@@ -1,0 +1,23 @@
+$NP^3$ MS Workflow
+A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis 
+The $NP^3$ Mass Spectrometry (MS) workflow is a program with a collection of scripts to enhance untargeted metabolomics research focused on drug discovery with optimizations towards natural products. 
+
+This workflow proposes an automatized procedure with the capability to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), of a collection of samples from LC-MS/MS experiments. It generates a rank of spectra candidates responsible for the observed hits in bioactivity experiments and suggests the real number of metabolites present in the samples. Molecular networks are created to improve the analysis and visualization of the results.
+
+Copyright (c) 2020 The Brazilian Center for Research in Energy and Materials (CNPEM) and The University of Campinas (UNICAMP)
+
+This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+===============================================================================
+

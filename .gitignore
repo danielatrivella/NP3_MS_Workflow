@@ -1,0 +1,32 @@
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# NP3_MSCluster #
+############
+
+*.Rhistory
+*.RData
+*.idea
+*.metadata
+*NP3_MSCluster_bin
+*mllib
+node_modules/*
+test/L754_bacs/L754_bacs_*
+test/L754_bacs/mzxml/processed_data*
+src/__pycache__/*
+
+# Dev Templates Bootstrap#
+##########################
+
+src/spectra_viewer/temp_data/*
+src/spectra_viewer/src/__pycache__/*
+src/spectra_viewer/src/__pycache__/
+src/spectra_viewer/src/pages/__pycache__/*
+src/spectra_viewer/src/pages/__pycache__/
+src/spectra_viewer/src/untitled0.py
