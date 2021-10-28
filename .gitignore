@@ -7,7 +7,7 @@
 *.o
 *.so
 
-# NP3_MSCluster #
+# NP3_MSCluster and others #
 ############
 
 *.Rhistory
@@ -20,6 +20,8 @@ node_modules/*
 test/L754_bacs/L754_bacs_*
 test/L754_bacs/mzxml/processed_data*
 src/__pycache__/*
+package-lock.json
+package.json
 
 # Dev Templates Bootstrap#
 ##########################
