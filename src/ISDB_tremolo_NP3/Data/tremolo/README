@@ -1,0 +1,8 @@
+Summary
+
+Tremolo is a spectral library search tool that leverages the Spectral Library Generating Function (SLGF) concept to identify spectrum-spectrum matches (SSMs). The SLGF models the variability of replicate spectra as compared to reference library spectra. Given a similarity function (in our case cosine), SLGF yields an expected score distribution for each reference library spectrum. Tremolo is able to assign p-values to SSMs and it has been shown to increase the sensitivity of spectral library searches.
+
+Please see the official tremolo website if you have any question http://proteomics.ucsd.edu/software-tools/tremolo/
+
+The license status of tremolo is unknown, if you are one of the copyright holder, please tell us how we can link our project to tremolo and/or distribute binaries of it.
+
