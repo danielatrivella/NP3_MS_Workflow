@@ -65,10 +65,11 @@ $NP^{3}$ MS workflow includes a conda environment file for Unix and Windows, ena
  
 First, download the workflow repository from the following link:
  
-- https://bitbucket.org/cnpemlqpn/np3_ms_workflow/
-    - In the section 'Downloads' click in the 'Download repository' name or in the '...' options click in the 'Download repository' item
-    - Extract the zip file
- 
+- https://github.com/danielatrivella/NP3_MS_Workflow
+  - Click on the green button named 'Code' and then click on the 'Download ZIP' option.
+      - The repository contains the entire Universal Natural Products Database (UNPD), so this download can take a while to finish. 
+  - Extract the zip file 
+  
 Then, download and install Anaconda with Python 3.8 from the following link: 
  
 - https://www.anaconda.com/products/individual
