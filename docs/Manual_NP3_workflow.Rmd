@@ -27,7 +27,7 @@ The $NP^{3}$ MS workflow consists of ten major steps:
 * Step 3: Clustering of pre-processed MS2 spectra into a collection of consensus spectra.
 * Step 4: Quantification of consensus spectra per sample and computation of the sample type indicators.
 * Step 5: Pairwise similarity comparisons of consensus spectra and their quantifications cleaning based on the similarity values.
-* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Linux OS only)
+* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS only)
 <!-- , and against the PubChem database using the MetFrag R package. -->
 * Step 7: Ionization variants annotation among concurrent consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a molecular network of annotations and assignment of the most likely [M+H]+ consensus spectra representatives
 * Step 8: Merge of consensus spectra quantifications based on the annotated variants and the [M+H]+ consensus spectra representatives.
@@ -37,7 +37,7 @@ The $NP^{3}$ MS workflow consists of ten major steps:
 This workflow also contains two interactive commands for data visualization:
  
 * The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
-* The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Linux OS.
+* The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Unix OS.
  
 Furthermore, the user can manually identify the resulting consensus spectra against the GNPS [8] spectral libraries and use another separated command of this workflow to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables.
  
@@ -274,7 +274,7 @@ Commands:
     - *\-o, \-\-output_path* \<path\>       : path to the final output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'mgf' folder and the 'count_tables' folder with the peak area and spectra count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
  
-- **tremolo** [options] : Step 6: (for Linux OS only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
+- **tremolo** [options] : Step 6: (for Unix OS only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
@@ -316,7 +316,7 @@ Commands:
 <!--     - List of mandatory options: -->
 <!--     - *\-g, \-\-mgf* \<path\>        path to the input MGF file with the MS/MS spectra data to be compared -->
     
-- **spectra_viewer** [options] : (for Linux OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots. 
+- **spectra_viewer** [options] : (for Unix OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots. 
     
 - **test** [options]      :       This command runs some use cases to test the $NP^{3}$ MS workflow consistency in all steps. This option is intended for debugging purposes, and is not a part of the analysis workflow.
  
@@ -1288,7 +1288,7 @@ PNG image(s) file(s) with the extracted chromatogram(s) of the selected sample(s
  
 ## 4.13. Command *spectra_viewer*
 
-This command runs the Streamlit interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. Currently, it is only supported for Linux OS.
+This command runs the Streamlit interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. Currently, it is only supported for Unix OS.
   It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
 
 Options for the command *spectra_viewer*:

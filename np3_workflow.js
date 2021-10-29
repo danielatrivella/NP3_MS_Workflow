@@ -2334,7 +2334,7 @@ program
 
 program
     .command('tremolo')
-    .description('Step 6: (for Linux OS only) This command runs the tremolo tool, used for spectra matching against ' +
+    .description('Step 6: (for Unix OS only) This command runs the tremolo tool, used for spectra matching against ' +
         'In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural ' +
         'Products Database).\n\n')
     .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored')
@@ -2894,7 +2894,7 @@ program
 
 program
     .command('spectra_viewer')
-    .description('(for Linux OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. ' +
+    .description('(for Unix OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. ' +
         'It receives as input a MGF file or a peak list. It is also possible to manipulate, filter, calculate ' +
         'similarity of the spectra and save PNG or SVG plots.\n\n')
     .option('-p, --port [port_number]', 'localhost server port number', "8501")
