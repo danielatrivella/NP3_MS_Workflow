@@ -1215,6 +1215,8 @@ program
                     console.log("DONE!\n");
                 }
             }
+        } else {
+            console.log('Linux/Unix Systems Only, skipped');
         }
         shell.cd('../../..');
 
