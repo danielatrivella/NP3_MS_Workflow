@@ -1,3 +1,4 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
+src/ISDB_tremolo_NP3/Data/dbs/UNPD_DB.csv filter=lfs diff=lfs merge=lfs -text
 *.mgf filter=lfs diff=lfs merge=lfs -text
 *.mzXML filter=lfs diff=lfs merge=lfs -text
