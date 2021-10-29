@@ -21,10 +21,12 @@ For the complete details of each command see the [NP³ MS workflow user manual](
 
 # Installation with Conda 
 
-NP³ MS workflow includes a conda environment file for Unix and Windows users to install the packages dependencies.   
+NP³ MS workflow includes a conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
-First, download the workflow repository from the link 'Download repository' in the section 'Downloads' or in the '...' options. 
+First, download the workflow repository. 
 
+- Click on the green button named 'Code' and then click on the 'Download ZIP' option.
+    - The repository contains the entire Universal Natural Products Database (UNPD), so this download can take a while to finish. 
 - Extract the zip file 
 
 Then, download and install Anaconda with Python 3.8 from the following link:  
@@ -54,9 +56,9 @@ $ conda
 
 If it outputs the conda help usage information you are good to go.    
 
-Now, go the NP³ MS workflow repository folder that you just downloaded and extracted, and open a terminal window there.   
+Now, go the NP³ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
 
-Then, create the provided NP³ MS workflow conda environment to automatically install almost all the workflow dependent programs and packages using the following terminal command: 
+Then, create the NP³ MS workflow conda environment to automatically install almost all the workflow programs and required packages using the following terminal command:
 
 Unix OS: 
 
@@ -84,7 +86,7 @@ $ conda activate np3
 
 You should see the '(np3)' tag as the first thing in your terminal line. Every time you open a new terminal you must execute this command once again in order to activate the NP³ MS workflow environment before using the NP³ MS workflow commands. 
 
-Now install the following libraries of the Node.js program: 
+Now install the libraries required by the node.js program: 
 
 In the terminal execute the following command: 
 
