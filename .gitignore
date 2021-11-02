@@ -22,6 +22,7 @@ test/L754_bacs/mzxml/processed_data*
 src/__pycache__/*
 package-lock.json
 package.json
+src/ISDB_tremolo_NP3/Data/dbs/UNPD_DB.csv
 
 # Dev Templates Bootstrap#
 ##########################
