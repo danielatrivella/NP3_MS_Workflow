@@ -1,3 +1,3 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:388aeaadf10fa0796210d037819a41abdea8c9e7cff4145a033591320e93ee5c
-size 193
+FILENAME,SAMPLE_CODE,DATA_COLLECTION_BATCH,SAMPLE_TYPE,BIOACTIVITY_fake,BIOACTIVITY_fake2,COR_test_all,COR_test_peak,GR_One
+"20190524_MeOH_POS_1-A,1_01_11518.d.mzXML",MEOH_1,1,BLANK,0,0,1,0,Um
+

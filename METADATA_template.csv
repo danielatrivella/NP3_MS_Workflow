@@ -1,3 +1,4 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:905973bbce578af841d785b056eb70157f6efe7194cc0728814eb0fa7b1ac87f
-size 359
+"FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","BIOACTIVITY_NAME","BIOACTIVITY_NAME2","COR_All","COR_S1","COR_S2","GR_Color","GR_kingdom","GR_Origin"
+"sample_blank.mzXML","b1",1,"blank",0,0,1,1,1,"Red","Fungi",
+"sample1.mzXML","s1",1,"sample",80,20,1,1,0,"Red","Monera","Land"
+"sample2.mzXML","s2",2,"sample",95,5,1,0,1,"Blue","Monera","Land"
