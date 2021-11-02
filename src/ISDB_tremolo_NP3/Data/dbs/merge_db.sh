@@ -1,1 +1,1 @@
-cat UNPD_DB.csv_* > UNPD_DB.csv
+cat UNPD_DB_p0*.csv > UNPD_DB.csv

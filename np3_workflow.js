@@ -1140,11 +1140,27 @@ program
         var resExec;
         var countError = 0;
 
+        console.log('* Merging the UNPD csv file *\n');
+
+        shell.cd('src/ISDB_tremolo_NP3/Data/dbs');
+        resExec = shell.exec('./merge_db.sh', {async:false});
+        if (resExec.code) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+            console.log('\nERROR. Could not merge the UNPD csv file. Tremolo identification is disabled.');
+            countError = countError + 1;
+        } else {
+            console.log("DONE!\n");
+        }
+        shell.cd('../../../..');
+
+
         if (!shell.which('R')) {
-            console.log('R not found, please ensure R is available and try again.');
+            console.log('ERROR. R not found, please ensure R is available and try again.');
+            process.exit(1);
         } else {
             // install R packages
-            console.log('Checking R packages requirements\n');
+            console.log('* Checking R packages requirements *\n');
 
             resExec = shell.exec('Rscript src/R_requirements.R', {async:false});
             if (resExec.code) {
@@ -1161,25 +1177,29 @@ program
         if (isWindows())
         {
             if (!shell.which('python')) {
-                console.log('Python not found, please ensure python 3 is available and try again.');
+                console.log('ERROR. Python not found, please ensure python 3 is available and try again.');
+                process.exit(1);
             } else {
                 if (parseDecimal(shell.exec("python --version", {async:false, silent: true}).stdout.toString().split(' ')[1]) < 3)
                 {
-                    console.log('Python 3 not found, please ensure python 3 is available and try again.');
+                    console.log('ERROR. Python 3 not found, please ensure python 3 is available and try again.');
+                    process.exit(1);
                 }
             }
         } else {
             if (!shell.which('python3')) {
-                console.log('Python 3 not found, please ensure python 3 is available and try again.');
+                console.log('ERROR. Python 3 not found, please ensure python 3 is available and try again.');
+                process.exit(1);
             }
         }
 
 
         if (!shell.which('pip')) {
-            console.log('Pip not found, please ensure pip - the python 3 package management - is available and try again.');
+            console.log('Pip not found, please ensure pip - the python 3 package management - is available and try again.\n');
+            countError = countError + 1;
         } else {
             // install python packages
-            console.log('\nChecking python 3 packages requirements\n\n');
+            console.log('* Checking python 3 packages requirements *\n');
             resExec = shell.exec('pip install -r src/python_requirements --user', {async:false});
             if (resExec.code) {
                 console.log(resExec.stdout);
@@ -1197,7 +1217,7 @@ program
         }
 
         // Compile dotproduct with pybind
-        console.log('\nCompiling the NP3 shifted cosine function for the spectra viewer web app\n');
+        console.log('* Compiling the NP3 shifted cosine function for the spectra viewer web app *\n');
         shell.cd('src/spectra_viewer/src');
         if (!isWindows())
         {
@@ -1220,7 +1240,7 @@ program
         }
         shell.cd('../../..');
 
-        console.log('\nCompiling NP3-MS-Clustering\n');
+        console.log('\n* Compiling NP3-MS-Clustering *\n');
         shell.cd('NP3_MSCluster');
 
         resExec = shell.exec('make clean', {async:false});
@@ -1248,7 +1268,8 @@ program
         {
             console.log('NP3 workflow installation complete! ' + printTimeElapsed(process.hrtime(start)))
         } else {
-            console.log('NP3 workflow installation ended with ' + countError + " error. " + printTimeElapsed(process.hrtime(start)))
+            console.log('NP3 workflow installation ended with ' + countError +
+                " error(s). Check the error messages, fix the conflicts and retry the setup. " + printTimeElapsed(process.hrtime(start)))
         }
 
     })
