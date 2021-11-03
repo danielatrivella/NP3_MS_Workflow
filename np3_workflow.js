@@ -1143,7 +1143,7 @@ program
         console.log('* Merging the UNPD csv file *\n');
 
         shell.cd('src/ISDB_tremolo_NP3/Data/dbs');
-        resExec = shell.exec('./merge_db.sh', {async:false});
+        resExec = shell.exec('sh merge_db.sh', {async:false});
         if (resExec.code) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
