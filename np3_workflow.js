@@ -1119,7 +1119,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.0.0',  '--version')
+    .version('1.1.0',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
