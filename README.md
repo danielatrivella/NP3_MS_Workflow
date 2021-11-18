@@ -129,7 +129,7 @@ $ conda activate np3
 
 Now, we can run the NP³ MS workflow with the provided metadata table. 
 
-The user can choose to run the entire workflow (Steps 2 to 10) with a single command, using the default parameters in the pre-processing Step 2, or to run the pre-processing Step 2 separated, in order to optimize the LC-MS processing result, and then run the rest of the workflow with a single command (Steps 3 to 10). We **highly recommend the users to run the pre-processing Step 2 separated** to optimize its most critical parameters: the common MS1 peak width found in your data and the expected deviation between the MS1 and the MS2 data (parameters peak_width and rt_tolerance, respectively). The pre-processing results will directly impact the isomers definition throughout the rest of the workflow, a bad optimization of its critical parameters can, for example, lead to large MS1 peaks being splitted or adjacent peaks being joined, negatively impacting the final result. The users should **follow the pre-processing optimization guide** present in section 4.3.4. of the [NP³ MS Workflow user manual](docs/Manual_NP3_workflow.pdf) when executing the workflow with a new dataset.
+The user can choose to run the entire workflow (Steps 2 to 10) with a single command, using the default parameters in the pre-processing Step 2, or to run the pre-processing Step 2 separated, in order to optimize the LC-MS processing result, and then run the rest of the workflow with a single command (Steps 3 to 10). We **highly recommend the users to run the pre-processing Step 2 separated** to optimize its most critical parameters: the common MS1 peak width found in your data and the expected deviation between the MS1 and the MS2 data (parameters peak_width and rt_tolerance, respectively). The pre-processing results will directly impact the isomers definition throughout the rest of the workflow, a bad optimization of its critical parameters can, for example, lead to large MS1 peaks being split or adjacent peaks being joined, negatively impacting the final result. The users should **follow the pre-processing optimization guide** present in section 4.3.4. of the [NP³ MS Workflow user manual](docs/Manual_NP3_workflow.pdf) when executing the workflow with a new dataset.
 
 
 The test dataset that we are using in this example gives good results with the pre-processing default parameters, so then we will run the entire workflow with a single command. 
@@ -149,33 +149,35 @@ If the workflow executed without any error message, the results should be locate
 ~~~ 
 L754_bacs_test 
 │  
-├── outs                                        <- the results from the clustering steps in separated folders, each one with results from the other workflow commands as described below 
+├── outs                                        <- the results from the clustering steps in separated folders, and inside them the results from the other workflow steps as described below 
 │   │    
-│   ├── L754_bacs_test                          <- the final clustering step results folder 
+│   ├── L754_bacs_test                          <- the final clustering (Step 3) result folder 
 │   │   │ 
 |   |   ├── clust                               <- the folder with clusters membership files (which SCANS or msclusterID were joined in the final clustering step) (Step3) 
 │   │   │ 
 |   |   ├── count_tables                        <- the folder with the quantification tables from Step 4 named as "L754_bacs_test_(spectra|peak_area).csv" and "L754_bacs_test_peak_area_MS1.csv" 
 │   │   │   |    
-│   │   │   ├── clean                           <- the folder with quantification tables from Steps 6, 7 and 9 
+│   │   │   ├── clean                           <- the folder with the quantification tables from Steps 5, 7 and 9 
 │   │   │   |  
-│   │   │   └── merge                           <- the folder with quantification tables from Steps 8 and 9 
+│   │   │   └── merge                           <- the folder with the quantification tables from Steps 8 and 9 
 │   │   │ 
-|   |   ├── mgf                                 <- the folder with the mgf files containing the resulting collection of consensus spectra (Step 3). The file L754_bacs_test_all.mgf contains all the resulting consensus spectra 
+|   |   ├── identifications                     <- the folder with the complete list of identifications from UNPD returned by tremolo              
+│   │   │ 
+|   |   ├── mgf                                 <- the folder with the MGF files from the clustering Step 3 (named L754_bacs_test_all.mgf), containing the complete list of consensus spectra, and from the clean Step 5 (named L754_bacs_test_clean.mgf), containing the final list of clean consensus spectra. 
 │   │   │    
-|   |   └── molecular_networking                <- the folder with the similarity molecular networks and the molecular network of annotations edge files (Steps 7 and 10). One table with the attributes of the molecular network of annotations 
+|   |   └── molecular_networking                <- the folder with the spectral similarity molecular networks (SSMN) and the ionization variant annotation molecular network (IVAMN) in edge files (Steps 7 and 10). One table with the attributes of the IVAMN
 │   │       |   
-│   │       └── similarity_tables               <- the folder with the pairwise similarity tables (Step 6) 
+│   │       └── similarity_tables               <- the folder with the pairwise similarity tables (Step 5) 
 │   │    
-│   ├── B_X_Y                                   <- the clustering steps results folders, where X is the data collection batch number in the metadata file of each group of samples and Y is 0 if it is the result of a data clustering step or 1 if it is the result of a blank clustering step 
+│   ├── B_X_Y                                   <- the clustering sub steps results folders, where X is the data collection batch number in the metadata table of each group of samples and Y is 0 if it is the result of a data clustering step or 1 if it is the result of a blank clustering step 
 │   │ 
 │   └── B_X                                     <- the data collection batch integration step results folders, where X is the data collection batch number 
 │ 
-├── np3_modifications.csv                       <- a copy of the ionization variant rules table used in the job 
+├── np3_modifications.csv                       <- a copy of the ionization variant rules table used in Step 7
 │ 
 ├── marine_bacteria_library_L754_metadata.csv   <- a copy of the metadata table used in the job 
 │ 
-└── logRunParms                                 <- the command line parameters values used to run the command 
+└── logRunParms                                 <- the command line parameters values used in the run command, for reproducibility
 ~~~ 
 
   
@@ -189,7 +191,7 @@ The NP³ MS workflow was implemented in a command line interface (CLI) capable o
 
 Before running any command of the workflow, the metadata table must be manually constructed, defining how the workflow will behave (Step 1). Then, the entire workflow can be executed with the command *run*, which runs Steps 2 to 10 or just Steps 3 to 10, using results obtained separately for Step 2. 
 
-We strongly recommend to run the pre-process command (Step 2) separated when running the workflow for the first time in a new dataset. This way the most critical parameters (peak_width and rt_tolerance) can be manually tuned to achieve more accurate results in the LC-MS peak detection algorithm and processing, which also depends on the mass spectrometrer equipment and the data quality. The user should **follow the pre-processing optimization guide** present in section 4.3.4. of the [NP³ MS Workflow user manual](docs/Manual_NP3_workflow.pdf) to improve the pre-process result, and also inpect the data. The workflow default values have been tested with an UHPLC-MS/MS-qTOF equipment (Acquity HClass Waters UHPLC and ESI\-QqTOF Impact II Bruker spectrometer).
+We strongly recommend to run the pre-process command (Step 2) separated when running the workflow for the first time in a new dataset. This way the most critical parameters (peak_width and rt_tolerance) can be manually tuned to achieve more accurate results in the LC-MS peak detection algorithm and processing, which also depends on the mass spectrometer equipment and the data quality. The user should **follow the pre-processing optimization guide** present in section 4.3.4. of the [NP³ MS Workflow user manual](docs/Manual_NP3_workflow.pdf) to improve the pre-process result, and also inspect the data. The workflow default values have been tested with an UHPLC-MS/MS-qTOF equipment (Acquity HClass Waters UHPLC and ESI\-QqTOF Impact II Bruker spectrometer).
 
  
 For further analyses, after running the entire NP³ MS workflow, each step can be executed separately on the results obtained previously and with different tolerance parameter values and/or correlation groups, as needed. When running a specific command separately it is important not to modify the original output files, instead create a copy of those files. In this way, you may reproduce the workflow steps as needed when repeating any step.
@@ -239,7 +241,7 @@ Commands:
  
 - **pre_process** [options] : Step 2: This command runs the pre-process of the LC-MS/MS raw data. It extracts the list of MS1 peaks with their dimension information (minimum and maximum retention times, the peak area and ID) in each sample, matches the MS2 spectra retention time and precursor m/z against this list and assign to each MS2 spectra a MS1 peak that encompasses it. Additionally, a table with the MS1 peaks without any MS2 spectrum m/z and retention time match are stored in a count table of non-fragmented MS1 peaks.
     - List of mandatory options:
-    -  *\-n, \-\-data_name* \<name\>  <x>      :   the data collection name for printting in the verbose messages
+    -  *\-n, \-\-data_name* \<name\>  <x>      :   the data collection name for printing in the verbose messages
     -  *\-m, \-\-metadata* \<file\> <x>         :    path to the metadata table CSV file
     -  *\-d, \-\-raw_data_path* \<path\> <x>   :    path to the folder containing the input LC-MS/MS raw spectra data files
  
@@ -275,7 +277,7 @@ Commands:
 - **corr** [options] : Step 9: This command runs the bioactivity correlation to rank the consensus spectra based on the scores computed for the selection of samples and bioactivity values present in the metadata table.
     - List of mandatory options:
     - *\-b, \-\-metadata* \<file\>\     : path to the metadata table CSV file. Used to retrieve the biocorrelation groups
-    - *\-c, \-\-count_file_path* \<file\>\ \ \ \ \ \ \ \ \ \ : path to the count table CSV file
+    - *\-c, \-\-count_file_path* \<file\> : path to the count table CSV file
  
 - **mn** [options] : Step 10: This command runs the creation of a molecular network of similarity based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes.
     - List of mandatory options:
@@ -297,7 +299,7 @@ Commands:
 
 ### Step 1: Construction of a Metadata Table 
 
-The metadata table must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata file was finished it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
+The metadata table must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata file was finished, it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
  
 A metadata template file is available in the NP³ MS workflow repository, named 'METADATA_TEMPLATE.csv'.
  
@@ -318,7 +320,7 @@ The metadata table may contain the following optional columns:
 The user is free to add any additional column to the metadata file, for example to add relevant descriptions for each file. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the job samples. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata file.
 
 
-For more details about the samples order and the bahavior of the clustering step related to the data collection batches grouping, see the section 4.1.1 Metadata Table Details of the documentation in the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
+For more details about the samples order and the behavior of the clustering step related to the data collection batches grouping, see the section 4.1.1 Metadata Table Details of the documentation in the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
 
 - - - - 
