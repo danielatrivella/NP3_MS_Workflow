@@ -74,7 +74,9 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
 writeMgfContent_NP3 <- function(sp, TITLE = NULL, con, RT = NULL, RTMIN = NULL, 
                                 RTMAX = NULL, PEAK_ID = NULL, PEAK_AREA = NULL, INTO = NULL,
                                 PEPMASS = NULL, SIZE = NULL, CHARGE = NULL) {
-  if (peaksCount(sp) == 0) # do not write zero peak spectrum
+  # do not write zero peak spectrum, or spectrum with all peaks intensity equals zero
+  sp <- clean(sp, all=TRUE) # remove zero intensity peaks
+  if (peaksCount(sp) == 0)
     return(0)
   
   .cat <- function(..., file = con, sep = "", append = TRUE) {
