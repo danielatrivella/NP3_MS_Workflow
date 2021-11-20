@@ -189,9 +189,9 @@ wrong_scans <- lapply(metadata$SAMPLE_CODE, function(x)
   # 2 if the scans could be removed by the filters (min num peaks and min base peak int)
   # 0 otherwise, meaning it is missing from the final count table - something went wrong
   mgf_data$valid <- 0 
-  valid_scans <- sapply(mgf_data$scans, function(scan_num) {
-    any(grepl(pattern = scan_num, fixed = TRUE, x = unlist(scans_peakIds[,1])))
-  })
+  valid_scans <- sapply(mgf_data$scans, function(scan_num, x) {
+    any(grepl(pattern = scan_num, fixed = TRUE, x = x))
+  }, x = unlist(scans_peakIds[,1]))
   mgf_data$valid[valid_scans] <- 1
   mgf_data$valid[!valid_scans & 
                  (mgf_data$num_peaks < min_num_peaks | 
