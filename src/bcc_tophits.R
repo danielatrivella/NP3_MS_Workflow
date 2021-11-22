@@ -6,22 +6,24 @@ source("src/read_metadata_table.R")
 corr_cutoff <- 0.6
 top_n_hits_gecutoff <- 5
 top_k_hits_lecutoff <- 3
+rm_flags <- TRUE
 
 # return the top n hits above the cutoff, if no cadidate is selected 
 # return the top k below the cutoff
 # sort the table by the maximum biocorrelation and basePeakIntensity to better 
 # deal with ties in the top n retrieval
+# do not select blansk or bed m/zs
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args) < 5) {
+if (length(args) < 6) {
   stop("Two arguments must be supplied to retrieve the top hits:\n", 
        " 1 - Path to a to a NP3 count table;\n", 
        " 2 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;\n",
        " 3 - The biocorrelation cutoff to select the top n hits;\n", 
        " 4 - The top n hits to be retrieve with the biocorrelation above the cutoff;\n", 
        " 5 - The top k hist to be retrieve when there were less then top n retrieved, where the top k are below the biocorr cutoff;\n", 
-       
+       " 6 - TRUE to also remove bflag and bedflag, FALSE otherwise;\n", 
        call.=FALSE)
 } else {
   path_count <- file.path(args[[1]])
@@ -42,6 +44,7 @@ if (length(args) < 5) {
   corr_cutoff <- as.numeric(args[[3]])
   top_n_hits_gecutoff <- as.numeric(args[[4]])
   top_k_hits_lecutoff <- as.numeric(args[[5]])
+  rm_flags <- as.logical(args[[6]])
 }
 
 # read the quantifications, skipping the rows with the bioactivities
@@ -63,13 +66,28 @@ corr_cols <- names(ms_count)[startsWith(names(ms_count), 'COR_')]
 # compute the max correlation
 ms_count$max_corr <- do.call(pmax, c(ms_count[,corr_cols], na.rm=T))
 ms_count$BCC_top_hits <- NA
+ms_count$valid <- TRUE
+# make blanks and bed mzs invalid for selection
+if ('BLANKS_TOTAL' %in% names(ms_count)) {
+  ms_count$valid[ms_count$BLANKS_TOTAL > 0] <- FALSE
+  if (rm_flags) {
+    ms_count$valid[ms_count$BFLAG] <- FALSE
+  }
+}
+if ('BEDS_TOTAL' %in% names(ms_count)) {
+  ms_count$valid[ms_count$BEDS_TOTAL > 0] <- FALSE
+  if (rm_flags) {
+    ms_count$valid[ms_count$BEDFLAG] <- FALSE
+  }
+}
 
 for (corr_col in corr_cols) {
   # order ms_count table using the max correlation and the basePeakInt
   top_n_corr <- ms_count %>%
+    filter(valid == TRUE) %>%
     arrange(desc(!!as.symbol(corr_col)), desc(max_corr), desc(basePeakInt)) %>% 
     slice(1:max(top_n_hits_gecutoff, top_k_hits_lecutoff)) %>% 
-    select('msclusterID', corr_col)
+    select('msclusterID', !!as.symbol(corr_col))
   
   # select the top n above the cutoff
   consensus_spec_select <- top_n_corr[top_n_corr[corr_col] >= corr_cutoff, 'msclusterID'][[1]]
@@ -85,14 +103,15 @@ for (corr_col in corr_cols) {
   # annotate the selected candidates
   select_index <- match(consensus_spec_select, ms_count$msclusterID)
   ms_count$BCC_top_hits[select_index] <- sapply(seq_along(select_index), 
-                                                function(i, sl_idxs) {
+                                                function(i, sl_idxs, corr_name) {
     ifelse(is.na(ms_count$BCC_top_hits[sl_idxs[i]]), 
-           paste0(corr_col,"_top_",i),
-           paste0(ms_count$BCC_top_hits[sl_idxs[i]],";",corr_col,"_top_",i))
-  }, sl_idxs = select_index)
+           paste0(corr_name,"_top_",i),
+           paste0(ms_count$BCC_top_hits[sl_idxs[i]],";",corr_name,"_top_",i))
+  }, sl_idxs = select_index, corr_name = corr_col)
 }
 
 ms_count$max_corr <- NULL
+ms_count$valid <- NULL
 #ms_count$BCC_top_hits[!is.na(ms_count$BCC_top_hits)]
 
-write_csv(ms_count, sub(".csv", "_top_BCC.csv", path_count))
+write_csv(ms_count, sub(".csv", "_topHits_BCC.csv", path_count))
