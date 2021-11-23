@@ -1,6 +1,22 @@
 suppressPackageStartupMessages(library(dplyr))
+##
+# Step 4 - quantifications from the subclustering results
+##
+
 library(purrr)
-source("src/read_metadata_table.R")
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+source(file.path(script_path(), "read_metadata_table.R"))
 
 # from package bazar
 almost.unique <- function(x, tol = sqrt(.Machine$double.eps))
@@ -220,7 +236,7 @@ if (sum(clusterList$numSpectra) !=
 # if it is the final step, compute indicators and peak area
 if (isLast == "1") 
 {
-  source('src/count_peak_area.R')
+  source(file.path(script_path(), "count_peak_area.R"))
   processed_data_path <- file.path(args[[5]])
   if (!dir.exists(processed_data_path))
   {

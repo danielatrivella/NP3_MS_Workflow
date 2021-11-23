@@ -1,6 +1,7 @@
-## Script to create the specification lists to be passed to the MSCluster when running runs in
-## in batches of experiments with blank files indicated
-#> Rscript create_batch_lists.R "LNB0020_METADATA.csv" "/home/cristina/Documents/CNPEM/ms_entity_annotation/pati_mzxml/lnb020" "." "LNB020"
+##
+# Script to create the specification lists to be passed to the MSCluster when running 
+# in batches of experiments with blank files indicated
+##
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
@@ -33,12 +34,21 @@ if (length(args) < 5) {
   output_name <- args[[4]]
   use_processed <- args[[5]] # the processed data dir
 }
-# path_batch_metadata <- file.path("/home/cristina/Documents/CNPEM/ms_entity_annotation/pati_mzxml/lnb028/LNB0028_TABELA_ATIVAS_metadata.csv")
-# path_raw_data <- file.path("/home/cristina/Documents/CNPEM/ms_entity_annotation/pati_mzxml/lnb028/LNB0028_ATIVAS/")
-# output_path <- "/home/cristina/Documents/CNPEM/ms_entity_annotation/pati_mzxml/lnb028/"
-# output_name <- "out_lnb028_test_blanks"
 
-source("src/read_metadata_table.R")
+library(purrr)
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+source(file.path(script_path(), "read_metadata_table.R"))
 spec_lists_path <- file.path(output_path, output_name, "spec_lists")
 outs_path <- file.path(output_path, output_name, "outs")
 

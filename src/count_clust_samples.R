@@ -1,5 +1,21 @@
+##
+# Step 4 - quantifications from the pre-processed files
+##
+
 suppressPackageStartupMessages(library(dplyr))
-source("src/read_metadata_table.R")
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+source(file.path(script_path(), "read_metadata_table.R"))
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
@@ -138,7 +154,7 @@ if (sum(clusterList$numSpectra) !=
 
 if (singleBatch == "1") # only one batch, compute sum of blanks
 {
-  source('src/count_peak_area.R')
+  source(file.path(script_path(), "count_peak_area.R"))
   processed_data_path <- file.path(args[[5]])
   if (!dir.exists(processed_data_path))
   {

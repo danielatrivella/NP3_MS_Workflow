@@ -47,8 +47,20 @@ if (length(args) < 6) {
 ## ----load-libs, message = FALSE--------------------------------------------
 cat("Loading package dplyr and Rcpp functions...\n")
 suppressPackageStartupMessages(library(dplyr))
-Rcpp::sourceCpp("src/read_mgf_peak_list_R.cpp")
-Rcpp::sourceCpp("src/dot_product_list.cpp")
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(), 'dot_product_list.cpp'))
 
 compareSpectraNormDotProductRow <- function(i)
 {
@@ -178,10 +190,13 @@ for (i in seq_along(path_mgf)) {
   {
     # parallelized pairwise comparisions
     cl <- makeCluster(parallel_cores)
-    clusterExport(cl, c("ms2_sample", "n_scans",
+    script_path_ <- script_path()
+    clusterExport(cl, c("ms2_sample", "n_scans","script_path_",
                         "bin_size"), envir=environment())
+    
     clusterEvalQ(cl, {
-      invisible(Rcpp::sourceCpp("src/dot_product_list.cpp"))})
+      invisible(Rcpp::sourceCpp(file.path(script_path_, 
+                                          "dot_product_list.cpp")))})
     
     write.table(cbind(parSapply(cl, 1:(n_scans-1), 
                           compareSpectraNormDotProductRow), 

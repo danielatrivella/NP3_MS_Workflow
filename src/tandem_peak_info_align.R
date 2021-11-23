@@ -1,10 +1,23 @@
+# pre-processing step
 # Merge LC-MS into MS/MS tandem mass data, use xcms CentWave algorithm to detect 
 # LC-MS peaks and MsnBase to read MS/MS in tandem and merge peak info
 # import functions to write to mgf the MS/MS data with LC-MS peak info
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
 
 suppressPackageStartupMessages(library(dplyr))
-source("src/read_metadata_table.R")
-source("src/writeMgfData_NP3.R")
+source(file.path(script_path(),"read_metadata_table.R"))
+source(file.path(script_path(),"writeMgfData_NP3.R"))
 
 decimalplaces <- function(x) {
   if (abs(x - round(x)) > .Machine$double.eps^0.5) {

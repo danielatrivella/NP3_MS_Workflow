@@ -1,13 +1,26 @@
 ## ----load-libs, message = FALSE--------------------------------------------
-cat("Loading packages Rcpp, readr, dplyr...\n")
+cat("Loading packages Rcpp, readr, dplyr, CPP functions...\n")
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-Rcpp::sourceCpp('src/triangular_matrix_R.cpp')
-Rcpp::sourceCpp('src/read_mgf_peak_list_R.cpp')
-Rcpp::sourceCpp('src/norm_dot_product.cpp')
-source('src/count_peak_area.R')
-source("src/read_metadata_table.R")
-source("src/writeMgfData_NP3.R")
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+
+Rcpp::sourceCpp(file.path(script_path(), 'triangular_matrix_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(), 'norm_dot_product.cpp'))
+source(file.path(script_path(), "count_peak_area.R"))
+source(file.path(script_path(), "read_metadata_table.R"))
+source(file.path(script_path(), "writeMgfData_NP3.R"))
 
 options(digits=10) # increase precision
 options(readr.show_progress = FALSE)

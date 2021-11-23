@@ -1,5 +1,19 @@
 suppressPackageStartupMessages(library(dplyr))
-Rcpp::sourceCpp('src/read_mgf_peak_list_R.cpp')
+
+library(purrr)
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
 # compute_peak_area(processed_data_path, 
 #                   ms_spectra_count$msclusterID,
 #                   lapply(ms_spectra_count$scans, function(x) strsplit(x, ";")[[1]]),

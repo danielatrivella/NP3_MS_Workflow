@@ -2,8 +2,20 @@
 # RUN annotation step
 ##
 
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
 # default args
-modification_file <- "rules/np3_modifications.csv"
+modification_file <- file.path(script_path(),"../rules/np3_modifications.csv")
 mz_tol <- 0.025
 fragment_tol <- 0.025
 rt_tol <- 2
@@ -91,7 +103,7 @@ if (length(args) < 2) {
   }
 }
 
-source("src/annotate_spectra_molecular_network.R")
+source(file.path(script_path(), "annotate_spectra_molecular_network.R"))
 
 annotate_spectra_table_network(output_path,  
                                path_batch_metadata, 

@@ -1,8 +1,20 @@
 ## ----load-libs, message = FALSE--------------------------------------------
-cat("Loading packages readr...\n")
+cat("Loading packages readr and auxiliary functions...\n")
 library(readr)
-source("src/read_metadata_table.R")
-source('src/count_peak_area.R')
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+source(file.path(script_path(), "read_metadata_table.R"))
+source(file.path(script_path(), "count_peak_area.R"))
 
 # function to merge the count table by column for all annotations 
 merge_counts <- function(col_name, x)

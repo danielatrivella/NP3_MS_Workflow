@@ -1,9 +1,24 @@
+##
+# step 9 - biocorrelation
+##
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+source(file.path(script_path(), "read_metadata_table.R"))
 suppressPackageStartupMessages(library(dplyr))
 
 # default args
 method <- "pearson"
 bio_cutoff <- 0
-source("src/read_metadata_table.R")
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)

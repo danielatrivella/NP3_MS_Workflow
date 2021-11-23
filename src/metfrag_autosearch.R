@@ -1,6 +1,18 @@
 cat("Loading packages metfRag, dlls...\n")
 suppressPackageStartupMessages(library(metfRag))
-Rcpp::sourceCpp('src/read_mgf_peak_list_R.cpp')
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
 
 try_with_time_limit <- function(expr, cpu = Inf, elapsed = Inf)
 {

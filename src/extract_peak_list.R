@@ -1,6 +1,19 @@
 ## ----load-libs, message = FALSE--------------------------------------------
 cat("Loading Rcpp functions...\n")
-Rcpp::sourceCpp("src/read_mgf_peak_list_R.cpp")
+library(purrr)
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(), "read_mgf_peak_list_R.cpp"))
 
 bin_size <- 0.05
 scale_factor <- 0.5

@@ -1,4 +1,6 @@
-# create molecular networking from pairswise similarity tables
+##
+# Step 10 - creates the SSMN from pairswise similarity tables
+##
 
 sim_min <- as.numeric(0.6)
 max_rows <- 3000
@@ -33,7 +35,19 @@ if (length(args) < 3) {
 
 cat("Loading package readr, dplyr, dlls...\n")
 suppressPackageStartupMessages(library(readr))
-Rcpp::sourceCpp('src/triangular_matrix_R.cpp')
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(), 'triangular_matrix_R.cpp'))
 
 build_mol_net_sim <- function(output_name, path_sim_table, 
                               output_path, sim_min, max_rows)

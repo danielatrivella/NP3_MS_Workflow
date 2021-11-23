@@ -1,9 +1,29 @@
+##
+# Step 7 - performs the pairwise annotation of concurrent consensus spectra and 
+# creates the IVAMN
+##
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+
 cat("Loading packages Rcpp, readr, dplyr...\n")
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-source("src/read_metadata_table.R")
-Rcpp::sourceCpp('src/norm_dot_product.cpp')
-Rcpp::sourceCpp('src/triangular_matrix_R.cpp')
+source(file.path(script_path(),"read_metadata_table.R"))
+Rcpp::sourceCpp(file.path(script_path(),
+                          'norm_dot_product.cpp'))
+Rcpp::sourceCpp(file.path(script_path(),
+                          'triangular_matrix_R.cpp'))
+
 
 # annotations values
 iso_mass <- 1.0033  # mass (13C) - mass (12C)

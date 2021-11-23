@@ -1,18 +1,33 @@
-cat("Loading packages Rcpp, readr, dplyr...\n")
-suppressPackageStartupMessages(library(readr))
-suppressPackageStartupMessages(library(dplyr))
-source("src/read_metadata_table.R")
-
-corr_cutoff <- 0.6
-top_n_hits_gecutoff <- 5
-top_k_hits_lecutoff <- 3
-rm_flags <- TRUE
-
+##
 # return the top n hits above the cutoff, if no cadidate is selected 
 # return the top k below the cutoff
 # sort the table by the maximum biocorrelation and basePeakIntensity to better 
 # deal with ties in the top n retrieval
 # do not select blansk or bed m/zs
+##
+
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+
+cat("Loading packages readr, dplyr...\n")
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+source(file.path(script_path(), "read_metadata_table.R"))
+
+corr_cutoff <- 0.6
+top_n_hits_gecutoff <- 5
+top_k_hits_lecutoff <- 3
+rm_flags <- TRUE
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)

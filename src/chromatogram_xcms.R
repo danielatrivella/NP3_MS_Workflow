@@ -1,7 +1,19 @@
 ## ----load-libs, message = FALSE--------------------------------------------
 cat("Loading package XCMS...\n")
 suppressPackageStartupMessages(library(xcms))
-source("src/read_metadata_table.R")
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+source(file.path(script_path(), "read_metadata_table.R"))
 
 .Last <- function() {
   graphics.off() # close devices before printing
