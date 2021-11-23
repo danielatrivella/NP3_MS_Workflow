@@ -1,5 +1,20 @@
+##
 # functionality test for the NP3 shifted cosine similarity function results
-Rcpp::sourceCpp('src/norm_dot_product.cpp')
+##
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(),
+                          '../src/norm_dot_product.cpp'))
 
 cat("\n*** Testing the NP3 shifted cosine similarity function ***\n")
 

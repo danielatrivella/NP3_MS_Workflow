@@ -1,8 +1,24 @@
+##
+# test the consistency of the count table - check the headers and MS2 completeness
+##
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
 cat("Loading packages readr...\n")
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-Rcpp::sourceCpp('src/read_mgf_peak_list_R.cpp')
-source("src/read_metadata_table.R")
+Rcpp::sourceCpp(file.path(script_path(),
+                          '../src/read_mgf_peak_list_R.cpp'))
+source(file.path(script_path(),"../src/read_metadata_table.R"))
 
 min_num_peaks <- 5  # minimum number of fragmented peaks that a ms2 spectra must have to be kept in the final counts table
 

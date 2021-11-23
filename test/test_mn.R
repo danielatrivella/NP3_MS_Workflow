@@ -1,4 +1,20 @@
-Rcpp::sourceCpp('src/triangular_matrix_R.cpp')
+##
+# test the consistency of the molecular networks
+##
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(),
+                          '../src/triangular_matrix_R.cpp'))
 library(stringr)
 library(readr)
 

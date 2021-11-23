@@ -1,5 +1,23 @@
-Rcpp::sourceCpp('src/triangular_matrix_R.cpp')
-Rcpp::sourceCpp('src/read_mgf_peak_list_R.cpp')
+##
+# test the clean counts and the molecular networks consistency
+##
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+Rcpp::sourceCpp(file.path(script_path(),
+                          '../src/triangular_matrix_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(),
+                          '../src/read_mgf_peak_list_R.cpp'))
+
 library(stringr)
 library(readr)
 
