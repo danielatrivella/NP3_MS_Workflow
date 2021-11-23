@@ -148,7 +148,7 @@ function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_fac
         bflag_cutoff_factor = 0;
     }
     console.log('*** Plotting the base peak intensity distribution of the clustering counts ***\n');
-    var resExec = shell.exec(python3()+' src/plot_basePeakInt_distribution.py ' + path_clustering_count +
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/plot_basePeakInt_distribution.py ' + path_clustering_count +
             ' ' + bflag_cutoff_factor, {async: false, silent: (verbose <= 0)});
 
     if (resExec.code) {
@@ -290,19 +290,19 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
 
     if (isWindows())
     {
-        resExec = shell.exec('.\\NP3_MSCluster\\NP3_MSCluster_bin.exe --list '+spec+' --output-name '+name+' ' +
+        resExec = shell.exec(__dirname+'\\NP3_MSCluster\\NP3_MSCluster_bin.exe --list '+spec+' --output-name '+name+' ' +
             '--out-dir '+out_path+'\\outs\\'+name+' --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
-            ' --model-dir NP3_MSCluster\\Models_Windows\\ --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
-            ' --tmp-dir NP3_MSCluster\\tmp_'+parms.output_name+'_rmv'+' --min-peaks-output '+min_numPeak_output+
+            ' --model-dir '+parms.model_dir+' --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
+            ' --tmp-dir '+__dirname+'\\NP3_MSCluster\\tmp_'+parms.output_name+'_rmv'+' --min-peaks-output '+min_numPeak_output+
             ' --scale-factor '+parms.scale_factor +' --verbose-level 10 --output-mgf --assign-charges --major-increment 100 ' +
             '--output-file-size '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose < min_verbose)});
     } else {
-        resExec = shell.exec('./NP3_MSCluster/NP3_MSCluster_bin --list '+spec+' --output-name '+name+' ' +
+        resExec = shell.exec(__dirname+'/NP3_MSCluster/NP3_MSCluster_bin --list '+spec+' --output-name '+name+' ' +
             '--out-dir '+out_path+'/outs/'+name+' --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
             ' --model-dir '+parms.model_dir+' --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
-            ' --tmp-dir ./NP3_MSCluster/tmp_'+parms.output_name+'_rmv'+' --min-peaks-output '+min_numPeak_output+
+            ' --tmp-dir '+__dirname+'/NP3_MSCluster/tmp_'+parms.output_name+'_rmv'+' --min-peaks-output '+min_numPeak_output+
             ' --scale-factor '+parms.scale_factor +' --verbose-level 10 --output-mgf --assign-charges --major-increment 100 ' +
             '--output-file-size '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose < min_verbose)});
     }
@@ -313,12 +313,12 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
         resExec.stderr).to(log_output_path);
 
     // remove tmp file and leave mscluster dir
-    shell.rm('-rf', 'NP3_MSCluster/tmp_'+parms.output_name+'_rmv');
-    shell.rm('-rf', 'NP3_MSCluster/out*');
+    shell.rm('-rf', __dirname+'/NP3_MSCluster/tmp_'+parms.output_name+'_rmv');
+    shell.rm('-rf', __dirname+'/NP3_MSCluster/out*');
     //shell.cd('..');
 
     if (resExec.code) {
-        shell.cd('..');
+        //shell.cd('..');
         if (parms.verbose < min_verbose) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
@@ -347,8 +347,8 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
 function callCountSpectraBySample(out_path, name, metadata, isFinal, processed_dir, mz_tol, logOutputPath, verbose)
 {
     console.log('*** Step 4 - Counting peak area and spectra by sample '+name+' *** \n');
-    var resExec = shell.exec('Rscript src/count_clust_samples.R '+out_path+' '+name+' '+metadata+' '+isFinal+' '+
-        processed_dir+' '+mz_tol,
+    var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_samples.R '+out_path+' '+name+' '+metadata+' '+
+        isFinal+' '+processed_dir+' '+mz_tol,
         {async:false, silent:(verbose <= 0)});
 
     if (resExec.code) {
@@ -370,8 +370,8 @@ function callCountSpectraBySample(out_path, name, metadata, isFinal, processed_d
 function callCountSpectraBySubClusterID(out_path, name, isFinal, metadata, processed_dir, mz_tol, logOutputPath, verbose)
 {
     console.log('*** Step 4 - Counting peak area and spectra by batch subclusters '+name+' *** \n');
-    var resExec = shell.exec('Rscript src/count_clust_batches.R '+out_path+' '+name+' '+isFinal+' '+metadata+' '+
-        processed_dir+' '+mz_tol, {async:false, silent:(verbose <= 0)});
+    var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_batches.R '+out_path+' '+name+' '+isFinal+' '+
+        metadata+' '+processed_dir+' '+mz_tol, {async:false, silent:(verbose <= 0)});
 
     if (resExec.code) {
         if (verbose <= 0) {
@@ -400,9 +400,9 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
     //   # return NA when div/0, all samples = 0 or return 1.1 when sd equals zero
     console.log('*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
         basename(counts)+' *** \n');
-    var resExec = shell.exec('Rscript src/bioactivity_correlation.R '+metadata+' '+counts+' '+method+' '+bio_cutoff,
+    var resExec = shell.exec('Rscript '+__dirname+'/src/bioactivity_correlation.R '+metadata+' '+counts+' '+method+' '+
+        bio_cutoff,
         {async:false, silent:(verbose <= 0)});
-
 
     if (resExec.code) {
         // in case of error show all the emmited msgs
@@ -425,7 +425,7 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
 function callAnalyseCount(counts, out_path, logOutputPath)
 {
     console.log('*** Analysing the count of spectra  *** \n');
-    var resExec = shell.exec('Rscript src/analyse_count.R '+counts, {async:false, silent:false});
+    var resExec = shell.exec('Rscript '+__dirname+'/src/analyse_count.R '+counts, {async:false, silent:false});
 
     if (resExec.code) {
         //console.log(resExec.stdout);
@@ -446,7 +446,7 @@ function callAnalyseCount(counts, out_path, logOutputPath)
 function callExtractPeakList(job_name, mgf_dir, counts_area, counts_spectra, bin_size, scale_factor, logOutputPath)
 {
     console.log('*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the counts table *** \n');
-    var resExec = shell.exec('Rscript src/extract_peak_list.R '+job_name+' '+mgf_dir+' '+counts_area+' '+bin_size+' '+
+    var resExec = shell.exec('Rscript '+__dirname+'/src/extract_peak_list.R '+job_name+' '+mgf_dir+' '+counts_area+' '+bin_size+' '+
         scale_factor+' '+counts_spectra, {async:false});
 
     if (resExec.code) {
@@ -470,7 +470,7 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
     var start = process.hrtime();
 
     console.log('*** Cleaning the counts table of not fragmented MS1 peaks  *** \n');
-    var resExec = shell.exec('Rscript src/clean_no_MS2_quantification.R  '+metadata_path+' '+output_path+' '+
+    var resExec = shell.exec('Rscript '+__dirname+'/src/clean_no_MS2_quantification.R  '+metadata_path+' '+output_path+' '+
         quantification_table_path+' '+mz_tol+' '+rt_tol, {async:false, silent:(verbose === 0)});
 
     if (resExec.code) {
@@ -497,7 +497,7 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
     annotations_merge = "isotopes,adducts,dimers,multicharges,fragments";
     var merge_output_path = output_path + "/count_tables/merge/";
 
-    var resExec = shell.exec('Rscript src/merge_annotation_counts.R '+output_path+' '+annotations_merge+' '+
+    var resExec = shell.exec('Rscript '+__dirname+'/src/merge_annotation_counts.R '+output_path+' '+annotations_merge+' '+
         metadata_path+' '+processed_dir+' '+merge_protonated, {async:false, silent:(verbose === 0)});
 
     if (resExec.code) {
@@ -546,7 +546,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
 
     var clean_output_path = output_path+"/count_tables/clean/";
 
-    var resExec = shell.exec('Rscript src/clean_spectra_quantification.R '+parms.metadata+' '+output_path+' '+
+    var resExec = shell.exec('Rscript '+__dirname+'/src/clean_spectra_quantification.R '+parms.metadata+' '+output_path+' '+
         processed_dir+' '+mz_tol+' '+ parms.similarity+' '+ rt_tol+' '+bin_size+' '+
         parms.scale_factor+' '+parms.ion_mode+' '+parms.bflag_cutoff+' '+parms.noise_cutoff+' '+parms.max_chunk_spectra,
         {async:false,
@@ -594,7 +594,7 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
     console.log('*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** \n');
 
-    var resExec = shell.exec('Rscript src/run_annotate_spectra_molecular_network.R '+parms.metadata+' '+output_path+' '+
+    var resExec = shell.exec('Rscript '+__dirname+'/src/run_annotate_spectra_molecular_network.R '+parms.metadata+' '+output_path+' '+
         parms.rules+' '+mz_tol+' '+ fragment_tol+' '+ rt_tol+' '+absolute_ms2_int_cutoff+' '+parms.ion_mode+' '+
         parms.scale_factor+' '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose === 0)});
 
@@ -622,8 +622,8 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     var peak_area_clean_path = output_path + "/count_tables/clean/" +
         output_name+"_peak_area_clean_annotated.csv";
 
-    var resExec = shell.exec(python3()+' src/mn_annotations_assign_protonated_representative.py '+mn_annotations_path+' '+
-        peak_area_clean_path, {async:false, silent:(parms.verbose === 0)});
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/mn_annotations_assign_protonated_representative.py '+
+        mn_annotations_path+' '+peak_area_clean_path, {async:false, silent:(parms.verbose === 0)});
 
     if (resExec.code) {
         if (parms.verbose === 0) {
@@ -646,8 +646,8 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
                                  verbose)
 {
     console.log('*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n');
-    var resExec = shell.exec('Rscript src/pairwise_similarity.R '+out_name+' '+mgf_path+' '+out_path+' '+bin_size+' '+
-        scaling_method+' '+trim_mz+' '+cores_parallel, {async:false, silent:(verbose <= 0)});
+    var resExec = shell.exec('Rscript '+__dirname+'/src/pairwise_similarity.R '+out_name+' '+mgf_path+' '+out_path+' '+
+        bin_size+' '+scaling_method+' '+trim_mz+' '+cores_parallel, {async:false, silent:(verbose <= 0)});
 
     var output_msg = '';
     if (resExec.code) {
@@ -672,7 +672,8 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
 function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_spectra, verbose)
 {
     console.log('*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n');
-    var resExec = shell.exec('Rscript src/molecular_networking.R '+out_path+' '+sim_mn+' '+max_chunk_spectra,
+    var resExec = shell.exec('Rscript '+__dirname+'/src/molecular_networking.R '+out_path+' '+sim_mn+' '+
+        max_chunk_spectra,
         {async:false, silent:(verbose <= 0)});
 
     if (resExec.code) {
@@ -694,7 +695,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
     var mn_file = out_path+'/molecular_networking/'+basename(out_path)+"_molecular_networking_sim_"+
         sim_mn.toString().replace(".", "")+".selfloop";
 
-    resExec = shell.exec(python3()+' src/molecular_network_filtering_library.py '+mn_file+' '+net_top_k+' '+max_component_size,
+    resExec = shell.exec(python3()+' '+__dirname+'/src/molecular_network_filtering_library.py '+mn_file+' '+net_top_k+' '+max_component_size,
         {async:false, silent:(verbose <= 0)});
 
     if (resExec.code) {
@@ -718,8 +719,8 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
 {
     console.log('*** Step 2 Suggestion - Suggesting values for some of the pre process parameters *** \n');
     n_bins = 150;
-    var resExec = shell.exec(python3()+' src/pp_pw_hist_suggestions.py '+metadata_path+' '+processed_data_dir+
-        '/MS1_list_with_MS2.csv '+processed_data_dir+'/MS1_list_with_MS2_noBlank_peak_width_hist.png '+n_bins,
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/pp_pw_hist_suggestions.py '+metadata_path+' '+
+        processed_data_dir+'/MS1_list_with_MS2.csv '+processed_data_dir+'/MS1_list_with_MS2_noBlank_peak_width_hist.png '+n_bins,
         {async:false, silent: (verbose <= 0)});
 
     if (resExec.code) {
@@ -740,7 +741,7 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
 function callGroupsfunc(metadata_path, count_tables, logOutputPath, verbose)
 {
     console.log('*** Creating groups based on the metadata grouping information *** \n');
-    var resExec = shell.exec(python3()+' src/groups.py --metadata '+metadata_path+' --count_file_path '+count_tables+
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/groups.py --metadata '+metadata_path+' --count_file_path '+count_tables+
     ' -q True', {async:false, silent: (verbose <= 0)});
     if (resExec.code) {
         if (verbose <= 0) {
@@ -766,11 +767,11 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
 
     if (parms.fragment_tolerance) // called from the run or clustering cmd, auto process
     {
-        resExec = shell.exec('Rscript src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir+ ' ' +parms.rt_tolerance[0]+ ' ' +
+        resExec = shell.exec('Rscript '+__dirname+'/src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir+ ' ' +parms.rt_tolerance[0]+ ' ' +
             parms.fragment_tolerance + ' ' + parms.ppm_tolerance + ' ' + parms.ion_mode+' '+ parms.processed_data_name+' '+
             parms.processed_data_overwrite, {async: false, silent: (verbose <= 0)});
     } else { // called from the process cmd
-        resExec = shell.exec('Rscript src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir + ' ' +parms.rt_tolerance+ ' ' +
+        resExec = shell.exec('Rscript '+__dirname+'/src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir + ' ' +parms.rt_tolerance+ ' ' +
             parms.mz_tolerance+ ' ' + parms.ppm_tolerance + ' ' + parms.ion_mode+' '+ parms.processed_data_name +' '+
             parms.processed_data_overwrite+ ' ' +parms.peak_width+ ' ' +parms.snthresh+ ' ' +parms.pre_filter+ ' ' +
             parms.min_fraction+ ' ' +parms.bw+ ' '  +parms.bin_size + ' ' +parms.max_features+ ' ' +parms.noise+ ' ' +parms.mz_center_fun+
@@ -841,11 +842,12 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
     }
 
     // Give the path to the CSV file containing the description of the database
-    var db_desc = "src/ISDB_tremolo_NP3/Data/dbs/UNPD_DB.csv";
+    var db_desc = __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_DB.csv";
 
     console.log(' Converting the mgf file to a pklbin file \n');
     // run the mgf file converter to pklbin
-    var resExec = shell.exec('src/ISDB_tremolo_NP3/Data/tremolo/convert '+ mgf+' src/ISDB_tremolo_NP3/Data/results/spectra_mgf_'+
+    var resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/convert '+ mgf+' '+
+        __dirname+'/src/ISDB_tremolo_NP3/Data/results/spectra_mgf_'+
         output_name+'.pklbin', {async:false, silent: (verbose <= 0)});
 
     if (!resExec.code) { // error code is 0
@@ -859,12 +861,17 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
         console.log("DONE!\n");
     }
 
-    shell.ShellString("EXISTING_LIBRARY_MGF=src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p01.mgf src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p02.mgf " +
-        "src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p03.mgf src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p04.mgf " +
-        "src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p05.mgf src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p06.mgf src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p07.mgf " +
-        "src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p08.mgf src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf\n\n" +
-        "searchspectra=src/ISDB_tremolo_NP3/Data/results/spectra_mgf_"+output_name+".pklbin\n\n" +
-        "RESULTS_DIR=src/ISDB_tremolo_NP3/Data/results/Results_tremolo_"+output_name+".out\n\n" +
+    shell.ShellString("EXISTING_LIBRARY_MGF="+__dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p01.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p02.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p03.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p04.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p05.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p06.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p07.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p08.mgf " +
+        __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf\n\n" +
+        "searchspectra="+__dirname+"/src/ISDB_tremolo_NP3/Data/results/spectra_mgf_"+output_name+".pklbin\n\n" +
+        "RESULTS_DIR="+__dirname+"/src/ISDB_tremolo_NP3/Data/results/Results_tremolo_"+output_name+".out\n\n" +
         "tolerance.PM_tolerance="+mz_tol+"\n\n" +
         "search_decoy=0\n\n" +
         "SCORE_THRESHOLD="+sim_tol+"\n\n" +
@@ -872,13 +879,14 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
         "NODEIDX=0\n" +
         "NODECOUNT=1\n\n" +
         "SEARCHABUNDANCE=0\n" +
-        "SLGFLOADMODE=1").to('src/ISDB_tremolo_NP3/Data/results/scripted_'+output_name+'.params');
+        "SLGFLOADMODE=1").to(__dirname+'/src/ISDB_tremolo_NP3/Data/results/scripted_'+output_name+'.params');
 
     console.log(' Running the tremolo search \n');
 
     // run the tremolo search
-    resExec = shell.exec('src/ISDB_tremolo_NP3/Data/tremolo/main_execmodule ExecSpectralLibrarySearch ' +
-        'src/ISDB_tremolo_NP3/Data/results/scripted_'+output_name+'.params ', {async:false, silent: (verbose_search === 0)});
+    resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/main_execmodule ExecSpectralLibrarySearch ' +
+        __dirname+'/src/ISDB_tremolo_NP3/Data/results/scripted_'+output_name+'.params ',
+        {async:false, silent: (verbose_search === 0)});
     if (resExec.code) {
         if (verbose <= 0) {
             console.log(resExec.stdout);
@@ -891,7 +899,8 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
         shell.ShellString(resExec.stdout).to(output_path+"/logTremolo")
     }
 
-    resExec = shell.exec(python3()+' src/ISDB_tremolo_NP3/Data/dbs/treat.py src/ISDB_tremolo_NP3/Data/results/Results_tremolo_' +
+    resExec = shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/treat.py ' +
+        __dirname+'/src/ISDB_tremolo_NP3/Data/results/Results_tremolo_' +
         output_name+'.out ' +output_path + ' ' +db_desc,
         {async:false, silent: (verbose <= 0)});
     if (resExec.code) {
@@ -905,9 +914,9 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
     }
 
     // removing tremolo output temporary files
-    shell.rm("src/ISDB_tremolo_NP3/Data/results/*.out");
-    shell.rm("src/ISDB_tremolo_NP3/Data/results/*.pklbin");
-    shell.rm("src/ISDB_tremolo_NP3/Data/results/*.params");
+    shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.out");
+    shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.pklbin");
+    shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.params");
 
     console.log("Tremolo search ended. "+printTimeElapsed(process.hrtime(start))+"\n");
     return(resExec.code);
@@ -918,8 +927,8 @@ function callCreateBatchLists(metadata, raw_data_path, output_path, output_name,
     var start = process.hrtime();
     console.log('*** Step 3 - Creating the NP3_MSCluster specification lists for '+output_name+' ***\n');
     try {
-        var resExec = shell.exec('Rscript src/create_batch_lists.R ' + metadata + ' ' + raw_data_path + ' ' + output_path +
-            ' ' + output_name + ' ' + processed_data_name, {async: false, silent: (verbose <= 0)});
+        var resExec = shell.exec('Rscript '+__dirname+'/src/create_batch_lists.R ' + metadata + ' ' + raw_data_path + ' ' +
+            output_path + ' ' + output_name + ' ' + processed_data_name, {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
             console.log(e);
@@ -944,8 +953,8 @@ function renameTremoloJoinedIds(path_clean_count, path_tremolo_result, verbose)
     var start = process.hrtime();
     console.log('*** Renaming the tremolo result with the joined IDs ***\n');
     try {
-        var resExec = shell.exec('Rscript src/tremolo_update_joinedIds.R ' + path_tremolo_result + ' ' + path_clean_count,
-            {async: false, silent: (verbose <= 0)});
+        var resExec = shell.exec('Rscript '+__dirname+'/src/tremolo_update_joinedIds.R ' + path_tremolo_result + ' ' +
+            path_clean_count, {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
             console.log(e);
@@ -961,7 +970,7 @@ function mergeTremoloResults(path_tremolo_result, max_results, path_count_files,
     var start = process.hrtime();
     console.log('*** Merging the tremolo result with the counts tables ***\n');
     try {
-        shell.exec(python3()+' src/ISDB_tremolo_NP3/Data/dbs/tremolo_merge_count.py ' + path_tremolo_result +
+        shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/tremolo_merge_count.py ' + path_tremolo_result +
             ' ' + max_results + ' ' + path_count_files.join(' '), {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
@@ -978,7 +987,7 @@ function mergeTremoloResults(path_tremolo_result, max_results, path_count_files,
 // {
 //     console.log('*** Step 6 - Running a MetFrag identification with PubChem for ' + output_name + ' ***\n');
 //
-//     resExec = shell.exec('Rscript src/metfrag_autosearch.R ' + output_path + "/" + ' ' +
+//     resExec = shell.exec('Rscript '+__dirname+'/src/metfrag_autosearch.R ' + output_path + "/" + ' ' +
 //         method + ' ' +ion_mode + ' ' + ppm_tolerance + ' ' + fragment_tolerance +
 //         ' ' + scale_factor, {async: false, silent: (verbose <= 0)});
 //     // { code:..., stdout:... , stderr:... }
@@ -1003,7 +1012,7 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
     if (clustering)
     {
         console.log('\n*** Testing the consistency of the clustering counts for the job '+output_name+' ***\n');
-        resExec = shell.exec('Rscript test/test_counts.R ' + processed_data + ' '+ output_path+output_name+'_spectra.csv ' +
+        resExec = shell.exec('Rscript '+__dirname+'/test/test_counts.R ' + processed_data + ' '+ output_path+output_name+'_spectra.csv ' +
             output_path+output_name+'_peak_area.csv '+metadata +' '+ min_peaks_output, {async: false, silent: false});
         if (resExec.code) {
             console.log('\nERROR');
@@ -1013,7 +1022,7 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
     if (shell.test("-e", output_path+'clean/') && clean)
     {
         console.log('\n*** Testing the consistency of the clean counts for the job '+output_name+' ***\n');
-        resExec  = shell.exec('Rscript test/test_counts.R ' + processed_data + ' '+ output_path+'clean/'+output_name+
+        resExec  = shell.exec('Rscript '+__dirname+'/test/test_counts.R ' + processed_data + ' '+ output_path+'clean/'+output_name+
             '_spectra_clean_annotated.csv '+output_path+'clean/'+output_name+'_peak_area_clean_annotated.csv '+
             metadata +' '+ min_peaks_output, {async: false, silent: false});
         if (resExec.code) {
@@ -1024,7 +1033,7 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
     if (shell.test("-e", output_path+'merge/') && merge)
     {
         console.log('\n*** Testing the consistency of the merged counts for the job '+output_name+' ***\n');
-        resExec = shell.exec('Rscript test/test_counts.R ' + processed_data+' '+ output_path+'merge/'+output_name+
+        resExec = shell.exec('Rscript '+__dirname+'/test/test_counts.R ' + processed_data+' '+ output_path+'merge/'+output_name+
             '_spectra_merged_annotations.csv '+output_path+'merge/'+output_name+'_peak_area_merged_annotations.csv '+
             metadata +' '+ min_peaks_output, {async: false, silent: false});
         if (resExec.code) {
@@ -1046,7 +1055,7 @@ function checkCleanMNConsistency(output_path, sim_tol, mn_tol, rt_tol, mz_tol, t
 
     // check molecular networking consistency
     console.log('\n*** Testing the consistency of the clean and annotated counts and the molecular networking for the job '+output_name+' ***\n');
-    resExec = shell.exec('Rscript test/test_clean_mn.R ' + output_path+' '+sim_tol+' '+ mn_tol+' '+ rt_tol+' '+ mz_tol+' '+
+    resExec = shell.exec('Rscript '+__dirname+'/test/test_clean_mn.R ' + output_path+' '+sim_tol+' '+ mn_tol+' '+ rt_tol+' '+ mz_tol+' '+
         top_k+' '+max_component_size, {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
@@ -1064,7 +1073,7 @@ function checkMNConsistency(output_path, mn_tol, top_k, max_component_size)
 
     // check molecular networking consistency
     console.log('\n*** Testing the consistency of the molecular networking for the job '+output_name+' ***\n');
-    resExec = shell.exec('Rscript test/test_mn.R ' + output_path+' '+mn_tol+' '+top_k+' '+max_component_size,
+    resExec = shell.exec('Rscript '+__dirname+'/test/test_mn.R ' + output_path+' '+mn_tol+' '+top_k+' '+max_component_size,
         {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
@@ -1076,7 +1085,7 @@ function checkMNConsistency(output_path, mn_tol, top_k, max_component_size)
 function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path) {
     // check molecular networking consistency
     console.log('\n*** Joining the GNPS identification to the NP3 counts tables ***\n');
-    resExec = shell.exec('Rscript src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
+    resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
         result_specnets_DB_path+' '+ms_count_path, {async: false, silent: false});
 
     if (resExec.code) {
@@ -1113,9 +1122,9 @@ function python3()
 
 function defaultModelDir() {
     if (isWindows())
-        return ".\\NP3_MSCluster\\Models_Windows";
+        return __dirname+"\\NP3_MSCluster\\Models_Windows";
     else
-        return "./NP3_MSCluster/Models";
+        return __dirname+"/NP3_MSCluster/Models";
 }
 
 program
@@ -1139,10 +1148,11 @@ program
         console.log('\n*** NP3 workflow setup ***\n\n');
         var resExec;
         var countError = 0;
+        var call_cwd = process.cwd();
 
         console.log('* Merging the UNPD csv file *\n');
 
-        shell.cd('src/ISDB_tremolo_NP3/Data/dbs');
+        shell.cd(__dirname+'/src/ISDB_tremolo_NP3/Data/dbs');
         resExec = shell.exec('sh merge_db.sh', {async:false});
         if (resExec.code) {
             console.log(resExec.stdout);
@@ -1152,7 +1162,7 @@ program
         } else {
             console.log("DONE!\n");
         }
-        shell.cd('../../../..');
+        shell.cd(call_cwd);
 
 
         if (!shell.which('R')) {
@@ -1162,7 +1172,7 @@ program
             // install R packages
             console.log('* Checking R packages requirements *\n');
 
-            resExec = shell.exec('Rscript src/R_requirements.R', {async:false});
+            resExec = shell.exec('Rscript '+__dirname+'/src/R_requirements.R', {async:false});
             if (resExec.code) {
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
@@ -1200,7 +1210,7 @@ program
         } else {
             // install python packages
             console.log('* Checking python 3 packages requirements *\n');
-            resExec = shell.exec('pip install -r src/python_requirements --user', {async:false});
+            resExec = shell.exec('pip install -r '+__dirname+'/src/python_requirements --user', {async:false});
             if (resExec.code) {
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
@@ -1218,7 +1228,7 @@ program
 
         // Compile dotproduct with pybind
         console.log('* Compiling the NP3 shifted cosine function for the spectra viewer web app *\n');
-        shell.cd('src/spectra_viewer/src');
+        shell.cd(__dirname+'/src/spectra_viewer/src');
         if (!isWindows())
         {
             if (!shell.which('c++')) {
@@ -1238,16 +1248,17 @@ program
         } else {
             console.log('Linux/Unix Systems Only, skipped');
         }
-        shell.cd('../../..');
+        shell.cd(call_cwd);
 
         console.log('\n* Compiling NP3-MS-Clustering *\n');
-        shell.cd('NP3_MSCluster');
+        shell.cd(__dirname+'/NP3_MSCluster');
 
         resExec = shell.exec('make clean', {async:false});
         if (resExec.code) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
             console.log('\nERROR. Could not clean the NP3_MSClustering compilation output. Ensure Make is installed and try again.');
+            shell.cd(call_cwd);
             process.exit(1);
         }
 
@@ -1256,13 +1267,14 @@ program
             console.log(resExec.stdout);
             console.log(resExec.stderr);
             console.log('\nERROR. Could not compile the NP3_MSClustering algorithm. Ensure Make is working and try again.');
+            shell.cd(call_cwd);
             process.exit(1);
         } else
         {
             console.log("DONE!\n\n");
         }
 
-        shell.cd('..');
+        shell.cd(call_cwd);
 
         if (countError === 0)
         {
@@ -1393,7 +1405,7 @@ program
     .option('-u, --rules [x]', ' path to the CSV file following the NP3 rules table format with the\n\t\t\t\t\t' +
         'accepted ionization modification rules for detecting adducts,\n\t\t\t\t\t' +
         'multiple charge, dimers/trimers and their combination with\n\t\t\t\t\t' +
-        'neutral losses. To be used by the annotation algorithm (Step 7)',"rules/np3_modifications.csv")
+        'neutral losses. To be used by the annotation algorithm (Step 7)',__dirname+"/rules/np3_modifications.csv")
     .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
         'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
         'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
@@ -1463,7 +1475,7 @@ program
 
         var start = process.hrtime();
         // run workflow
-        console.log('*** NP3 MS Workflow RUN for ' +options.output_name+ ' - Steps 2 to 10 ***\n');
+        console.log('*** NP3 MS Workflow RUN for \'' +options.output_name+ '\' - Steps 2 to 10 ***\n');
 
         // set model dir
         // directory where model files are kept. If running MSCluster on Windows and not from the current
@@ -1983,7 +1995,7 @@ program
 
         var start = process.hrtime();
         // run workflow
-        console.log('*** NP3 MS Workflow Clustering for ' +options.output_name+ ' - Steps 3 and 4 ***\n');
+        console.log('*** NP3 MS Workflow Clustering for \'' +options.output_name+ '\' - Steps 3 and 4 ***\n');
 
         // set model dir
         // directory where model files are kept. If running MSCluster on Windows and not from the current
@@ -2174,7 +2186,7 @@ program
         parseNOISEcutoff, "FALSE")
     .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules ' +
         'for detecting adducts, multiple charge and dimers/trimers variants, and their combination ' +
-        'with neutral losses (Step 7)',"rules/np3_modifications.csv")
+        'with neutral losses (Step 7)',__dirname+"/rules/np3_modifications.csv")
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Steps 5 and 7).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln) of the\n\t\t\t\t\t' +
@@ -2489,7 +2501,7 @@ program
         'to a ion adduct type: \'1\' = [M+H]+ or \'2\' = [M-H]-', convertIonMode,1)
     .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules for ' +
         'detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses.',
-        "rules/np3_modifications.csv")
+        __dirname+"/rules/np3_modifications.csv")
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Step 5 and 7).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln) of the\n\t\t\t\t\t' +
@@ -2849,11 +2861,9 @@ program
         console.log('*** NP3 Extracting Chromatograms ***');
 
         // call extract chromatogram using xcms
-        //var resExec = shell.exec('Rscript src/chromatogram_xcms.R '+options.data_name+' '+options.metadata+' '
-        //  +options.raw_data_path, {async:false});
-
         try {
-            var resExec = execFileSync("Rscript", ["src/chromatogram_xcms.R", options.data_name, options.metadata,
+            var resExec = execFileSync("Rscript",
+                [__dirname+"/src/chromatogram_xcms.R", options.data_name, options.metadata,
                 options.raw_data_path], {stdio: 'inherit'});
         } catch (err) {
             console.log('\nERROR');
@@ -2922,10 +2932,10 @@ program
         'similarity of the spectra and save PNG or SVG plots.\n\n')
     .option('-p, --port [port_number]', 'localhost server port number', "8501")
     .action(function(options) {
-        // const { execFileSync } = require('child_process');
+        var call_cwd = process.cwd();
         // run workflow
         console.log('*** NP3 Spectra Viewer (press control + c to cancel the operation) ***');
-        shell.cd('src/spectra_viewer');
+        shell.cd(__dirname+'/src/spectra_viewer');
         try {
             var resExec = shell.exec('streamlit run main.py --server.port '+options.port,{async:false, silent:false});
         } catch (err) {
@@ -2934,7 +2944,7 @@ program
             console.log('\nERROR');
             process.exit(1);
         }
-        shell.cd('../..');
+        shell.cd(call_cwd);
         console.log('\nDONE!\n');
     })
     .on('--help', function() {
@@ -2960,6 +2970,8 @@ program
     .option('-s, --skip [x]', 'Skip to test x', 1)
     .action(function(options) {
         var start = process.hrtime();
+        var np3_js_call = 'node '+ __dirname +'/np3_workflow.js';
+
         var unit_test_res = ['@@@@@ UNIT TEST NP3 Shifted cosine @@@@@\n'];
         var test_res = ['@@@@@ TEST 1 @@@@@\n','@@@@@ TEST 2 @@@@@\n','@@@@@ TEST 3 @@@@@\n','@@@@@ TEST 4 @@@@@\n','@@@@@ TEST 5 @@@@@',
             '@@@@@ TEST 6 @@@@@','@@@@@ TEST 7 @@@@@','@@@@@ TEST 8 @@@@@','@@@@@ TEST 9 @@@@@',
@@ -2970,7 +2982,7 @@ program
         console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         console.log("@@@@@@ Unit Test - NP3 Shifted Cosine @@@@@");
         console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-        resExec = shell.exec('Rscript test/test_np3_shifted_cosine.R',
+        resExec = shell.exec('Rscript '+__dirname+'/test/test_np3_shifted_cosine.R',
             {async:false, silent:true});
         if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
             // in case of error show all the emitted msgs
@@ -2986,12 +2998,13 @@ program
 
         // # not using parallel in the pairwise
         if (options.skip <= 1) {
-            shell.rm('-rf', 'test/L754_bacs/L754_bacs_all');
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_all');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Test 1 - L754_bacs_all - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js run -n L754_bacs_all ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata.csv -d test/L754_bacs/mzxml -o test/L754_bacs ' +
+            resExec = shell.exec(np3_js_call+' run -n L754_bacs_all ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml -o '+__dirname+'/test/L754_bacs ' +
                 '-j '+options.tremolo+' -v 10 -q '+options.pre_process+' -l 1 '+
                 '--noise_cutoff FALSE',
                 {async:false, silent:true});
@@ -3007,12 +3020,12 @@ program
             }
             //console.log("\n\n");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Test 1 - L754_bacs_all - gnps_result - Molecular Networking @@@@@");
+            console.log("@@@@@@ Test 1.1 - L754_bacs_all - gnps_result - Molecular Networking @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js gnps_result -i ' +
-                'test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/clusterinfo/0e83d32ce4414494ad9cc12ad3db4824.clusterinfo ' +
-                '-s test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/result_specnets_DB/31ba0709274e450295c6da492030f356.tsv ' +
-                '-c test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_annotated.csv',
+            resExec = shell.exec(np3_js_call+' gnps_result ' +
+                '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/clusterinfo/0e83d32ce4414494ad9cc12ad3db4824.clusterinfo ' +
+                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/result_specnets_DB/31ba0709274e450295c6da492030f356.tsv ' +
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_annotated.csv',
                 {async:false, silent:true});
             var gnps_result_mn = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3028,11 +3041,11 @@ program
                 console.log('DONE!\n');
             }
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Test 1 - L754_bacs_all - gnps_result - Library Search @@@@@");
+            console.log("@@@@@@ Test 1.2 - L754_bacs_all - gnps_result - Library Search @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js gnps_result -s ' +
-                'test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications-main.tsv ' +
-                '-c test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_annotated.csv',
+            resExec = shell.exec(np3_js_call+' gnps_result ' +
+                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications-main.tsv ' +
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_annotated.csv',
                 {async:false, silent:true});
             var gnps_result_ls = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3056,13 +3069,13 @@ program
         // # test metadata with more than 10 samples in more than 10 data collections with all types
         // use the same pre processed data
         if (options.skip <= 2) {
-            shell.rm('-rf', 'test/L754_bacs/L754_bacs_multi_collection_11');
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_multi_collection_11');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Test 2 - L754_bacs_multi_collection_11 - run @@@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec=shell.exec('node np3_workflow.js run -n L754_bacs_multi_collection_11 ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv ' +
-                '-d test/L754_bacs/mzxml -o test/L754_bacs/ -j '+options.tremolo+' -v 11 ' +
+            resExec=shell.exec(np3_js_call+' run -n L754_bacs_multi_collection_11 ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml -o '+__dirname+'/test/L754_bacs/ -j '+options.tremolo+' -v 11 ' +
                 '--noise_cutoff 2',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3081,13 +3094,14 @@ program
         // # test metadata with all samples in one data collection batch and without blanks
         // # split the run cmd in the sub cmds calls and using a smaller chunk size
         if (options.skip <= 3) {
-            shell.rm('-rf', 'test/L754_bacs/L754_bacs_one_collection');
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_one_collection');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 3 - L754_bacs_one_collection - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js run -n L754_bacs_one_collection ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_one_collection.csv -d test/L754_bacs/mzxml ' +
-                '-o test/L754_bacs/ -y processed_data_one_collection -j '+options.tremolo+' -b 200 ' +
+            resExec = shell.exec(np3_js_call+' run -n L754_bacs_one_collection ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_collection.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
+                '-o '+__dirname+'/test/L754_bacs/ -y processed_data_one_collection -j '+options.tremolo+' -b 200 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
                 ' --bflag_cutoff 1.5 --noise_cutoff 1.5',
                 {async:false, silent:true});
@@ -3106,13 +3120,14 @@ program
 
         // # test metadata with only blank samples;
         if (options.skip <= 4) {
-            shell.rm('-rf', 'test/L754_bacs/L754_bacs_blanks');
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_blanks');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 4 - L754_bacs_blanks - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js run -n L754_bacs_blanks ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv -d test/L754_bacs/mzxml ' +
-                '-o test/L754_bacs/ -y processed_data_blanks -j '+options.tremolo+' -v 11 -q '+
+            resExec = shell.exec(np3_js_call+' run -n L754_bacs_blanks ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
+                '-o '+__dirname+'/test/L754_bacs/ -y processed_data_blanks -j '+options.tremolo+' -v 11 -q '+
                 options.pre_process + ' --bflag_cutoff 1',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3133,9 +3148,9 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 5 - L754_bacs_blanks_one_sample - pre_process @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec=shell.exec('node np3_workflow.js pre_process -n L754_bacs_blanks_one_sample ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-d test/L754_bacs/mzxml -y processed_data_blanks_one_sample -v 11 -q '+options.pre_process,
+            resExec=shell.exec(np3_js_call+' pre_process -n L754_bacs_blanks_one_sample ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml -y processed_data_blanks_one_sample -v 11 -q '+options.pre_process,
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -3157,13 +3172,14 @@ program
         }
 
         if (options.skip <= 6) {
-            shell.rm('-rf', 'test/L754_bacs/L754_bacs_blanks_one_sample');
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 6 - L754_bacs_blanks_one_sample - clustering @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js clustering -n L754_bacs_blanks_one_sample ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-d test/L754_bacs/mzxml -o test/L754_bacs -y processed_data_blanks_one_sample -v 13 -b 500 ' +
+            resExec = shell.exec(np3_js_call+' clustering -n L754_bacs_blanks_one_sample ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
+                '-o '+__dirname+'/test/L754_bacs -y processed_data_blanks_one_sample -v 13 -b 500 ' +
                 '-q '+options.pre_process+
                 ' -j '+options.tremolo,
                 {async:false, silent:true});
@@ -3184,9 +3200,9 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 7 - L754_bacs_blanks_one_sample - tremolo @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js tremolo ' +
-                '-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/identifications/ ' +
-                '-g test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_all.mgf ' +
+            resExec = shell.exec(np3_js_call+' tremolo ' +
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/identifications/ ' +
+                '-g '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_all.mgf ' +
                 '-k 20 -v 13',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR")) {
@@ -3211,10 +3227,11 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 8 - L754_bacs_blanks_one_sample - clean & annotate_protonated @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js clean ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
-                '-y test/L754_bacs/mzxml/processed_data_blanks_one_sample -b 500 -v 13 -t 2,5 --bflag_cutoff 3',
+            resExec = shell.exec(np3_js_call+' clean ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-y '+__dirname+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample -b 500 -v 13 ' +
+                '-t 2,5 --bflag_cutoff 3',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -3227,9 +3244,10 @@ program
                 console.log('DONE!\n');
             }
 
-            resExec = shell.exec('node np3_workflow.js annotate_protonated ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample -b 500 -v 13 -t 2 -i 500',
+            resExec = shell.exec(np3_js_call+' annotate_protonated ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-b 500 -v 13 -t 2 -i 500',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -3247,10 +3265,10 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 9 - L754_bacs_blanks_one_sample - merge all @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js merge ' +
-                '-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
-                '-y test/L754_bacs/mzxml/processed_data_blanks_one_sample ' +
-                '-m test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv -v 13 -p FALSE',
+            resExec = shell.exec(np3_js_call+' merge ' +
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-y '+__dirname+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv -v 13 -p FALSE',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.toLocaleUpperCase().includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -3268,8 +3286,8 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 10 - L754_bacs_blanks_one_sample - mn @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            resExec = shell.exec('node np3_workflow.js mn ' +
-                '-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+            resExec = shell.exec(np3_js_call+' mn ' +
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
                 '-w 0.9 -k 5 -b 10 -v 13',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.toLocaleUpperCase().includes("ERROR")) {
