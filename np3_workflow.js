@@ -290,11 +290,11 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
 
     if (isWindows())
     {
-        resExec = shell.exec(__dirname+'\\NP3_MSCluster\\NP3_MSCluster_bin.exe --list '+spec+' --output-name '+name+' ' +
-            '--out-dir '+out_path+'\\outs\\'+name+' --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
+        resExec = shell.exec('"'+__dirname+'\\NP3_MSCluster\\NP3_MSCluster_bin.exe" --list "'+spec+'" --output-name "'+name+'" ' +
+            '--out-dir "'+out_path+'\\outs\\'+name+'" --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
-            ' --model-dir '+parms.model_dir+' --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
-            ' --tmp-dir '+__dirname+'\\NP3_MSCluster\\tmp_'+parms.output_name+'_rmv'+' --min-peaks-output '+min_numPeak_output+
+            ' --model-dir "'+parms.model_dir+'" --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
+            ' --tmp-dir "'+__dirname+'\\NP3_MSCluster\\tmp_'+parms.output_name+'_rmv"'+' --min-peaks-output '+min_numPeak_output+
             ' --scale-factor '+parms.scale_factor +' --verbose-level 10 --output-mgf --assign-charges --major-increment 100 ' +
             '--output-file-size '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose < min_verbose)});
     } else {
