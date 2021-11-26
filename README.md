@@ -23,11 +23,22 @@ For the complete details of each command see the [NP³ MS workflow user manual](
 
 NP³ MS workflow includes a conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
-First, download the workflow repository. 
+First, download or clone the workflow repository. 
+
+**Download** the repository:
 
 - Click on the green button named 'Code' and then click on the 'Download ZIP' option.
     - The repository contains the entire Universal Natural Products Database (UNPD), so this download can take a while to finish. 
 - Extract the zip file 
+
+Or **clone** the repository:
+
+- Make sure you have Git installed (instruction in https://github.com/git-guides/install-git)
+- Open the command line in the folder you want to place this repository and then type:
+``` 
+git clone https://github.com/danielatrivella/NP3_MS_Workflow.git
+``` 
+
 
 Then, download and install Anaconda with Python 3.8 from the following link:  
 
@@ -39,18 +50,18 @@ Then, download and install Anaconda with Python 3.8 from the following link:
     - To install on Unix OS run the following terminal command in the folder where the Anaconda installer was downloaded (replace 'Anaconda_installer_name' by the name of the downloaded file): 
 
         ```  
-        $ sh Anaconda_installer_name.sh 
+        sh Anaconda_installer_name.sh 
         ```      
 
         - During installation when asked 'Do you wish the installer to initialize Anaconda3 by running conda init?' answer 'yes' 
 
-        - If you answer 'no', then you need to manually type the command `$ conda init` before using Anaconda. 
+        - If you answer 'no', then you need to manually type the command `conda init` before using Anaconda. 
 
                    
 To verify if the Anaconda installation was successful, open a **new** terminal window and type:   
 
 ```  
-$ conda 
+conda 
 ``` 
 
 
@@ -63,25 +74,25 @@ Then, create the NP³ MS workflow conda environment to automatically install alm
 Unix OS: 
 
 ```  
-$ conda env create -f environment_np3_unix.yml 
+conda env create -f environment_np3_unix.yml 
 ``` 
 
 Windows OS: 
 
 ```  
-$ conda env create -f environment_np3_win.yml 
+conda env create -f environment_np3_win.yml 
 ``` 
 
   - The conda environment installation can be a slow process, more than 5 minutes is expected. If this is taking too long to finish (probable got stuck in the 'Solving environment' step), try executing the following command first and then retry the NP³ MS workflow conda environment creation.
   
     ```
-      $ conda config --set channel_priority strict
+    conda config --set channel_priority strict
     ```
 
 The NP³ MS workflow conda environment must be created and activated before running the NP³ MS workflow commands. If the NP³ MS workflow environment was created successfully, activate it with the following command: 
 
 ```  
-$ conda activate np3 
+conda activate np3 
 ```   
 
 You should see the '(np3)' tag as the first thing in your terminal line. Every time you open a new terminal you must execute this command once again in order to activate the NP³ MS workflow environment before using the NP³ MS workflow commands. 
@@ -91,7 +102,7 @@ Now install the libraries required by the node.js program:
 In the terminal execute the following command: 
 
 ``` 
-$ npm install shelljs@0.8.4 commander@5.1.0 
+npm install shelljs@0.8.4 commander@5.1.0 
 ```   
 
 Make sure all programs and OS libraries were properly installed and continue to the remaining packages installation. If you could not install the environment or failed in any of the above steps check the **manual** installation guide in the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
@@ -104,7 +115,7 @@ For **automatically** installing the remaining packages and compiling the NP3_MS
 
   
 ```  
-$ node np3_workflow.js setup 
+node np3_workflow.js setup 
 ``` 
 
 If it runs without any ERROR message you are good to go! Otherwise, look for dependencies problems and retry with superuser privileges. 
@@ -124,7 +135,7 @@ Start by activating the NP³ MS workflow environment. Run the following command 
 
  
 ```  
-$ conda activate np3 
+conda activate np3 
 ``` 
 
 Now, we can run the NP³ MS workflow with the provided metadata table. 
@@ -138,7 +149,7 @@ In the repository root folder run the following command to execute all the workf
 
 
 ``` 
-$ node np3_workflow.js run --output_name "L754_bacs_test" --output_path "test/L754_bacs" --metadata "test/L754_bacs/marine_bacteria_library_L754_metadata.csv" --raw_data_path "test/L754_bacs/mzxml" --verbose 1 
+node np3_workflow.js run --output_name "L754_bacs_test" --output_path "test/L754_bacs" --metadata "test/L754_bacs/marine_bacteria_library_L754_metadata.csv" --raw_data_path "test/L754_bacs/mzxml" --verbose 1 
 
 ``` 
   
@@ -200,7 +211,7 @@ If you did install the workflow dependencies using the conda environments, alway
 
 
 ```  
-$ conda activate np3 
+conda activate np3 
 ``` 
   
 ## NP³ MS Workflow Commands 
@@ -208,7 +219,7 @@ $ conda activate np3
 The CLI is found in the root folder of the NP³ MS workflow repository (named np3_workflow.js) and can be run with the command: 
  
 ``` 
-$ node np3_workflow.js [cmd] [options] 
+node np3_workflow.js [cmd] [options] 
 ``` 
   
 Where **cmd** are the available NP³ MS workflow commands that the script can handle (the workflow steps) and **options** are the list of available options for each command. 
@@ -218,14 +229,14 @@ The list of available commands is described below together with their respective
   
 
 ```  
-$ node np3_workflow.js --help 
+node np3_workflow.js --help 
 ``` 
  
 
 Or simple:   
 
 ```  
-$ node np3_workflow -h 
+node np3_workflow -h 
 ```   
 
 Commands:   
