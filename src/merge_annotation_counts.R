@@ -22,12 +22,16 @@ merge_counts <- function(col_name, x)
   # print(col_name)
   # x <- unlist(x,recursive = F)
   switch(col_name,
-         msclusterID=,mzConsensus=,rtMean=,rtMin=,rtMax=,HFLAG=,DESREPLICATION=,
-         BEDFLAG=,BFLAG=,CFLAG=,peaksList=,peaksInt=,adducts=,isotopes=,
-         dimers=,multiCharges=,fragments=,analogs=,BLANK_DIST=,
+         msclusterID=,mzConsensus=,rtMean=,rtMin=,rtMax=,
+         peaksList=,peaksInt=,adducts=,isotopes=,
+         dimers=,multiCharges=,fragments=,analogs=,
          multicharge_ion=,isotope_ion=
            x[[col_name]][[1]],
-         peakIds=
+         BLANK_DIST=ifelse(any(!is.na(x[[col_name]])), 
+                           min(x[[col_name]], na.rm = TRUE), 
+                           NA),
+         HFLAG=,BEDFLAG=,BFLAG=,CFLAG=any(x[[col_name]]),
+         DESREPLICATION=,peakIds=
            ifelse(any(!is.na(x[[col_name]])), 
                   paste(unique(unlist(strsplit(x[[col_name]][
                     !is.na(x[[col_name]])], ";"))), collapse = ";"), 
