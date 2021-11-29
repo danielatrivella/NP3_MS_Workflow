@@ -657,13 +657,13 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
         }
         console.log('\nERROR');
         shell.ShellString('\n*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n' +
-            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'logPairwiseComparisonOutput');
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/logPairwiseComparisonOutput');
         process.exit(1);
     } else {
         console.log('\nDONE!\n');
         output_msg = '\n*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n' +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n';
-        shell.ShellString(output_msg).toEnd(out_path+'logPairwiseComparisonOutput');
+        shell.ShellString(output_msg).toEnd(out_path+'/logPairwiseComparisonOutput');
     }
 
     return(output_msg)
