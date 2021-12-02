@@ -618,7 +618,10 @@ void PeakList::joinAdjacentPeaks(mass_t tolerance, bool indAddCounts)
 
 		if (indAddCounts)
 		{
-			tmpPeakArea[0].count	   += peaks_[startIdx].count;
+			if (tmpPeakArea[0].count + peaks_[startIdx].count > 255)
+				tmpPeakArea[0].count = 255;
+			else
+				tmpPeakArea[0].count   += peaks_[startIdx].count;
 			tmpPeakArea[0].maxPossible += peaks_[startIdx].maxPossible;
 		}
 		startIdx++;
@@ -644,7 +647,10 @@ void PeakList::joinAdjacentPeaks(mass_t tolerance, bool indAddCounts)
 			tmpPeakArea[prev].mass		= newMass;
 			if (indAddCounts)
 			{
-				tmpPeakArea[prev].count		  += peaks_[i].count;
+				if (tmpPeakArea[prev].count + peaks_[i].count > 255)
+					tmpPeakArea[prev].count = 255;
+				else
+					tmpPeakArea[prev].count += peaks_[i].count;
 				tmpPeakArea[prev].maxPossible += peaks_[i].maxPossible;
 			}
 		}
@@ -997,7 +1003,7 @@ void PeakList::printPeaks() const
 	cout << setprecision(5) << fixed;
 	int i;
 	for (i=0; i<numPeaks_; i++)
-		cout << i << "\t" << peaks_[i].mass << "\t" << peaks_[i].intensity << "\t" 
+		cout << i << "\t" << peaks_[i].mass << "\t" << peaks_[i].intensity << "\t"
 			 << static_cast<int>(peaks_[i].count) << "\t" << static_cast<int>(peaks_[i].maxPossible)
 			 << "\t" << peaks_[i].charge << endl;
 }
