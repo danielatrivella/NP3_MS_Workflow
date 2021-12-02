@@ -618,11 +618,16 @@ void PeakList::joinAdjacentPeaks(mass_t tolerance, bool indAddCounts)
 
 		if (indAddCounts)
 		{
+			// NP3 fixed an upper bound for the peaks counts and maxPossible to prevent it from going above the char type limit = 255
 			if (tmpPeakArea[0].count + peaks_[startIdx].count > 255)
 				tmpPeakArea[0].count = 255;
 			else
-				tmpPeakArea[0].count   += peaks_[startIdx].count;
-			tmpPeakArea[0].maxPossible += peaks_[startIdx].maxPossible;
+				tmpPeakArea[0].count += peaks_[startIdx].count;
+
+			if (tmpPeakArea[0].maxPossible + peaks_[startIdx].maxPossible > 255)
+				tmpPeakArea[0].maxPossible = 255;
+			else
+				tmpPeakArea[0].maxPossible += peaks_[startIdx].maxPossible;
 		}
 		startIdx++;
 	}
@@ -647,11 +652,16 @@ void PeakList::joinAdjacentPeaks(mass_t tolerance, bool indAddCounts)
 			tmpPeakArea[prev].mass		= newMass;
 			if (indAddCounts)
 			{
+			    // NP3 fixed an upper bound for the peaks counts and maxPossible to prevent it from going above the char type limit = 255
 				if (tmpPeakArea[prev].count + peaks_[i].count > 255)
 					tmpPeakArea[prev].count = 255;
 				else
 					tmpPeakArea[prev].count += peaks_[i].count;
-				tmpPeakArea[prev].maxPossible += peaks_[i].maxPossible;
+
+                if (tmpPeakArea[prev].maxPossible + peaks_[i].maxPossible > 255)
+                    tmpPeakArea[prev].maxPossible = 255;
+                else
+                    tmpPeakArea[prev].maxPossible += peaks_[i].maxPossible;
 			}
 		}
 		else
