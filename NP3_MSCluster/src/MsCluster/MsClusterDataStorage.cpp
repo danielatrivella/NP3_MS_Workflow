@@ -1580,7 +1580,10 @@ void MsClusterDataStorage::selectDistancePeaksFromMultipleSigneltons(Cluster* cl
 			
 			tmpPeakArea[prev].intensity = intensitySum;
 			tmpPeakArea[prev].massAsInt = convertMassToInt(newMass);
-			peakCounts[prev]+=peakCounts[i];
+			if (peakCounts[prev]+peakCounts[i]<255)
+				peakCounts[prev]+=peakCounts[i];
+			else
+				peakCounts[prev]=255;
 		}
 		else
 		{
@@ -1596,8 +1599,8 @@ void MsClusterDataStorage::selectDistancePeaksFromMultipleSigneltons(Cluster* cl
 	// modify the intensity according to the peakWeightTable_
 	// that is discount the weight of peaks that have only a few copies
 	for (int i=0; i<totalPeaks; i++)
-		tmpPeakArea[i].intensity = tmpPeakArea[i].intensity * 
-			peakWeightTable_.getWeight(static_cast<int>(peakCounts[i]),static_cast<int>(cluster->clusterSize_));
+		tmpPeakArea[i].intensity = tmpPeakArea[i].intensity *
+				peakWeightTable_.getWeight(static_cast<int>(peakCounts[i]),static_cast<int>(cluster->clusterSize_));
 
 	// select a number of peaks according to their intensity
 	sort(tmpPeakArea.begin(), tmpPeakArea.begin()+totalPeaks, compIntensity);
@@ -1717,7 +1720,9 @@ void MsClusterDataStorage::makeConsensusForSmallCluster(Cluster* cluster,
 		// TODO add sqs into ratio computation
 		if (maxPrecursorIntensity>0.0)
 		{
-			float ratio = (cluster->getHeader()->getPrecursorIntensity() /maxPrecursorIntensity);
+		    // NP3 fixed the intensity ratio to be between the current singleton and the main cluster consensus, instead of the max of the members
+            float ratio = (singleton->getHeader()->getPrecursorIntensity() /maxPrecursorIntensity);
+		    //float ratio = (singleton->getHeader()->getPrecursorIntensity()/cluster->getHeader()->getPrecursorIntensity());
 			if (ratio<0.2)
 				ratio = 0.2;
 			for (size_t j=0; j<numPeaks; j++)
@@ -1769,9 +1774,22 @@ void MsClusterDataStorage::makeConsensusForSmallCluster(Cluster* cluster,
 	cluster->peaks_    = &tmpPeakArea[0];
 	cluster->numPeaks_ = p;
 
+// NP3 debug final cluster consensus
+//	if (cluster->getHeader()->getMOverZ() > 293.08 && cluster->getHeader()->getMOverZ() < 293.1) {
+//        cout << "@@@@@@@@@@@ AAAA precursor " << cluster->getHeader()->getMOverZ() << endl;
+//        cluster->detailedPrint();
+//        cluster->printPeaks();
+//	}
+
 	// process the peaks
 	// counts and maxPosisble fields in peaks should be added (so paramter true is given)
 	cluster->joinAdjacentPeaks(config_->getTolerance() ,true);
+
+//    if (cluster->getHeader()->getMOverZ() > 293.08 && cluster->getHeader()->getMOverZ() < 293.1) {
+//        cout << "@@@@@@@@@@@ AAAA precursor " << cluster->getHeader()->getMOverZ() << endl;
+//        cluster->detailedPrint();
+//        cluster->printPeaks();
+//    }
 
 	// convert the min/max counts to counts of the number of spectra that have peaks 
 	// at a given mass
@@ -1792,8 +1810,8 @@ void MsClusterDataStorage::makeConsensusForSmallCluster(Cluster* cluster,
 	for (size_t i=0; i<cluster->numPeaks_; i++)
 	{
 		Peak& peak = cluster->peaks_[i];
-		const float ratio =  peakWeightTable_.getWeight(static_cast<int>(peak.count), 
-													    static_cast<int>(peak.maxPossible));
+		const float ratio =  peakWeightTable_.getWeight(static_cast<int>(peak.count),
+				static_cast<int>(peak.maxPossible));
 		peak.intensity *= ratio;
 		totalPeakIntnesity += peak.intensity;
 	}
@@ -1864,6 +1882,7 @@ void MsClusterDataStorage::makeConsensusForLargeCluster(Cluster* cluster, Single
 	{
 		const Cluster* singleton = getCluster(singletonIdxs[i]);
 		const size_t singletonSize = singleton->getHeader()->getClusterSize();
+		// TODO change to continue
 		if (totalSize + singletonSize > MAX_CLUSTER_SIZE_FOR_UPDATE)
 			break;
 
