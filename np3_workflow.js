@@ -1509,6 +1509,7 @@ program
             options.processed_data_name, options.verbose);
 
         // save run parameters values
+        shell.ShellString('NP3 MS Workflow - version '+ options.parent.version() +'\n\n').toEnd(output_path+'/logRunParms');
         shell.ShellString('output_name: '+options.output_name + "\n\ncmd: \n\n").toEnd(output_path+'/logRunParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(output_path+'/logRunParms');
 
@@ -2037,7 +2038,7 @@ program
             options.processed_data_name, options.verbose);
 
         // save run parameters values
-        // save run parameters values
+        shell.ShellString('NP3 MS Workflow - version '+ options.parent.version() +'\n\n').toEnd(output_path+'/logRunParms');
         shell.ShellString('output_name: '+options.output_name + "\n\ncmd: \n\n").toEnd(output_path+'/logRunParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(output_path+'/logRunParms');
         options.bflag_cutoff = 1.5; // just to plot the vertical lines in the basePeakInt distribution
