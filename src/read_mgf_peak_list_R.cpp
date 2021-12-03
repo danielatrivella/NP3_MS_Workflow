@@ -104,8 +104,11 @@ std::vector<std::vector<double> > joinAdjPeaksScalee(std::vector<double> peaks,
   double totalIntensity = ints[prev];
   
   for(int i = prev+1; i < n; ++i) {
-    // if the precursor mass is informed, remove the peaks in a +/- 20 Da around precursor ion mass
-    if (trim_mz != -1 && diff_abs(peaks[i], trim_mz) < 20) {
+    // if the precursor mass is informed, 
+    // remove the peaks in a +/- 20 Da around precursor ion mass
+    // without removing the precursor m/z
+    if (trim_mz != -1 && diff_abs(peaks[i], trim_mz) < 20 && 
+        diff_abs(peaks[i], trim_mz) > bin_size) {
       continue;
     }
     totalIntensity += ints[i];
