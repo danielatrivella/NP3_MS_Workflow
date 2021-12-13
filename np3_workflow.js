@@ -245,8 +245,9 @@ function callClustering(options, output_path, specs_path) {
             options.metadata, 1, processed_dir, options.mz_tolerance,
             logOutputPath, options.verbose);
     }
-
-    console.log('DONE clustering and counting spectra!\n' + printTimeElapsed(process.hrtime(start_clust))+ "\n");
+    var step_time = '\nDONE clustering and counting spectra!\n' + printTimeElapsed(process.hrtime(start_clust))+ "\n";
+    console.log(step_time);
+    shell.ShellString(step_time).toEnd(logOutputPath);
 
     // for analysing the clustering counts
     callAnalyseCount(output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
@@ -277,8 +278,11 @@ function callClustering(options, output_path, specs_path) {
         callCleanNoMs2Counts(options.raw_data_path+'/'+options.processed_data_name+"/MS1_list_no_MS2.csv" ,
             options.metadata, output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area_MS1.csv",
             options.mz_tolerance, options.rt_tolerance[1], options.method, logOutputPath,
-            options.verbose)
+            options.verbose);
 
+    var step_time = '\nFinish Steps 3 and 4! ' + printTimeElapsed(process.hrtime(start_clust))+ "\n";
+    console.log(step_time);
+    shell.ShellString(step_time).toEnd(logOutputPath);
 }
 
 
@@ -400,6 +404,7 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
     //   # return NA when div/0, all samples = 0 or return 1.1 when sd equals zero
     console.log('*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
         basename(counts)+' *** \n');
+    var start = process.hrtime();
     var resExec = shell.exec('Rscript '+__dirname+'/src/bioactivity_correlation.R '+metadata+' '+counts+' '+method+' '+
         bio_cutoff,
         {async:false, silent:(verbose <= 0)});
@@ -415,10 +420,10 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
             basename(counts)+' *** \n' +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
-        console.log('\nDONE!\n');
+        var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        console.log(done_msg);
         shell.ShellString('\n*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
-            basename(counts)+' *** \n'+resExec.stdout+'\n'+resExec.stderr+
-            '\nDONE!\n').toEnd(logOutputPath);
+            basename(counts)+' *** \n'+resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
     }
 }
 
@@ -531,6 +536,9 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
                 output_name + '_spectra_merged_annotations.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
         }
+        var done_msg = '\nFinish Step 8 '+printTimeElapsed(process.hrtime(start))+"\n";
+        console.log(done_msg);
+        shell.ShellString(done_msg).toEnd(merge_output_path+'logMergeOutput');
     }
 }
 
@@ -583,6 +591,10 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
             clean_output_path+output_name+"_peak_area_clean.csv",
             clean_output_path+"logCleanOutput", parms.verbose);
         // TODO Future alignment function will probably be here
+
+        var out_done_log = '\nFinish Step 5 '+printTimeElapsed(process.hrtime(start))+'\n';
+        console.log(out_done_log);
+        shell.ShellString(out_done_log).toEnd(clean_output_path+"logCleanOutput");
     }
 
     return(resExec.code);
@@ -593,6 +605,7 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
 {
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
     console.log('*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** \n');
+    var start = process.hrtime();
 
     var resExec = shell.exec('Rscript '+__dirname+'/src/run_annotate_spectra_molecular_network.R '+parms.metadata+' '+output_path+' '+
         parms.rules+' '+mz_tol+' '+ fragment_tol+' '+ rt_tol+' '+absolute_ms2_int_cutoff+' '+parms.ion_mode+' '+
@@ -616,6 +629,7 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     }
 
     console.log('*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n');
+    var start_protonated = process.hrtime();
     var output_name = basename(output_path);
     var mn_annotations_path = output_path + '/molecular_networking/' +
         output_name + "_molecular_networking_annotations.selfloop";
@@ -636,9 +650,10 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     } else {
         console.log('\nDONE!\n');
         shell.ShellString('*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n' +
-            resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed(process.hrtime(start_protonated))+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
 
+    shell.ShellString('\nFinish Step 7 '+printTimeElapsed(process.hrtime(start))+"\n").toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     return(resExec.code);
 }
 
@@ -672,6 +687,7 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
 function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_spectra, verbose)
 {
     console.log('*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n');
+    var start = process.hrtime();
     var resExec = shell.exec('Rscript '+__dirname+'/src/molecular_networking.R '+out_path+' '+sim_mn+' '+
         max_chunk_spectra,
         {async:false, silent:(verbose <= 0)});
@@ -707,9 +723,10 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/molecular_networking/logMnOutput');
         console.log('\nERROR');
     } else {
-        console.log('\nDONE!\n');
+        var mn_time = '\nDONE! \nFinish Step 10 '+printTimeElapsed(process.hrtime(start))+"\n";
+        console.log(mn_time);
         shell.ShellString('\n*** Filtering the SSMN - top k neighbours and max component size  *** \n' +
-            resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(out_path+'/molecular_networking/logMnOutput');
+            resExec.stdout + '\n' + resExec.stderr + mn_time).toEnd(out_path+'/molecular_networking/logMnOutput');
     }
 
     return(resExec.code)
@@ -718,6 +735,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
 function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, verbose)
 {
     console.log('*** Step 2 Suggestion - Suggesting values for some of the pre process parameters *** \n');
+    var start = process.hrtime();
     n_bins = 150;
     var resExec = shell.exec(python3()+' '+__dirname+'/src/pp_pw_hist_suggestions.py '+metadata_path+' '+
         processed_data_dir+'/MS1_list_with_MS2.csv '+processed_data_dir+'/MS1_list_with_MS2_noBlank_peak_width_hist.png '+n_bins,
@@ -728,11 +746,12 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
         console.log(resExec.stderr);
         console.log('\nERROR');
     } else {
-        console.log('\nDONE!\n');
+        var ppsuggest_time = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        console.log(ppsuggest_time);
 
         // save the suggestion output to the statistics log and to the output log
         shell.ShellString(resExec.stdout).toEnd(out_path);
-        shell.ShellString(resExec.stdout).toEnd(processed_data_dir+'logPreProcessOutput');
+        shell.ShellString(resExec.stdout+ppsuggest_time).toEnd(processed_data_dir+'logPreProcessOutput');
         return resExec.stdout
     }
     return ''
@@ -764,6 +783,7 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
 {
     var resExec;
     console.log('*** Step 2 - Pre-processing the raw LC-MS/MS data and enriching the MS2 data with MS1 peak information *** \n');
+    var start = process.hrtime();
 
     if (parms.fragment_tolerance) // called from the run or clustering cmd, auto process
     {
@@ -826,6 +846,11 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
                 pre_process_dir + '/logPreProcessStatistics', verbose);
         }
         output_stats = undefined;
+    }
+    var pp_end = "\nFinish Step 2 "+printTimeElapsed(process.hrtime(start))+"\n";
+    console.log(pp_end);
+    if (!preprocess_new_result) {
+        shell.ShellString(pp_end).toEnd(pre_process_dir + 'logPreProcessOutput');
     }
 
     return(output_stats);
@@ -918,7 +943,9 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
     shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.pklbin");
     shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.params");
 
-    console.log("Tremolo search ended. "+printTimeElapsed(process.hrtime(start))+"\n");
+    var tremolo_end = "Tremolo search ended!\nFinish Step 6 "+printTimeElapsed(process.hrtime(start))+"\n";
+    console.log(tremolo_end);
+    shell.ShellString(tremolo_end).toEnd(output_path+"/logTremolo");
     return(resExec.code);
 }
 
