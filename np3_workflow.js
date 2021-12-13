@@ -653,7 +653,9 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
             resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed(process.hrtime(start_protonated))+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
 
-    shell.ShellString('\nFinish Step 7 '+printTimeElapsed(process.hrtime(start))+"\n").toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+    var finish_step = '\nFinish Step 7 '+printTimeElapsed(process.hrtime(start))+"\n";
+    console.log(finish_step);
+    shell.ShellString(finish_step).toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     return(resExec.code);
 }
 
