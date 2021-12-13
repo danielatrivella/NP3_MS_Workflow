@@ -558,13 +558,14 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
     }
 
     var clean_output_path = output_path+"/count_tables/clean/";
-    shell.ShellString(log_clustered_spec_comparison + step_name).toEnd(clean_output_path+"logCleanOutput");
 
     var resExec = shell.exec('Rscript '+__dirname+'/src/clean_spectra_quantification.R '+parms.metadata+' '+output_path+' '+
         processed_dir+' '+mz_tol+' '+ parms.similarity+' '+ rt_tol+' '+bin_size+' '+
         parms.scale_factor+' '+parms.ion_mode+' '+parms.bflag_cutoff+' '+parms.noise_cutoff+' '+parms.max_chunk_spectra,
         {async:false,
         silent:(parms.verbose === 0)});
+    // print the clustered spectra comparision in the output log after the folder creation (counts_table/clean)
+    shell.ShellString(log_clustered_spec_comparison + "\n" + step_name).toEnd(clean_output_path+"logCleanOutput");
 
     if (resExec.code) {
         if (parms.verbose === 0) {
@@ -596,7 +597,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
             clean_output_path+"logCleanOutput", parms.verbose);
         // TODO Future alignment function will probably be here
 
-        var out_done_log = '\nFinish Step 5 '+printTimeElapsed(process.hrtime(start))+'\n';
+        var out_done_log = '\nFinish Step 5 (without the clustered spectra comparison) '+printTimeElapsed(process.hrtime(start))+'\n';
         console.log(out_done_log);
         shell.ShellString(out_done_log).toEnd(clean_output_path+"logCleanOutput");
     }
@@ -2286,12 +2287,13 @@ program
         var output_name = basename(options.output_path);
 
         // check if pairwise table exists
+        var out_clustered_spec_comp = '';
         if (!shell.test('-e', options.output_path + "/molecular_networking/similarity_tables/similarity_table_" +
             output_name + ".csv")) {
             // cread molecular networking output dir
             shell.mkdir("-p", options.output_path + "/molecular_networking/similarity_tables");
             // call pairwise comparison, create folder
-            var out_clustered_spec_comp = callPairwiseComparision(basename(options.output_path), options.output_path + "/molecular_networking/similarity_tables",
+            out_clustered_spec_comp = callPairwiseComparision(basename(options.output_path), options.output_path + "/molecular_networking/similarity_tables",
                 options.output_path + "/mgf/", options.fragment_tolerance,
                 options.scale_factor, options.trim_mz, options.parallel_cores,
                 options.verbose);
