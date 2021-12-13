@@ -147,7 +147,8 @@ function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_fac
     if (bflag_cutoff_factor === "FALSE") {
         bflag_cutoff_factor = 0;
     }
-    console.log('*** Plotting the base peak intensity distribution of the clustering counts ***\n');
+    var step_name = '*** Plotting the base peak intensity distribution of the clustering counts ***\n';
+    console.log(step_name);
     var resExec = shell.exec(python3()+' '+__dirname+'/src/plot_basePeakInt_distribution.py ' + path_clustering_count +
             ' ' + bflag_cutoff_factor, {async: false, silent: (verbose <= 0)});
 
@@ -157,12 +158,12 @@ function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_fac
             console.log(resExec.stderr);
         }
         console.log('\nERROR');
-        shell.ShellString('*** Plotting the base peak intensity distribution of the clustering counts ***\n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
         var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
         console.log(done_msg);
-        shell.ShellString('*** Plotting the base peak intensity distribution of the clustering counts ***\n' +
+        shell.ShellString(step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(logOutputPath);
     }
 }
@@ -350,7 +351,8 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
 
 function callCountSpectraBySample(out_path, name, metadata, isFinal, processed_dir, mz_tol, logOutputPath, verbose)
 {
-    console.log('*** Step 4 - Counting peak area and spectra by sample '+name+' *** \n');
+    var step_name = '*** Step 4 - Counting peak area and spectra by sample '+name+' *** \n';
+    console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_samples.R '+out_path+' '+name+' '+metadata+' '+
         isFinal+' '+processed_dir+' '+mz_tol,
         {async:false, silent:(verbose <= 0)});
@@ -361,19 +363,20 @@ function callCountSpectraBySample(out_path, name, metadata, isFinal, processed_d
             console.log(resExec.stderr);
         }
         console.log('\nERROR');
-        shell.ShellString('\n*** Step 4 - Counting peak area and spectra by sample '+name+' *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
         process.exit(1);
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('\n*** Step 4 - Counting peak area and spectra by sample '+name+' *** \n'+
+        shell.ShellString('\n'+ step_name +
             resExec.stdout+'\n'+resExec.stderr+'\nDONE!\n').toEnd(logOutputPath);
     }
 }
 
 function callCountSpectraBySubClusterID(out_path, name, isFinal, metadata, processed_dir, mz_tol, logOutputPath, verbose)
 {
-    console.log('*** Step 4 - Counting peak area and spectra by batch subclusters '+name+' *** \n');
+    var step_name = '*** Step 4 - Counting peak area and spectra by batch subclusters '+name+' *** \n';
+    console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_batches.R '+out_path+' '+name+' '+isFinal+' '+
         metadata+' '+processed_dir+' '+mz_tol, {async:false, silent:(verbose <= 0)});
 
@@ -383,12 +386,12 @@ function callCountSpectraBySubClusterID(out_path, name, isFinal, metadata, proce
             console.log(resExec.stderr);
         }
         console.log('\nERROR');
-        shell.ShellString('\n*** Step 4 - Counting peak area and spectra by batch subclusters '+name+' *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
         process.exit(1);
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('\n*** Step 4 - Counting peak area and spectra by batch subclusters '+name+' *** \n'+
+        shell.ShellString('\n'+ step_name +
             resExec.stdout+'\n'+resExec.stderr + '\nDONE!\n').toEnd(logOutputPath);
     }
 }
@@ -402,8 +405,9 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
     //   #$4 - output name name;
     //   #$5 - Correlation method, one of: 'pearson' (default), 'kendall', or 'spearman'.
     //   # return NA when div/0, all samples = 0 or return 1.1 when sd equals zero
-    console.log('*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
-        basename(counts)+' *** \n');
+    var step_name = '*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
+        basename(counts)+' *** \n';
+    console.log(step_name);
     var start = process.hrtime();
     var resExec = shell.exec('Rscript '+__dirname+'/src/bioactivity_correlation.R '+metadata+' '+counts+' '+method+' '+
         bio_cutoff,
@@ -416,41 +420,41 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
             console.log(resExec.stderr);
         }
         console.log('ERROR\n');
-        shell.ShellString('\n*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
-            basename(counts)+' *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
         var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
         console.log(done_msg);
-        shell.ShellString('\n*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
-            basename(counts)+' *** \n'+resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
+        shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
     }
 }
 
 function callAnalyseCount(counts, out_path, logOutputPath)
 {
-    console.log('*** Analysing the count of spectra  *** \n');
+    var step_name = '*** Analysing the count of spectra  *** \n';
+    console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/analyse_count.R '+counts, {async:false, silent:false});
 
     if (resExec.code) {
         //console.log(resExec.stdout);
         //console.log(resExec.stderr);
         console.log('\nERROR');
-        shell.ShellString('*** Analysing the count of spectra  *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
         console.log('\nDONE!\n');
 
         // save analyse count file
         shell.ShellString(resExec.stdout).to(out_path);
-        shell.ShellString('\n*** Analysing the count of spectra  *** \n'+resExec.stdout+'\n'+resExec.stderr+
+        shell.ShellString('\n'+step_name+resExec.stdout+'\n'+resExec.stderr+
             '\nDONE!\n').toEnd(logOutputPath);
     }
 }
 
 function callExtractPeakList(job_name, mgf_dir, counts_area, counts_spectra, bin_size, scale_factor, logOutputPath)
 {
-    console.log('*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the counts table *** \n');
+    var step_name = '*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the counts table *** \n';
+    console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/extract_peak_list.R '+job_name+' '+mgf_dir+' '+counts_area+' '+bin_size+' '+
         scale_factor+' '+counts_spectra, {async:false});
 
@@ -458,13 +462,11 @@ function callExtractPeakList(job_name, mgf_dir, counts_area, counts_spectra, bin
         console.log(resExec.stdout);
         console.log(resExec.stderr);
         console.log('\nERROR');
-        shell.ShellString('\n*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the ' +
-            'counts table *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('\n*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the ' +
-            'counts table *** \n'+resExec.stdout+'\n'+resExec.stderr+'\nDONE!\n').toEnd(logOutputPath);
+        shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+'\nDONE!\n').toEnd(logOutputPath);
     }
 }
 
@@ -473,8 +475,8 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
                               logOutputPath, verbose)
 {
     var start = process.hrtime();
-
-    console.log('*** Cleaning the counts table of not fragmented MS1 peaks  *** \n');
+    var step_name = '*** Cleaning the counts table of not fragmented MS1 peaks  *** \n';
+    console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/clean_no_MS2_quantification.R  '+metadata_path+' '+output_path+' '+
         quantification_table_path+' '+mz_tol+' '+rt_tol, {async:false, silent:(verbose === 0)});
 
@@ -482,12 +484,12 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
         console.log(resExec.stdout);
         //console.log(resExec.stderr);
         console.log('\nERROR');
-        shell.ShellString('\n*** Cleaning the counts table of not fragmented MS1 peaks  *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
         var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
         console.log(done_msg);
-        shell.ShellString('\n*** Cleaning the counts table of not fragmented MS1 peaks  *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(logOutputPath);
         // call correlation
         callComputeCorrelation(metadata_path, output_path,
@@ -498,7 +500,8 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
 function callMergeCounts(output_path, output_name, processed_dir, metadata_path, merge_protonated, method, verbose)
 {
     var start = process.hrtime();
-    console.log('*** Step 8 - Merging the counts table based on the provided chemical annotations *** \n');
+    var step_name = '*** Step 8 - Merging the counts table based on the provided chemical annotations *** \n';
+    console.log(step_name);
     annotations_merge = "isotopes,adducts,dimers,multicharges,fragments";
     var merge_output_path = output_path + "/count_tables/merge/";
 
@@ -510,13 +513,13 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
             console.log(resExec.stdout);
             // console.log(resExec.stderr);
         }
-        shell.ShellString('*** Step 8 - Merging the counts table based on the provided chemical annotations *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(merge_output_path+'logMergeOutput');
         console.log('\nERROR');
     } else {
         var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
         console.log(done_msg);
-        shell.ShellString('*** Step 8 - Merging the counts table based on the provided chemical annotations *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(merge_output_path+'logMergeOutput');
 
         // run corr if the metadata was provided and at least one symbolic cluster was created
@@ -543,16 +546,19 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
 }
 
 // call the clean step
-function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size, processed_dir)
+function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size, processed_dir,
+                                   log_clustered_spec_comparison)
 {
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
     var start = process.hrtime();
-    console.log('*** Step 5 - Cleaning the clustering counts tables *** \n');
+    var step_name = '*** Step 5 - Cleaning the clustering counts tables *** \n';
+    console.log(step_name);
     if (processed_dir === "") {
         processed_dir = parms.raw_data_path + '/' + parms.processed_data_name;
     }
 
     var clean_output_path = output_path+"/count_tables/clean/";
+    shell.ShellString(log_clustered_spec_comparison + step_name).toEnd(clean_output_path+"logCleanOutput");
 
     var resExec = shell.exec('Rscript '+__dirname+'/src/clean_spectra_quantification.R '+parms.metadata+' '+output_path+' '+
         processed_dir+' '+mz_tol+' '+ parms.similarity+' '+ rt_tol+' '+bin_size+' '+
@@ -565,14 +571,12 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
             console.log(resExec.stdout);
             console.log(resExec.stderr);
         }
-        shell.ShellString('*** Step 5 - Cleaning the clustering counts tables *** \n' +
-            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(clean_output_path+"logCleanOutput");
+        shell.ShellString(resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(clean_output_path+"logCleanOutput");
         console.log('\nERROR');
     } else {
         var out_done_log = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
         console.log(out_done_log);
-        shell.ShellString('\n*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the ' +
-            'counts table *** \n'+resExec.stdout+'\n'+resExec.stderr+out_done_log).toEnd(clean_output_path+"logCleanOutput");
+        shell.ShellString(resExec.stdout+'\n'+resExec.stderr+out_done_log).toEnd(clean_output_path+"logCleanOutput");
 
         output_name = basename(output_path);
         // analyse the clean clustering count
@@ -604,7 +608,8 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
                                  absolute_ms2_int_cutoff)
 {
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
-    console.log('*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** \n');
+    var step_name = '*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** \n';
+    console.log(step_name);
     var start = process.hrtime();
 
     var resExec = shell.exec('Rscript '+__dirname+'/src/run_annotate_spectra_molecular_network.R '+parms.metadata+' '+output_path+' '+
@@ -616,19 +621,18 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
             console.log(resExec.stdout);
             console.log(resExec.stderr);
         }
-        shell.ShellString('*** Step 7 - Annotating ionization variants in the clean counts table and creating the ' +
-            'molecular network of annotations (IVAMN) *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
         console.log('\nERROR');
         return(resExec.code);
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('*** Step 7 - Annotating ionization variants in the clean counts table and creating the ' +
-            'molecular network of annotations (IVAMN) *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
 
-    console.log('*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n');
+    var step_name = '*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n';
+    console.log(step_name);
     var start_protonated = process.hrtime();
     var output_name = basename(output_path);
     var mn_annotations_path = output_path + '/molecular_networking/' +
@@ -645,11 +649,11 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
             console.log(resExec.stderr);
         }
         console.log('\nERROR');
-        shell.ShellString('*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed(process.hrtime(start_protonated))+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
 
@@ -662,7 +666,8 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
 function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, cores_parallel,
                                  verbose)
 {
-    console.log('*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n');
+    var step_name = '*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n';
+    console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/pairwise_similarity.R '+out_name+' '+mgf_path+' '+out_path+' '+
         bin_size+' '+scaling_method+' '+trim_mz+' '+cores_parallel, {async:false, silent:(verbose <= 0)});
 
@@ -673,12 +678,12 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
             console.log(resExec.stderr);
         }
         console.log('\nERROR');
-        shell.ShellString('\n*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/logPairwiseComparisonOutput');
         process.exit(1);
     } else {
         console.log('\nDONE!\n');
-        output_msg = '\n*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n' +
+        output_msg = step_name +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n';
         shell.ShellString(output_msg).toEnd(out_path+'/logPairwiseComparisonOutput');
     }
@@ -688,7 +693,8 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
 
 function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_spectra, verbose)
 {
-    console.log('*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n');
+    var step_name ='*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n';
+    console.log(step_name);
     var start = process.hrtime();
     var resExec = shell.exec('Rscript '+__dirname+'/src/molecular_networking.R '+out_path+' '+sim_mn+' '+
         max_chunk_spectra,
@@ -699,17 +705,17 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
             console.log(resExec.stdout);
             console.log(resExec.stderr);
         }
-        shell.ShellString('\n*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/molecular_networking/logMnOutput');
         console.log('\nERROR');
         return(resExec.code)
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n' +
+        shell.ShellString(step_name +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(out_path+'/molecular_networking/logMnOutput');
     }
-    
-    console.log('*** Filtering the SSMN - top k neighbours and max component size  *** \n');
+    var step_name ='*** Filtering the SSMN - top k neighbours and max component size  *** \n';
+    console.log(step_name);
     var mn_file = out_path+'/molecular_networking/'+basename(out_path)+"_molecular_networking_sim_"+
         sim_mn.toString().replace(".", "")+".selfloop";
 
@@ -721,13 +727,13 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
             console.log(resExec.stdout);
             console.log(resExec.stderr);
         }
-        shell.ShellString('\n*** Filtering the SSMN - top k neighbours and max component size  *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/molecular_networking/logMnOutput');
         console.log('\nERROR');
     } else {
         var mn_time = '\nDONE! \nFinish Step 10 '+printTimeElapsed(process.hrtime(start))+"\n";
         console.log(mn_time);
-        shell.ShellString('\n*** Filtering the SSMN - top k neighbours and max component size  *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout + '\n' + resExec.stderr + mn_time).toEnd(out_path+'/molecular_networking/logMnOutput');
     }
 
@@ -761,7 +767,8 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
 
 function callGroupsfunc(metadata_path, count_tables, logOutputPath, verbose)
 {
-    console.log('*** Creating groups based on the metadata grouping information *** \n');
+    var step_name = '*** Creating groups based on the metadata grouping information *** \n';
+    console.log(step_name);
     var resExec = shell.exec(python3()+' '+__dirname+'/src/groups.py --metadata '+metadata_path+' --count_file_path '+count_tables+
     ' -q True', {async:false, silent: (verbose <= 0)});
     if (resExec.code) {
@@ -770,11 +777,11 @@ function callGroupsfunc(metadata_path, count_tables, logOutputPath, verbose)
             console.log(resExec.stderr);
         }
         console.log('\nERROR');
-        shell.ShellString('\n*** Creating groups based on the metadata grouping information *** \n' +
+        shell.ShellString('\n' + step_name+
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
         console.log('\nDONE!\n');
-        shell.ShellString('\n*** Creating groups based on the metadata grouping information *** \n' +
+        shell.ShellString('\n' + step_name +
             resExec.stdout+'\nDONE!\n').toEnd(logOutputPath);
     }
 
@@ -1553,17 +1560,18 @@ program
 
         output_path = output_path+"/outs/"+options.output_name;
 
-        // cread molecular networking output dir
+        // create molecular networking output dir
         shell.mkdir("-p", output_path+ "/molecular_networking/similarity_tables");
-        // call pairwise comparison, create folder
-        callPairwiseComparision(options.output_name, output_path + "/molecular_networking/similarity_tables",
+        // call pairwise comparison for the clustered spectra
+        var out_clustered_spec_comp = callPairwiseComparision(options.output_name, output_path + "/molecular_networking/similarity_tables",
             output_path+"/mgf/", options.fragment_tolerance,
             options.scale_factor, options.trim_mz, options.parallel_cores,
             options.verbose);
 
         // remove mass dissipation in the clustering from area and spectra count
         resExec = callCleanClusteringCounts(options, output_path, options.mz_tolerance,
-            options.rt_tolerance[1], options.fragment_tolerance, '');
+            options.rt_tolerance[1], options.fragment_tolerance, '',
+            out_clustered_spec_comp);
 
         var counts_path = output_path+"/count_tables/"+options.output_name;
         //resExec = 0
@@ -2283,7 +2291,7 @@ program
             // cread molecular networking output dir
             shell.mkdir("-p", options.output_path + "/molecular_networking/similarity_tables");
             // call pairwise comparison, create folder
-            callPairwiseComparision(basename(options.output_path), options.output_path + "/molecular_networking/similarity_tables",
+            var out_clustered_spec_comp = callPairwiseComparision(basename(options.output_path), options.output_path + "/molecular_networking/similarity_tables",
                 options.output_path + "/mgf/", options.fragment_tolerance,
                 options.scale_factor, options.trim_mz, options.parallel_cores,
                 options.verbose);
@@ -2296,7 +2304,8 @@ program
         // var resExec = callCleanAnnotateClustering(options, options.output_path, options.mz_tolerance,
         //     options.rt_tolerance, options.fragment_tolerance, options.processed_data_dir);
         var resExec = callCleanClusteringCounts(options, options.output_path, options.mz_tolerance,
-            options.rt_tolerance[1], options.fragment_tolerance, options.processed_data_dir);
+            options.rt_tolerance[1], options.fragment_tolerance, options.processed_data_dir,
+            out_clustered_spec_comp);
 
         if (!resExec) {   // clean worked, if not windows run tremolo
             var output_clean_path = options.output_path + "/count_tables/clean/";
