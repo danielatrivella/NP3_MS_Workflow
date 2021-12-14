@@ -22,6 +22,11 @@ function printTimeElapsed(t) {
         (t[0]%60).toFixed(0) + "s " + (t[1]/1000000).toFixed(2) + "ms") ;
 }
 
+function printTimeElapsed_bigint(t_start,t_end) {
+    const t_elapsed = Number(t_end - t_start)/1000000000; // t is in nanoseconds, compute the diff and convert to seconds
+    return 'Time Elapsed: ' + (t_elapsed/60).toFixed(2) + 'min';
+}
+
 function parseDecimal(val) {
     return parseInt(val, 10);
 }
@@ -40,7 +45,7 @@ function checkJobNameMaxLength(job_name) {
 }
 
 function parseBFLAGcutoff(val) {
-    val = toupper(val)
+    val = toupper(val);
     if (val === "FALSE") {
         return val;
     }
@@ -53,7 +58,7 @@ function parseBFLAGcutoff(val) {
 }
 
 function parseNOISEcutoff(val) {
-    val = toupper(val)
+    val = toupper(val);
     if (val === "FALSE") {
         return val;
     }
@@ -142,7 +147,7 @@ function convertMethodCorr(method) {
 
 function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_factor, logOutputPath, verbose)
 {
-    var start = process.hrtime();
+    const start_plot = process.hrtime.bigint();
     // convert the bflag cutoff to zero when it is disabled
     if (bflag_cutoff_factor === "FALSE") {
         bflag_cutoff_factor = 0;
@@ -161,7 +166,7 @@ function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_fac
         shell.ShellString(step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
-        var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        var done_msg = '\nDONE! '+printTimeElapsed_bigint(start_plot, process.hrtime.bigint())+"\n";
         console.log(done_msg);
         shell.ShellString(step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(logOutputPath);
@@ -169,7 +174,7 @@ function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_fac
 }
 
 function callClustering(options, output_path, specs_path) {
-    var start_clust = process.hrtime();
+    const start_clust = process.hrtime.bigint();
     console.log('\n*** Step 3 - Clustering the pre-processed MS2 spectra using the MS1 information *** \n');
     // copy MSCluster model
     //shell.cp(options.model_dir+"/LTQ_TRYP_config.txt", output_path);
@@ -246,7 +251,7 @@ function callClustering(options, output_path, specs_path) {
             options.metadata, 1, processed_dir, options.mz_tolerance,
             logOutputPath, options.verbose);
     }
-    var step_time = '\nDONE clustering and counting spectra!\n' + printTimeElapsed(process.hrtime(start_clust))+ "\n";
+    var step_time = '\nDONE clustering and counting spectra!\n' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n";
     console.log(step_time);
     shell.ShellString(step_time).toEnd(logOutputPath);
 
@@ -281,7 +286,7 @@ function callClustering(options, output_path, specs_path) {
             options.mz_tolerance, options.rt_tolerance[1], options.method, logOutputPath,
             options.verbose);
 
-    var step_time = '\nFinish Steps 3 and 4! ' + printTimeElapsed(process.hrtime(start_clust))+ "\n";
+    step_time = '\n======\nFinish Steps 3 and 4! ' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n======\n";
     console.log(step_time);
     shell.ShellString(step_time).toEnd(logOutputPath);
 }
@@ -408,7 +413,7 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
     var step_name = '*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from '+
         basename(counts)+' *** \n';
     console.log(step_name);
-    var start = process.hrtime();
+    const start_corr = process.hrtime.bigint();
     var resExec = shell.exec('Rscript '+__dirname+'/src/bioactivity_correlation.R '+metadata+' '+counts+' '+method+' '+
         bio_cutoff,
         {async:false, silent:(verbose <= 0)});
@@ -423,7 +428,7 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
         shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
-        var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        var done_msg = '\nDONE! '+printTimeElapsed_bigint(start_corr, process.hrtime.bigint())+"\n";
         console.log(done_msg);
         shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
     }
@@ -474,7 +479,7 @@ function callExtractPeakList(job_name, mgf_dir, counts_area, counts_spectra, bin
 function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_path, mz_tol, rt_tol, method,
                               logOutputPath, verbose)
 {
-    var start = process.hrtime();
+    const start_cleanMS1 = process.hrtime.bigint();
     var step_name = '*** Cleaning the counts table of not fragmented MS1 peaks  *** \n';
     console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/clean_no_MS2_quantification.R  '+metadata_path+' '+output_path+' '+
@@ -487,7 +492,7 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
         shell.ShellString('\n' + step_name +
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
     } else {
-        var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        var done_msg = '\nDONE! '+printTimeElapsed_bigint(start_cleanMS1, process.hrtime.bigint())+"\n";
         console.log(done_msg);
         shell.ShellString('\n' + step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(logOutputPath);
@@ -499,7 +504,7 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
 
 function callMergeCounts(output_path, output_name, processed_dir, metadata_path, merge_protonated, method, verbose)
 {
-    var start = process.hrtime();
+    const start_merge = process.hrtime.bigint();
     var step_name = '*** Step 8 - Merging the counts table based on the provided chemical annotations *** \n';
     console.log(step_name);
     annotations_merge = "isotopes,adducts,dimers,multicharges,fragments";
@@ -517,7 +522,7 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(merge_output_path+'logMergeOutput');
         console.log('\nERROR');
     } else {
-        var done_msg = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        var done_msg = '\nDONE! '+printTimeElapsed_bigint(start_merge, process.hrtime.bigint())+"\n";
         console.log(done_msg);
         shell.ShellString(step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(merge_output_path+'logMergeOutput');
@@ -539,7 +544,7 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
                 output_name + '_spectra_merged_annotations.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
         }
-        var done_msg = '\nFinish Step 8 '+printTimeElapsed(process.hrtime(start))+"\n";
+        var done_msg = '\n======\nFinish Step 8 '+printTimeElapsed_bigint(start_merge, process.hrtime.bigint())+"\n======\n";
         console.log(done_msg);
         shell.ShellString(done_msg).toEnd(merge_output_path+'logMergeOutput');
     }
@@ -550,7 +555,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
                                    log_clustered_spec_comparison)
 {
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
-    var start = process.hrtime();
+    const start_clean = process.hrtime.bigint();
     var step_name = '*** Step 5 - Cleaning the clustering counts tables *** \n';
     console.log(step_name);
     if (processed_dir === "") {
@@ -575,7 +580,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
         shell.ShellString(resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(clean_output_path+"logCleanOutput");
         console.log('\nERROR');
     } else {
-        var out_done_log = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        var out_done_log = '\nDONE! '+printTimeElapsed_bigint(start_clean, process.hrtime.bigint())+"\n";
         console.log(out_done_log);
         shell.ShellString(resExec.stdout+'\n'+resExec.stderr+out_done_log).toEnd(clean_output_path+"logCleanOutput");
 
@@ -597,7 +602,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
             clean_output_path+"logCleanOutput", parms.verbose);
         // TODO Future alignment function will probably be here
 
-        var out_done_log = '\nFinish Step 5 (without the clustered spectra comparison) '+printTimeElapsed(process.hrtime(start))+'\n';
+        var out_done_log = '\n======\nFinish Step 5 '+printTimeElapsed_bigint(start_clean, process.hrtime.bigint())+' (without the clustered spectra comparison time) \n======\n';
         console.log(out_done_log);
         shell.ShellString(out_done_log).toEnd(clean_output_path+"logCleanOutput");
     }
@@ -611,7 +616,7 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
     var step_name = '*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** \n';
     console.log(step_name);
-    var start = process.hrtime();
+    const start_ann = process.hrtime.bigint();
 
     var resExec = shell.exec('Rscript '+__dirname+'/src/run_annotate_spectra_molecular_network.R '+parms.metadata+' '+output_path+' '+
         parms.rules+' '+mz_tol+' '+ fragment_tol+' '+ rt_tol+' '+absolute_ms2_int_cutoff+' '+parms.ion_mode+' '+
@@ -634,7 +639,7 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
 
     var step_name = '*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n';
     console.log(step_name);
-    var start_protonated = process.hrtime();
+    const start_protonated = process.hrtime.bigint();
     var output_name = basename(output_path);
     var mn_annotations_path = output_path + '/molecular_networking/' +
         output_name + "_molecular_networking_annotations.selfloop";
@@ -655,10 +660,10 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     } else {
         console.log('\nDONE!\n');
         shell.ShellString(step_name +
-            resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed(process.hrtime(start_protonated))+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed_bigint(start_protonated, process.hrtime.bigint())+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
 
-    var finish_step = '\nFinish Step 7 '+printTimeElapsed(process.hrtime(start))+"\n";
+    var finish_step = '\n======\nFinish Step 7 '+printTimeElapsed_bigint(start_ann, process.hrtime.bigint())+"\n======\n";
     console.log(finish_step);
     shell.ShellString(finish_step).toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     return(resExec.code);
@@ -667,8 +672,9 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
 function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, cores_parallel,
                                  verbose)
 {
-    var step_name = '*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n';
+    const step_name = '*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n';
     console.log(step_name);
+    const start_comp = process.hrtime.bigint();
     var resExec = shell.exec('Rscript '+__dirname+'/src/pairwise_similarity.R '+out_name+' '+mgf_path+' '+out_path+' '+
         bin_size+' '+scaling_method+' '+trim_mz+' '+cores_parallel, {async:false, silent:(verbose <= 0)});
 
@@ -683,9 +689,10 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/logPairwiseComparisonOutput');
         process.exit(1);
     } else {
-        console.log('\nDONE!\n');
+        const done_msg = '\nDONE! \n======\nFinish pairwise comparison '+printTimeElapsed_bigint(start_comp, process.hrtime.bigint())+'\n======\n';
+        console.log(done_msg);
         output_msg = step_name +
-            resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n';
+            resExec.stdout + '\n' + resExec.stderr + done_msg;
         shell.ShellString(output_msg).toEnd(out_path+'/logPairwiseComparisonOutput');
     }
 
@@ -696,7 +703,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
 {
     var step_name ='*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n';
     console.log(step_name);
-    var start = process.hrtime();
+    const start_mn = process.hrtime.bigint();
     var resExec = shell.exec('Rscript '+__dirname+'/src/molecular_networking.R '+out_path+' '+sim_mn+' '+
         max_chunk_spectra,
         {async:false, silent:(verbose <= 0)});
@@ -732,7 +739,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/molecular_networking/logMnOutput');
         console.log('\nERROR');
     } else {
-        var mn_time = '\nDONE! \nFinish Step 10 '+printTimeElapsed(process.hrtime(start))+"\n";
+        var mn_time = '\nDONE! \n======\nFinish Step 10 '+printTimeElapsed_bigint(start_mn, process.hrtime.bigint())+"\n======\n";
         console.log(mn_time);
         shell.ShellString('\n' + step_name +
             resExec.stdout + '\n' + resExec.stderr + mn_time).toEnd(out_path+'/molecular_networking/logMnOutput');
@@ -744,7 +751,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
 function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, verbose)
 {
     console.log('*** Step 2 Suggestion - Suggesting values for some of the pre process parameters *** \n');
-    var start = process.hrtime();
+    const start_ppsug = process.hrtime.bigint();
     n_bins = 150;
     var resExec = shell.exec(python3()+' '+__dirname+'/src/pp_pw_hist_suggestions.py '+metadata_path+' '+
         processed_data_dir+'/MS1_list_with_MS2.csv '+processed_data_dir+'/MS1_list_with_MS2_noBlank_peak_width_hist.png '+n_bins,
@@ -755,7 +762,7 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
         console.log(resExec.stderr);
         console.log('\nERROR');
     } else {
-        var ppsuggest_time = '\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n";
+        var ppsuggest_time = '\nDONE! '+printTimeElapsed_bigint(start_ppsug, process.hrtime.bigint())+"\n";
         console.log(ppsuggest_time);
 
         // save the suggestion output to the statistics log and to the output log
@@ -793,7 +800,7 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
 {
     var resExec;
     console.log('*** Step 2 - Pre-processing the raw LC-MS/MS data and enriching the MS2 data with MS1 peak information *** \n');
-    var start = process.hrtime();
+    const start_pp = process.hrtime.bigint();
 
     if (parms.fragment_tolerance) // called from the run or clustering cmd, auto process
     {
@@ -857,7 +864,7 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
         }
         output_stats = undefined;
     }
-    var pp_end = "\nFinish Step 2 "+printTimeElapsed(process.hrtime(start))+"\n";
+    var pp_end = "\n======\nFinish Step 2 "+printTimeElapsed_bigint(start_pp, process.hrtime.bigint())+"\n======\n";
     console.log(pp_end);
     if (!preprocess_new_result) {
         shell.ShellString(pp_end).toEnd(pre_process_dir + 'logPreProcessOutput');
@@ -867,7 +874,7 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
 }
 
 function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, top_k, verbose, verbose_search) {
-    var start = process.hrtime();
+    const start_tremolo = process.hrtime.bigint();
     console.log('*** Step 6 - Calling tremolo to perform an in-silico spectral library identification against UNPD *** \n');
 
     // check if output_path exists
@@ -953,7 +960,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
     shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.pklbin");
     shell.rm(__dirname+"/src/ISDB_tremolo_NP3/Data/results/*.params");
 
-    var tremolo_end = "Tremolo search ended!\nFinish Step 6 "+printTimeElapsed(process.hrtime(start))+"\n";
+    var tremolo_end = "Tremolo search ended!\n======\nFinish Step 6 "+printTimeElapsed_bigint(start_tremolo, process.hrtime.bigint())+"\n======\n";
     console.log(tremolo_end);
     shell.ShellString(tremolo_end).toEnd(output_path+"/logTremolo");
     return(resExec.code);
@@ -961,7 +968,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
 
 function callCreateBatchLists(metadata, raw_data_path, output_path, output_name, processed_data_name, verbose)
 {
-    var start = process.hrtime();
+    const start_batchlist = process.hrtime.bigint();
     console.log('*** Step 3 - Creating the NP3_MSCluster specification lists for '+output_name+' ***\n');
     try {
         var resExec = shell.exec('Rscript '+__dirname+'/src/create_batch_lists.R ' + metadata + ' ' + raw_data_path + ' ' +
@@ -981,13 +988,13 @@ function callCreateBatchLists(metadata, raw_data_path, output_path, output_name,
         console.log('\nERROR');
         process.exit(1);
     } else {
-        console.log('\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n");
+        console.log('\nDONE! '+printTimeElapsed_bigint(start_batchlist, process.hrtime.bigint())+"\n");
     }
 }
 
 function renameTremoloJoinedIds(path_clean_count, path_tremolo_result, verbose)
 {
-    var start = process.hrtime();
+    const start_renametremolo = process.hrtime.bigint();
     console.log('*** Renaming the tremolo result with the joined IDs ***\n');
     try {
         var resExec = shell.exec('Rscript '+__dirname+'/src/tremolo_update_joinedIds.R ' + path_tremolo_result + ' ' +
@@ -999,12 +1006,12 @@ function renameTremoloJoinedIds(path_clean_count, path_tremolo_result, verbose)
         console.log("\nERROR");
     }
 
-    console.log('DONE! '+printTimeElapsed(process.hrtime(start))+"\n");
+    console.log('DONE! '+printTimeElapsed_bigint(start_renametremolo, process.hrtime.bigint())+"\n");
 }
 
 function mergeTremoloResults(path_tremolo_result, max_results, path_count_files, verbose)
 {
-    var start = process.hrtime();
+    const start_mergetremolo = process.hrtime.bigint();
     console.log('*** Merging the tremolo result with the counts tables ***\n');
     try {
         shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/tremolo_merge_count.py ' + path_tremolo_result +
@@ -1016,7 +1023,7 @@ function mergeTremoloResults(path_tremolo_result, max_results, path_count_files,
         console.log("\nERROR");
     }
 
-    console.log('\nDONE! '+printTimeElapsed(process.hrtime(start))+"\n");
+    console.log('\nDONE! '+printTimeElapsed_bigint(start_mergetremolo, process.hrtime.bigint())+"\n");
 }
 
 // function callMetfragPubChem(output_name, output_path, method, ion_mode, ppm_tolerance, fragment_tolerance,scale_factor,
@@ -1181,7 +1188,7 @@ program
         'compile the NP3_MSCluster algorithm\n\n')
     .action(function()
     {
-        var start = process.hrtime();
+        const start_setup = process.hrtime.bigint();
         console.log('\n*** NP3 workflow setup ***\n\n');
         var resExec;
         var countError = 0;
@@ -1315,10 +1322,10 @@ program
 
         if (countError === 0)
         {
-            console.log('NP3 workflow installation complete! ' + printTimeElapsed(process.hrtime(start)))
+            console.log('NP3 workflow installation complete! ' + printTimeElapsed_bigint(start_setup, process.hrtime.bigint()))
         } else {
             console.log('NP3 workflow installation ended with ' + countError +
-                " error(s). Check the error messages, fix the conflicts and retry the setup. " + printTimeElapsed(process.hrtime(start)))
+                " error(s). Check the error messages, fix the conflicts and retry the setup. " + printTimeElapsed_bigint(start_setup, process.hrtime.bigint()))
         }
 
     })
@@ -1510,7 +1517,7 @@ program
             process.exit(1);
         }
 
-        var start = process.hrtime();
+        const start_run = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 MS Workflow RUN for \'' +options.output_name+ '\' - Steps 2 to 10 ***\n');
 
@@ -1672,7 +1679,9 @@ program
             console.log('ERROR in the clean and annotation step, check if this is not wanted.');
         }
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        var run_end_msg = "\nRUN "+printTimeElapsed_bigint(start_run, process.hrtime.bigint());
+        console.log(run_end_msg);
+        shell.ShellString(run_end_msg).toEnd(options.output_path+'/'+options.output_name+'/logRunParms');
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n");
@@ -1854,7 +1863,7 @@ program
             process.exit(1);
         }
 
-        var start = process.hrtime();
+        const start_pp = process.hrtime.bigint();
         // run process peak info and align raw data
         console.log('*** NP3 Pre Process - Step 2 ***\n');
 
@@ -1862,7 +1871,7 @@ program
             options, options.verbose);
 
         console.log('*** Pre processed samples of '+options.data_name+' ***');
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log(printTimeElapsed_bigint(start_pp, process.hrtime.bigint()));
     })
     .on('--help', function() {
         console.log('');
@@ -2032,7 +2041,7 @@ program
             process.exit(1);
         }
 
-        var start = process.hrtime();
+        const start_clust = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 MS Workflow Clustering for \'' +options.output_name+ '\' - Steps 3 and 4 ***\n');
 
@@ -2119,7 +2128,7 @@ program
             console.log('*** Done for '+options.output_name+' ***');
         }
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("Clustering "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint()));
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
@@ -2299,7 +2308,7 @@ program
                 options.verbose);
         }
 
-        var start = process.hrtime();
+        const start_clean = process.hrtime.bigint();
         console.log('*** NP3 Clean Clustered Spectra - Step 5 ***\n');
 
         // remove mass dissipation from the clustering area and spectra count
@@ -2368,7 +2377,7 @@ program
             console.log('ERROR in the clean step.');
         }
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("Cleaning "+printTimeElapsed_bigint(start_clean, process.hrtime.bigint()));
 
         if (options.verbose >= 10 && !resExec ) {
             console.log("\n*** TESTING ***\n\n");
@@ -2577,7 +2586,7 @@ program
         shell.ShellString('output_name: '+output_name + "\n\ncmd: \n\n").toEnd(options.output_path+'/count_tables/clean/logAnnotateParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(options.output_path+'/count_tables/clean/logAnnotateParms');
 
-        var start = process.hrtime();
+        const start_ann = process.hrtime.bigint();
         console.log('*** NP3 Annotate Spectra, Create the Molecular Network of Annotations and Assign Protonated Representatives - Step 7 ***\n');
 
         // call annotate spectra to identify variant and create the molecular network of annotations
@@ -2585,7 +2594,7 @@ program
             options.mz_tolerance, options.fragment_tolerance, options.rt_tolerance,
             options.absolute_ms2_int_cutoff);
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("Annotation [M+H]+ "+ printTimeElapsed_bigint(start_ann, process.hrtime.bigint()));
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n");
@@ -2651,7 +2660,7 @@ program
         shell.ShellString('output_name: '+output_name + "\n\ncmd: \n\n").toEnd(options.output_path+'/count_tables/merge/logMergeParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(options.output_path+'/count_tables/merge/logMergeParms');
 
-        var start = process.hrtime();
+        const start_merge = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 Merge Counts based on Annotations - Step 8 ***\n');
 
@@ -2660,7 +2669,7 @@ program
             options.processed_data_dir, options.metadata, options.merge_protonated,
             options.method, options.verbose);
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("Merge "+printTimeElapsed_bigint(start_merge, process.hrtime.bigint()));
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
@@ -2711,7 +2720,7 @@ program
         shell.ShellString('output_name: '+output_name + "\n\ncmd: \n\n").toEnd(output_path+'/logCorrParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(output_path+'/logCorrParms');
 
-        var start = process.hrtime();
+        const start_corr = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 Spectra Count and Bioactivity Correlation - Step 9 ***\n');
         var corr_log_output = output_path+'logCorrOutput';
@@ -2719,7 +2728,7 @@ program
         callComputeCorrelation(options.metadata, options.count_file_path, options.method,
             options.bio_cutoff, corr_log_output, options.verbose);
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("Corr "+ printTimeElapsed_bigint(start_corr, process.hrtime.bigint()));
     })
     .on('--help', function() {
         console.log('');
@@ -2782,7 +2791,7 @@ program
         shell.ShellString('output_name: '+output_name + "\n\ncmd: \n\n").toEnd(options.output_path+'/molecular_networking/logMnParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(options.output_path+'/molecular_networking/logMnParms');
 
-        var start = process.hrtime();
+        const start_mn = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 Molecular Networking Creation - Step 10 ***\n');
 
@@ -2790,7 +2799,7 @@ program
             options.net_top_k, options.max_component_size,
             options.max_chunk_spectra, options.verbose);
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("MN "+printTimeElapsed_bigint(start_mn, process.hrtime.bigint()));
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
@@ -2846,14 +2855,14 @@ program
             process.exit(1);
         }
 
-        var start = process.hrtime();
+        const start_gnpsjoin = process.hrtime.bigint();
         // run workflow
         console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
 
         callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
             options.count_file_path);
 
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
     })
     .on('--help', function() {
         console.log('');
@@ -3010,7 +3019,7 @@ program
     .option('-t, --tremolo [x]', '\'TRUE\' or \'FALSE\' to test the tremolo step.', toupper, "FALSE")
     .option('-s, --skip [x]', 'Skip to test x', 1)
     .action(function(options) {
-        var start = process.hrtime();
+        const start_test = process.hrtime.bigint();
         var np3_js_call = 'node '+ __dirname +'/np3_workflow.js';
 
         var unit_test_res = ['@@@@@ UNIT TEST NP3 Shifted cosine @@@@@\n'];
@@ -3356,7 +3365,7 @@ program
         });
 
         console.log("\n-------------------------------------------------------\n");
-        console.log(printTimeElapsed(process.hrtime(start)));
+        console.log(printTimeElapsed_bigint(start_test, process.hrtime.bigint()));
         console.log("\n--------------------------END--------------------------\n");
     });
 
