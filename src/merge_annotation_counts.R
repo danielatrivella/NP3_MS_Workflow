@@ -30,8 +30,8 @@ merge_counts <- function(col_name, x)
          BLANK_DIST=ifelse(any(!is.na(x[[col_name]])), 
                            min(x[[col_name]], na.rm = TRUE), 
                            NA),
-         HFLAG=,BEDFLAG=,BFLAG=,CFLAG=any(x[[col_name]]),
-         DESREPLICATION=,peakIds=
+         BEDFLAG=,BFLAG=,CFLAG=any(as.logical(x[[col_name]])),
+         HFLAG=,DESREPLICATION=,peakIds=
            ifelse(any(!is.na(x[[col_name]])), 
                   paste(unique(unlist(strsplit(x[[col_name]][
                     !is.na(x[[col_name]])], ";"))), collapse = ";"), 
