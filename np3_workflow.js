@@ -1679,9 +1679,9 @@ program
             console.log('ERROR in the clean and annotation step, check if this is not wanted.');
         }
 
-        var run_end_msg = "\nRUN "+printTimeElapsed_bigint(start_run, process.hrtime.bigint());
+        var run_end_msg = "\n\nRUN "+printTimeElapsed_bigint(start_run, process.hrtime.bigint());
         console.log(run_end_msg);
-        shell.ShellString(run_end_msg).toEnd(options.output_path+'/'+options.output_name+'/logRunParms');
+        shell.ShellString(run_end_msg+"\n").toEnd(options.output_path+'/'+options.output_name+'/logRunParms');
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n");
@@ -2088,7 +2088,10 @@ program
         shell.ShellString('NP3 MS Workflow - version '+ options.parent.version() +'\n\n').toEnd(output_path+'/logRunParms');
         shell.ShellString('output_name: '+options.output_name + "\n\ncmd: \n\n").toEnd(output_path+'/logRunParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(output_path+'/logRunParms');
+
         options.bflag_cutoff = 1.5; // just to plot the vertical lines in the basePeakInt distribution
+
+        // run clustering step
         callClustering(options, output_path, specs_path);
 
         // tremolo search for not windows OS for the clustered mgf
@@ -2128,7 +2131,9 @@ program
             console.log('*** Done for '+options.output_name+' ***');
         }
 
-        console.log("Clustering "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint()));
+        var clust_end_msg = "\n\nClustering "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
+        console.log(clust_end_msg);
+        shell.ShellString(clust_end_msg+"\n").toEnd(output_path+'/logRunParms');
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
