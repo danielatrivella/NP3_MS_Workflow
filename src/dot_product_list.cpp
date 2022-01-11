@@ -40,6 +40,9 @@ std::vector<double> normDotProductShiftList(
     //     (mz_diff < 12 - bin_size || mz_diff > 100 + bin_size)) {
     //   mz_diff = 0.0;
     // }
+    if (abs(mz_diff) > 200) {
+      mz_diff = 0;
+    }
     similarities.push_back(normDotProductShift(peaks_A, ints_A,
                                                peaks_B[i],ints_B[i],
                                                bin_size, mz_diff));
