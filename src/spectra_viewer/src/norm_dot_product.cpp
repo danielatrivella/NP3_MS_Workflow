@@ -384,7 +384,7 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
       while (j < n_B && mzShift > 0.0) {
         idxB = idxB_nomatch[j];
 
-        double diff = peaks_A[idxA]-peaks_B[idxB];
+        const double diff = peaks_A[idxA]-peaks_B[idxB];
         if (diff <= 0) // pB > pA; increment pA
         {
           // we are looking for shifted peaks in A, not in B. Then we need pA > pB
@@ -405,8 +405,8 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
           //   j++;  // no match for idxB
           // }
         } else { // pA > pB;
-          diff = abs(diff - mzShift);  // pA -pB - mzShift
-          if (diff <= bin_size) // match with mzShift
+          const double diff2 = abs(diff - mzShift);  // pA -pB - mzShift
+          if (diff2 <= bin_size) // match with mzShift
           {
             sum_ints_A += ints_A[idxA] * ints_A[idxA];
             sum_ints_B += ints_B[idxB] * ints_B[idxB];
