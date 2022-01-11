@@ -181,45 +181,35 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
     idxB_nomatch.push_back(i);
   }
   n_B = idxB_nomatch.size();
-  
-  // Rcout << "nA " << n_A << "\n";
-  // Rcout << "nB " << n_B << "\n";
+  //Rcout << "nA " << n_A << "\n";
+  //Rcout << "nB " << n_B << "\n";
   
   // try to match the not matched masses with a mzShift, 
   // if it is greater than the bin size
   if (mzShift > bin_size) {
     for (i = 0; i < n_A && n_B > 0; i++) {
       idxA = idxA_nomatch[i];
+      //Rcout << "idxA" << idxA << "\n";
       int j = 0, matched = 0;
       
       // find a match on peaks_B for idxA
       while (j < n_B && mzShift > 0.0) {
         idxB = idxB_nomatch[j];
+        //Rcout << "idxB" << idxB << "\n";
         
-        double diff = peaks_A[idxA]-peaks_B[idxB];
+        const double diff = peaks_A[idxA]-peaks_B[idxB];
+        //Rcout << "peaks_A[idxA]" << peaks_A[idxA] << "\n";
+        //Rcout << "peaks_B[idxB]" << peaks_B[idxB]<< "\n";
         if (diff <= 0) // pB > pA; increment pA
         {
+          //Rcout << "no match" << "\n";
           // we are looking for shifted peaks in A, not in B. Then we need pA > pB
           break; // no match for idxA
-          // diff = abs(diff + mzShift);
-          // if (diff <= bin_size) // match with mzShift
-          // {
-          //   sum_ints_A += ints_A[idxA] * ints_A[idxA];
-          //   sum_ints_B += ints_B[idxB] * ints_B[idxB];
-          //   top_sum += ints_A[idxA] * ints_B[idxB];
-          //   idxB_nomatch.erase(idxB_nomatch.begin() + j);
-          //   n_B--;
-          //   matched = 1;
-          //   break;
-          // } else if (diff > mzShift) {
-          //   break; // no match for idxA
-          // } else {
-          //   j++;  // no match for idxB
-          // }
         } else { // pA > pB;
-          diff = abs(diff - mzShift);  // pA -pB - mzShift
-          if (diff <= bin_size) // match with mzShift
+          const double diff2 = abs(diff - mzShift);  // pA -pB - mzShift
+          if (diff2 <= bin_size) // match with mzShift
           {
+            //Rcout << "match!" << "\n";
             sum_ints_A += ints_A[idxA] * ints_A[idxA];
             sum_ints_B += ints_B[idxB] * ints_B[idxB];
             top_sum += ints_A[idxA] * ints_B[idxB];
@@ -228,16 +218,16 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
             matched = 1;
             break;
           } else if (diff > mzShift) {
+            //Rcout << "no match - increment pB" << "\n";
             j++;  // no match for idxB,  increment pB
           } else {  // diff < mzShift
+            //Rcout << "no match - increment pA" << "\n";
             break; // no match for idxA,  increment pA
           }
-          // } else  {
-          //   j++;  // no match for idxB,  increment pB
-          // }
         }
       }
       if (matched == 0) {
+        //Rcout << "no match sum ints A" << "\n";
         sum_ints_A += ints_A[idxA] * ints_A[idxA];
       }
     }
@@ -247,10 +237,13 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
   
   // TODO heuristica para ordenar e uar as menos intensas se n_B for menor que N_A, se nao nao precisa pq vai usar tudo de todo jeito
   // add the no matched peaks
+  //Rcout << "i" << i << "\n";
   for (;i < n_A; i++) {
+    //Rcout << "idxA_nomatch" << idxA_nomatch[i] << "\n";
     sum_ints_A += ints_A[idxA_nomatch[i]] * ints_A[idxA_nomatch[i]];
   }
   for (i = 0; i < n_B; i++) {
+    //Rcout << "idxB_nomatch" << idxB_nomatch[i] << "\n";
     sum_ints_B += ints_B[idxB_nomatch[i]] * ints_B[idxB_nomatch[i]];
   }
   
