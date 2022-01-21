@@ -117,7 +117,7 @@ double normDotProductTrim(std::vector<double> peaks_A, std::vector<double> ints_
 // Match exactly peak masses first and for the remaining try to match with shifted peak masses
 // mzShift: the exact mz difference beteween the precursor mass of the spectra A and B (not the absolute, because needs to garantee that spectra A have a bigger precursor mass); recommended range is between 12 and 100, outside this range set it to 0
 // [[Rcpp::export]]
-double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints_A,
+std::vector<double> normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints_A,
                       std::vector<double> peaks_B, std::vector<double> ints_B,
                       double bin_size, double mzShift) {
   // if precursor mass of A < precurosr mass of B -> mzShift is negative then shift spectra
@@ -128,7 +128,7 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
     mzShift = mzShift * -1;
   }
   
-  int n_A = peaks_A.size(), n_B = peaks_B.size(), i;
+  int n_A = peaks_A.size(), n_B = peaks_B.size(), i, matched_peaks = 0;
   
   //Rcout << n_A;
   std::vector<int> idxA_nomatch, idxB_nomatch;
@@ -149,6 +149,7 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
         sum_ints_A += ints_A[idxA] * ints_A[idxA];
         sum_ints_B += ints_B[idxB] * ints_B[idxB];
         top_sum += ints_A[idxA] * ints_B[idxB];
+        matched_peaks++;
         idxA++;
         idxB++;
       } else {
@@ -162,6 +163,7 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
         sum_ints_A += ints_A[idxA] * ints_A[idxA];
         sum_ints_B += ints_B[idxB] * ints_B[idxB];
         top_sum += ints_A[idxA] * ints_B[idxB];
+        matched_peaks++;
         idxA++;
         idxB++;
       } else {
@@ -213,6 +215,7 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
             sum_ints_A += ints_A[idxA] * ints_A[idxA];
             sum_ints_B += ints_B[idxB] * ints_B[idxB];
             top_sum += ints_A[idxA] * ints_B[idxB];
+            matched_peaks++;
             idxB_nomatch.erase(idxB_nomatch.begin() + j);
             n_B--;
             matched = 1;
@@ -246,13 +249,22 @@ double normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints
     //Rcout << "idxB_nomatch" << idxB_nomatch[i] << "\n";
     sum_ints_B += ints_B[idxB_nomatch[i]] * ints_B[idxB_nomatch[i]];
   }
-  
-  // The multipliers to maintain the norm would cancel each other here eliminating the need to compute it
+  // TODO return cosine and matched peaks
+  std::vector<double> out_cos_matches;
+  // if less than minimum number of matched peaks, set the similarity to 0.0 -> can remove false positive matches
+  // if (matched_peaks < min_matched_peaks) {
+  //   return 0.0;
+  // } else {
+  // The multipliers to maintain the norm would cancel each other here 
+  // eliminating the need to compute it
   if (top_sum > 0.0) {
-    return (top_sum / sqrt(sum_ints_A * sum_ints_B));
+    out_cos_matches.push_back(top_sum / sqrt(sum_ints_A * sum_ints_B));
   } else {
-    return top_sum;
+    out_cos_matches.push_back(top_sum);
   }
+  out_cos_matches.push_back(matched_peaks);
+  return out_cos_matches;
+  // }
 }
 
 
