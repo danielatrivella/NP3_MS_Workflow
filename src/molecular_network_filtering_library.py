@@ -11,10 +11,10 @@ def loading_network(filename):
     G_edges_list = G_edges_list.fillna('')
     G = nx.Graph()
     if 'annotation' in G_edges_list.columns:
-        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'annotation': x[3]})
+        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'num_matched_peaks': x[3], 'annotation': x[4]})
                           for x in G_edges_list.itertuples(index=False)])
     else:
-        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'annotation': ''})
+        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'num_matched_peaks': x[3], 'annotation': ''})
                           for x in G_edges_list.itertuples(index=False)])
     return G
 
@@ -55,6 +55,23 @@ def filter_top_k(G, top_k):
     for edge in edge_to_remove:
         G.remove_edge(edge[0], edge[1])
     print("After Top K Mutual", len(G.edges()))
+
+def filter_min_matched_peaks(G, min_matched):
+    print("Filter min_matched_peaks", min_matched, "fragment ions")
+    # Keeping only the edges that have at least min_matched peaks in common
+    print("Starting Number of Edges", len(G.edges()))
+    # Doing this for each pair,
+    # remove the edges that do have at least min_matched peaks
+    edge_to_remove = []
+    for edge in G.edges(data=True):
+        if edge[0] == edge[1]:  # do not remove selfloops
+            continue
+        num_matched_peaks = edge[2]["num_matched_peaks"]
+        if num_matched_peaks < min_matched:
+            edge_to_remove.append(edge)
+    for edge in edge_to_remove:
+        G.remove_edge(edge[0], edge[1])
+    print("After Min Matched Peak ", len(G.edges()))
 
 def filter_component(G, max_component_size):
     if max_component_size == 0:
@@ -108,12 +125,25 @@ def prune_component(G, component, cosine_delta=0.001):
             #print(edge)
             G.remove_edge(edge[0], edge[1])
 
+def add_selfloops(G):
+    # Get single nodes and create selfloops
+    container_edge = []
+    for iso in nx.isolates(G):
+        if G.degree(iso) == 0:
+            container_edge.append((iso, iso, {'cosine': 1, "num_matched_peaks": -1, "annotation": ""}))
+
+    print("Added {} selfloop edges".format(len(container_edge)))
+
+    # Insert all new edges
+    G.add_edges_from(container_edge)
+
 def output_graph(G, filename):
     output_file = open(filename, "w")
     #Outputting the graph
     component_index = 0
     #write header
-    output_file.write(",".join(["msclusterID_source","msclusterID_target","cosine","annotation", "componentIndex"]) + "\n")
+    output_file.write(",".join(["msclusterID_source","msclusterID_target","cosine",
+                                "num_matched_peaks", "annotation", "componentIndex"]) + "\n")
     #write edges
     for component in nx.connected_components(G):
         component_index += 1
@@ -126,19 +156,21 @@ def output_graph(G, filename):
                 output_list.append(str(edge[1]))
                 output_list.append(str(edge[0]))
             output_list.append(str(edge[2]["cosine"]))
+            output_list.append(str(edge[2]["num_matched_peaks"]))
             output_list.append(str(edge[2]["annotation"]))
             output_list.append(str(component_index))
             output_file.write(",".join(output_list) + "\n")
 
 if __name__ == "__main__":
     import sys, os
-    if len(sys.argv) > 3:
+    if len(sys.argv) > 4:
         # print(sys.argv)
         graph_file = sys.argv[1]
         top_k = int(sys.argv[2])
         max_component_size = int(sys.argv[3])
+        min_matched_peaks = int(sys.argv[4])
     else:
-      print("Error: Three arguments must be supplied to filter the NP3 similarity molecular networking:\n",
+      print("Error: Four arguments must be supplied to filter the NP3 spectral similarity molecular networking (SSMN):\n",
        " 1 - Path to the molecular networking of similarity file (.selfloop);\n",
        " 2 - net_top_k: the maximum number of neighbor nodes for one single node. The edge between two nodes are "
        "kept only if both nodes are within each other's TopK most similar nodes. For example, if this value is set "
@@ -146,28 +178,26 @@ if __name__ == "__main__":
        "networks (many nodes) much easier to visualize. ;\n",
        " 3 - maximum_component_size: the maximum number of nodes that all component of the network must have. The edges"
        "of the network will be removed using an increasing cosine threshold until each component has at most "
-       "maximum_component_size nodes.")
+       "maximum_component_size nodes;\n",
+       " 4 - minimum_matched_peaks: The minimum number of common fragment ions that two separate consensus MS/MS spectra "
+       "must share in order to be connected by an edge in the SSMN")
       sys.exit(1)
 
 
     G = loading_network(graph_file)
     total_nodes = set(G.nodes) # Keep original nodes list
+    # filter min number of matched peaks
+    filter_min_matched_peaks(G, min_matched_peaks)
+    # filter top k and component size
     filter_top_k(G, top_k)
     filter_component(G, max_component_size)
     outName = str(graph_file.replace('.selfloop', '')+
-                 '_topK_'+str(top_k)+'_maxComponent_'+str(max_component_size)+
-                 '.selfloop')
+                  '_minMatchedPeaks_'+str(min_matched_peaks)+
+                  '_topK_'+str(top_k)+'_maxComponent_'+str(max_component_size)+
+                  '.selfloop')
 
     # Get single nodes and create selfloops
-    container_edge = []
-    for iso in nx.isolates(G):
-        if G.degree(iso) == 0:
-            container_edge.append((iso, iso, {'cosine': 1, "annotation": ""}))
-    
-    print("Added {} selfloop edges".format(len(container_edge)))
-    
-    # Insert all new edges
-    G.add_edges_from(container_edge)
+    add_selfloops(G)
 
     # Export
     output_graph(G, outName)
