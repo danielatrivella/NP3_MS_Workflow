@@ -24,9 +24,15 @@ if (length(args) < 3) {
   
   path_sim_table <- file.path(output_path, "molecular_networking", "similarity_tables", 
                               paste0("similarity_table_", output_name, "_clean.csv"))
+  path_matches_table <- file.path(output_path, "molecular_networking", "similarity_tables", 
+                              paste0("similarity_table_matches_", output_name, "_clean.csv"))
   if (!file.exists(path_sim_table)) # get not clean data
+  {
     path_sim_table <- file.path(output_path, "molecular_networking", "similarity_tables", 
                                 paste0("similarity_table_", output_name, ".csv"))
+    path_matches_table <- file.path(output_path, "molecular_networking", "similarity_tables", 
+                                paste0("similarity_table_matches_", output_name, ".csv"))
+  }
   output_path <- file.path(output_path, "molecular_networking") 
   
   sim_min <- round(as.numeric(args[[2]]), 2)
@@ -49,7 +55,7 @@ script_path <- function() {
 }
 Rcpp::sourceCpp(file.path(script_path(), 'triangular_matrix_R.cpp'))
 
-build_mol_net_sim <- function(output_name, path_sim_table, 
+build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
                               output_path, sim_min, max_rows)
 {
   create_edges_sim <- function(i, written_rows)
@@ -65,8 +71,9 @@ build_mol_net_sim <- function(output_name, path_sim_table,
       return(res_edges)
     }
     
-    if (scans_order[[j+1]] != scans_pairsim[[i,1]])
-      stop("An inconsistency was found in the pairwise similary table. The provided pairwise similarity table must have a quadratic dimension NxN, where N is the number os compared spectra.")
+    if (scans_order[[j+1]] != scans_pairsim[[i,1]] || 
+        scans_order[[j+1]] != scans_pairmatches[[i,1]])
+      stop("An inconsistency was found in the pairwise similary table. The SCANS order did not match to what was expected. The provided pairwise similarity table must have a quadratic dimension NxN, where N is the number os compared spectra.")
     
     # read the scan similarity row
     scans_pairsim_i <- unlist(scans_pairsim[i,(j+2):n_scans], use.names = FALSE)
@@ -80,6 +87,7 @@ build_mol_net_sim <- function(output_name, path_sim_table,
       res_edges <-  data.frame(msclusterID_source = scans_order[[j+1]], 
                                msclusterID_target = scans_order[neighbors_sim + (j+1)], 
                                cosine = scans_pairsim_i[neighbors_sim], 
+                               num_matched_peaks = unlist(scans_pairmatches[i,c((j+2):n_scans)[neighbors_sim]], use.names = FALSE),
                                stringsAsFactors = FALSE)
     } else {
       # no edges
@@ -111,6 +119,8 @@ build_mol_net_sim <- function(output_name, path_sim_table,
             "Setting it to 100.", call. = FALSE)
     max_rows <- 100
   }
+  # set max_rows to 2/3 of the total to leave space for the matches tables
+  max_rows <- 2/3 * max_rows
   
   # read the scans present in the provided pairwise sim table - first row
   scans_order <- unlist(suppressMessages(readr::read_csv(path_sim_table, n_max = 1, col_names = FALSE)), 
@@ -124,7 +134,7 @@ build_mol_net_sim <- function(output_name, path_sim_table,
   single_scans_ann <- single_scans_sim <- scans_order[-1]
   
   # create the edge file for sim mn
-  write.table(t(c("msclusterID_source", "msclusterID_target", "cosine")),
+  write.table(t(c("msclusterID_source", "msclusterID_target", "cosine", "num_matched_peaks")),
               file = file.path(output_path, paste0(output_name,"_molecular_networking_sim_",sub("\\.", "", sim_min),".selfloop")), sep = ",",
               row.names = FALSE, col.names = FALSE)
   
@@ -144,6 +154,9 @@ build_mol_net_sim <- function(output_name, path_sim_table,
     scans_pairsim <- suppressMessages(readr::read_csv(path_sim_table, skip = (max_rows*(k-1)+1), 
                                                n_max = max_rows, 
                                             col_names = FALSE))
+    scans_pairmatches <- suppressMessages(readr::read_csv(path_matches_table, skip = (max_rows*(k-1)+1), 
+                                                      n_max = max_rows, 
+                                                      col_names = FALSE))
     
     ###############
     # similarity MN
@@ -151,7 +164,7 @@ build_mol_net_sim <- function(output_name, path_sim_table,
     edges_mn <- lapply(seq_len(nrow(scans_pairsim)),
                            create_edges_sim, max_rows*(k-1))
     edges_mn <- dplyr::bind_rows(edges_mn[!sapply(edges_mn, is.null)])
-    rm(scans_pairsim)
+    rm(scans_pairsim, scans_pairmatches)
     
     # remove the scans with a neighbor from the single list
     single_scans_sim <- single_scans_sim[!(single_scans_sim %in% 
@@ -169,6 +182,7 @@ build_mol_net_sim <- function(output_name, path_sim_table,
   edges_mn <- data.frame(msclusterID_source = single_scans_sim,
                          msclusterID_target = single_scans_sim,
                          cosine = rep(1.00, length(single_scans_sim)),
+                         num_matched_peaks = rep(-1, length(single_scans_sim)),
                          stringsAsFactors = FALSE)
   
   readr::write_csv(edges_mn, path = file.path(output_path, 
@@ -214,5 +228,5 @@ build_mol_net_sim <- function(output_name, path_sim_table,
   # print(nodes_degree)
 } 
 
-build_mol_net_sim(output_name, path_sim_table, output_path, 
-                  sim_min, max_rows)
+build_mol_net_sim(output_name, path_sim_table, path_matches_table,
+                  output_path, sim_min, max_rows)
