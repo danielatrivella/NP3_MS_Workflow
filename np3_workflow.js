@@ -699,7 +699,7 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
     return(output_msg)
 }
 
-function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_spectra, verbose)
+function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matched_peaks, max_chunk_spectra, verbose)
 {
     var step_name ='*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n';
     console.log(step_name);
@@ -722,12 +722,13 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, max_chunk_
         shell.ShellString(step_name +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(out_path+'/molecular_networking/logMnOutput');
     }
-    var step_name ='*** Filtering the SSMN - top k neighbours and max component size  *** \n';
+    var step_name ='*** Filtering the SSMN - minimum matched peaks, top k neighbours and max component size  *** \n';
     console.log(step_name);
     var mn_file = out_path+'/molecular_networking/'+basename(out_path)+"_molecular_networking_sim_"+
         sim_mn.toString().replace(".", "")+".selfloop";
 
-    resExec = shell.exec(python3()+' '+__dirname+'/src/molecular_network_filtering_library.py '+mn_file+' '+net_top_k+' '+max_component_size,
+    resExec = shell.exec(python3()+' '+__dirname+'/src/molecular_network_filtering_library.py '+mn_file+' '+net_top_k+' '+
+        max_component_size+ ' '+min_matched_peaks,
         {async:false, silent:(verbose <= 0)});
 
     if (resExec.code) {
@@ -1647,9 +1648,9 @@ program
             callComputeCorrelation(options.metadata, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
         }
-
+        options.min_matched_peaks=4;
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
-            options.max_component_size,
+            options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra,options.verbose);
 
         // if (options.metfrag_identification === "TRUE")
@@ -2366,8 +2367,9 @@ program
             }
 
             // create MNs
+            options.min_matched_peaks=4;
             callCreatMN(options.output_path, options.similarity_mn, options.net_top_k,
-                options.max_component_size,
+                options.max_component_size, options.min_matched_peaks,
                 options.max_chunk_spectra, options.verbose);
 
             // if (options.metfrag_identification === "TRUE")
@@ -2799,9 +2801,9 @@ program
         const start_mn = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 Molecular Networking Creation - Step 10 ***\n');
-
+        options.min_matched_peaks = 4;
         callCreatMN(options.output_path, options.similarity_mn,
-            options.net_top_k, options.max_component_size,
+            options.net_top_k, options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra, options.verbose);
 
         console.log("MN "+printTimeElapsed_bigint(start_mn, process.hrtime.bigint()));
