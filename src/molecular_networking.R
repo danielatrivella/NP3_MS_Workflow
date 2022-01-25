@@ -126,6 +126,8 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
   scans_order <- unlist(suppressMessages(readr::read_csv(path_sim_table, n_max = 1, col_names = FALSE)), 
                     use.names = FALSE)
   n_scans <- length(scans_order)
+  # store the number of peaks of each scans, extracted from the diagonal of the matches table
+  scans_num_peaks <- c()
   
   # number maximum of rows to read at a time
   max_rows <- min(n_scans, max_rows)
@@ -151,12 +153,15 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
   # divide the job in chunks of 10^4 lines
   for (k in seq_len(ceiling(n_scans/max_rows)))
   {
+    # read the pairwise tables of similarity and of matches
     scans_pairsim <- suppressMessages(readr::read_csv(path_sim_table, skip = (max_rows*(k-1)+1), 
                                                n_max = max_rows, 
                                             col_names = FALSE))
     scans_pairmatches <- suppressMessages(readr::read_csv(path_matches_table, skip = (max_rows*(k-1)+1), 
                                                       n_max = max_rows, 
                                                       col_names = FALSE))
+    # store the number of peaks of each scans
+    scans_num_peaks <- c(scans_num_peaks, diag(as.matrix(scans_pairmatches[,-1])))
     
     ###############
     # similarity MN
@@ -189,15 +194,18 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
                                               paste0(output_name,"_molecular_networking_sim_",
                                                      sub("\\.", "", sim_min), ".selfloop")),
                    append = TRUE, col_names = FALSE)
+  rm(edges_mn)
   
-  # add the annotations in the similarity table if the mn of annotations is present
+  # read the complete SSMN and add more information to the edges
+  edges_mn_sim <- suppressMessages(readr::read_csv(
+    file.path(output_path, paste0(output_name,"_molecular_networking_sim_",
+                                  sub("\\.", "", sim_min), ".selfloop"))))
+ 
+  # add the ionization variants annotations in the SSMN if the mn of annotations is present
   if (file.exists(file.path(output_path, 
                             paste0(output_name,
                                    "_molecular_networking_annotations.selfloop"))))
   {
-    edges_mn_sim <- suppressMessages(readr::read_csv(
-      file.path(output_path, paste0(output_name,"_molecular_networking_sim_",
-                                    sub("\\.", "", sim_min), ".selfloop"))))
     edges_mn_ann <- suppressMessages(readr::read_csv(
       file.path(output_path, paste0(output_name,
                                     "_molecular_networking_annotations.selfloop"))))
@@ -215,11 +223,16 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
         ""
       }
     }, edges_mn_ann)
-    
-    readr::write_csv(edges_mn_sim, path = file.path(output_path, 
-                                                paste0(output_name,"_molecular_networking_sim_",
-                                                       sub("\\.", "", sim_min), ".selfloop")))
   }
+  
+  # add the number of peaks information of the source and target nodes to their edges, 
+  # to be used when applying the min matched peaks parameter
+  edges_mn_sim$num_peaks_source <- scans_num_peaks[match(edges_mn_sim$msclusterID_source, scans_order[-1])]
+  edges_mn_sim$num_peaks_target <- scans_num_peaks[match(edges_mn_sim$msclusterID_target, scans_order[-1])]
+  
+  readr::write_csv(edges_mn_sim, path = file.path(output_path, 
+                                                  paste0(output_name,"_molecular_networking_sim_",
+                                                         sub("\\.", "", sim_min), ".selfloop")))
   
   cat("|\n")
   tf <- Sys.time()
