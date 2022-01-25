@@ -120,7 +120,7 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
     max_rows <- 100
   }
   # set max_rows to 2/3 of the total to leave space for the matches tables
-  max_rows <- 2/3 * max_rows
+  max_rows <- round(2/3 * max_rows)
   
   # read the scans present in the provided pairwise sim table - first row
   scans_order <- unlist(suppressMessages(readr::read_csv(path_sim_table, n_max = 1, col_names = FALSE)), 
