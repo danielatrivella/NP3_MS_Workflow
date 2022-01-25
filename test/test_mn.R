@@ -22,12 +22,13 @@ mn_tol <- 0.6
 top_k <- 15
 
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args) < 4) {
+if (length(args) < 5) {
   stop("Three arguments must be supplied to test the molecular networking consistency:\n", 
        " 1 - Path to the output folder where the molecular_networking directory is located;\n",
        " 2 - mn_tol;\n",
        " 3 - top_k;\n",
-       " 4 - max_component_size.",
+       " 4 - max_component_size;\n",
+       " 5 - min_matched_peaks.",
        call.=FALSE)
 } else {
   output_path <- args[[1]]
@@ -38,6 +39,7 @@ if (length(args) < 4) {
     mn_tol <- as.numeric(args[[2]])
     top_k <- as.numeric(args[[3]])
     max_component_size <- as.numeric(args[[4]])
+    min_matched_peaks <- as.numeric(args[[5]])
   }
 }
 
@@ -64,9 +66,12 @@ if (!is.na(mn_tol)) {
   scans_pairsim <- suppressMessages(read_csv(path_sim_table))
   scans_order <- c(-1, scans_pairsim[[1]])
   
-  path_sim_selfloops <- file.path(output_path, "molecular_networking", paste0(output_name,"_molecular_networking_sim_",
-                                                                              sub("\\.", "", mn_tol),"_topK_", top_k, "_maxComponent_",
-                                                                              max_component_size, ".selfloop"))
+  path_sim_selfloops <- file.path(output_path, "molecular_networking", 
+                                  paste0(output_name,"_molecular_networking_sim_",
+                                         sub("\\.", "", mn_tol),
+                                         "_minMatchedPeaks_",min_matched_peaks,
+                                         "_topK_", top_k, "_maxComponent_",
+                                         max_component_size, ".selfloop"))
   sim_selfloops <- suppressMessages(read_csv(path_sim_selfloops))
 }
 
@@ -95,10 +100,32 @@ if (!all(ms_area_count$msclusterID %in% ann_selfloops$msclusterID_source |
     !(ms_area_count$msclusterID %in% ann_selfloops$msclusterID_source |
         ms_area_count$msclusterID %in% ann_selfloops$msclusterID_target)])
 }
+
+# check if all edges of the filtered SSMN have more peaks in common than the 
+# min_matched_peaks, excluding selfloops (num_matched_peaks = -1)
+if (!is.na(mn_tol) && any(sim_selfloops$num_matched_peaks < min_matched_peaks & 
+        sim_selfloops$num_matched_peaks != -1)) {
+  cat("There are", sum(sim_selfloops$num_matched_peaks < min_matched_peaks & 
+                         sim_selfloops$num_matched_peaks != -1), 
+      "connections in the filtered SSMN with less common peaks than the minimum number",
+      "of matched peaks =", min_matched_peaks, 
+      ". Error in the SSMN filtering algorithm.")
+  n_inconsistency <- n_inconsistency + sum(sim_selfloops$num_matched_peaks < min_matched_peaks & 
+                                             sim_selfloops$num_matched_peaks != -1)
+}
+# check if all edges of the filtered SSMN have a cosine above the cutoff
+if (!is.na(mn_tol) && any(sim_selfloops$cosine < mn_tol)) {
+  cat("There are", sum(sim_selfloops$cosine < mn_tol), 
+      "connections in the filtered SSMN with a cosine value smaller than the",
+      "similarity cutoff =", mn_tol,".")
+  n_inconsistency <- n_inconsistency + sum(sim_selfloops$cosine < mn_tol)
+}
+
 # remove NA annotations of selfloops
 ann_selfloops <- ann_selfloops[!is.na(ann_selfloops$annotation),] 
 
-# check if similarity cutoff the fragments, isotopes and neutral loss annotations is being respected
+# check if the similarity cutoff for fragments, isotopes and neutral loss 
+# annotations is being respected
 if (any(grepl("fragment", ann_selfloops$annotation) & 
         ann_selfloops$cosine < 0.2))
 {
@@ -130,7 +157,7 @@ if (any(grepl("\\[M\\+H-(NH3|H2O|NH3-H2O)]\\+", ann_selfloops$annotation) &
                                               ann_selfloops$cosine < 0.2))
 }
 
-# check clean and annoations - count
+# check clean and annotations - count
 for (i in seq_len(nrow(ms_area_count))) {
   # print(i)
   cluster <- ms_area_count[i,]

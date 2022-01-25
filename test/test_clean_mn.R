@@ -34,7 +34,7 @@ RMSE <- function(x, y) {
 }
 
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args) < 7) {
+if (length(args) < 8) {
   stop("Six arguments must be supplied to test the clean and annotated counts and the molecular networking consistency:\n", 
        " 1 - Path to the output folder where the molecular_networking directory is located;\n",
        " 2 - sim_tol;\n",
@@ -42,7 +42,8 @@ if (length(args) < 7) {
        " 4 - rt_tol;\n",
        " 5 - mz_tol;\n",
        " 6 - top_k;\n",
-       " 7 - max_component_size.",
+       " 7 - max_component_size;\n",
+       " 8 - min_matched_peaks.",
        call.=FALSE)
 } else {
   output_path <- args[[1]]
@@ -52,6 +53,7 @@ if (length(args) < 7) {
   mz_tol <- as.numeric(args[[5]])
   top_k <- as.numeric(args[[6]])
   max_component_size <- as.numeric(args[[7]])
+  min_matched_peaks <- as.numeric(args[[8]])
 }
 # print(args)
 output_name <- basename(output_path)
@@ -74,10 +76,15 @@ if (!file.exists(path_sim_table))
        "' do not exists. Provide a valid path to where it is located.")
 }
 
-path_sim_selfloops <- file.path(output_path, "molecular_networking", paste0(output_name,"_molecular_networking_sim_",
-                                                                            sub("\\.", "", mn_tol),"_topK_", top_k, "_maxComponent_",
-                                                                            max_component_size, ".selfloop"))
-path_ann_selfloops <- file.path(output_path, "molecular_networking", paste0(output_name,"_molecular_networking_annotations.selfloop"))
+path_sim_selfloops <- file.path(output_path, "molecular_networking", 
+                                paste0(output_name,"_molecular_networking_sim_",
+                                        sub("\\.", "", mn_tol),
+                                       "_minMatchedPeaks_",min_matched_peaks,
+                                       "_topK_", top_k, "_maxComponent_",
+                                        max_component_size, ".selfloop"))
+path_ann_selfloops <- file.path(output_path, "molecular_networking", 
+                                paste0(output_name,
+                                       "_molecular_networking_annotations.selfloop"))
 
 scans_pairsim <- suppressMessages(read_csv(path_sim_table))
 scans_order <- c(-1, scans_pairsim[[1]])
@@ -107,6 +114,26 @@ if (!all(ms_area_count$msclusterID %in% ann_selfloops$msclusterID_source |
     !(ms_area_count$msclusterID %in% ann_selfloops$msclusterID_source |
         ms_area_count$msclusterID %in% ann_selfloops$msclusterID_target)])
 }
+# check if all edges of the filtered SSMN have more peaks in common than the 
+# min_matched_peaks, excluding selfloops (num_matched_peaks = -1)
+if (any(sim_selfloops$num_matched_peaks < min_matched_peaks & 
+        sim_selfloops$num_matched_peaks != -1)) {
+  cat("There are", sum(sim_selfloops$num_matched_peaks < min_matched_peaks & 
+                         sim_selfloops$num_matched_peaks != -1), 
+      "connections in the filtered SSMN with less common peaks than the minimum number",
+      "of matched peaks =", min_matched_peaks, 
+      ". Error in the SSMN filtering algorithm.")
+  n_inconsistency <- n_inconsistency + sum(sim_selfloops$num_matched_peaks < min_matched_peaks & 
+                                             sim_selfloops$num_matched_peaks != -1)
+}
+# check if all edges of the filtered SSMN have a cosine above the cutoff
+if (any(sim_selfloops$cosine < mn_tol)) {
+  cat("There are", sum(sim_selfloops$cosine < mn_tol), 
+      "connections in the filtered SSMN with a cosine value smaller than the",
+      "similarity cutoff =", mn_tol,".")
+  n_inconsistency <- n_inconsistency + sum(sim_selfloops$cosine < mn_tol1)
+}
+
 # remove NA annotations of selfloops
 ann_selfloops <- ann_selfloops[!is.na(ann_selfloops$annotation),] 
 

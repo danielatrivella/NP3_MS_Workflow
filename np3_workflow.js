@@ -1093,7 +1093,8 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
     return res_all;
 }
 
-function checkCleanMNConsistency(output_path, sim_tol, mn_tol, rt_tol, mz_tol, top_k, max_component_size)
+function checkCleanMNConsistency(output_path, sim_tol, mn_tol, rt_tol, mz_tol, top_k, max_component_size,
+                                 min_matched_peaks)
 {
     output_name = basename(output_path);
     var res_all = "*** checkCleanMNConsistency of job "+output_name+" ***\n\n";
@@ -1101,7 +1102,7 @@ function checkCleanMNConsistency(output_path, sim_tol, mn_tol, rt_tol, mz_tol, t
     // check molecular networking consistency
     console.log('\n*** Testing the consistency of the clean and annotated counts and the molecular networking for the job '+output_name+' ***\n');
     resExec = shell.exec('Rscript '+__dirname+'/test/test_clean_mn.R ' + output_path+' '+sim_tol+' '+ mn_tol+' '+ rt_tol+' '+ mz_tol+' '+
-        top_k+' '+max_component_size, {async: false, silent: false});
+        top_k+' '+max_component_size+' '+min_matched_peaks, {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
     }
@@ -1111,14 +1112,15 @@ function checkCleanMNConsistency(output_path, sim_tol, mn_tol, rt_tol, mz_tol, t
     return res_all;
 }
 
-function checkMNConsistency(output_path, mn_tol, top_k, max_component_size)
+function checkMNConsistency(output_path, mn_tol, top_k, max_component_size, min_matched_peaks)
 {
     output_name = basename(output_path);
     var res_all = "*** checkMNConsistency of job "+output_name+" ***\n\n";
 
     // check molecular networking consistency
     console.log('\n*** Testing the consistency of the molecular networking for the job '+output_name+' ***\n');
-    resExec = shell.exec('Rscript '+__dirname+'/test/test_mn.R ' + output_path+' '+mn_tol+' '+top_k+' '+max_component_size,
+    resExec = shell.exec('Rscript '+__dirname+'/test/test_mn.R ' + output_path+' '+mn_tol+' '+top_k+' '+
+        max_component_size+' '+min_matched_peaks,
         {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
@@ -1688,7 +1690,8 @@ program
             console.log("\n*** TESTING ***\n");
 
             checkCleanMNConsistency(output_path,options.similarity, options.similarity_mn,
-                options.rt_tolerance[1], options.mz_tolerance, options.net_top_k, options.max_component_size);
+                options.rt_tolerance[1], options.mz_tolerance, options.net_top_k,
+                options.max_component_size, options.min_matched_peaks);
 
             checkCountsConsistency(output_path,
                 options.raw_data_path+'/'+options.processed_data_name,
@@ -2390,7 +2393,8 @@ program
             console.log("\n*** TESTING ***\n\n");
 
             checkCleanMNConsistency(options.output_path,options.similarity, options.similarity_mn,
-                options.rt_tolerance[1], options.mz_tolerance, options.net_top_k, options.max_component_size);
+                options.rt_tolerance[1], options.mz_tolerance, options.net_top_k,
+                options.max_component_size, options.min_matched_peaks);
             // use the default min peaks
             checkCountsConsistency(options.output_path,options.processed_data_dir,
                 options.metadata, 5, false, true, false);
@@ -2606,7 +2610,8 @@ program
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n");
 
-            checkMNConsistency(options.output_path, undefined, undefined, undefined);
+            checkMNConsistency(options.output_path, undefined, undefined,
+                undefined, undefined);
         }
     })
     .on('--help', function() {
@@ -2812,7 +2817,7 @@ program
             console.log("\n*** TESTING ***\n\n");
 
             checkMNConsistency(options.output_path, options.similarity_mn, options.net_top_k,
-                options.max_component_size);
+                options.max_component_size, options.min_matched_peaks);
         }
     })
     .on('--help', function() {
