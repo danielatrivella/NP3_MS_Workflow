@@ -10,12 +10,21 @@ def loading_network(filename):
     G_edges_list = pd.read_csv(filename)
     G_edges_list = G_edges_list.fillna('')
     G = nx.Graph()
+    # read edges file and information used in the filtering
     if 'annotation' in G_edges_list.columns:
-        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'num_matched_peaks': x[3], 'annotation': x[4]})
+        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'num_matched_peaks': x[3], 'annotation': x[4],
+                                        'num_peaks_source': x[5], 'num_peaks_target': x[6]})
                           for x in G_edges_list.itertuples(index=False)])
     else:
-        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'num_matched_peaks': x[3], 'annotation': ''})
+        G.add_edges_from([(x[0], x[1], {'cosine': round(x[2], 3), 'num_matched_peaks': x[3], 'annotation': '',
+                                        'num_peaks_source': x[4], 'num_peaks_target': x[5]})
                           for x in G_edges_list.itertuples(index=False)])
+
+    nx.set_node_attributes(G, G_edges_list[['msclusterID_source', 'num_peaks_source']].drop_duplicates().set_index(
+        'msclusterID_source').to_dict()['num_peaks_source'], "num_peaks")
+    nx.set_node_attributes(G, G_edges_list[['msclusterID_target', 'num_peaks_target']].drop_duplicates().set_index(
+        'msclusterID_target').to_dict()['num_peaks_target'], "num_peaks")
+
     return G
 
 def nodes_topk_cutoff(G, top_k):
@@ -67,8 +76,14 @@ def filter_min_matched_peaks(G, min_matched):
         if edge[0] == edge[1]:  # do not remove selfloops
             continue
         num_matched_peaks = edge[2]["num_matched_peaks"]
+        min_num_peaks = min([G.nodes[edge[0]]["num_peaks"], G.nodes[edge[1]]["num_peaks"]])
+        # use the minimum number of peaks when applying this filter to prevent applying it for spectra with few peaks <= min_matched
+        # in this case only remove the edge if it has only one match, otherwise keep it
         if num_matched_peaks < min_matched:
-            edge_to_remove.append(edge)
+            if min_num_peaks > min_matched:
+                edge_to_remove.append(edge)
+            elif num_matched_peaks < 2:
+                edge_to_remove.append(edge)
     for edge in edge_to_remove:
         G.remove_edge(edge[0], edge[1])
     print("After Min Matched Peak ", len(G.edges()))
@@ -130,7 +145,9 @@ def add_selfloops(G):
     container_edge = []
     for iso in nx.isolates(G):
         if G.degree(iso) == 0:
-            container_edge.append((iso, iso, {'cosine': 1, "num_matched_peaks": -1, "annotation": ""}))
+            container_edge.append((iso, iso, {'cosine': 1, "num_matched_peaks": -1, "annotation": "",
+                                              "num_peaks_source": G.nodes[iso]["num_peaks"],
+                                              "num_peaks_target": G.nodes[iso]["num_peaks"]}))
 
     print("Added {} selfloop edges".format(len(container_edge)))
 
@@ -143,7 +160,8 @@ def output_graph(G, filename):
     component_index = 0
     #write header
     output_file.write(",".join(["msclusterID_source","msclusterID_target","cosine",
-                                "num_matched_peaks", "annotation", "componentIndex"]) + "\n")
+                                "num_matched_peaks", "annotation", "num_peaks_source", "num_peaks_target",
+                                "componentIndex"]) + "\n")
     #write edges
     for component in nx.connected_components(G):
         component_index += 1
@@ -158,6 +176,8 @@ def output_graph(G, filename):
             output_list.append(str(edge[2]["cosine"]))
             output_list.append(str(edge[2]["num_matched_peaks"]))
             output_list.append(str(edge[2]["annotation"]))
+            output_list.append(str(edge[2]["num_peaks_source"]))
+            output_list.append(str(edge[2]["num_peaks_target"]))
             output_list.append(str(component_index))
             output_file.write(",".join(output_list) + "\n")
 
