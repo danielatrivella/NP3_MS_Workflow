@@ -102,9 +102,16 @@ if (!all(ms_area_count$msclusterID %in% ann_selfloops$msclusterID_source |
 }
 
 # check if all edges of the filtered SSMN have more peaks in common than the 
-# min_matched_peaks, excluding selfloops (num_matched_peaks = -1)
+# min_matched_peaks, excluding selfloops (num_matched_peaks = -1) and edges
+# between spectra with few peaks < min_matched_peaks, which should have at least 
+# more than 2 matched peaks
 if (!is.na(mn_tol) && any(sim_selfloops$num_matched_peaks < min_matched_peaks & 
-        sim_selfloops$num_matched_peaks != -1)) {
+                          sim_selfloops$num_matched_peaks != -1 & 
+                          ((sim_selfloops$num_peaks_source > min_matched_peaks & 
+                            sim_selfloops$num_peaks_target > min_matched_peaks) | 
+                           (sim_selfloops$num_matched_peaks < 2 & 
+                            (sim_selfloops$num_peaks_source < min_matched_peaks | 
+                             sim_selfloops$num_peaks_target < min_matched_peaks))))) {
   cat("There are", sum(sim_selfloops$num_matched_peaks < min_matched_peaks & 
                          sim_selfloops$num_matched_peaks != -1), 
       "connections in the filtered SSMN with less common peaks than the minimum number",
