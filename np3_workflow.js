@@ -1175,7 +1175,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.1.2',  '--version')
+    .version('1.1.3',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -2788,9 +2788,7 @@ program
 program
     .command('mn')
     .description('Step 10: This command runs the creation of a molecular network of similarity based on the pairwise ' +
-        'spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to ' +
-        'limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the ' +
-        'size of the components to a maximum number of nodes. The final filtered network contains components that ' +
+        'spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched pekas, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network contains components that ' +
         'represent the most analogous spectra, possible connecting spectra from similar chemical classes.\n\n')
     .option('-o, --output_path <path>', 'path to the output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the molecular_networking folder and inside it the similarity_tables folder. The job name will be extracted from here')
@@ -3319,7 +3317,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
                 '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
                 '-y '+__dirname+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample -b 500 -v 13 ' +
-                '-t 2,5 --bflag_cutoff 3',
+                '-t 2,5 --bflag_cutoff 3 --max_shift 500 --min_matched_peaks 10',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -3376,7 +3374,7 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' mn ' +
                 '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
-                '-w 0.9 -k 5 -b 10 -v 13',
+                '-w 0.9 -k 5 -b 10 -v 13 --min_matched_peaks 1',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.toLocaleUpperCase().includes("ERROR")) {
                 // in case of error show all the emmited msgs
