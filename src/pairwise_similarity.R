@@ -4,12 +4,13 @@ scale_factor <- 0.5
 trim_mz <- TRUE
 parallel_cores <- 1
 join_isotopic_peaks <- 1 # always on
+max_shift <- 200 # maximum mass difference allowed to search for shifted m/z fragmented ion in the cosine computation
 # ion_mode <- "+"
 # e_mass <- 1.00783
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args) < 6) {
+if (length(args) < 7) {
   stop("Seven arguments must be supplied to create the pairwise similarity table:\n",
        " 1 - Job name;\n",
        " 2 - Path to the MGF file with the spectra to be compared pairwise or directory where the mgfs from the clustering job exists;\n",
@@ -17,7 +18,8 @@ if (length(args) < 6) {
        " 4 - The bin size to consider two fragmented peaks m/z's the same;\n",
        " 5 - The spectra fragmented peaks scaling method: 0 - ln, 1 - no scale and x > 0 power scale;\n",
        " 6 - A logical indicating if the spectra should be trimmed by the precursor mass;\n",
-       " 7 - The number of cores to use for parallel processing. At least 2 are needed for parallellization. If 1 disable parallel processing.\n",
+       " 7 - The maximum difference allowed between precursor m/zs to search for shifted m/z fragments in the cosine computation (max_shift);\n",
+       " 8 - (optional) The number of cores to use for parallel processing. At least 2 are needed for parallellization. If 1 disable parallel processing (default).\n",
        call.=FALSE)
 } else {
   data_name <- args[[1]]
@@ -26,11 +28,12 @@ if (length(args) < 6) {
   bin_size <- as.numeric(args[[4]])
   scale_factor <- as.numeric(args[[5]])
   trim_mz <- as.logical(args[[6]])
+  max_shift <- as.numeric(args[[7]])
   # ion_mode <- as.numeric(args[[7]])
   
-  if (length(args) == 7)
+  if (length(args) == 8)
   {
-    parallel_cores <- as.numeric(args[[7]])
+    parallel_cores <- as.numeric(args[[8]])
     if (parallel_cores < 1) {
       warning("Invalid parallel_cores value (", parallel_cores, 
               "). The number of cores to be used for parallel processing must be at least 2 ",
@@ -72,7 +75,8 @@ compareSpectraNormDotProductRow <- function(i)
                                                   peaks_B = ms2_sample$MZS[(i+1):n_scans],
                                                   ints_B = ms2_sample$INTS[(i+1):n_scans], 
                                                   mzs_B = ms2_sample$PREC_MZ[(i+1):n_scans],
-                                                  bin_size = bin_size)
+                                                  bin_size = bin_size,
+                                                  max_shift = max_shift)
   list(c(rep(0, i-1), 1, round(np3_cos_matches_list[[1]], 3)),
        c(rep(0, i-1), length(ms2_sample$MZS[[i]]), round(np3_cos_matches_list[[2]])))
 }
@@ -85,7 +89,8 @@ compareSpectraNormDotProductSample <- function(i, peaks_sample_B, ints_sample_B,
                                                   peaks_B = peaks_sample_B,
                                                   ints_B = ints_sample_B, 
                                                   mzs_B = mzs_sample_B,
-                                                  bin_size = bin_size)
+                                                  bin_size = bin_size,
+                                                  max_shift = max_shift)
   list(round(np3_cos_matches_list[[1]], 3),
        round(np3_cos_matches_list[[2]]))
 }
@@ -130,6 +135,11 @@ if (trim_mz) {
 } else {
   trim_mz <- -1
 }
+if (!is.numeric(max_shift) || max_shift < 0)
+  stop("Invalid max_shift parameter value (", max_shift ,
+       "). The maximum allowed shift between precursor m/z parameter must be a non negative numeric value. ",
+       "Execution aborted.")
+
 if (!is.numeric(bin_size) || bin_size < 0)
   stop("Invalid bin_size parameter value (", bin_size ,
        "). The bin size parameter must be a non negative numeric value. ",
@@ -187,7 +197,7 @@ for (i in seq_along(path_mgf)) {
     cl <- makeCluster(parallel_cores)
     script_path_ <- script_path()
     clusterExport(cl, c("ms2_sample", "n_scans","script_path_",
-                        "bin_size"), envir=environment())
+                        "bin_size", "max_shift"), envir=environment())
     
     clusterEvalQ(cl, {
       invisible(Rcpp::sourceCpp(file.path(script_path_, 
@@ -317,7 +327,7 @@ for (i in seq_along(path_mgf)) {
   } else {
     # add heading i = 1 and row.names
     write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
-                           ";bin_size:", bin_size, ";trim_mz:", trim_mz), scans_num)),
+                           ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
                   file = file.path(output_path, paste0("similarity_table_", data_name, ".csv")), 
                   sep = ",", row.names = FALSE, col.names = FALSE)
     write.table(t(sim_table_tmp), file.path(output_path, 
@@ -344,7 +354,7 @@ for (i in seq_along(path_mgf)) {
   } else {
     # add heading i = 1 and row.names
     write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
-                           ";bin_size:", bin_size, ";trim_mz:", trim_mz), scans_num)),
+                           ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
                 file = file.path(output_path, paste0("similarity_table_matches_", data_name, ".csv")), 
                 sep = ",", row.names = FALSE, col.names = FALSE)
     write.table(t(sim_table_matches_tmp), file.path(output_path, 
