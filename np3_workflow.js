@@ -593,7 +593,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
         var out_pairComp = callPairwiseComparision(output_name+'_clean',
             output_path+'/molecular_networking/similarity_tables/',
             output_path+'/mgf/'+output_name+'_clean.mgf',
-             bin_size, parms.scale_factor, parms.trim_mz,
+             bin_size, parms.scale_factor, parms.trim_mz, parms.max_shift,
             parms.parallel_cores,parms.verbose);
         shell.ShellString(out_pairComp).toEnd(clean_output_path+"logCleanOutput");
 
@@ -669,14 +669,14 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     return(resExec.code);
 }
 
-function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, cores_parallel,
+function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, max_shift, cores_parallel,
                                  verbose)
 {
     const step_name = '*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n';
     console.log(step_name);
     const start_comp = process.hrtime.bigint();
     var resExec = shell.exec('Rscript '+__dirname+'/src/pairwise_similarity.R '+out_name+' '+mgf_path+' '+out_path+' '+
-        bin_size+' '+scaling_method+' '+trim_mz+' '+cores_parallel, {async:false, silent:(verbose <= 0)});
+        bin_size+' '+scaling_method+' '+trim_mz+' '+max_shift+' '+cores_parallel, {async:false, silent:(verbose <= 0)});
 
     var output_msg = '';
     if (resExec.code) {
@@ -1458,6 +1458,17 @@ program
         'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
         'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
         'spectra acquired on qTOFs.', toupper, "TRUE")
+    .option('--max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search of ' +
+        'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
+        'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
+        'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
+    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
+        'share to be connected by an edge in the filtered SSMN. Connections ' +
+        'between spectra with less common peaks than this cutoff will be ' +
+        'removed when filtering the SSMN. Except for when one of the spectra ' +
+        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
+        'value, in this case the spectra must share at least 2 peaks. ' +
+        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed\n\t\t\t\t\t" +
         "in a chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased. To be used in Steps 5, 7 and 10",parseDecimal,3000)
@@ -1576,7 +1587,7 @@ program
         // call pairwise comparison for the clustered spectra
         var out_clustered_spec_comp = callPairwiseComparision(options.output_name, output_path + "/molecular_networking/similarity_tables",
             output_path+"/mgf/", options.fragment_tolerance,
-            options.scale_factor, options.trim_mz, options.parallel_cores,
+            options.scale_factor, options.trim_mz, options.max_shift,options.parallel_cores,
             options.verbose);
 
         // remove mass dissipation in the clustering from area and spectra count
@@ -1650,7 +1661,6 @@ program
             callComputeCorrelation(options.metadata, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
         }
-        options.min_matched_peaks=4;
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
             options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra,options.verbose);
@@ -2267,6 +2277,17 @@ program
         'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
         'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
         'spectra acquired on qTOFs.',toupper,"TRUE")
+    .option('--max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search of ' +
+        'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
+        'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
+        'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
+    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
+        'share to be connected by an edge in the filtered SSMN. Connections ' +
+        'between spectra with less common peaks than this cutoff will be ' +
+        'removed when filtering the SSMN. Except for when one of the spectra ' +
+        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
+        'value, in this case the spectra must share at least 2 peaks. ' +
+        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
     .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing. ' +
         'x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1', parseDecimal, 2)
     .option('-e, --method [name]', 'a character string indicating which correlation coefficient is to be computed. One ' +
@@ -2313,7 +2334,7 @@ program
             // call pairwise comparison, create folder
             out_clustered_spec_comp = callPairwiseComparision(basename(options.output_path), options.output_path + "/molecular_networking/similarity_tables",
                 options.output_path + "/mgf/", options.fragment_tolerance,
-                options.scale_factor, options.trim_mz, options.parallel_cores,
+                options.scale_factor, options.trim_mz, options.max_shift, options.parallel_cores,
                 options.verbose);
         }
 
@@ -2370,7 +2391,6 @@ program
             }
 
             // create MNs
-            options.min_matched_peaks=4;
             callCreatMN(options.output_path, options.similarity_mn, options.net_top_k,
                 options.max_component_size, options.min_matched_peaks,
                 options.max_chunk_spectra, options.verbose);
@@ -2789,6 +2809,13 @@ program
         'threshold until each network component has at most X nodes. \n\t\t\t\t\t' +
         'Keeping this value low makes very large networks (many nodes \n\t\t\t\t\t' +
         'and edges) much easier to visualize.', 200)
+    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
+        'share to be connected by an edge in the filtered SSMN. Connections ' +
+        'between spectra with less common peaks than this cutoff will be ' +
+        'removed when filtering the SSMN. Except for when one of the spectra ' +
+        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
+        'value, in this case the spectra must share at least 2 peaks. ' +
+        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed in " +
         "a chunk at the same time. In case of memory issues this value should be decreased",parseDecimal,3000)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information', parseDecimal, 0)
@@ -2806,7 +2833,6 @@ program
         const start_mn = process.hrtime.bigint();
         // run workflow
         console.log('*** NP3 Molecular Networking Creation - Step 10 ***\n');
-        options.min_matched_peaks = 4;
         callCreatMN(options.output_path, options.similarity_mn,
             options.net_top_k, options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra, options.verbose);
