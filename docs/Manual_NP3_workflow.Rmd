@@ -1,12 +1,12 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis 
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.1.3
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br]
   - Luiz F. G. Alves^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - luiz.alves@lnbio.cnpem.br]
   - Daniela B. B. Trivella^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
   - Guilherme P. Telles^[Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - gpt@ic.unicamp.br]
-date: October, 2021
+date: January, 2022 
 output:
   pdf_document: default
   html_document:
@@ -386,6 +386,8 @@ Options for the command *run*:
 - *\-\-noise_cutoff* [x]            :      A positive numeric value to scale the interquartile range (IQR) of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt value below this distribution median plus IQR*noise_cutoff after the clean Step 5. Or FALSE to disable it. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile) of the distribution. When no blank sample is present in the metadata, the full distribution is used. This cutoff will affect the spectra with with a low basePeakInt value that probably are noise features.  If the clustering Step 3 results in more than 25000 spectra, the noise cutoff will be applied before the clean Step 5 to prevent a long processing time (default: "FALSE")
 - *\-u, \-\-rules* [x]              :   path to the CSV file following the NP3 rules table format with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. To be used by the annotation algorithm (Step 7) (default: "rules/np3_modifications.csv")
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
+- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
+- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased. To be used in Steps 6, 7 and 10 (default: 3000)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (Step 9) (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process (Step 5) (default: "FALSE") -->
@@ -758,6 +760,8 @@ Options for the command *clean*:
                       Keeping this value low makes very large networks (many nodes 
                       and edges) much easier to visualize. (default: 200)
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
+- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
+- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-l, \-\-parallel_cores* [x]       :   the number of cores to be used for parallel processing (Step 5). x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1 (default: 2)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process. (default: "FALSE") -->
@@ -802,9 +806,9 @@ The clustering (Step 3) identify multiple spectra of the same ion and replace th
  
 The clean step is a second clustering strategy that was developed to reduce the remaining redundancies from the clustering result, and to overcome the fragmented clusters limitation. It is an optimal clustering with greedy heuristics that was implemented in R code with auxiliary compiled functions (dlls) in C++. 
  
-The *clean* step starts by performing the pairwise comparisons of the consensus spectra. These comparisons result in a symmetric and quadratic matrix (n + 1)x(n + 1), where n is the number of consensus spectra from Step 3 and the remaining 1 row and column are the msclusterIDs (clusters IDs resulting from the clustering step). The upper triangular part of these matrix contains the similarity values between all consensus spectra and its lower triangular part is empty to reduce repeating the same computations. These similarity values are computed using a shifted version of the cosine function [8,9], which we call $NP^{3}$ shifted cosine function. 
+The *clean* step starts by performing the pairwise comparisons of the consensus spectra. These comparisons result in two symmetric and quadratic matrix (n + 1)x(n + 1), where n is the number of consensus spectra from Step 3 and the remaining 1 row and column are the msclusterIDs (clusters IDs resulting from the clustering step). The upper triangular part of these matrix contains in one the similarity values and in the other the number of matched peaks between all consensus spectra. And their lower triangular part is empty to reduce repeating the same computations. These similarity values are computed using a shifted version of the cosine function [8,9], which we call $NP^{3}$ shifted cosine function. 
  
-The $NP^{3}$ shifted cosine algorithm first matches the same m/z's from fragmented peaks list of the spectra being compared within a mass tolerance; then, for the remaining not matched fragmented peaks of the spectra it adds a shift equals to the difference of the spectra precursor m/z in all fragmented peaks' m/z of the spectrum with the smaller precursor m/z. And finally, it tries to match again the remaining peaks of the spectra within the mass tolerance. The shift is used to overcome a small motif difference that could be present in the ions structure, it will produce a shift in some fragmented peaks m/z's equal to the motif mass. Only motifs greater than the m/z tolerance are considered, a precursor m/z difference outside this value will be set to zero, and then the shift won't be applied. Using the precursor m/z difference in the cosine computation is a heuristic that can increase the similarity score of analogue structures and possible ionization variants (e.g., different adducts, neutral losses, etc). This implementation was inspired by the modified cosine implemented in the GNPS workflow [8].
+The $NP^{3}$ shifted cosine algorithm first matches the same m/z's from fragmented peaks list of the spectra being compared within a mass tolerance; then, for the remaining not matched fragmented peaks of the spectra it adds a shift equals to the difference of the spectra precursor m/z in all fragmented peaks' m/z of the spectrum with the smaller precursor m/z. And finally, it tries to match again the remaining peaks of the spectra within the mass tolerance. The shift is used to overcome a small motif difference that could be present in the ions structure, it will produce a shift in some fragmented peaks m/z's equal to the motif mass. Only motifs greater than the m/z tolerance and smaller than the max_shift parameter value are considered, a precursor m/z difference outside this range will be set to zero, and then, the shift won't be applied. Using the precursor m/z difference in the cosine computation is a heuristic that can increase the similarity score of analogue structures and possible ionization variants (e.g., different adducts, neutral losses, etc). This implementation was inspired by the modified cosine implemented in the GNPS workflow [8].
  
 Next, the *clean* step use the computed similarity table of the resulting consensus spectra to reduce the clustering count tables. It works in the following steps: 
  
@@ -1138,7 +1142,7 @@ The correlation score will produce NA values with warnings if the counts of the 
  
 ## 4.10. Step 10: Command *mn* (Molecular Networking)
  
-Creates the molecular network of similarity based on the pairwise spectra similarity value above a given cut-off. Then, a filter is applied in this network to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network is organized into components of similar spectra, representing chemical and structurally related compounds.
+Creates the molecular network of similarity based on the pairwise spectra similarity value above a given cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched pekas, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network is organized into components of similar spectra, representing chemical and structurally related compounds.
  
 The nodes of the molecular network of similarity are the collection of consensus spectra and the links of this network connects the spectra that have a similarity value above the *similarity_mn* cutoff and that passed the filters. The annotations from Step 7 are also included in the molecular network of similarity as labels when present.
  
@@ -1153,6 +1157,7 @@ Options for the command *mn*:
                       threshold until each network component has at most X nodes. 
                       Keeping this value low makes very large networks (many nodes 
                       and edges) much easier to visualize. (default: 200)
+- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-b, \-\-max_chunk_spectra* [name]           : Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000)
 - *\-v, \-\-verbose* [x]             : for values X\>0 show the scripts output information. (default: 0)
 - *\-h, \-\-help*                    : output usage information
@@ -1177,20 +1182,23 @@ Where the 'output_name' is extracted from the 'output_path';
  
 ##### 4.10.3. *mn* Details
  
-The molecular networks are a great way to visualize the table counts results. The .selfloops files can be opened in graph visualization tools, such as Cytoscape [19] and Gephi [20]. Then the count tables can also be loaded to the networks to add the other information present in these tables to each node, by matching their msclusterIDs.
+The molecular networks are a great way to visualize the table counts results. The resulting .selfloops edges files can be opened in graph visualization tools, such as Cytoscape [19] and Gephi [20]. Then the count tables can also be loaded to the networks to add the other nodes information present in these tables, by matching their msclusterIDs.
  
 The creation of the molecular network of similarity is based on the pairwise similarity comparison of the collection of consensus spectra using the shifted cosine similarity score (see Step 5 details), ranging from 0 (totally dissimilar) to 1 (completely identical). The nodes of the molecular networks of similarity are the collection of consensus spectra and the links of these networks connect two consensus spectra that have a similarity score greater or equal to the provided cosine similarity cut-off (default to 0.6 is used). 
  
-The molecular network of similarity is further filtered by limiting the number of links of each node to the top K most similar neighbors (default K equals 15 was used) and pruning the remaining links with an increasing cosine similarity cut-off to limit the components sizes to a provided maximum number of nodes (default of 200 nodes is used). These filtering was based in the GNPS molecular networking analysis code [8].
+The molecular network of similarity is further filtered by removing the links between spectra with a number of commom peaks that do not respect the minimum number of matched peaks parameter cut-off (default to at least 6 matched peaks), then limiting the number of links of each node to the top K most similar neighbors (default K equals 15 was used) and pruning the remaining links with an increasing cosine similarity cut-off to limit the components sizes to a provided maximum number of nodes (default of 200 nodes is used). These filtering was based in the GNPS molecular networking analysis code [8].
  
-If the resulting molecular network of similarity is too dense (many nodes and links forming a giant single component), the user can try to restrict the filters with a bigger similarity cutoff (similarity_mn parameter) and a smaller top K neighbors and component size cut-offs (net_top_k and max_component_size parameters).
+If the resulting molecular network of similarity is too dense (many nodes and links forming a giant single component), the user can try to restrict the filters with a bigger similarity and minimum number of common peaks cut-offs (similarity_mn and min_matched_peaks parameters) and a smaller top K neighbors and component size cut-offs (net_top_k and max_component_size parameters).
  
 The molecular networks of similarity .selfloop files have the following columns, comma separated:
  
-- "msclusterID_source" : the number of the msclusterID of the source node
-- "msclusterID_target" : the number of the msclusterID of the target node
+- "msclusterID_source" : the number of the msclusterID of the source node spectrum
+- "msclusterID_target" : the number of the msclusterID of the target node spectrum
 - "cosine" : the similarity value between the source and the target node
+- "num_matched_peaks": the number of common peaks between the source and target node spectra
 - "annotation" : the existing annotation between the source and the target node (this can be missing for some node pairs)
+- "num_peaks_source": the number of fragment peaks in the source node spectrum after normalization and cleaning
+- "num_peaks_target": the number of fragment peaks in the target node spectrum after normalization and cleaning
 - "componentIndex" : the component index of the source and target nodes
  
 The molecular network of similarity is an undirected graph. The source and the target nodes could be shifted, their order do not matter but the source node has always a smaller msclusterID than the target node due to the implemented algorithm.
