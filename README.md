@@ -17,6 +17,14 @@ This workflow also contains two interactive commands for MS1 and MS2 data visual
 
 For the complete details of each command see the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
+- - - -
+
+# Current Version 1.1.3
+
+- NEW features:
+	- Added the parameter max_shift, used in the pairwise comparison with NP3 shifted cosine function (Step 5). Applies the shift when the precursor m/z difference of the spectra being compared is smaller than this cut-off.
+	- Added the parameter min_matched_peaks used in the SSMN filtering (Step 10). Removes links from the SSMN between spectra with few fragment peaks in common
+
 - - - - 
 
 # Installation with Conda 
