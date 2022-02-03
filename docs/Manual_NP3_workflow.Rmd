@@ -27,10 +27,10 @@ The $NP^{3}$ MS workflow consists of ten major steps:
 * Step 3: Clustering of pre-processed MS2 spectra into a collection of consensus spectra.
 * Step 4: Quantification of consensus spectra per sample and computation of the sample type indicators.
 * Step 5: Pairwise similarity comparisons of consensus spectra and their quantifications cleaning based on the similarity values.
-* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS only)
+* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS and positive ion mode only).
 <!-- , and against the PubChem database using the MetFrag R package. -->
-* Step 7: Ionization variants annotation among concurrent consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a molecular network of annotations and assignment of the most likely [M+H]+ consensus spectra representatives
-* Step 8: Merge of consensus spectra quantifications based on the annotated variants and the [M+H]+ consensus spectra representatives.
+* Step 7: Ionization variants annotation among concurrent consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a molecular network of annotations and assignment of the most likely [M+H]+ consensus spectra representatives (for positive ion mode only).
+* Step 8: Merge of consensus spectra quantifications based on the annotated variants and the [M+H]+ consensus spectra representatives (for positive ion mode only).
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments.
 * Step 10: Creation of a molecular network of similarity based on the consensus spectra similarity.
  
@@ -206,7 +206,6 @@ Before running any command of the workflow, the metadata table must be manually 
  
 We strongly recommend to run the pre-process command (Step 2) separated when running the workflow for the first time in a new dataset. This way the most critical parameters (peak_width and rt_tolerance) can be manually tuned to achieve more accurate results in the LC-MS peak detection algorithm and processing, which also depends on the mass spectrometrer equipment and the data quality. The user should **follow the pre-processing optimization guide** present in section 4.3.4. of this manual to improve the pre-process result, and also inpect the data. The workflow default values have been tested with an UHPLC-MS/MS-qTOF equipment (Acquity HClass Waters UHPLC and ESI\-QqTOF Impact II Bruker spectrometer).
 
- 
 For further analyses, after running the entire $NP^{3}$ MS workflow, each step can be executed separately on the results obtained previously and with different tolerance parameter values and/or correlation groups, as needed. When running a specific command separately it is important not to modify the original output files, instead create a copy of those files. In this way, you may reproduce the workflow steps as needed when repeating any step.
  
 If you did install the workflow dependencies using the conda environments, always remember to activate the $NP^{3}$ MS workflow environment before executing any of the workflow commands. To activate the $NP^{3}$ MS workflow environment use the following command:
@@ -275,7 +274,7 @@ Commands:
     - *\-o, \-\-output_path* \<path\>       : path to the final output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'mgf' folder and the 'count_tables' folder with the peak area and spectra count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
  
-- **tremolo** [options] : Step 6: (for Unix OS only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
+- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
@@ -285,12 +284,12 @@ Commands:
 <!--     - *\-g, \-\-mgf* <file>     :     path to the input MGF file with the MS/MS spectra data to be searched and identified -->
 <!--     - *\-o, \-\-output_path* <path> : path to where the identification results will be saved. Prefereable inside the final clustering results directory in the 'job_name/outs/job_name/identifications' folder -->
     
-- **annotate_protonated** [options] : Step 7: This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
+- **annotate_protonated** [options] : Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
     - List of mandatory options:
     - *\-m, \-\-metadata* \<file\>          : path to the metadata table CSV file
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'counts_table' folder and inside it the 'clean' subfolder with the clean count tables in CSV files. The name of the output folder will be used as the job name.
  
-- **merge** [options] : Step 8: This command runs the merge of the clean count tables based on the annotated variants. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to better account for the quantifications of the true metabolites.
+- **merge** [options] : Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to better account for the quantifications of the true metabolites.
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'counts_table' folder and inside it the 'clean' subfolder with the clean count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
@@ -837,7 +836,7 @@ Table: Clean Count Tables New Columns from the Data Cleaning Step
 
 ## 4.6. Step 6: Command *tremolo*
  
-Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS.
+Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode.
  
 A binary version of the tremolo tool is freely available for download in the following link: http://proteomics.ucsd.edu/software-tools/tremolo/.
  
@@ -894,7 +893,7 @@ Concatenate tremolo results in the count files:
  
 ## 4.7. Step 7: Command *annotate_protonated*
  
-Annotate possible ionization variants in the count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragments based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some consensus spectra as putative [M+H]+ representatives. 
+Annotate possible ionization variants in the count tables and creates the molecular network of annotations (for positive ion mode only). It searches for adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragments based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some consensus spectra as putative [M+H]+ representatives. 
  
 The number of [M+H]+ cosensus spectra representative offer a suggestion to the number of real metabolites present in the samples.
  
@@ -1056,7 +1055,7 @@ An attributes table is also created for the molecular network of annotations con
  
 ## 4.8. Step 8: Command *merge*
  
-Runs the merge of the clean count tables based on the annotated variants. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. This union is performed for each type of annotation (adducts + neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragments) and by combining all of them together, what can lead to at most 31 new symbolic spectra by consensus spectra. 
+Runs the merge of the clean count tables based on the annotated variants (for positive ion mode only). It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. This union is performed for each type of annotation (adducts + neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragments) and by combining all of them together, what can lead to at most 31 new symbolic spectra by consensus spectra. 
  
 By default, the merge is only performed for the consensus spectra assigned as a [M+H]+ representative, to better account for the quantifications of the true metabolites.
  
