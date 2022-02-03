@@ -838,6 +838,13 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
     }
 
     var reg_stats = resExec.stdout.match(/\* Pre-processing - Statistics [\s\S]*/gm);
+    // console.log(reg_stats);
+    if (!reg_stats) {
+        console.log("ERROR in the pre-processing, no statistics was printed! :(");
+        shell.ShellString("ERROR\n\nOUTPUT:"+resExec.stdout+"\n\nERROR:"+resExec.stderr).to(raw_dir+'/logPreProcessError');
+        shell.ShellString("ERROR\n\nOUTPUT:"+resExec.stdout+"\n\nERROR:"+resExec.stderr).to(pre_process_dir+'logPreProcessOutput');
+        process.exit(1);
+    }
     reg_stats[0] = '\n' + reg_stats[0].trim() + '\n';
     if (verbose <= 0) {
         console.log(reg_stats[0]);
@@ -2450,7 +2457,7 @@ program
 
 program
     .command('tremolo')
-    .description('Step 6: (for Unix OS only) This command runs the tremolo tool, used for spectra matching against ' +
+    .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against ' +
         'In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural ' +
         'Products Database).\n\n')
     .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored')
@@ -2560,7 +2567,7 @@ program
 
 program
     .command('annotate_protonated')
-    .description('Step 7: This command runs the annotation of possible ionization variants in the clean count tables ' +
+    .description('Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables ' +
         'and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, ' +
         'dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. ' +
         'Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus ' +
@@ -2659,7 +2666,7 @@ program
 
 program
     .command('merge')
-    .description('Step 8: This command runs the merge of the clean count tables based on the annotated variants. It ' +
+    .description('Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants. It ' +
         'creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. ' +
         'By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to ' +
         'better account for the quantifications of the true metabolites.\n\n')
