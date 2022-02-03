@@ -2,6 +2,16 @@
 
 ## A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis  
 
+- - - - 
+
+# Current Version 1.1.3
+
+- NEW features:
+	- Added the parameter max_shift, used in the pairwise comparison with NP3 shifted cosine function (Step 5). Applies the shift when the precursor m/z difference of the spectra being compared is smaller than this cut-off.
+	- Added the parameter min_matched_peaks used in the SSMN filtering (Step 10). Removes links from the SSMN between spectra with few fragment peaks in common
+
+- - - - 
+
 # Overview 
 
 The NP³ MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics research focused on drug discovery with optimizations towards natural products. 
@@ -18,14 +28,6 @@ This workflow also contains two interactive commands for MS1 and MS2 data visual
 For the complete details of each command see the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
 - - - -
-
-# Current Version 1.1.3
-
-- NEW features:
-	- Added the parameter max_shift, used in the pairwise comparison with NP3 shifted cosine function (Step 5). Applies the shift when the precursor m/z difference of the spectra being compared is smaller than this cut-off.
-	- Added the parameter min_matched_peaks used in the SSMN filtering (Step 10). Removes links from the SSMN between spectra with few fragment peaks in common
-
-- - - - 
 
 # Installation with Conda 
 
@@ -135,7 +137,7 @@ If the workflow command **setup** persists to fail, the programs and packages mu
 
 # Getting Started 
 
-The input for the NP³ MS workflow are LC-MS/MS raw data files in mzXML or mzML formats (mzData format could also be used, but was not vastly tested). It supports only the positive ([M+H]+) ion mode. The negative ([M-H]-) ion mode could also be used, but the Steps 7 and 8 were not vastly tested for it and could lead to undesired results.
+The input for the NP³ MS workflow are LC-MS/MS raw data files in mzXML or mzML formats (mzData format could also be used, but was not vastly tested). It supports only the positive ([M+H]+) ion mode. The negative ([M-H]-) ion mode could also be used, but the Steps 6 is not supported and Steps 7 and 8 were not vastly tested for it and could lead to undesired results, the rest of the results can be used. 
 
 Let's use the samples L754_bacs present in the 'test' folder to check the installation and run the NP³ MS workflow for the first time. A metadata table (Step 1) is already provided in the 'test/L754_bacs' folder. 
 
@@ -277,17 +279,17 @@ Commands:
     - *\-o, \-\-output_path* \<path\>       : path to the final output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'mgf' folder and the 'count_tables' folder with the peak area and spectra count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
  
-- **tremolo** [options] : Step 6: (for Unix OS only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
+- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
 
-- **annotate_protonated** [options] : Step 7: This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
+- **annotate_protonated** [options] : Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
     - List of mandatory options:
     - *\-m, \-\-metadata* \<file\>          : path to the metadata table CSV file
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'counts_table' folder and inside it the 'clean' subfolder with the clean count tables in CSV files. The name of the output folder will be used as the job name.
  
-- **merge** [options] : Step 8: This command runs the merge of the clean count tables based on the annotated variants. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to better account for the quantifications of the true metabolites.
+- **merge** [options] : Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to better account for the quantifications of the true metabolites.
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'counts_table' folder and inside it the 'clean' subfolder with the clean count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
