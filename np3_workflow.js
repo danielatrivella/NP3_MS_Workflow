@@ -807,13 +807,13 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
     {
         resExec = shell.exec('Rscript '+__dirname+'/src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir+ ' ' +parms.rt_tolerance[0]+ ' ' +
             parms.fragment_tolerance + ' ' + parms.ppm_tolerance + ' ' + parms.ion_mode+' '+ parms.processed_data_name+' '+
-            parms.processed_data_overwrite, {async: false, silent: (verbose <= 0)});
+            parms.processed_data_overwrite, {async: false, silent: (verbose <= 0), maxBuffer: 1024*1024*1024});
     } else { // called from the process cmd
         resExec = shell.exec('Rscript '+__dirname+'/src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir + ' ' +parms.rt_tolerance+ ' ' +
             parms.mz_tolerance+ ' ' + parms.ppm_tolerance + ' ' + parms.ion_mode+' '+ parms.processed_data_name +' '+
             parms.processed_data_overwrite+ ' ' +parms.peak_width+ ' ' +parms.snthresh+ ' ' +parms.pre_filter+ ' ' +
             parms.min_fraction+ ' ' +parms.bw+ ' '  +parms.bin_size + ' ' +parms.max_features+ ' ' +parms.noise+ ' ' +parms.mz_center_fun+
-            ' '+ parms.max_samples_batch_align+' '+ parms.integrate_method+' '+ parms.fit_gauss, {async: false, silent: (verbose <= 0)});
+            ' '+ parms.max_samples_batch_align+' '+ parms.integrate_method+' '+ parms.fit_gauss, {async: false, silent: (verbose <= 0), maxBuffer: 1024*1024*1024});
     }
 
     if (resExec.code) {
@@ -843,6 +843,7 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
         console.log("ERROR in the pre-processing, no statistics was printed! :(");
         shell.ShellString("ERROR\n\nOUTPUT:"+resExec.stdout+"\n\nERROR:"+resExec.stderr).to(raw_dir+'/logPreProcessError');
         shell.ShellString("ERROR\n\nOUTPUT:"+resExec.stdout+"\n\nERROR:"+resExec.stderr).to(pre_process_dir+'logPreProcessOutput');
+
         process.exit(1);
     }
     reg_stats[0] = '\n' + reg_stats[0].trim() + '\n';
