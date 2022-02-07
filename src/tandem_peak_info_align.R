@@ -54,25 +54,21 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
                                             total_spectra, blank_mzs,
                                             num_mzs_number_peak, mz_tol)
 {
+  # count number of samples using the total_spectra vector, more reliable
+  n_samples <- length(total_spectra)
   #print(blank_mzs)
-  # check if the pre process was successful and if not send a warning
+  # check if the pre process was successful in all correspondences, 
+  # and if not send a warning
   mzs_nomatch <- suppressMessages(readr::read_csv(file.path(path_raw_data, processed_data_dir,
                                            "log_MS2_no_MS1peak_match.csv"),guess_max = 5000))
-  
-  # with blank mzs
-  # summary_MS2_no_MS1 <- as.data.frame.matrix(table(mzs_nomatch[,c("sample_code", "no_match")]))
-  # summary_MS2_no_MS1$total_spectra <- sapply(row.names(summary_MS2_no_MS1), function(x) total_spectra[[x]])
-  # summary_MS2_no_MS1$MS2_noMatchingMzMS1 <- round(summary_MS2_no_MS1$no_mz/summary_MS2_no_MS1$total_spectra, 3)
-  # summary_MS2_no_MS1$MS2_noMatchingRtMS1 <- round(summary_MS2_no_MS1$no_rt/summary_MS2_no_MS1$total_spectra, 3)
-  # print(summary_MS2_no_MS1[,c("MS2_noMatchingMzMS1", "MS2_noMatchingRtMS1")])
-  #
   cat("\n\n* Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *\n\n")
   if (nrow(mzs_nomatch) == 0) {
     cat("All MS2 spectra had a MS1 peak correspondence!!")
     return()
   }
   
-  # also set as blank the ms1 peaks with a ms2 correspondence
+  # add blank information to the list of ms1 peaks with a ms2 correspondence
+  # and to the log of ms2 without ms1
   ms1_w_ms2_list <- suppressMessages(readr::read_csv(file.path(path_raw_data, processed_data_dir,
                                                                "MS1_list_with_MS2.csv"), guess_max = 5000))
   ms1_w_ms2_list$BFLAG <- FALSE
@@ -92,11 +88,12 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
     readr::write_csv(mzs_nomatch, file.path(path_raw_data, processed_data_dir,
                                             "log_MS2_no_MS1peak_match.csv"))
   }
-  # update the ms1 peaks with a ms2 correspondence list with blank info
+  # update the list of ms1 peaks with a ms2 correspondence with blank info
   readr::write_csv(ms1_w_ms2_list, file.path(path_raw_data, processed_data_dir,
                                           "MS1_list_with_MS2.csv"))
   remove(ms1_w_ms2_list)
   # filter only mzs from the blank samples and mzs different from the blank mzs in the other samples
+  # in other words, remove no matchs from blank m/zs that appear in samples that are not blank
   summary_MS2_no_MS1 <- as.data.frame.matrix(table(mzs_nomatch[mzs_nomatch$blank != 2,
                                                                c("sample_code", "no_match")]))
   summary_MS2_no_MS1$total_MS2 <- sapply(row.names(summary_MS2_no_MS1), function(x) total_spectra[[x]])
@@ -112,7 +109,16 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   names(summary_MS2_no_MS1)[1:2] <- c("MS2_no_MS1_mz", "MS2_no_MS1_rt")
   summary_MS2_no_MS1 <- tibble::rownames_to_column(summary_MS2_no_MS1, var='SAMPLE_CODE')
   
-  # print statistics of blank and not blank samples
+  # check if the summary includes all sample codes, 
+  # if not include the missing ones without no correspondece (good pre-processed samples)
+  if (!all(names(total_spectra) %in% summary_MS2_no_MS1$SAMPLE_CODE)) {
+    summary_MS2_no_MS1 <- bind_rows(summary_MS2_no_MS1,
+              lapply(names(total_spectra)[!(names(total_spectra) %in% summary_MS2_no_MS1$SAMPLE_CODE)], 
+           function(x) list(SAMPLE_CODE = x, MS2_no_MS1_mz = 0, MS2_no_MS1_rt= 0,
+                            total_MS2 = 0, rate_MS2_no_MS1_mz=0.0, rate_MS2_no_MS1_rt=0.0)))
+  }
+  
+  # print statistics of blank and not blank samples with the rates of no correspondence by sample
   summary_MS2_no_MS1 <- arrange(summary_MS2_no_MS1, rate_MS2_no_MS1_rt, rate_MS2_no_MS1_mz)
   print(summary_MS2_no_MS1[,c('SAMPLE_CODE', 'rate_MS2_no_MS1_mz', 'rate_MS2_no_MS1_rt')], width=200)
   # print legend
@@ -230,13 +236,13 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
       'Summary of the rate_MS2_no_MS1_mz value for all not blank samples\n\n')
   print(summary(summary_MS2_no_MS1$rate_MS2_no_MS1_mz))
   cat('\n Number of not blank samples with the rate_MS2_no_MS1_mz value above 5%:',
-      sum(summary_MS2_no_MS1['rate_MS2_no_MS1_mz'] > 5), '/',nrow(summary_MS2_no_MS1))
+      sum(summary_MS2_no_MS1['rate_MS2_no_MS1_mz'] > 5), '/',n_samples)
   cat('\n==========\n')
   cat('\n==========\n',
       'Summary of the rate_MS2_no_MS1_rt value for all not blank samples\n\n')
   print(summary(summary_MS2_no_MS1$rate_MS2_no_MS1_rt))
   cat('\n Number of not blank samples with the rate_MS2_no_MS1_rt value above 5%:',
-      sum(summary_MS2_no_MS1['rate_MS2_no_MS1_rt'] > 5), '/',nrow(summary_MS2_no_MS1))
+      sum(summary_MS2_no_MS1['rate_MS2_no_MS1_rt'] > 5), '/',n_samples)
   cat('\n==========\n\n')
   
   # plot the number of mzs by the number of MS1 peaks (isomers)
