@@ -159,7 +159,7 @@ In the repository root folder run the following command to execute all the workf
 
 
 ``` 
-node np3_workflow.js run --output_name "L754_bacs_test" --output_path "test/L754_bacs" --metadata "test/L754_bacs/marine_bacteria_library_L754_metadata.csv" --raw_data_path "test/L754_bacs/mzxml" --verbose 1 
+node np3_workflow.js run --output_name "L754_bacs_test" --output_path "test/L754_bacs" --metadata "test/L754_bacs/marine_bacteria_library_L754_metadata.csv" --raw_data_path "test/L754_bacs/mzxml" --tremolo_identification TRUE --verbose 1
 
 ``` 
   
