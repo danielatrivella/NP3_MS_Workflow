@@ -64,6 +64,7 @@ script_path <- function() {
 }
 Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
 Rcpp::sourceCpp(file.path(script_path(), 'dot_product_list.cpp'))
+source(file.path(script_path(), "write_sparse_matrix.R"))
 
 compareSpectraNormDotProductRow <- function(i)
 {
@@ -161,9 +162,13 @@ if (!is.na(scale_factor) || !is.null(scale_factor))
   scale_factor <- 1 # no scale
 }
 
+# save number of similarity pairs that are != 0 - sparse matrix information
+n_simpairs <- 0
 
 # start pairwise comparison between the mgf samples
-total_spectra <- 0
+total_spectra <- 0 # store total number of spectra compared
+n_wsim_total <- 0 # store total number of similarities != 0 that were written
+n_wmatches_total <- 0 # store total number of #matches != 0 that were written
 cat("\n  * Comparing", data_name, "result spectra pairwise *\n")
 # add progress
 progress_comp <- seq(from = 1, to = n_mgf, by = 1)
@@ -188,6 +193,10 @@ for (i in seq_along(path_mgf)) {
   if (i == 1) {
     scans_num <- c(scans_num, ms2_sample$SCANS)
     total_spectra <- total_spectra + n_scans
+    start_pos_i <- 0
+  } else {
+    # TODO get current sample starting position
+    start_pos_i <- which(ms2_sample$SCANS[[1]] %in% scans_num) - 1
   }
   
   # compare all spectra of mgf[[i]] pairwise
@@ -206,50 +215,102 @@ for (i in seq_along(path_mgf)) {
     # separate matched peaks from cosine and save in different tables
     comp_row_sim_matches <- parSapply(cl, 1:(n_scans-1), 
                                       compareSpectraNormDotProductRow)
+    # TODO convert the sim results to matrix -> sparse matrix and call the writeMMgz function on it
+    # TODO skip number of written spectra on i, and on j??
     # save cosine values
-    write.table(bind_cols(comp_row_sim_matches[1,], list(c(rep(0.000,n_scans-1), 1.000))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
+    n_written_sim <- writeMMgz_upperTri(x=as(as.matrix(bind_cols(comp_row_sim_matches[1,], 
+                                                           list(c(rep(0.000,n_scans-1), 1.000)))),
+                                       "sparseMatrix"),                                  
+              file=file.path(output_path, 
+                             paste0("similarity_table_", data_name, "_tmp.csv")),
+              total_written_spec_x = start_pos_i,
+              total_written_spec_y = start_pos_i)
     # save matches, with the num of spectra in the diagonal
-    write.table(bind_cols(comp_row_sim_matches[2,], 
-                          list(c(rep(0.000,n_scans-1), length(ms2_sample$MZS[[n_scans]])))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
+    n_written_matches <- writeMMgz_upperTri(x=as(as.matrix(bind_cols(comp_row_sim_matches[2,],
+                                       list(c(rep(0.000,n_scans-1), length(ms2_sample$MZS[[n_scans]]))))), 
+                   "sparseMatrix"),
+              file = file.path(output_path, 
+                               paste0("similarity_table_matches_", data_name, "_tmp.csv")),
+              total_written_spec_x = start_pos_i,
+              total_written_spec_y = start_pos_i)
+    # save cosine values
+    # write.table(bind_cols(comp_row_sim_matches[1,], list(c(rep(0.000,n_scans-1), 1.000))), 
+    #             file = file.path(output_path, 
+    #                              paste0("similarity_table_", data_name, "_tmp.csv")), 
+    #             sep = ",", row.names = FALSE, col.names = FALSE)
+    # save matches, with the num of spectra in the diagonal
+    # write.table(bind_cols(comp_row_sim_matches[2,], 
+    #                       list(c(rep(0.000,n_scans-1), length(ms2_sample$MZS[[n_scans]])))), 
+    #             file = file.path(output_path, 
+    #                              paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
+    #             sep = ",", row.names = FALSE, col.names = FALSE)
     rm(comp_row_sim_matches)
     #stopCluster(cl)
   } else if (n_scans > 1) {
     # sequential pairwise comparisions
     comp_row_sim_matches <- sapply(1:(n_scans-1), compareSpectraNormDotProductRow)
     # save cosine values
-    write.table(bind_cols(comp_row_sim_matches[1,], list(c(rep(0.000,n_scans-1), 1.000))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
+    n_written_sim <- writeMMgz_upperTri(x=as(as.matrix(bind_cols(comp_row_sim_matches[1,], 
+                                                        list(c(rep(0.000,n_scans-1), 1.000)))),
+                                    "sparseMatrix"),                                  
+                               file=file.path(output_path, 
+                                              paste0("similarity_table_", data_name, "_tmp.csv")),
+                               total_written_spec_x = start_pos_i,
+                               total_written_spec_y = start_pos_i)
     # save matches, with the num of spectra in the diagonal
-    write.table(bind_cols(comp_row_sim_matches[2,], 
-                          list(c(rep(0.000,n_scans-1), length(ms2_sample$MZS[[n_scans]])))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
+    n_written_matches <- writeMMgz_upperTri(x=as(as.matrix(bind_cols(comp_row_sim_matches[2,],
+                                                            list(c(rep(0.000,n_scans-1), length(ms2_sample$MZS[[n_scans]]))))), 
+                                        "sparseMatrix"),
+                                   file = file.path(output_path, 
+                                                    paste0("similarity_table_matches_", data_name, "_tmp.csv")),
+                                   total_written_spec_x = start_pos_i,
+                                   total_written_spec_y = start_pos_i)
+    # save cosine values
+    # write.table(bind_cols(comp_row_sim_matches[1,], list(c(rep(0.000,n_scans-1), 1.000))), 
+    #             file = file.path(output_path, 
+    #                              paste0("similarity_table_", data_name, "_tmp.csv")), 
+    #             sep = ",", row.names = FALSE, col.names = FALSE)
+    # # save matches, with the num of spectra in the diagonal
+    # write.table(bind_cols(comp_row_sim_matches[2,], 
+    #                       list(c(rep(0.000,n_scans-1), length(ms2_sample$MZS[[n_scans]])))), 
+    #             file = file.path(output_path, 
+    #                              paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
+    #             sep = ",", row.names = FALSE, col.names = FALSE)
     rm(comp_row_sim_matches)
   } else {
     # only one scan, save identical cosine and matches equals the number of peaks
-    write.table(c(1.00), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
-    write.table(c(length(ms2_sample$MZS[[n_scans]])), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
+    n_written_sim <- writeMMgz_upperTri(x=as(as.matrix(c(1.00)),
+                                             "sparseMatrix"),                                  
+                                        file=file.path(output_path, 
+                                                       paste0("similarity_table_", data_name, "_tmp.csv")),
+                                        total_written_spec_x = start_pos_i,
+                                        total_written_spec_y = start_pos_i)
+    # save matches, with the num of spectra in the diagonal
+    n_written_matches <- writeMMgz_upperTri(x=as(as.matrix(c(length(ms2_sample$MZS[[n_scans]]))), 
+                                                 "sparseMatrix"),
+                                            file = file.path(output_path, 
+                                                             paste0("similarity_table_matches_", data_name, "_tmp.csv")),
+                                            total_written_spec_x = start_pos_i,
+                                            total_written_spec_y = start_pos_i)
+    # write.table(c(1.00), 
+    #             file = file.path(output_path, 
+    #                              paste0("similarity_table_", data_name, "_tmp.csv")), 
+    #             sep = ",", row.names = FALSE, col.names = FALSE)
+    # write.table(c(length(ms2_sample$MZS[[n_scans]])), 
+    #             file = file.path(output_path, 
+    #                              paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
+    #             sep = ",", row.names = FALSE, col.names = FALSE)
   }
+  
+  # TODO sum total written sim values and matches != 0
+  n_wsim_total <- n_wsim_total + n_written_sim
+  n_wmatches_total <- n_wmatches_total + n_written_matches
   
   if (i < n_mgf)
   {
     # compare all spectra of mgf[[i]] with all spectra of the others mgf
-    for (j in (i+1):n_mgf) {
+    for (j in (i+1):n_mgf) 
+    {
       # read the ms2 data and get the scan indexes
       ms2_sample_j <- readMgfPeaksList(path_mgf[[j]], bin_size = bin_size, 
                                        trim_mz = trim_mz, scale_factor = scale_factor,
@@ -266,6 +327,8 @@ for (i in seq_along(path_mgf)) {
         total_spectra <- total_spectra + n_scans_j
         scans_num <- c(scans_num, ms2_sample_j$SCANS)
       }
+      # TODO get current sample starting position
+      start_pos_j <- which(ms2_sample_j$SCANS[[1]] %in% scans_num) - 1
       
       # make the pairwise comparisions
       if (parallel_cores > 1 && require(parallel) && n_scans > 1)
@@ -282,27 +345,60 @@ for (i in seq_along(path_mgf)) {
                                           ms2_sample_j$PREC_MZ)
       }
       # separate matched peaks from cosine and save in different tables
-      if (n_scans_j == 1) #transpose result if only one member
+      if (n_scans_j == 1) 
       {
-        write.table(t(comp_sample_sim_matches[1,]), 
-                    file = file.path(output_path, 
-                                     paste0("similarity_table_", data_name, "_tmp.csv")), 
-                    sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
-        write.table(t(comp_sample_sim_matches[2,]), 
-                    file = file.path(output_path, 
-                                     paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                    sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
-     } else {
-        write.table(comp_sample_sim_matches[1,], 
-                    file = file.path(output_path, 
-                                     paste0("similarity_table_", data_name, "_tmp.csv")), 
-                    sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
-       write.table(comp_sample_sim_matches[2,], 
-                   file = file.path(output_path, 
-                                    paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                   sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
-     }
+        #transpose result if only one member
+        # save cosine values
+        n_written_sim <- writeMMgz_upperTri(x=as(as.matrix(t(comp_sample_sim_matches[1,])),
+                                                 "sparseMatrix"),                                  
+                                            file=file.path(output_path, 
+                                                           paste0("similarity_table_", data_name, "_tmp.csv")),
+                                            total_written_spec_x = start_pos_i,
+                                            total_written_spec_y = start_pos_j)
+        # save matches
+        n_written_matches <- writeMMgz_upperTri(x=as(as.matrix(t(comp_sample_sim_matches[2,])), 
+                                                     "sparseMatrix"),
+                                                file = file.path(output_path, 
+                                                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")),
+                                                total_written_spec_x = start_pos_i,
+                                                total_written_spec_y = start_pos_j)
+        # write.table(t(comp_sample_sim_matches[1,]), 
+        #             file = file.path(output_path, 
+        #                              paste0("similarity_table_", data_name, "_tmp.csv")), 
+        #             sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
+        # write.table(t(comp_sample_sim_matches[2,]), 
+        #             file = file.path(output_path, 
+        #                              paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
+        #             sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
+     
+      } else {
+        # save cosine values
+        n_written_sim <- writeMMgz_upperTri(x=as(as.matrix(comp_sample_sim_matches[1,]),
+                                              "sparseMatrix"),                                  
+                                         file=file.path(output_path, 
+                                                        paste0("similarity_table_", data_name, "_tmp.csv")),
+                                         total_written_spec_x = start_pos_i,
+                                         total_written_spec_y = start_pos_j)
+        # save matches
+        n_written_matches <- writeMMgz_upperTri(x=as(as.matrix(comp_sample_sim_matches[2,]), 
+                                                  "sparseMatrix"),
+                                             file = file.path(output_path, 
+                                                              paste0("similarity_table_matches_", data_name, "_tmp.csv")),
+                                             total_written_spec_x = start_pos_i,
+                                             total_written_spec_y = start_pos_j)
+         #  write.table(comp_sample_sim_matches[1,], 
+         #              file = file.path(output_path, 
+         #                               paste0("similarity_table_", data_name, "_tmp.csv")), 
+         #              sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
+         # write.table(comp_sample_sim_matches[2,], 
+         #             file = file.path(output_path, 
+         #                              paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
+         #             sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE)
+      }
       rm(comp_sample_sim_matches)
+      # TODO sum total written sim values and matches != 0
+      n_wsim_total <- n_wsim_total + n_written_sim
+      n_wmatches_total <- n_wmatches_total + n_written_matches
     }
     rm(ms2_sample_j)
   }
@@ -310,59 +406,65 @@ for (i in seq_along(path_mgf)) {
   if (parallel_cores > 1 && require(parallel) && n_scans > 1)
     stopCluster(cl)
   
-  sim_table_tmp <- read.csv(file.path(output_path, 
-                                      paste0("similarity_table_", data_name, "_tmp.csv")), 
-                            header = FALSE, stringsAsFactors = FALSE)
-  
-  if (i > 1)
-  {
-    sim_table_tmp <- rbind(matrix(0, 
-                                  nrow = total_spectra-nrow(sim_table_tmp), 
-                                  ncol = ncol(sim_table_tmp)), 
-                           sim_table_tmp)
-    
-    write.table(t(sim_table_tmp), file.path(output_path, 
-                                            paste0("similarity_table_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
-  } else {
-    # add heading i = 1 and row.names
-    write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
-                           ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
-                  file = file.path(output_path, paste0("similarity_table_", data_name, ".csv")), 
-                  sep = ",", row.names = FALSE, col.names = FALSE)
-    write.table(t(sim_table_tmp), file.path(output_path, 
-                                            paste0("similarity_table_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
-  }
-  rm(sim_table_tmp)
-  
-  # write final number of matches
-  sim_table_matches_tmp <- read.csv(file.path(output_path, 
-                                      paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                            header = FALSE, stringsAsFactors = FALSE)
-  
-  if (i > 1)
-  {
-    sim_table_matches_tmp <- rbind(matrix(0, 
-                                  nrow = total_spectra-nrow(sim_table_matches_tmp), 
-                                  ncol = ncol(sim_table_matches_tmp)), 
-                                  sim_table_matches_tmp)
-    
-    write.table(t(sim_table_matches_tmp), file.path(output_path, 
-                                            paste0("similarity_table_matches_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
-  } else {
-    # add heading i = 1 and row.names
-    write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
-                           ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
-                file = file.path(output_path, paste0("similarity_table_matches_", data_name, ".csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
-    write.table(t(sim_table_matches_tmp), file.path(output_path, 
-                                            paste0("similarity_table_matches_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
-  }
-  rm(ms2_sample, sim_table_matches_tmp)
+  # TODO it needed to transpose the final matrix, we do not need to do that anymore, just
+  # save the header in the final table and concat this final file with the temporary one
+  # need to do this outside the loop
+  # sim_table_tmp <- read.csv(file.path(output_path, 
+  #                                     paste0("similarity_table_", data_name, "_tmp.csv")), 
+  #                           header = FALSE, stringsAsFactors = FALSE)
+  # 
+  # if (i > 1)
+  # {
+  #   sim_table_tmp <- rbind(matrix(0, 
+  #                                 nrow = total_spectra-nrow(sim_table_tmp), 
+  #                                 ncol = ncol(sim_table_tmp)), 
+  #                          sim_table_tmp)
+  #   
+  #   write.table(t(sim_table_tmp), file.path(output_path, 
+  #                                           paste0("similarity_table_", data_name, ".csv")),
+  #               row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
+  # } else {
+  #   # add heading i = 1 and row.names
+  #   write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
+  #                          ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
+  #                 file = file.path(output_path, paste0("similarity_table_", data_name, "_header.csv")), 
+  #                 sep = ",", row.names = FALSE, col.names = FALSE)
+  #   write.table(t(sim_table_tmp), file.path(output_path, 
+  #                                           paste0("similarity_table_", data_name, ".csv")),
+  #               row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
+  # }
+  # rm(sim_table_tmp)
+  # 
+  # # write final number of matches
+  # sim_table_matches_tmp <- read.csv(file.path(output_path, 
+  #                                     paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
+  #                           header = FALSE, stringsAsFactors = FALSE)
+  # 
+  # if (i > 1)
+  # {
+  #   sim_table_matches_tmp <- rbind(matrix(0, 
+  #                                 nrow = total_spectra-nrow(sim_table_matches_tmp), 
+  #                                 ncol = ncol(sim_table_matches_tmp)), 
+  #                                 sim_table_matches_tmp)
+  #   
+  #   write.table(t(sim_table_matches_tmp), file.path(output_path, 
+  #                                           paste0("similarity_table_matches_", data_name, ".csv")),
+  #               row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
+  # } else {
+  #   # add heading i = 1 and row.names
+  #   write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
+  #                          ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
+  #               file = file.path(output_path, paste0("similarity_table_matches_", data_name, "_header.csv")), 
+  #               sep = ",", row.names = FALSE, col.names = FALSE)
+  #   write.table(t(sim_table_matches_tmp), file.path(output_path, 
+  #                                           paste0("similarity_table_matches_", data_name, ".csv")),
+  #               row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",")
+  # }
+  # rm(ms2_sample, sim_table_matches_tmp)
 }
+
+# TODO add heading here, concat with tmp and also create headear row with scan numbers
+
 
 cat("|\n")
 tf <- Sys.time()
