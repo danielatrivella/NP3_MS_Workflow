@@ -23,6 +23,7 @@ dependencies:
   - r-rjson=0.2.20
   - r-squash=1.0.9
   - r-maldiquant=1.19.3
+  - r-matrix
   - make=4.3
   - compilers
   - python=3.7

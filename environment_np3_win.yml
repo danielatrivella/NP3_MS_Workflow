@@ -24,6 +24,7 @@ dependencies:
   - r-squash=1.0.9
   - r-maldiquant=1.19.3
   - r-robustbase
+  - r-matrix
   - make=4.3
   - compilers
   - python=3.7
