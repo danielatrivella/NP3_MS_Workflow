@@ -108,8 +108,10 @@ if (file.exists(path_mgf_dir) && !dir.exists(path_mgf_dir) && grepl(".mgf$",path
   }
   # get the path to each mgf file inside the mgf dir
   path_mgf <- file.path(path_mgf_dir, list.files(path_mgf_dir)[grepl("_[0-9]+.mgf$", list.files(path_mgf_dir))])
-  # order paths by mass
-  path_mgf <- path_mgf[order(as.numeric(gsub(paste0(data_name, "_[0-9]+_[0-9]+_|_[0-9]+.mgf"), "", basename(path_mgf))))]
+  # order paths by mz and mz count (number of files with that mz range)
+  path_mgf <- path_mgf[order(sapply(strsplit(gsub(paste0(data_name, "_[0-9]+_[0-9]+_|.mgf"), 
+                                                  "", basename(path_mgf)), "_"),
+                                    function(x) { as.numeric(x[1])+as.numeric(x[2])*0.1 }))]
 }
 n_mgf <- length(path_mgf)
 if (n_mgf == 0) {
