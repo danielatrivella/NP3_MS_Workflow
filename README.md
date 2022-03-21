@@ -10,6 +10,12 @@
 	- Added the parameter max_shift, used in the pairwise comparison with NP3 shifted cosine function (Step 5). Applies the shift when the precursor m/z difference of the spectra being compared is smaller than this cut-off.
 	- Added the parameter min_matched_peaks used in the SSMN filtering (Step 10). Removes links from the SSMN between spectra with few fragment peaks in common
 
+- - - -
+
+# Tutorial Videos
+
+- [Tutorial 1](https://youtu.be/gtPhn5hPuuQ): Brief introduction, 'Getting Started' section and a [M+H]+ analysis
+
 - - - - 
 
 # Overview 
