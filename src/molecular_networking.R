@@ -157,9 +157,11 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
     scans_pairsim <- suppressMessages(readr::read_csv(path_sim_table, skip = (max_rows*(k-1)+1), 
                                                n_max = max_rows, 
                                             col_names = FALSE))
+    scans_pairsim[is.na(scans_pairsim)] <- 0
     scans_pairmatches <- suppressMessages(readr::read_csv(path_matches_table, skip = (max_rows*(k-1)+1), 
                                                       n_max = max_rows, 
                                                       col_names = FALSE))
+    scans_pairmatches[is.na(scans_pairmatches)] <- 0
     # store the number of peaks of each scans
     scans_num_peaks <- c(scans_num_peaks, diag(as.matrix(scans_pairmatches[,-1])))
     

@@ -841,7 +841,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
       for (multiCharge in which(rules_mod$charge == 2)) {
         # ((M-ion_mode)/Y + X) - m <= mz_tol
         # ajusted formula to deal with M+1 = [M+H] and not [M]
-        if (any(abs(((cluster_peak_ms1$mzConsensus - ion_mode)/rules_mod$charge[[multiCharge]] + 
+        if (!is.null(ms_no_spectra_count) && any(abs(((cluster_peak_ms1$mzConsensus - ion_mode)/rules_mod$charge[[multiCharge]] + 
                   rules_mod$mzdiff[[multiCharge]]) - cluster$mzConsensus) <= mz_tol))
         {
           # add multi charge isotopic annotation of the variant present in the MS1
@@ -883,7 +883,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
       for (multiCharge in which(rules_mod$charge == 3)) {
         # ((M-ion_mode)/Y + X) - m <= mz_tol
         # ajusted formula to deal with M+1 = [M+H] and not [M]
-        if (any(abs(((cluster_peak_ms1$mzConsensus - ion_mode)/rules_mod$charge[[multiCharge]] + 
+        if (!is.null(ms_no_spectra_count) && any(abs(((cluster_peak_ms1$mzConsensus - ion_mode)/rules_mod$charge[[multiCharge]] + 
                      rules_mod$mzdiff[[multiCharge]]) - cluster$mzConsensus) <= mz_tol))
         {
           # add multi charge isotopic annotation of the variant present in the MS1

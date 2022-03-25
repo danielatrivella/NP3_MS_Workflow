@@ -265,7 +265,7 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
     
     # aggregate columns
     sim_chunk[,x_rows-1] <- matrix(apply(sim_chunk, 1, function(x) {
-      sapply(joined_ids, function(j) max(x[j-1]))}),
+      sapply(joined_ids, function(j) max(x[j-1], na.rm = T))}),
       ncol = length(x_rows_chunk), byrow = TRUE)
     sim_chunk <- sim_chunk[, !rm_rows[-1]] # rm first column of scans number
 
@@ -274,7 +274,7 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
     {
       sim_chunk[x_rows[x_rows_chunk]-from_row,] <- apply(sim_chunk, 2, function(x) {
         sapply(joined_ids[x_rows_chunk], 
-               function(j) max(x[j-from_row]))})
+               function(j) max(x[j-from_row], na.rm = T))})
       # remove already aggregated rows
       sim_chunk <- sim_chunk[!rm_rows[(from_row+1):to_row], ]
     }

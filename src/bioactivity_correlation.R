@@ -182,8 +182,8 @@ colnames(corr_bioactivity) <- bioactivity
 for (bio in bioactivity)
 {
   bio_suffix <- sub("BIOACTIVITY", "", bio)
-  # get the columns within each correlations
-  # remove correlations with equal or less than one sample selected
+  # retrieve the columns within each correlations
+  # remove correlations with less or equal than one sample selected with a valid bioactivity
   corr_samples_code <- lapply(corr_sets, function(i)
   {
     samples <- metadata[as.numeric(metadata[, i]) == 1 & 
@@ -211,8 +211,12 @@ for (bio in bioactivity)
       NULL
     }
   })
-  corr_samples_code <- corr_samples_code[!sapply(corr_samples_code, is.null)]
+  # remove invalid correlations
+  invalid_corr <- sapply(corr_samples_code, is.null)
+  corr_samples_code <- corr_samples_code[!invalid_corr]
+  corr_sets <- corr_sets[!invalid_corr]
   
+  # apply the biocorrelation
   count_samples <- bind_cols(count_samples, 
     lapply(seq_along(corr_samples_code), function(i)
     {

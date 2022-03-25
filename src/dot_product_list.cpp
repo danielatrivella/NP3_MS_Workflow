@@ -40,6 +40,11 @@ std::vector<std::vector<double>> normDotProductShiftList(
     out_normDotProductShift = normDotProductShift(peaks_A, ints_A,
                                                    peaks_B[i],ints_B[i],
                                                     bin_size, mz_diff);
+    if (out_normDotProductShift[0] < 0.1) {
+      out_normDotProductShift[0] = 0.0;
+      out_normDotProductShift[1] = 0;
+    }
+      
     similarities.push_back(out_normDotProductShift[0]);
     matches.push_back(out_normDotProductShift[1]);
   }
