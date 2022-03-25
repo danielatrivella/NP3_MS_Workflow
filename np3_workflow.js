@@ -2757,7 +2757,7 @@ program
 
         var output_path = basedir(options.count_file_path);
         // save merge parameters values
-        shell.ShellString('output_name: '+output_name + "\n\ncmd: \n\n").toEnd(output_path+'/logCorrParms');
+        shell.ShellString("Corr cmd: \n\n").toEnd(output_path+'/logCorrParms');
         shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(output_path+'/logCorrParms');
 
         const start_corr = process.hrtime.bigint();
