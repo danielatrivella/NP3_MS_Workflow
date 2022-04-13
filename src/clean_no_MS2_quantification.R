@@ -351,8 +351,9 @@ clean_quantification <- function(quantification_table, metadata, output_path, mz
   # check if peak area count of MS2 file exists and use it to enumerate the mz's ids uniquely
   if (!missing(output_path)) {
     if (file.exists(sub("_MS1", "", output_path))) {
+      # increment 1 to skip last msclusterID
       msclusterID_i <- length(readr::count_fields(sub("_MS1", "", output_path), 
-                                           skip = 1, tokenizer = readr::tokenizer_csv()))
+                                           skip = 1, tokenizer = readr::tokenizer_csv()))+1
       quantification_table$msclusterID <- msclusterID_i:(msclusterID_i+nrow(quantification_table)-1)
     }
     
