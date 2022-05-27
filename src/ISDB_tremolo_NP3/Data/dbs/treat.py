@@ -27,17 +27,23 @@ with open(db_file, 'rt') as f:
     mw_store = {}
     cas_store = {}
     pm_store = {}
-    # store the NPClassifier columns : 'NPClassifier_class', 'NPClassifier_superclass', 'NPClassifier_pathway', 'NPClassifier_isglycoside'
+    # store the NPClassifier and Classyfire columns : 'NPClassifier_class', 'NPClassifier_superclass', 'NPClassifier_pathway', 'NPClassifier_isglycoside', 'ClassyFire_subclass'
     npc_superclass_store = {}
     npc_class_store = {}
     npc_pathway_store = {}
     npc_isglycoside_store = {}
-
+    cf_subclass_store = {}
+    # store the NPAtlas columns : 'NPAtlas_id', 'NPAtlas_compound_names','NPAtlas_origin_type', 'NPAtlas_genus', 'NPAtlas_origin_species'
+    npa_id_store = {}
+    npa_compound_names_store = {}
+    npa_origin_type_store = {}
+    npa_genus_store = {}
+    npa_origin_species_store = {}
     for row in reader:
         if header:
             # unpd columns index
             unpd_id_pos = row.index('UNPD_ID')
-            smiles_pos = row.index('SMILES')
+            smiles_pos = row.index('Canonical_Smiles')
             cn_pos = row.index('cn')
             mf_pos = row.index('mf')    
             mw_pos = row.index('mw')        
@@ -48,6 +54,13 @@ with open(db_file, 'rt') as f:
             npc_class_pos = row.index('NPClassifier_superclass')
             npc_pathway_pos = row.index('NPClassifier_pathway')
             npc_isglycoside_pos = row.index('NPClassifier_isglycoside')
+            cf_subclass_pos = row.index('ClassyFire_subclass')
+            # NPA columns index
+            npa_id_pos = row.index('NPAtlas_id')
+            npa_compound_names_pos = row.index('NPAtlas_compound_names')
+            npa_origin_type_pos = row.index('NPAtlas_origin_type')
+            npa_genus_pos = row.index('NPAtlas_genus')
+            npa_origin_species_pos = row.index('NPAtlas_origin_species')
             header = False
         else:
             smiles_store[row[unpd_id_pos]] = row[smiles_pos]
@@ -60,6 +73,12 @@ with open(db_file, 'rt') as f:
             npc_class_store[row[unpd_id_pos]] = row[npc_class_pos]
             npc_pathway_store[row[unpd_id_pos]] = row[npc_pathway_pos]
             npc_isglycoside_store[row[unpd_id_pos]] = row[npc_isglycoside_pos]
+            cf_subclass_store[row[unpd_id_pos]] = row[cf_subclass_pos]
+            npa_id_store[row[unpd_id_pos]] = row[npa_id_pos]
+            npa_compound_names_store[row[unpd_id_pos]] = row[npa_compound_names_pos]
+            npa_origin_type_store[row[unpd_id_pos]] = row[npa_origin_type_pos]
+            npa_genus_store[row[unpd_id_pos]] = row[npa_genus_pos]
+            npa_origin_species_store[row[unpd_id_pos]] = row[npa_origin_species_pos]
 
 print("treated {} compounds".format(len(smiles_store)))
 
@@ -78,7 +97,9 @@ with open(result_file, 'rt') as f:
             #sharPeaks_id_pos = row.index('LibSearchSharedPeaks')
             row[0] = "msclusterID"
             header = row + ["SMILES"] + ["chemicalNames"] + ["molecularFormula"] + ["molecularWeight"] + ["CAS"] + \
-                     ["PARENTMASS"] + ["NPClassifier_superclass"] + ["NPClassifier_class"] + ["NPClassifier_pathway"] + ["NPClassifier_isglycoside"]
+                     ["PARENTMASS"] + ["NPClassifier_superclass"] + ["NPClassifier_class"] + ["ClassyFire_subclass"] +\
+                     ["NPClassifier_pathway"] + ["NPClassifier_isglycoside"] + ["NPAtlas_id"] + \
+                     ["NPAtlas_compound_names"] + ["NPAtlas_origin_type"] + ["NPAtlas_genus"] + ["NPAtlas_origin_species"]
         else:
             # store smiles and compoundName in the results
             temp = row   
@@ -91,8 +112,15 @@ with open(result_file, 'rt') as f:
             # npc data
             temp += [npc_superclass_store[row[unpd_id_pos]]]
             temp += [npc_class_store[row[unpd_id_pos]]]
+            temp += [cf_subclass_store[row[unpd_id_pos]]]
             temp += [npc_pathway_store[row[unpd_id_pos]]]
             temp += [npc_isglycoside_store[row[unpd_id_pos]]]
+            # npa data
+            temp += [npa_id_store[row[unpd_id_pos]]]
+            temp += [npa_compound_names_store[row[unpd_id_pos]]]
+            temp += [npa_origin_type_store[row[unpd_id_pos]]]
+            temp += [npa_genus_store[row[unpd_id_pos]]]
+            temp += [npa_origin_species_store[row[unpd_id_pos]]]
             output += [temp]
 
 print("\nConverting tremolo result to CSV")       
