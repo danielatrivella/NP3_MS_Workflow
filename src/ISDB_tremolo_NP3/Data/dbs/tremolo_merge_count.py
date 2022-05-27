@@ -31,6 +31,13 @@ with open(result_file, 'rt') as f:
     result_npc_class = {}
     result_npc_pathway = {}
     result_npc_isglycoside = {}
+    result_cf_subclass = {}
+    # NPAtlas columns result
+    result_npa_id = {}
+    result_npa_compound_names = {}
+    result_npa_origin_type = {}
+    result_npa_genus = {}
+    result_npa_origin_species = {}
     for row in reader:
         if not header:
             scan_id_pos = row.index('msclusterID')
@@ -48,6 +55,13 @@ with open(result_file, 'rt') as f:
             npc_class_pos = row.index('NPClassifier_superclass')
             npc_pathway_pos = row.index('NPClassifier_pathway')
             npc_isglycoside_pos = row.index('NPClassifier_isglycoside')
+            cf_subclass_pos = row.index('ClassyFire_subclass')
+            # NPA columns index
+            npa_id_pos = row.index('NPAtlas_id')
+            npa_compound_names_pos = row.index('NPAtlas_compound_names')
+            npa_origin_type_pos = row.index('NPAtlas_origin_type')
+            npa_genus_pos = row.index('NPAtlas_genus')
+            npa_origin_species_pos = row.index('NPAtlas_origin_species')
             header = True
         else:
             # obtain scan results
@@ -68,6 +82,12 @@ with open(result_file, 'rt') as f:
                 result_npc_class[row[scan_id_pos]] += ";" + row[npc_class_pos]
                 result_npc_pathway[row[scan_id_pos]] += ";" + row[npc_pathway_pos]
                 result_npc_isglycoside[row[scan_id_pos]] += ";" + row[npc_isglycoside_pos]
+                result_cf_subclass[row[scan_id_pos]] += ";" + row[cf_subclass_pos]
+                result_npa_id[row[scan_id_pos]] += ";" + row[npa_id_pos]
+                result_npa_compound_names[row[scan_id_pos]] += ";" + row[npa_compound_names_pos]
+                result_npa_origin_type[row[scan_id_pos]] += ";" + row[npa_origin_type_pos]
+                result_npa_genus[row[scan_id_pos]] += ";" + row[npa_genus_pos]
+                result_npa_origin_species[row[scan_id_pos]] += ";" + row[npa_origin_species_pos]
                 scan_count[row[scan_id_pos]] += 1
             else:
                 result_smile[row[scan_id_pos]] = row[smiles_id_pos]
@@ -83,6 +103,12 @@ with open(result_file, 'rt') as f:
                 result_npc_class[row[scan_id_pos]] = row[npc_class_pos]
                 result_npc_pathway[row[scan_id_pos]] = row[npc_pathway_pos]
                 result_npc_isglycoside[row[scan_id_pos]] = row[npc_isglycoside_pos]
+                result_cf_subclass[row[scan_id_pos]] = row[cf_subclass_pos]
+                result_npa_id[row[scan_id_pos]] = row[npa_id_pos]
+                result_npa_compound_names[row[scan_id_pos]] = row[npa_compound_names_pos]
+                result_npa_origin_type[row[scan_id_pos]] = row[npa_origin_type_pos]
+                result_npa_genus[row[scan_id_pos]] = row[npa_genus_pos]
+                result_npa_origin_species[row[scan_id_pos]] = row[npa_origin_species_pos]
                 scan_count[row[scan_id_pos]] = 1
 
 count_file = sys.argv[3]
@@ -99,7 +125,9 @@ with open(count_file, 'rt') as f:
             header = row + ["tremolo_UNPD_IDs"] + ["tremolo_SMILES"] + ["tremolo_chemicalNames"] + \
                      ["tremolo_molecularFormula"] + ["tremolo_molecularWeight"] + ["tremolo_CAS"] + ["tremolo_MQScore"]+ \
                      ["tremolo_mzErrorPPM"] + ["tremolo_numSharedPeaks"] + ["tremolo_NPClassifier_superclass"] + \
-                     ["tremolo_NPClassifier_class"] + ["tremolo_NPClassifier_pathway"] + ["tremolo_NPClassifier_isglycoside"]
+                     ["tremolo_NPClassifier_class"] + ["tremolo_ClassyFire_subclass"] + ["tremolo_NPClassifier_pathway"] + \
+                     ["tremolo_NPClassifier_isglycoside"] + ["tremolo_NPAtlas_id"] + ["tremolo_NPAtlas_compound_names"] + \
+                     ["tremolo_NPAtlas_origin_type"] + ["tremolo_NPAtlas_genus"] + ["tremolo_NPAtlas_origin_species"]
         else:
             temp = row
 
@@ -158,6 +186,11 @@ with open(count_file, 'rt') as f:
             else:
                 temp += ["NA"]
 
+            if row[cluster_index] in result_cf_subclass:
+                temp += [result_cf_subclass[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
             if row[cluster_index] in result_npc_pathway:
                 temp += [result_npc_pathway[row[cluster_index]]]
             else:
@@ -165,6 +198,31 @@ with open(count_file, 'rt') as f:
 
             if row[cluster_index] in result_npc_isglycoside:
                 temp += [result_npc_isglycoside[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npa_id:
+                temp += [result_npa_id[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npa_compound_names:
+                temp += [result_npa_compound_names[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npa_origin_type:
+                temp += [result_npa_origin_type[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npa_genus:
+                temp += [result_npa_genus[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npa_origin_species:
+                temp += [result_npa_origin_species[row[cluster_index]]]
             else:
                 temp += ["NA"]
 
@@ -189,10 +247,12 @@ if len(sys.argv) == 5:
         for row in reader:
             if not header:
                 cluster_index = row.index('msclusterID')
-                header = row + ["tremolo_UNPD_IDs"] + ["tremolo_SMILES"] + ["tremolo_chemicalNames"] + [
-                    "tremolo_molecularFormula"] + ["tremolo_molecularWeight"] + ["tremolo_CAS"] + ["tremolo_MQScore"] + \
+                header = row + ["tremolo_UNPD_IDs"] + ["tremolo_SMILES"] + ["tremolo_chemicalNames"] + \
+                         ["tremolo_molecularFormula"] + ["tremolo_molecularWeight"] + ["tremolo_CAS"] + ["tremolo_MQScore"] + \
                          ["tremolo_mzErrorPPM"] + ["tremolo_numSharedPeaks"] + ["tremolo_NPClassifier_superclass"] + \
-                     ["tremolo_NPClassifier_class"] + ["tremolo_NPClassifier_pathway"] + ["tremolo_NPClassifier_isglycoside"]
+                         ["tremolo_NPClassifier_class"] + ["tremolo_ClassyFire_subclass"] + ["tremolo_NPClassifier_pathway"] + \
+                         ["tremolo_NPClassifier_isglycoside"] + ["tremolo_NPAtlas_id"] + ["tremolo_NPAtlas_compound_names"] + \
+                         ["tremolo_NPAtlas_origin_type"] + ["tremolo_NPAtlas_genus"] + ["tremolo_NPAtlas_origin_species"]
             else:
                 temp = row
 
@@ -251,6 +311,11 @@ if len(sys.argv) == 5:
                 else:
                     temp += ["NA"]
 
+                if row[cluster_index] in result_cf_subclass:
+                    temp += [result_cf_subclass[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
                 if row[cluster_index] in result_npc_pathway:
                     temp += [result_npc_pathway[row[cluster_index]]]
                 else:
@@ -258,6 +323,31 @@ if len(sys.argv) == 5:
 
                 if row[cluster_index] in result_npc_isglycoside:
                     temp += [result_npc_isglycoside[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npa_id:
+                    temp += [result_npa_id[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npa_compound_names:
+                    temp += [result_npa_compound_names[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npa_origin_type:
+                    temp += [result_npa_origin_type[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npa_genus:
+                    temp += [result_npa_genus[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npa_origin_species:
+                    temp += [result_npa_origin_species[row[cluster_index]]]
                 else:
                     temp += ["NA"]
 
