@@ -1183,7 +1183,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.1.3',  '--version')
+    .version('1.1.4',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -2460,7 +2460,7 @@ program
     .command('tremolo')
     .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against ' +
         'In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural ' +
-        'Products Database).\n\n')
+        'Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.\n\n')
     .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored')
     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be searched and identified')
     .option('-c, --count_file_path [name]', 'optional paths to the count CSV files, separated by a comma ' +
