@@ -26,6 +26,11 @@ with open(result_file, 'rt') as f:
     result_mw = {}
     result_cas = {}
     scan_count = {}
+    # NPClassifier columns result
+    result_npc_superclass = {}
+    result_npc_class = {}
+    result_npc_pathway = {}
+    result_npc_isglycoside = {}
     for row in reader:
         if not header:
             scan_id_pos = row.index('msclusterID')
@@ -38,6 +43,11 @@ with open(result_file, 'rt') as f:
             score_id_pos = row.index('MQScore')
             ppmError_id_pos = row.index('mzErrorPPM')
             sharPeaks_id_pos = row.index('LibSearchSharedPeaks')
+            # NPC columns index
+            npc_superclass_pos = row.index('NPClassifier_class')
+            npc_class_pos = row.index('NPClassifier_superclass')
+            npc_pathway_pos = row.index('NPClassifier_pathway')
+            npc_isglycoside_pos = row.index('NPClassifier_isglycoside')
             header = True
         else:
             # obtain scan results
@@ -54,6 +64,10 @@ with open(result_file, 'rt') as f:
                 result_score[row[scan_id_pos]] += ";" + row[score_id_pos]
                 result_ppmError[row[scan_id_pos]] += ";" + row[ppmError_id_pos]
                 result_sharedPeaks[row[scan_id_pos]] += ";" + row[sharPeaks_id_pos]
+                result_npc_superclass[row[scan_id_pos]] += ";" + row[npc_superclass_pos]
+                result_npc_class[row[scan_id_pos]] += ";" + row[npc_class_pos]
+                result_npc_pathway[row[scan_id_pos]] += ";" + row[npc_pathway_pos]
+                result_npc_isglycoside[row[scan_id_pos]] += ";" + row[npc_isglycoside_pos]
                 scan_count[row[scan_id_pos]] += 1
             else:
                 result_smile[row[scan_id_pos]] = row[smiles_id_pos]
@@ -65,6 +79,10 @@ with open(result_file, 'rt') as f:
                 result_score[row[scan_id_pos]] = row[score_id_pos]
                 result_ppmError[row[scan_id_pos]] = row[ppmError_id_pos]
                 result_sharedPeaks[row[scan_id_pos]] = row[sharPeaks_id_pos]
+                result_npc_superclass[row[scan_id_pos]] = row[npc_superclass_pos]
+                result_npc_class[row[scan_id_pos]] = row[npc_class_pos]
+                result_npc_pathway[row[scan_id_pos]] = row[npc_pathway_pos]
+                result_npc_isglycoside[row[scan_id_pos]] = row[npc_isglycoside_pos]
                 scan_count[row[scan_id_pos]] = 1
 
 count_file = sys.argv[3]
@@ -78,9 +96,10 @@ with open(count_file, 'rt') as f:
     for row in reader:
         if not header:
             cluster_index = row.index('msclusterID')
-            header = row + ["UNPD_IDs_tremolo"] + ["SMILES_tremolo"] + ["chemicalNames_tremolo"] + [
-                "molecularFormula_tremolo"] + ["molecularWeight_tremolo"] + ["CAS_tremolo"] + ["MQScore_tremolo"] + ["mzErrorPPM_tremolo"] + [
-                         "numSharedPeaks_tremolo"]
+            header = row + ["tremolo_UNPD_IDs"] + ["tremolo_SMILES"] + ["tremolo_chemicalNames"] + \
+                     ["tremolo_molecularFormula"] + ["tremolo_molecularWeight"] + ["tremolo_CAS"] + ["tremolo_MQScore"]+ \
+                     ["tremolo_mzErrorPPM"] + ["tremolo_numSharedPeaks"] + ["tremolo_NPClassifier_superclass"] + \
+                     ["tremolo_NPClassifier_class"] + ["tremolo_NPClassifier_pathway"] + ["tremolo_NPClassifier_isglycoside"]
         else:
             temp = row
 
@@ -128,6 +147,27 @@ with open(count_file, 'rt') as f:
                 temp += [result_sharedPeaks[row[cluster_index]]]
             else:
                 temp += ["NA"]
+
+            if row[cluster_index] in result_npc_superclass:
+                temp += [result_npc_superclass[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npc_class:
+                temp += [result_npc_class[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npc_pathway:
+                temp += [result_npc_pathway[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
+            if row[cluster_index] in result_npc_isglycoside:
+                temp += [result_npc_isglycoside[row[cluster_index]]]
+            else:
+                temp += ["NA"]
+
             output += [temp]
 
 print("    - Outputing ", count_file)
@@ -149,9 +189,10 @@ if len(sys.argv) == 5:
         for row in reader:
             if not header:
                 cluster_index = row.index('msclusterID')
-                header = row + ["UNPD_IDs_tremolo"] + ["SMILES_tremolo"] + ["chemicalNames_tremolo"] + [
-                    "molecularFormula_tremolo"] + ["molecularWeight_tremolo"] + ["CAS_tremolo"] + ["MQScore_tremolo"] + ["mzErrorPPM_tremolo"] + [
-                             "numSharedPeaks_tremolo"]
+                header = row + ["tremolo_UNPD_IDs"] + ["tremolo_SMILES"] + ["tremolo_chemicalNames"] + [
+                    "tremolo_molecularFormula"] + ["tremolo_molecularWeight"] + ["tremolo_CAS"] + ["tremolo_MQScore"] + \
+                         ["tremolo_mzErrorPPM"] + ["tremolo_numSharedPeaks"] + ["tremolo_NPClassifier_superclass"] + \
+                     ["tremolo_NPClassifier_class"] + ["tremolo_NPClassifier_pathway"] + ["tremolo_NPClassifier_isglycoside"]
             else:
                 temp = row
 
@@ -199,6 +240,27 @@ if len(sys.argv) == 5:
                     temp += [result_sharedPeaks[row[cluster_index]]]
                 else:
                     temp += ["NA"]
+
+                if row[cluster_index] in result_npc_superclass:
+                    temp += [result_npc_superclass[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npc_class:
+                    temp += [result_npc_class[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npc_pathway:
+                    temp += [result_npc_pathway[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
+                if row[cluster_index] in result_npc_isglycoside:
+                    temp += [result_npc_isglycoside[row[cluster_index]]]
+                else:
+                    temp += ["NA"]
+
                 output += [temp]
     with open(count_file, 'w') as tsvfile:
         writer = csv.writer(tsvfile, delimiter=',',
