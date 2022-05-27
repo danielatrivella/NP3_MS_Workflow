@@ -4,11 +4,10 @@
 
 - - - - 
 
-# Current Version 1.1.3
+# Current Version 1.1.4
 
 - NEW features:
-	- Added the parameter max_shift, used in the pairwise comparison with NP3 shifted cosine function (Step 5). Applies the shift when the precursor m/z difference of the spectra being compared is smaller than this cut-off.
-	- Added the parameter min_matched_peaks used in the SSMN filtering (Step 10). Removes links from the SSMN between spectra with few fragment peaks in common
+	- Added origin and class information to the UNPD compounds from NPClassifier, NPAtlas and ClassyFire.
 
 - - - -
 
@@ -285,7 +284,7 @@ Commands:
     - *\-o, \-\-output_path* \<path\>       : path to the final output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'mgf' folder and the 'count_tables' folder with the peak area and spectra count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
  
-- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database).
+- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
