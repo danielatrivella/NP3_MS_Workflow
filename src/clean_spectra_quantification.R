@@ -354,14 +354,11 @@ merge_counts <- function(col_name, x)
                   NA),
          joinedIDs = paste(c(x$msclusterID[is.na(x[[col_name]])],
                              x[[col_name]][!is.na(x[[col_name]])]), collapse = ";"),
-         gnps_Smiles=,SMILES_tremolo=ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ,
-                                            paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ","), 
-                                            NA),
          ifelse(is.numeric(x[[col_name]]) && !startsWith(col_name, 'gnps_'), # do not sum gnps results, concatenate them
                 sum(x[[col_name]], na.rm = TRUE), # sum all the counts cols (_area and _spectra)
                 ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ;
                        paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
-                       NA))) # cocatenate string fields (e.g. from tremolo or gnps)
+                       NA))) # cocatenate string fields (e.g. from gnps)
 }
 
 
@@ -393,7 +390,7 @@ batch_metadata <- readMetadataTable(path_batch_metadata)
 
 # read count files
 ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, guess_max = 5000))
-ms_spectra_count <- ms_spectra_count[, !endsWith(names(ms_spectra_count), "_tremolo")]
+ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "tremolo_")]
 ms_spectra_count$joinedIDs <- NA
 ms_spectra_count$numJoins <- 0
 # multiple the peakInts by the sumInts to correctly scale the joined spectra peaks

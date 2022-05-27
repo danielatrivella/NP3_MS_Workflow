@@ -88,7 +88,7 @@ if (!isTRUE(all.equal(unlist(ms_spectra_count[,c("mzConsensus", "rtMean", "rtMin
 }
 
 # removed not used columns
-ms_spectra_count <- ms_spectra_count[, !(endsWith(names(ms_spectra_count), "_tremolo") | 
+ms_spectra_count <- ms_spectra_count[, !(startsWith(names(ms_spectra_count), "tremolo_") | 
                                          endsWith(names(ms_spectra_count), "_metfrag"))]
 ms_spectra_count <- bind_cols(ms_spectra_count,  
                               ms_area_count[,endsWith(names(ms_area_count), "_area")])

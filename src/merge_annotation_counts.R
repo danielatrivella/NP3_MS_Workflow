@@ -44,7 +44,7 @@ merge_counts <- function(col_name, x)
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ;
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                   NA),
-         gnps_Smiles=,SMILES_tremolo=ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ,
+         gnps_Smiles=,tremolo_SMILES=ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ,
                                paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ","), 
                                NA),
          mergedIDs_all= unlist(x[[col_name]]),
