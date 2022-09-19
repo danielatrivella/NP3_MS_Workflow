@@ -34,7 +34,8 @@ def treat_dfMS1_list_pw(dfMS1_list_with_MS2, dfMeta):
     n = dfMS1_list_with_MS2.shape[0]
     # transform the column names and the samples types to lower case (no case sensitive)
     dfMeta.columns = dfMeta.columns.str.lower()
-    dfMeta["sample_type"] = dfMeta.sample_type.str.lower()
+    dfMeta.columns = dfMeta.columns.str.strip()
+    dfMeta["sample_type"] = dfMeta.sample_type.str.lower()    
     # Get blank samples names
     blank_sample_codes = dfMeta[dfMeta.sample_type == "blank"]["sample_code"].to_list()
     # get the blank samples columns names
