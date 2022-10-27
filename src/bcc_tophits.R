@@ -37,8 +37,8 @@ if (length(args) < 6) {
        " 2 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;\n",
        " 3 - The biocorrelation cutoff to select the top n hits;\n", 
        " 4 - The top n hits to be retrieve with the biocorrelation above the cutoff;\n", 
-       " 5 - The top k hist to be retrieve when there were less then top n retrieved, where the top k are below the biocorr cutoff;\n", 
-       " 6 - TRUE to also remove bflag and bedflag, FALSE otherwise;\n", 
+       #" 5 - The top k hist to be retrieve when there were less then top n retrieved, where the top k are below the biocorr cutoff;\n", 
+       " 5 - TRUE to also remove bflag and bedflag, FALSE otherwise;\n", 
        call.=FALSE)
 } else {
   path_count <- file.path(args[[1]])
@@ -58,8 +58,8 @@ if (length(args) < 6) {
   
   corr_cutoff <- as.numeric(args[[3]])
   top_n_hits_gecutoff <- as.numeric(args[[4]])
-  top_k_hits_lecutoff <- as.numeric(args[[5]])
-  rm_flags <- as.logical(args[[6]])
+  #top_k_hits_lecutoff <- as.numeric(args[[5]])
+  rm_flags <- as.logical(args[[5]])
 }
 
 # read the quantifications, skipping the rows with the bioactivities
@@ -99,24 +99,28 @@ if ('BEDS_TOTAL' %in% names(ms_count)) {
 for (corr_col in corr_cols) {
   # order ms_count table using the max correlation and the basePeakInt
   top_n_corr <- ms_count %>%
-    filter(valid == TRUE) %>%
+    filter(valid == TRUE,  !is.na(!!as.symbol(corr_col)), !!as.symbol(corr_col) >= corr_cutoff) %>%
     arrange(desc(!!as.symbol(corr_col)), desc(max_corr), desc(basePeakInt)) %>% 
-    slice(1:max(top_n_hits_gecutoff, top_k_hits_lecutoff)) %>% 
+    #slice(1:max(top_n_hits_gecutoff, top_k_hits_lecutoff)) %>% 
     select('msclusterID', !!as.symbol(corr_col))
-  
+  cat("\n** Top selected for ", corr_col, " **\n")
+  print(top_n_corr)
   # select the top n above the cutoff
-  consensus_spec_select <- top_n_corr[top_n_corr[corr_col] >= corr_cutoff, 'msclusterID'][[1]]
+  consensus_spec_select <- top_n_corr[, 'msclusterID'][[1]]
   if (length(consensus_spec_select) >= top_n_hits_gecutoff) {
     consensus_spec_select <- consensus_spec_select[1:top_n_hits_gecutoff]
-  } else {
-    # not enought candidates above the cutoff, select more candidates to reach top_k
-    if (top_k_hits_lecutoff > length(consensus_spec_select)) {
-      consensus_spec_select <- top_n_corr[1:top_k_hits_lecutoff, 'msclusterID'][[1]]
-    }
-  }
+  } 
+  #else {
+  #  # not enought candidates above the cutoff, select more candidates to reach top_k
+  #  if (top_k_hits_lecutoff > length(consensus_spec_select)) {
+  #    consensus_spec_select <- top_n_corr[1:min(top_k_hits_lecutoff, nrow(top_n_corr)), 'msclusterID'][[1]]
+  #  }
+  #}
   
   # annotate the selected candidates
+  #print(consensus_spec_select)
   select_index <- match(consensus_spec_select, ms_count$msclusterID)
+  #print(select_index)
   ms_count$BCC_top_hits[select_index] <- sapply(seq_along(select_index), 
                                                 function(i, sl_idxs, corr_name) {
     ifelse(is.na(ms_count$BCC_top_hits[sl_idxs[i]]), 
