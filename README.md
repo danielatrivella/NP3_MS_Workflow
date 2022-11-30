@@ -15,7 +15,7 @@
 
 - [Tutorial 1](https://youtu.be/gtPhn5hPuuQ): Brief introduction, 'Getting Started' section and a [M+H]+ analysis
 
-<iframe width="560" height="315" src="https://youtu.be/gtPhn5hPuuQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![](https://markdown-videos.deta/youtube/gtPhn5hPuuQ)](https://youtu.be/gtPhn5hPuuQ)
 
 - - - - 
 
