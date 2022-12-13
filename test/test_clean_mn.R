@@ -58,7 +58,7 @@ if (length(args) < 8) {
 # print(args)
 output_name <- basename(output_path)
 
-path_area_count <- file.path(output_path, "count_tables", "clean", paste0(output_name,"_peak_area_clean_annotated.csv"))
+path_area_count <- file.path(output_path, "count_tables", "clean", paste0(output_name,"_peak_area_clean_ann.csv"))
 if (!file.exists(path_area_count))
 {
   stop("The count file '", path_area_count,
@@ -77,14 +77,14 @@ if (!file.exists(path_sim_table))
 }
 
 path_sim_selfloops <- file.path(output_path, "molecular_networking", 
-                                paste0(output_name,"_molecular_networking_sim_",
+                                paste0(output_name,"_ssmn_w_",
                                         sub("\\.", "", mn_tol),
-                                       "_minMatchedPeaks_",min_matched_peaks,
-                                       "_topK_", top_k, "_maxComponent_",
+                                       "_mmp_",min_matched_peaks,
+                                       "_k_", top_k, "_x_",
                                         max_component_size, ".selfloop"))
 path_ann_selfloops <- file.path(output_path, "molecular_networking", 
                                 paste0(output_name,
-                                       "_molecular_networking_annotations.selfloop"))
+                                       "_ivamn.selfloop"))
 
 scans_pairsim <- suppressMessages(read_csv(path_sim_table))
 scans_order <- c(-1, scans_pairsim[[1]])

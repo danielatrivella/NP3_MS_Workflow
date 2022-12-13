@@ -529,19 +529,19 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
 
         // run corr if the metadata was provided and at least one symbolic cluster was created
         if (typeof metadata_path != "undefined" && shell.test('-e',merge_output_path +
-            output_name + '_peak_area_merged_annotations.csv')) {
+            output_name + '_peak_area_merged_ann.csv')) {
             // call groups
             callGroupsfunc(metadata_path,
-                merge_output_path + output_name + '_peak_area_merged_annotations.csv',
+                merge_output_path + output_name + '_peak_area_merged_ann.csv',
                 merge_output_path+'logMergeOutput', verbose);
 
             // call correlation
             callComputeCorrelation(metadata_path, merge_output_path +
-                output_name + '_peak_area_merged_annotations.csv',
+                output_name + '_peak_area_merged_ann.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
             // call correlation
             callComputeCorrelation(metadata_path, merge_output_path +
-                output_name + '_spectra_merged_annotations.csv',
+                output_name + '_spectra_merged_ann.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
         }
         var done_msg = '\n======\nFinish Step 8 '+printTimeElapsed_bigint(start_merge, process.hrtime.bigint())+"\n======\n";
@@ -642,9 +642,9 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     const start_protonated = process.hrtime.bigint();
     var output_name = basename(output_path);
     var mn_annotations_path = output_path + '/molecular_networking/' +
-        output_name + "_molecular_networking_annotations.selfloop";
+        output_name + "_ivamn.selfloop";
     var peak_area_clean_path = output_path + "/count_tables/clean/" +
-        output_name+"_peak_area_clean_annotated.csv";
+        output_name+"_peak_area_clean_ann.csv";
 
     var resExec = shell.exec(python3()+' '+__dirname+'/src/mn_annotations_assign_protonated_representative.py '+
         mn_annotations_path+' '+peak_area_clean_path, {async:false, silent:(parms.verbose === 0)});
@@ -724,7 +724,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matche
     }
     var step_name ='*** Filtering the SSMN - minimum matched peaks, top k neighbours and max component size  *** \n';
     console.log(step_name);
-    var mn_file = out_path+'/molecular_networking/'+basename(out_path)+"_molecular_networking_sim_"+
+    var mn_file = out_path+'/molecular_networking/'+basename(out_path)+"_ssmn_w_"+
         sim_mn.toString().replace(".", "")+".selfloop";
 
     resExec = shell.exec(python3()+' '+__dirname+'/src/molecular_network_filtering_library.py '+mn_file+' '+net_top_k+' '+
@@ -1076,7 +1076,7 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
     {
         console.log('\n*** Testing the consistency of the clean counts for the job '+output_name+' ***\n');
         resExec  = shell.exec('Rscript '+__dirname+'/test/test_counts.R ' + processed_data + ' '+ output_path+'clean/'+output_name+
-            '_spectra_clean_annotated.csv '+output_path+'clean/'+output_name+'_peak_area_clean_annotated.csv '+
+            '_spectra_clean_ann.csv '+output_path+'clean/'+output_name+'_peak_area_clean_ann.csv '+
             metadata +' '+ min_peaks_output, {async: false, silent: false});
         if (resExec.code) {
             console.log('\nERROR');
@@ -1087,7 +1087,7 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
     {
         console.log('\n*** Testing the consistency of the merged counts for the job '+output_name+' ***\n');
         resExec = shell.exec('Rscript '+__dirname+'/test/test_counts.R ' + processed_data+' '+ output_path+'merge/'+output_name+
-            '_spectra_merged_annotations.csv '+output_path+'merge/'+output_name+'_peak_area_merged_annotations.csv '+
+            '_spectra_merged_ann.csv '+output_path+'merge/'+output_name+'_peak_area_merged_ann.csv '+
             metadata +' '+ min_peaks_output, {async: false, silent: false});
         if (resExec.code) {
             console.log('\nERROR');
@@ -1490,7 +1490,7 @@ program
     //     'if this happen the user must stop the process (Step 6)', toupper, "FALSE")
     .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
         'the Tremolo tool should be used for the spectra matching\n\t\t\t\t\t' +
-        'against the ISDB from the UNPD (Step 6)', toupper, "FALSE")
+        'against the ISDB from the UNPD (Step 6)', toupper, "TRUE")
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information.\n\t\t\t\t\t' +
         ' For values greater or equal to 10 a consistency test of \n\t\t\t\t\t' +
         'the results is also performed.', parseDecimal, 0)
@@ -1636,10 +1636,10 @@ program
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(options.metadata, counts_path + "_peak_area_clean_annotated.csv",
+                callComputeCorrelation(options.metadata, counts_path + "_peak_area_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
-                callComputeCorrelation(options.metadata, counts_path + "_spectra_clean_annotated.csv",
+                callComputeCorrelation(options.metadata, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
             }
@@ -1746,14 +1746,14 @@ program
             "- The 'molecular_networking' folder containing:\n" +
             "    - One subfolder named \"similarity_tables\" with the pairwise similarity tables;\n" +
             "    - Three molecular networks edge files (Steps 7 and 10): \n" +
-            "        - the molecular network of annotations named as '\<output\_name\>\_molecular\_networking\_annotations.selfloops'\n" +
-            "        - the complete molecular network of similarity named as '\<output\_name\>\_molecular\_networking\_sim\_" +
+            "        - the molecular network of annotations named as '\<output\_name\>\_ivamn.selfloops'\n" +
+            "        - the complete molecular network of similarity named as '\<output\_name\>\_ssmn\_w\_" +
             "\<similarity_mn\>.selfloops', all links with a similarity value above the cut-off are present\n" +
-            "        - the filtered molecular network of similarity named as '\<output\_name\>\_molecular\_networking\_sim\_" +
-            "\<similarity_mn\>\_topK\_\<net\_top\_k\>\_maxComponent\_\<max\_component\_size\>.selfloops';\n" +
+            "        - the filtered molecular network of similarity named as '\<output\_name\>\_ssmn\_w\_" +
+            "\<similarity_mn\>\_k\_\<net\_top\_k\>\_x\_\<max\_component\_size\>.selfloops';\n" +
             "    - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ " +
             "representatives, named as " +
-            "'<output\_name>_molecular_networking_annotations_attributes_protonated_representative.csv'"
+            "'<output\_name>_ivamn_attributes.csv'"
         );
         console.log('\n');
         console.log('EXAMPLES:');
@@ -2013,7 +2013,7 @@ program
     //     'database of the top correlated spectra.', toupper,"FALSE")
     .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
         'the Tremolo tool should be used for the spectral matching\n\t\t\t\t\t' +
-        'against the ISDB from the UNPD', toupper, "FALSE")
+        'against the ISDB from the UNPD', toupper, "TRUE")
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra to be loaded and processed in a\n\t\t\t\t\t" +
         "chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased",parseDecimal,3000)
@@ -2305,7 +2305,7 @@ program
     //     'PubChem database of the top correlated m/z\'s\n\t\t\t\t\t', toupper,"FALSE")
     .option('-j, --tremolo_identification [x]', 'for not Windows OS\'s. A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used ' +
         'for the spectral matching against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD ' +
-        '(Universal Natural Products Database).', toupper,"FALSE")
+        '(Universal Natural Products Database).', toupper,"TRUE")
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed in " +
         "a chunk at the same time. In case of memory issues this value should be decreased",parseDecimal,3000)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information', parseDecimal, 0)
@@ -2391,10 +2391,10 @@ program
             } else {
                 // annotations worked, call correlation in the clean and annotated counts
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_peak_area_clean_annotated.csv",
+                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_peak_area_clean_ann.csv",
                     options.method,0, output_clean_path+"logAnnotateOutput", options.verbose);
 
-                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_spectra_clean_annotated.csv",
+                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_spectra_clean_ann.csv",
                     options.method,0, output_clean_path+"logAnnotateOutput", options.verbose);
             }
 
@@ -2437,13 +2437,13 @@ program
         console.log('One subfolder inside the \'count_tables\' folder is created named \'clean\' containing:\n' +
             '    - A text file named \'analyseCountClusteringClean\' with the clean count analyses\n' +
             '    - Two CSV files with the clustering counts of spectra and peak area cleanned and annotated, named with the ' +
-            'suffix \'_clean_annotated.csv\'\n' +
+            'suffix \'_clean_ann.csv\'\n' +
             '    - CSV files with the correlation columns added are also included when there is a biocorrelation result\n' +
             'The \'molecular_networking\' folder is also created if not present yet, and inside it: \n' +
             '    - One subfolder named "similarity_tables" with the clean version of the pairwise table of similarity;\n' +
             '    - Two molecular networking\'s edge files: the MN of annotations is named as ' +
-            '\'<*output\\_name*>_molecular_networking_annotations.selfloops\' and the MN of similarity is named as ' +
-            '\'<*output\\_name*>_molecular_networking_sim<*similarity_mn*>_topK_<*net_top_k*>_maxComponent_<*max_component_size*>.selfloop\', where the ' +
+            '\'<*output\\_name*>_ivamn.selfloops\' and the MN of similarity is named as ' +
+            '\'<*output\\_name*>_ssmn_w_<*similarity_mn*>_k_<*net_top_k*>_x_<*max_component_size*>.selfloop\', where the ' +
             '\'output\\_name\' is extracted from the \'output_path\';\n' +
             '    - One CSV file with the molecular network of annotations edges attributes and protonated representative\n\n'+
             'When running Tremolo the \'identification\' folder is also created (if not present yet) with the' +
@@ -2653,10 +2653,9 @@ program
             'result as new columns, named with the suffix \'_annotated.csv\' \n\n' +
             'The \'molecular_networking\' folder is created if not present yet, and inside it is created:\n' +
             '- The molecular network of annotations edge file named as ' +
-            '\'\<*output\_name*\>\_molecular\_networking\_annotations.selfloops\';\n' +
+            '\'\<*output\_name*\>\_ivamn.selfloops\';\n' +
             '- One CSV table containing the molecular network of annotations attributes and the assigned ' +
-            '[M+H]+ representatives, named as\'\<*output\_name*\>\_molecular\_networking\_annotations\_attributes\_' +
-            'protonated\_representative.csv\'\n\n'+
+            '[M+H]+ representatives, named as\'\<*output\_name*\>\_ivamn\_attributes.csv\'\n\n'+
             'Where the \'output\_name\' is extracted from the \'output_path\';');
         console.log('');
         console.log('EXAMPLES:');
@@ -2726,7 +2725,7 @@ program
         console.log('');
         console.log('One subfolder inside the \'count_tables\' folder is created named \'merge\' containing:\n' +
             '- Two CSV files with the cleaned and annotated counts of spectra and peak area merged and new symbolic ' +
-            'clusters added as new rows, named with the suffix \'_merged_annotations.csv\';\n' +
+            'clusters added as new rows, named with the suffix \'_merged_ann.csv\';\n' +
             '- CSV files with the correlation columns added are also included when there is a biocorrelation result.');
         console.log('');
         console.log('EXAMPLES:');
@@ -2778,8 +2777,8 @@ program
         console.log('');
         console.log('A CSV table in the count_file directory named as \'\<count_file\>_corr_\<method\>.csv\', ' +
             'without the count_file extension. The new tables contain the original count tables plus for each correlation ' +
-            'group and bioactivity score, as defined in the metadata table, a new column with the correlation scores of ' +
-            'each consensus spectrum, and a new row with the bioactivities scores of each sample placed above the original ' +
+            'group and bioactivity score, as defined in the metadata table and new columns with the correlation scores of ' +
+            'each consensus spectrum. Also, in a copy of this table, named with the suffix \'_bioAct.csv\', new rows are added with the bioactivities scores of each sample placed above the original ' +
             'counts table header (first rows).\n' +
             '\n' +
             'In the metadata table the columns with a bioactivity score must be named with the prefix "BIOACTIVITY_" and ' +
@@ -2859,9 +2858,9 @@ program
         console.log('RESULTS:');
         console.log('');
         console.log('Two files with the molecular networks of similarity are created inside the \'molecular_networking\' folder:\n' +
-            '- One named \'\<*output\_name*\>\_molecular\_networking\_sim\_\<*similarity_mn*\>.selfloops\' with the complete network, all links with a similarity value above the cut-off are present\n' +
-            '- Another named \'\<*output\_name*\>\_molecular\_networking\_sim\_\<*similarity_mn*\>\_topK\_' +
-            '\<*net\_top\_k*\>\_maxComponent\_\<*max\_component\_size*\>.selfloops\' with the filtered network;\n' +
+            '- One named \'\<*output\_name*\>\_ssmn\_w\_\<*similarity_mn*\>.selfloops\' with the complete network, all links with a similarity value above the cut-off are present\n' +
+            '- Another named \'\<*output\_name*\>\_ssmn\_w\_\<*similarity_mn*\>\_k\_' +
+            '\<*net\_top\_k*\>\_x\_\<*max\_component\_size*\>.selfloops\' with the filtered network;\n' +
             '    \n' +
             'Where the \'output\_name\' is extracted from the \'output_path\';');
         console.log('');
@@ -3060,7 +3059,7 @@ program
     .description('This command runs some use cases to test the $NP^{3}$ MS workflow consistency in all steps. ' +
         'This option is intended for debugging purposes, and is not a part of the analysis workflow.\n\n')
     .option('-p, --pre_process [x]', '\'TRUE\' or \'FALSE\' to test the pre process step.', toupper, "FALSE")
-    .option('-t, --tremolo [x]', '\'TRUE\' or \'FALSE\' to test the tremolo step.', toupper, "FALSE")
+    .option('-t, --tremolo [x]', '\'TRUE\' or \'FALSE\' to test the tremolo step. If on Windows OS this should be FALSE.', toupper, "TRUE")
     .option('-s, --skip [x]', 'Skip to test x', 1)
     .action(function(options) {
         const start_test = process.hrtime.bigint();
@@ -3119,7 +3118,7 @@ program
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/clusterinfo/0e83d32ce4414494ad9cc12ad3db4824.clusterinfo ' +
                 '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/result_specnets_DB/31ba0709274e450295c6da492030f356.tsv ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_annotated.csv',
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv',
                 {async:false, silent:true});
             var gnps_result_mn = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3139,7 +3138,7 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications-main.tsv ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_annotated.csv',
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv',
                 {async:false, silent:true});
             var gnps_result_ls = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {

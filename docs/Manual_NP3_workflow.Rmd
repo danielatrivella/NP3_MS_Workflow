@@ -391,7 +391,7 @@ Options for the command *run*:
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased. To be used in Steps 6, 7 and 10 (default: 3000)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (Step 9) (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process (Step 5) (default: "FALSE") -->
-- *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (Step 5) (default: "FALSE")
+- *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (Step 5) (default: "TRUE")
 - *\-v, \-\-verbose* [x]             : for values X\>0 show the scripts output information. For values greater or equal to 10 a consistency test of the results is also performed. (default: 0)
 - *\-h, \-\-help*                    : output usage information
  
@@ -416,17 +416,14 @@ The final integration step result is located inside the 'outs' directory in a fo
 - The 'molecular_networking' folder containing: 
     - One subfolder named "similarity_tables" with the pairwise similarity tables (Step 5);
     - Three molecular networks edge files (Steps 7 and 10): 
-        - the molecular network of annotations named as '\<*output_name*\>_molecular_networking
-        _annotations.selfloops'
-        - the complete molecular network of similarity named as '\<*output_name*\>_molecular_networking
-        _sim_\<*similarity_mn*\>.selfloops', all links with a similarity value above the cut-off are present
+        - the molecular network of annotations named as '\<*output_name*\>_ivamn.selfloops'
+        - the complete molecular network of similarity named as '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>.selfloops', all links with a similarity value above the cut-off are present
         - the filtered molecular network of similarity named as 
-    '\<*output_name*\>_molecular_networking_sim
-    _\<*similarity_mn*\>_topK_
-    \<*net_top_k*\>_maxComponent_\<*max_component_size*\>.selfloops';
+    '\<*output_name*\>_ssmn_w
+    _\<*similarity_mn*\>_k_
+    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops';
     - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
-    '\<*output_name*\>_molecular_networking_annotations_attributes_
-    protonated_representative.csv' (Step 7)
+    '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
  
 ##### 4.2.2. *run* Examples
  
@@ -617,7 +614,7 @@ Options for the command *clustering*:
 - *\-e, \-\-method* [name]             :  a character string indicating which correlation coefficient is to be computed. One of "pearson", "kendall", or "spearman" (default: "spearman")
 - *\-x, \-\-min_peaks_output* [x]       : the minimum number of fragment peaks that a spectrum must have to be outputted after the final clustering step (Step 3). Spectra with less than X peaks will be discarded. x >= 1 (default: 5)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if MetFrag tool should be used for identification search against the PubChem database of the top correlated spectra. (default: "FALSE") -->
-- *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (default: "FALSE")
+- *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (default: "TRUE")
 - *\-b, \-\-max_chunk_spectra* [x]      : Maximum number of spectra to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000)
 - *\-v, \-\-verbose* [x]              :   for values X>0 show the scripts output information (default: 0)
 - *\-h, \-\-help*                     :   output usage information
@@ -765,7 +762,7 @@ Options for the command *clean*:
 - *\-l, \-\-parallel_cores* [x]       :   the number of cores to be used for parallel processing (Step 5). x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1 (default: 2)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process. (default: "FALSE") -->
-- *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (default: "FALSE")
+- *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (default: "TRUE")
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000)
 - *\-v, \-\-verbose* [x]             : for values X\>0 show the scripts output information. (default: 0)
 - *\-h, \-\-help*                    : output usage information
@@ -775,18 +772,17 @@ Options for the command *clean*:
 One subfolder inside the 'count_tables' folder is created named 'clean' containing:
  
 - A text file named 'analyseCountClusteringClean' with the clean count analyses
-- Two CSV files with the clustering counts of spectra and peak area cleaned and annotated, named with the suffix '_clean_annotated.csv'
+- Two CSV files with the clustering counts of spectra and peak area cleaned and annotated, named with the suffix '_clean_ann.csv'
 - CSV files with the correlation columns added are also included when there is a biocorrelation result
  
 The 'molecular_networking' folder is also created if not present yet, and inside it is created: 
  
 - One subfolder named "similarity_tables" with the clean version of the pairwise table of similarity;
-- Two molecular networks edge files (Steps 7 and 10): the molecular network of annotations is named as '\<*output_name*\>_molecular_networking_annotations.selfloops' and the molecular network of similarity is named as 
-    '\<*output_name*\>_molecular_networking_sim_\<*similarity_mn*\>_topK_
-    \<*net_top_k*\>_maxComponent_\<*max_component_size*\>.selfloops';
+- Two molecular networks edge files (Steps 7 and 10): the molecular network of annotations is named as '\<*output_name*\>_ivamn.selfloops' and the molecular network of similarity is named as 
+    '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>_k_
+    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops';
 - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
-    '\<*output_name*\>_molecular_networking_annotations_attributes_
-    protonated_representative.csv' (Step 7)
+    '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
  
 Where the 'output_name' is extracted from the 'output_path';
  
@@ -889,8 +885,8 @@ Concatenate tremolo results in the count files:
   $ node np3_workflow.js tremolo -o 
     "/path/to/the/output/dir/test_np3/outs/test_np3/identifications" 
     -g "/path/to/the/output/dir/test_np3/outs/test_np3/mgf/test_np3_all.mgf" -c 
-    "/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_spectra_clean_annotated.csv,
-    /path/to/the/output/dir/test_np3/outs/test_np3/test_np3_peak_area_clean_annotated.csv"
+    "/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_spectra_clean_ann.csv,
+    /path/to/the/output/dir/test_np3/outs/test_np3/test_np3_peak_area_clean_ann.csv"
 ```
  
  
@@ -925,10 +921,9 @@ It creates inside the 'count_tables/clean' folder:
  
 The 'molecular_networking' folder is created if not present yet, and inside it is created: 
  
-- The molecular network of annotations edge file named as '\<*output_name*\>_molecular_networking_annotations.selfloops';
+- The molecular network of annotations edge file named as '\<*output_name*\>_ivamn.selfloops';
 - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
-    '\<*output_name*\>_molecular_networking_annotations_attributes_
-    protonated_representative.csv'
+    '\<*output_name*\>_ivamn_attributes.csv'
  
 Where the 'output_name' is extracted from the 'output_path';
  
@@ -1077,7 +1072,7 @@ Options for the command *merge*:
  
 One subfolder inside the 'count_tables' folder is created named 'merge' containing:
  
-- Two CSV files with the cleaned and annotated counts of spectra and peak area merged and new symbolic clusters added as new rows, named with the suffix '_merged_annotations.csv';
+- Two CSV files with the cleaned and annotated counts of spectra and peak area merged and new symbolic clusters added as new rows, named with the suffix '_merged_ann.csv';
 - CSV files with the correlation columns added are also included when there is a biocorrelation result.
  
 ##### 4.8.2. *merge* Examples
@@ -1130,7 +1125,7 @@ Options for the command *corr*:
  
 ##### 4.9.1. *corr* Results
  
-A CSV table in the count_file directory named as '\<count_file\>_corr_\<method\>.csv', without the count_file extension. The new tables contain the original count tables plus for each correlation group and bioactivity score, as defined in the metadata table, a new column with the correlation scores of each consensus spectrum, and a new row with the bioactivities scores of each sample placed above the original counts table header (first rows).
+A CSV table in the count_file directory named as '\<count_file\>_corr_\<method\>.csv', without the count_file extension. The new tables contain the original count tables plus for each correlation group and bioactivity score, as defined in the metadata table and new columns with the correlation scores of each consensus spectrum. Also, in a copy of this table, named with the suffix \'_bioAct.csv\', new rows are added with the bioactivities scores of each sample placed above the original counts table header (first rows).
  
 In the metadata table the columns with a bioactivity score must be named with the prefix "BIOACTIVITY_" and the columns with the correlation groups (samples to be used in each correlation) must be named with the prefix "COR_".
 The correlation score will produce NA values with warnings if the counts of the selected samples are all equal 0 or if the bioactivity of the selected samples are all the same, and it will produce "CTE" if the counts of the selected samples have the same values (standard deviation equals 0). 
@@ -1168,10 +1163,10 @@ Options for the command *mn*:
  
 Two files with the molecular networks of similarity are created inside the 'molecular_networking' folder:
  
-- One named '\<*output_name*\>_molecular_networking_sim_\<*similarity_mn*\>.selfloops' with the complete network, all links with a similarity value above the cut-off are present
+- One named '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>.selfloops' with the complete network, all links with a similarity value above the cut-off are present
 - Another named 
-'\<*output_name*\>_molecular_networking_sim_\<*similarity_mn*\>_topK_
-    \<*net_top_k*\>_maxComponent_\<*max_component_size*\>.selfloops' with the filtered network;
+'\<*output_name*\>_ssmn_w_\<*similarity_mn*\>_k_
+    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops' with the filtered network;
     
 Where the 'output_name' is extracted from the 'output_path';
  

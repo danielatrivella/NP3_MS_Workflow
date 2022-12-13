@@ -258,7 +258,7 @@ if (!any(startsWith(names(count_samples), "COR_")))
   stop("No correlation was computed for ", 
        out_name, 
        ". Probably a wrong count file was provided or a wrong selection of ", 
-       "samples for the correlation groups was provided in the metadatada file.")
+       "samples for the correlation groups was provided in the metadatada table.")
 }
 
 # get the max correlation score of each group
@@ -275,23 +275,28 @@ samplesOrder <- match(names(count_samples)[which(names(count_samples) %in% sampl
 # skip the samplesNames[[1]] pos, the "BIOACTIVITY" tag and the bioactivity action (inhibition or activation) 
 # to print the bioactivity value by sample
 # skip the columns before the first corr to print the max corr by group
-
 write.table(t(c(rep("", min(match(samplesNames, names(count_samples))) - 2), 
                 bioactivity[1], corr_bioactivity[samplesOrder, bioactivity[1]], 
                 rep("", which(startsWith(names(count_samples), "COR_"))[[1]]- max(match(samplesNames, names(count_samples))) -1),
                 corrs_max)), 
-            file = file.path(output_path, paste0(out_name, "_corr_", method, ".csv")),
+            file = file.path(output_path, paste0(out_name, "_corr_", method, "_bioAct.csv")),
             sep = ",", col.names = FALSE, row.names = FALSE)
+# write the bioactivities in the first rows
 for (bio in bioactivity[-1])
 {
   suppressWarnings(write.table(t(c(rep("", min(match(samplesNames, names(count_samples))) - 2), 
                   bio, corr_bioactivity[samplesOrder, bio])), 
-              file = file.path(output_path, paste0(out_name, "_corr_", method, ".csv")),
+              file = file.path(output_path, paste0(out_name, "_corr_", method, "_bioAct.csv")),
               sep = ",", append = TRUE, col.names = FALSE, row.names = FALSE)) # suppressing warning because of the param 'append'
 }
+# write the quantification table
 suppressWarnings(write.table(count_samples, 
-          file = file.path(output_path, paste0(out_name, "_corr_", method, ".csv")), 
+          file = file.path(output_path, paste0(out_name, "_corr_", method, "_bioAct.csv")), 
           row.names = FALSE, append = TRUE, sep = ",")) # suppressing warning because of the param 'append'
+# write the quantification table without bioactivity data on the top
+suppressWarnings(write.table(count_samples, 
+                             file = file.path(output_path, paste0(out_name, "_corr_", method, ".csv")), 
+                             row.names = FALSE, sep = ",")) # suppressing warning because of the param 'append'
 
 # check if more than 10 warnings were emmited and show all unique ones
 if (length(warnings()) > 10)

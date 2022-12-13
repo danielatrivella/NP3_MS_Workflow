@@ -212,8 +212,8 @@ if __name__ == "__main__":
     filter_top_k(G, top_k)
     filter_component(G, max_component_size)
     outName = str(graph_file.replace('.selfloop', '')+
-                  '_minMatchedPeaks_'+str(min_matched_peaks)+
-                  '_topK_'+str(top_k)+'_maxComponent_'+str(max_component_size)+
+                  '_mmp_'+str(min_matched_peaks)+
+                  '_k_'+str(top_k)+'_x_'+str(max_component_size)+
                   '.selfloop')
 
     # Get single nodes and create selfloops

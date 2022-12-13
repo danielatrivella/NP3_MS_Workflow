@@ -85,7 +85,7 @@ if (length(args) < 5) {
   output_name <- basename(output_path)
   
   path_spectra_count <- file.path(output_path, "count_tables", "clean", 
-                                  paste0(output_name,"_spectra_clean_annotated.csv"))
+                                  paste0(output_name,"_spectra_clean_ann.csv"))
   if (!file.exists(path_spectra_count))
   {
     stop("The spectra count file '", path_spectra_count,
@@ -331,9 +331,9 @@ names(ms_area_count)[count_columns] <- sub(pattern = "_spectra",
                                            x = names(ms_area_count)[count_columns])
 
 write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "merge", 
-                                             paste0(output_name, "_spectra_merged_annotations.csv")))
+                                             paste0(output_name, "_spectra_merged_ann.csv")))
 write_csv(ms_area_count, path = file.path(output_path, "count_tables", "merge",
-                                          paste0(output_name, "_peak_area_merged_annotations.csv")))
+                                          paste0(output_name, "_peak_area_merged_ann.csv")))
 
 t0 <- Sys.time()
 cat("  * Done in", 

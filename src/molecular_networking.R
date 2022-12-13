@@ -137,7 +137,7 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
   
   # create the edge file for sim mn
   write.table(t(c("msclusterID_source", "msclusterID_target", "cosine", "num_matched_peaks")),
-              file = file.path(output_path, paste0(output_name,"_molecular_networking_sim_",sub("\\.", "", sim_min),".selfloop")), sep = ",",
+              file = file.path(output_path, paste0(output_name,"_ssmn_w_",sub("\\.", "", sim_min),".selfloop")), sep = ",",
               row.names = FALSE, col.names = FALSE)
   
   options(readr.show_progress = FALSE)
@@ -179,7 +179,7 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
                                                 edges_mn$msclusterID_target)))]
     # write the edges for the first k nodes
     readr::write_csv(edges_mn, path = file.path(output_path, 
-                                                paste0(output_name,"_molecular_networking_sim_",
+                                                paste0(output_name,"_ssmn_w_",
                                                        sub("\\.", "", sim_min), ".selfloop")),
                      append = TRUE, col_names = FALSE)
     
@@ -193,24 +193,24 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
                          stringsAsFactors = FALSE)
   
   readr::write_csv(edges_mn, path = file.path(output_path, 
-                                              paste0(output_name,"_molecular_networking_sim_",
+                                              paste0(output_name,"_ssmn_w_",
                                                      sub("\\.", "", sim_min), ".selfloop")),
                    append = TRUE, col_names = FALSE)
   rm(edges_mn)
   
   # read the complete SSMN and add more information to the edges
   edges_mn_sim <- suppressMessages(readr::read_csv(
-    file.path(output_path, paste0(output_name,"_molecular_networking_sim_",
+    file.path(output_path, paste0(output_name,"_ssmn_w_",
                                   sub("\\.", "", sim_min), ".selfloop"))))
  
   # add the ionization variants annotations in the SSMN if the mn of annotations is present
   if (file.exists(file.path(output_path, 
                             paste0(output_name,
-                                   "_molecular_networking_annotations.selfloop"))))
+                                   "_ivamn.selfloop"))))
   {
     edges_mn_ann <- suppressMessages(readr::read_csv(
       file.path(output_path, paste0(output_name,
-                                    "_molecular_networking_annotations.selfloop"))))
+                                    "_ivamn.selfloop"))))
     edges_mn_ann <- edges_mn_ann[!is.na(edges_mn_ann$annotation),]
     
     edges_mn_sim$annotation <- apply(edges_mn_sim, 1, function(x, ann_edges)
@@ -233,7 +233,7 @@ build_mol_net_sim <- function(output_name, path_sim_table, path_matches_table,
   edges_mn_sim$num_peaks_target <- scans_num_peaks[match(edges_mn_sim$msclusterID_target, scans_order[-1])]
   
   readr::write_csv(edges_mn_sim, path = file.path(output_path, 
-                                                  paste0(output_name,"_molecular_networking_sim_",
+                                                  paste0(output_name,"_ssmn_w_",
                                                          sub("\\.", "", sim_min), ".selfloop")))
   
   cat("|\n")

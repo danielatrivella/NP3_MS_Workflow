@@ -55,7 +55,7 @@ if (length(args) < 3) {
   }
   
   path_area_count <- file.path(output_path, "count_tables", "clean", 
-                               paste0(output_name, "_peak_area_clean_annotated.csv"))
+                               paste0(output_name, "_peak_area_clean_ann.csv"))
   if (!file.exists(path_area_count))
   {
     path_area_count <- file.path(output_path, "count_tables",

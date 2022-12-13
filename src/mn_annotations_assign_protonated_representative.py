@@ -180,7 +180,7 @@ def mn_annotation_find_protonated(mn_annotation_edges_file, nodes_filename):
         G_nodes_info.loc[idx, 'protonated_num_ancestors_edges'] = len(protonated_rterror)
 
     # save the mn of annotations attributes in a new table file
-    G_nodes_info.to_csv(os.path.splitext(mn_annotation_edges_file)[0]+"_attributes_protonated_representative.csv",
+    G_nodes_info.to_csv(os.path.splitext(mn_annotation_edges_file)[0]+"_attributes.csv",
                         index=False)
     # overwrite the mn annotation edges file
     output_mn_annotations(G, mn_annotation_edges_file)

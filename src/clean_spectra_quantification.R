@@ -268,7 +268,7 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
       sapply(joined_ids, function(j) max(x[j-1], na.rm = T))}),
       ncol = length(x_rows_chunk), byrow = TRUE)
     sim_chunk <- sim_chunk[, !rm_rows[-1]] # rm first column of scans number
-
+    
     # if any joined id is inside the read chunk, agregate the rows
     if (any(x_rows_chunk)) 
     {
@@ -298,9 +298,9 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
   cat("|\n")
   # check number of resulting rows and cols
   res <- readr::count_fields(file.path(output_path,
-                                "molecular_networking/similarity_tables",
-                                paste0("similarity_table_", output_name, "_tmp.csv")), 
-                      skip = 1, tokenizer = tokenizer_csv())
+                                       "molecular_networking/similarity_tables",
+                                       paste0("similarity_table_", output_name, "_tmp.csv")), 
+                             skip = 1, tokenizer = tokenizer_csv())
   if (length(res) != nscans || any(res != nscans + 1)) {
     unlink(file.path(output_path,
                      "molecular_networking/similarity_tables",
@@ -377,9 +377,9 @@ if (!file.exists(file.path(output_path,
                         "molecular_networking/similarity_tables", 
                         paste0("similarity_table_", output_name, "_aggMax.csv"))
   if (!file.copy(file.path(output_path, 
-                      "molecular_networking/similarity_tables", 
-                      paste0("similarity_table_", output_name, ".csv")),
-            sim_file, overwrite = TRUE))
+                           "molecular_networking/similarity_tables", 
+                           paste0("similarity_table_", output_name, ".csv")),
+                 sim_file, overwrite = TRUE))
     stop("The pairwise similarity table file '", file.path(output_path, 
                                                            "molecular_networking/similarity_tables", 
                                                            paste0("similarity_table_", output_name, ".csv")),
@@ -458,10 +458,10 @@ count_columns <- which(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE
 
 # order in the columns and lines: skip header[1] and add -1 to avoid first column
 scans_order <- c(-1, unlist(read.csv(file.path(output_path, 
-                                  "molecular_networking/similarity_tables", 
-                                  paste0("similarity_table_", output_name, ".csv")), 
-                        stringsAsFactors = FALSE, nrows= 1,
-                        strip.white = TRUE, header = FALSE)[-1]))
+                                               "molecular_networking/similarity_tables", 
+                                               paste0("similarity_table_", output_name, ".csv")), 
+                                     stringsAsFactors = FALSE, nrows= 1,
+                                     strip.white = TRUE, header = FALSE)[-1]))
 nscans <- length(scans_order) - 1 # rm first column with scan numbers
 
 order_table <- match(scans_order[-1], ms_spectra_count$msclusterID)
@@ -476,7 +476,7 @@ ms_spectra_count <- ms_spectra_count[order_table,]
 if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff) && 
     nrow(ms_spectra_count) > 25000) {
   cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <=",
-          NOISE_cutoff,"**\n")
+      NOISE_cutoff,"**\n")
   spectra_to_keep <- (ms_spectra_count$basePeakInt > NOISE_cutoff)
   # ms_area_count <- ms_area_count[spectra_to_keep,]
   ms_spectra_count <- ms_spectra_count[spectra_to_keep,]
@@ -581,19 +581,19 @@ repeat
       joined_ids <- joined_ids_step
     
     pairwise_sim <- read_csv_chunked(file.path(output_path, 
-                               "molecular_networking/similarity_tables", 
-                               paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                     DataFrameCallback$new(function(x, pos) 
-                       subset(x, `-1` %in% joined_ids)), 
-                     col_names = TRUE, col_types = col_types)
+                                               "molecular_networking/similarity_tables", 
+                                               paste0("similarity_table_", output_name, "_aggMax.csv")), 
+                                     DataFrameCallback$new(function(x, pos) 
+                                       subset(x, `-1` %in% joined_ids)), 
+                                     col_names = TRUE, col_types = col_types)
     # get preceding scans sim info
     pairwise_sim[,-1] <- pairwise_sim[,-1] + t(read_csv(file.path(output_path, 
-                       "molecular_networking/similarity_tables", 
-                       paste0("similarity_table_", output_name, "_aggMax.csv")), 
-             col_names = TRUE, paste(sapply(scans_order, 
-                                            function(i, x) ifelse(i %in% x, "d", "-"), 
-                                            joined_ids), 
-                                     collapse = "")))
+                                                                  "molecular_networking/similarity_tables", 
+                                                                  paste0("similarity_table_", output_name, "_aggMax.csv")), 
+                                                        col_names = TRUE, paste(sapply(scans_order, 
+                                                                                       function(i, x) ifelse(i %in% x, "d", "-"), 
+                                                                                       joined_ids), 
+                                                                                collapse = "")))
     
     # read count tables from last step
     ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
@@ -632,7 +632,7 @@ repeat
       i <- i + 1
       next()
     }
-
+    
     sim_i <- which_eq(pairwise_sim[[1]], scan_num, 1)
     if (length(sim_i) == 0) # read more lines to find scan_num
     {
@@ -697,7 +697,7 @@ repeat
                                            function(x,y)  RMSE(x, y),
                                            y = c(cluster$rtMin, cluster$rtMax)) <= 2*rt_tol,]
     }
-  
+    
     # if there is a not similar cluster in the current cluster peak check if they share any MS1 peak id 
     # and add them to the adj list to be joined
     if (cluster$numSpectra < 5000) { # too many spectra will make the regular expression too big 
@@ -710,8 +710,8 @@ repeat
         if (length(peakIds) > 0 && length(peakIds) <= 500) {
           peaksIds <- paste0(peakIds, collapse = "|")
           non_adj_peak <- cluster_peak$msclusterID[non_adj_peak][
-                            grepl(pattern = peaksIds,  
-                                  cluster_peak$peakIds[non_adj_peak])]
+            grepl(pattern = peaksIds,  
+                  cluster_peak$peakIds[non_adj_peak])]
           if (length(non_adj_peak) > 0)
             adj_clusters <- c(adj_clusters, non_adj_peak)
         }
@@ -723,7 +723,7 @@ repeat
       # if blank cluster, also join BFLAGS with base peak below the cutoff
       if (cluster$BLANKS_TOTAL > 0) {
         non_adj_peak <- ((!(cluster_peak$msclusterID %in% adj_clusters)) & 
-                         (cluster_peak$basePeakInt <= BFLAG_cutoff))
+                           (cluster_peak$basePeakInt <= BFLAG_cutoff))
       } else if (cluster$BFLAG && cluster$basePeakInt <= BFLAG_cutoff) {
         # if not blank cluster but BFLAG True and basePeakInt <= cutoff, also join to blank clusters in the peak
         non_adj_peak <- ((!(cluster_peak$msclusterID %in% adj_clusters)) & 
@@ -736,7 +736,7 @@ repeat
     }
     # filter only adj peaks
     cluster_peak <- cluster_peak[cluster_peak$msclusterID %in% adj_clusters,]
-  
+    
     if (nrow(cluster_peak) == 1) # just the current cluster, then go to next spectrum
     {
       i <- i + 1
@@ -785,7 +785,7 @@ repeat
   
   t2 <- Sys.time()
   cat("        * Joined", num_joins, "similar clusters in", 
-          round(t2-t1, 2), units(t2-t1), "*\n")
+      round(t2-t1, 2), units(t2-t1), "*\n")
   
   # aggregate similarity values of joined idxs
   if (num_joins > 0)
@@ -817,7 +817,7 @@ repeat
     assigned_scans <- assigned_scans[!joined_idx]
     t1 <- Sys.time()
     cat("          * Done aggregating similarity table in", 
-            round(t1-t2, 2), units(t1-t2), "*\n")
+        round(t1-t2, 2), units(t1-t2), "*\n")
   }
   
   num_joins_total <- num_joins_total + num_joins
@@ -825,7 +825,7 @@ repeat
   # stop joining if no join was made in the last step and this is not the blanks step (step_join == 0)
   if (step_join >= 1 && (num_joins == 0 || step_join == 10))
     break()
-
+  
   step_join <- step_join + 1
 }
 
@@ -844,7 +844,7 @@ ms_spectra_count$peaksInt <- sapply(seq_len(nrow(ms_spectra_count)), function(i)
 
 tf <- Sys.time()
 cat("\n  * Done reducing", num_joins_total, "similar clusters in", 
-        round(tf-t0, 2), units(tf-t0), "*\n\n")
+    round(tf-t0, 2), units(tf-t0), "*\n\n")
 rm(cluster, cluster_peak, total_num_join_clusters, num_joins, num_joins_total, 
    num_joins_last_step)
 # warnings()
@@ -885,7 +885,7 @@ if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff)) {
   ms_spectra_count <- ms_spectra_count[order_table,]
   ms_area_count <- ms_area_count[order_table,]
   cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <=",
-          NOISE_cutoff,"**\n")
+      NOISE_cutoff,"**\n")
   spectra_to_keep <- (ms_spectra_count$basePeakInt > NOISE_cutoff)
   ms_area_count <- ms_area_count[spectra_to_keep,]
   ms_spectra_count <- ms_spectra_count[spectra_to_keep,]
@@ -945,30 +945,30 @@ joined_idx <- which(!is.na(ms_area_count$joinedIDs))
 ms_spectra_count[joined_idx, c("peaksList", "peaksInt")] <- 
   ms_area_count[joined_idx, c("peaksList", "peaksInt")] <- 
   Reduce(rbind, lapply(joined_idx, function(i) {
-  # check joined scans are ok  
-  scan_nums <-  as.numeric(strsplit(ms_area_count$joinedIDs[[i]], split = ";")[[1]])
-  min_scan <- min(scan_nums)
-  scan_nums <- scan_nums[scan_nums != min_scan]
-  
-  if (!(min_scan %in% ms_area_count$msclusterID))
-    stop("Error in the cleanning step. Missing scan number in the resulting counts table.")
-  if (any(scan_nums %in% ms_area_count$msclusterID))
-    stop("Error in the cleanning step. Cleaned scan number is still present in the counts table.")
-  
-  # join adj peaks
-  peaks <- as.numeric(strsplit(ms_area_count$peaksList[[i]], split = ";")[[1]])
-  ints <- as.numeric(strsplit(ms_area_count$peaksInt[[i]], split = ";")[[1]])
-  # order peaks
-  peaksOrder <- order(peaks)
-  peaks <- peaks[peaksOrder]
-  ints <- ints[peaksOrder]
-  
-  sapply(joinAdjPeaksScalee(peaks, ints, bin_size, -1, scale_factor, 0), 
-         function(x) {
-           x <- round(x,5)
-           paste(x,collapse = ";")
-        })
-}), init = NULL)
+    # check joined scans are ok  
+    scan_nums <-  as.numeric(strsplit(ms_area_count$joinedIDs[[i]], split = ";")[[1]])
+    min_scan <- min(scan_nums)
+    scan_nums <- scan_nums[scan_nums != min_scan]
+    
+    if (!(min_scan %in% ms_area_count$msclusterID))
+      stop("Error in the cleanning step. Missing scan number in the resulting counts table.")
+    if (any(scan_nums %in% ms_area_count$msclusterID))
+      stop("Error in the cleanning step. Cleaned scan number is still present in the counts table.")
+    
+    # join adj peaks
+    peaks <- as.numeric(strsplit(ms_area_count$peaksList[[i]], split = ";")[[1]])
+    ints <- as.numeric(strsplit(ms_area_count$peaksInt[[i]], split = ";")[[1]])
+    # order peaks
+    peaksOrder <- order(peaks)
+    peaks <- peaks[peaksOrder]
+    ints <- ints[peaksOrder]
+    
+    sapply(joinAdjPeaksScalee(peaks, ints, bin_size, -1, scale_factor, 0), 
+           function(x) {
+             x <- round(x,5)
+             paste(x,collapse = ";")
+           })
+  }), init = NULL)
 # check if the inverse scaled intensities sum 1000
 check_ints_sum <- sapply(ms_area_count$peaksInt[joined_idx], function(x) {
   ints <- as.numeric(strsplit(x, ";")[[1]])
@@ -1038,20 +1038,20 @@ if ("DESREPLICATION" %in% names(ms_area_count))
   hflag_rows <- !is.na(ms_area_count$HFLAG) | !is.na(ms_area_count$DESREPLICATION)
   ms_spectra_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- 
     ms_area_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- Reduce(rbind, 
-    lapply(which(hflag_rows), 
-           function(i)
-           {
-             if (is.na(ms_area_count$HFLAG[[i]]))
-               hflag <- NA
-             else
-               hflag <- paste0(unique(strsplit(ms_area_count$HFLAG[[i]], ";")[[1]]), collapse = ";")
-             if (is.na(ms_area_count$DESREPLICATION[[i]]))
-               desrep <- NA
-             else
-               desrep <- paste0(unique(strsplit(ms_area_count$DESREPLICATION[[i]], ";")[[1]]), collapse = ";")
-             
-             return(c(desrep, hflag))
-           }), init = NULL)
+                                                                      lapply(which(hflag_rows), 
+                                                                             function(i)
+                                                                             {
+                                                                               if (is.na(ms_area_count$HFLAG[[i]]))
+                                                                                 hflag <- NA
+                                                                               else
+                                                                                 hflag <- paste0(unique(strsplit(ms_area_count$HFLAG[[i]], ";")[[1]]), collapse = ";")
+                                                                               if (is.na(ms_area_count$DESREPLICATION[[i]]))
+                                                                                 desrep <- NA
+                                                                               else
+                                                                                 desrep <- paste0(unique(strsplit(ms_area_count$DESREPLICATION[[i]], ";")[[1]]), collapse = ";")
+                                                                               
+                                                                               return(c(desrep, hflag))
+                                                                             }), init = NULL)
 }
 
 cat("\n  ** Adding blanks neighborhood information **\n")
@@ -1093,7 +1093,7 @@ if (length(blanks_code) > 0)
   blanks_neighbor[[1]] <- blanks_neighbor[[1]][!(blanks_neighbor[[1]] %in% match(blank_ids, scans_order[-1]))]
   # set blank dist to 1 to not blank nodes
   ms_area_count$BLANK_DIST[is.na(ms_area_count$BLANK_DIST) & 
-                           ms_area_count$msclusterID %in% scans_order[-1][blanks_neighbor[[1]]]] <- 1
+                             ms_area_count$msclusterID %in% scans_order[-1][blanks_neighbor[[1]]]] <- 1
   
   for (depth in 2:blank_depth) 
   {
@@ -1113,15 +1113,15 @@ if (length(blanks_code) > 0)
                                               "molecular_networking/similarity_tables", 
                                               paste0("similarity_table_", output_name, "_aggMax.csv")), 
                                     col_names = TRUE, paste0("-", paste(sapply(seq_along(scans_order[-1]), 
-                                                                   function(i, x) ifelse(i %in% x, "d", "-"), 
-                                                                   blank_idx), 
-                                                            collapse = "")))
+                                                                               function(i, x) ifelse(i %in% x, "d", "-"), 
+                                                                               blank_idx), 
+                                                                        collapse = "")))
     blanks_neighbor[[depth]] <- unique(c(blanks_neighbor[[depth]],
-                                     which(rowSums(pairwise_sim_blanks >= sim_tol) > 0)))
+                                         which(rowSums(pairwise_sim_blanks >= sim_tol) > 0)))
     blanks_neighbor[[depth]] <- blanks_neighbor[[depth]][!(blanks_neighbor[[depth]] %in% unlist(blanks_neighbor[1:(depth-1)]))]
     # set blank dist to depth to not assigned dists
     ms_area_count$BLANK_DIST[is.na(ms_area_count$BLANK_DIST) &
-                             ms_area_count$msclusterID %in% scans_order[-1][blanks_neighbor[[depth]]]] <- depth
+                               ms_area_count$msclusterID %in% scans_order[-1][blanks_neighbor[[depth]]]] <- depth
   }
   
   rm(blank_ids, blank_idx, blank_depth, blanks_neighbor, blanks_code, pairwise_sim_blanks)
@@ -1150,5 +1150,10 @@ write_csv(ms_area_count, path = file.path(output_path, "count_tables", "clean",
 write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
                                              paste0(output_name, "_spectra_clean.csv")))
 rm(ms_spectra_count, ms_area_count)
+# not removing aggMax sim table - it is used in the testing scripts
+# unlink(file.path(output_path,
+#                  "molecular_networking/similarity_tables",
+#                  paste0("similarity_table_", output_name, "_aggMax.csv")),
+#        force = TRUE)
 t0 <- Sys.time()
 cat("\n    * Done in", round(t0-tf, 2), units(t0-tf), "*\n\n")

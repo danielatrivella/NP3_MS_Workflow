@@ -230,7 +230,7 @@ wrong_scans <- lapply(metadata$SAMPLE_CODE, function(x)
 warnings()
 
 # only test consistency in the header of not merged counts
-if (!grepl(pattern = "_merged_annotations.csv", fixed = TRUE, x = path_area_count))
+if (!grepl(pattern = "_merged_ann.csv", fixed = TRUE, x = path_area_count))
 {
   # norm header fields
   real_headers_total$msclusterId <- real_headers_total$msclusterId/nrow(metadata)

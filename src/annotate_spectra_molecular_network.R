@@ -127,7 +127,7 @@ save_annotation_net <- function(i, scans_annotations, scans_order, output_path,
                              ann_mzError, ann_rtError, ann_numCommonSamples), 
                   file.path(output_path, paste0("molecular_networking/", 
                                                 output_name,
-                                                "_molecular_networking_annotations.selfloop")),
+                                                "_ivamn.selfloop")),
                   row.names = FALSE, col.names = FALSE, append = TRUE, sep = ",", 
                   fileEncoding = "UTF-8")
     }
@@ -141,7 +141,7 @@ write_annotation_net_singletons_join_duplicated <- function(output_path,
   ann_net <- suppressMessages(read_csv(file.path(output_path, 
                                                  paste0("molecular_networking/", 
                                                         output_name,
-                                                        "_molecular_networking_annotations.selfloop")),
+                                                        "_ivamn.selfloop")),
                                        guess_max = 5000))
   # join duplicated annotation
   duplicated_ann <- which(duplicated(ann_net[,c(1,2)]))
@@ -227,7 +227,7 @@ write_annotation_net_singletons_join_duplicated <- function(output_path,
   write.table(ann_net, 
               file.path(output_path, paste0("molecular_networking/", 
                                             output_name,
-                                            "_molecular_networking_annotations.selfloop")),
+                                            "_ivamn.selfloop")),
               row.names = FALSE, sep = ",", 
               fileEncoding = "UTF-8")
 }
@@ -395,9 +395,9 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
       !file.exists(path_clean_spectra_count))
   {
     path_clean_area_count <- file.path(output_path, "count_tables", "clean",
-                                       paste0(output_name,"_peak_area_clean_annotated.csv"))
+                                       paste0(output_name,"_peak_area_clean_ann.csv"))
     path_clean_spectra_count <- file.path(output_path, "count_tables", "clean",
-                                          paste0(output_name,"_spectra_clean_annotated.csv"))
+                                          paste0(output_name,"_spectra_clean_ann.csv"))
     if (!file.exists(path_clean_area_count) || 
         !file.exists(path_clean_spectra_count)) {
       stop("The clean counts files '", path_clean_area_count,
@@ -1253,7 +1253,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
                        "mzError", "rtError", "numCommonSamples"), 
             path = file.path(output_path, paste0("molecular_networking/", 
                                                  output_name,
-                                                 "_molecular_networking_annotations.selfloop")),
+                                                 "_ivamn.selfloop")),
             col_names = FALSE)
   # save annotation net before writing tables to save annotations separated by type
   annotations_cols <- bind_rows(lapply(seq_len(nrow(ms_area_clean)), 
@@ -1285,7 +1285,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
   ms_area_clean$analogs <- NULL
   ms_area_clean <- bind_cols(ms_area_clean, annotations_cols)
   write_csv(ms_area_clean, path = file.path(output_path, "count_tables", "clean",
-                                            paste0(output_name, "_peak_area_clean_annotated.csv")))
+                                            paste0(output_name, "_peak_area_clean_ann.csv")))
   rm(ms_area_clean)
   
   ms_spectra_count <- suppressMessages(read_csv(path_clean_spectra_count, guess_max = 5000))
@@ -1300,7 +1300,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
   ms_spectra_count$analogs <- NULL
   ms_spectra_count <- bind_cols(ms_spectra_count, annotations_cols)
   write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
-                                               paste0(output_name, "_spectra_clean_annotated.csv")))
+                                               paste0(output_name, "_spectra_clean_ann.csv")))
   
   # remove intermediary clean count files when exists
   if (file.exists(file.path(output_path, "count_tables", "clean", paste0(output_name, "_peak_area_clean.csv")))) {
