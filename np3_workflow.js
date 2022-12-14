@@ -1095,7 +1095,7 @@ function checkCountsConsistency(output_path, processed_data, metadata, min_peaks
         res_all = res_all + "*merge*\n"+resExec.stdout+"\n"+resExec.stderr+"\n"
     } else if (merge) {
 		console.log('*** Testing the consistency of the merged counts for the job '+output_name+' ***\n');
-		console.log('\nDone! No symbolic link was created.\n');
+		console.log('\nDone! No symbolic spectrum was created in merge.\n');
 	}
 
     return res_all;
