@@ -407,7 +407,7 @@ A directory inside the *output_path* named with the *output_name* containing:
     - A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files
     - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output. 
  
-The clustering steps results folders are named as 'B_\<DATA_COLLECTION_BATCH\>_\<X\>' where *\<DATA_COLLECTION_BATCH\>* is the data collection batch number in the metadata file of each group of samples and *\<X\>* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
+The clustering steps results folders are named as 'B_\<DATA_COLLECTION_BATCH\>_\<X\>' where \<*DATA_COLLECTION_BATCH*\> is the data collection batch number in the metadata file of each group of samples and \<*X*\> is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
  
 The final integration step result is located inside the 'outs' directory in a folder named with the *output_name*. This folder contains the final counts and is where the user will find the final results. It also contains the following data:
  
@@ -416,17 +416,25 @@ The final integration step result is located inside the 'outs' directory in a fo
 - The 'molecular_networking' folder containing: 
     - One subfolder named "similarity_tables" with the pairwise similarity tables (Step 5);
     - Three molecular networks edge files (Steps 7 and 10): 
-        - the molecular network of annotations named as '\<*output_name*\>_ivamn.selfloops'
-        - the complete molecular network of similarity named as '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>.selfloops', all links with a similarity value above the cut-off are present
-        - the filtered molecular network of similarity named as 
-    '\<*output_name*\>_ssmn_w
-    _\<*similarity_mn*\>_k_
-    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops';
-    - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
-    '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
+        - the molecular network of annotations named as: 
+        
+          '\<*output_name*\>_ivamn.selfloops'
+        - the complete molecular network of spectra similarity named as :
+        
+          '\<*output_name*\>\_ssmn_w\_\<*similarity_mn*\>.selfloops', which contains all links with a similarity value above the cut-off
+        - the filtered molecular network of spectra similarity named as:
+        
+          '\<*output_name*\>\_ssmn_w_\<*similarity_mn*\>\_k_\<*net_top_k*\>\_x_\newline
+           \<*max_component_size*\>.selfloops'
+    - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as:
+    
+      '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
+ 
  
 ##### 4.2.2. *run* Examples
  
+Fake examples using the *run* command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js run --output_name "test_np3" --output_path 
     "/path/where/the/output/will/be/stored/" --metadata 
@@ -547,20 +555,23 @@ At the end, a diagnostic of possible splitted peaks is also performed. It works 
 
 ##### 4.3.4. *pre_process* Optimization Guide
 
- The pre-process step perform the LC-MS data processing (feature finding), which will detect the MS1 peaks and then directly impact in the isomers separation and definition. The LC-MS processing is highly dependent on the parameters setup to achieve a better optimization of its results for different mass spectrometrer equipments, chromatographic methods and data quality. With that on mind, a diagnostic of this step result and a suggestion of values for the **most critical parameters** were implemented to help the user in this optimization. The diagnostic and suggestion are still in a **Beta version**, and should be used as a guide and not as a rule.
+
+The Pre-processing step performs the LC-MS data processing (feature finding) with XCMS. It extracts the list of MS¹ peaks for each sample, and then, directly impact in the isomers separation and resolution. The LC-MS processing is highly dependent on the parameters setup. The optimization of this parameters depends on the mass spectrometer equipment, the chromatographic method used and the data quality. With that pointed out, a diagnostic of Pre-process result and a suggestion of values for the **most critical parameters** were implemented to help the user in this optimization. The diagnostic and suggestion are still in a **Beta version**, and should be used as a guide and not as a rule.
  
-In order to optimize the pre-processing step, the user could follow two strategies: (1) run the pre-processing with the default parameters and analyse the diagnostic result and the suggestions; or (2) inspect the chromatograms of the dataset first (using a target m/z and/or random picked m/zs) and run the pre-processing with a pre setup of parameters values that best represent whats observed in the real data. **The second option is more recommended**, because the suggestion of values for the most critical parameters will be biased by the parameters used in the given result. The user can also choose to run the entire workflow with this first pre-processing result to examine the final quantification tables and decide if they are good enough for its purporse.
+In order to optimize the Pre-processing step, the user could follow two strategies: (1) run pre-processing with the default parameters and analyse the diagnostic result and suggestions; or (2) inspect the chromatograms of the dataset first (using a target m/z or randomly pick one) and run the pre-processing with a pre setup of parameters values that best represent what you observed in the real data. **The second option is more recommended**, because the suggestion of values for the most critical parameters will be biased by the parameters values used. The user can also choose to run the entire workflow with this first pre-processing result to examine the final clean quantification tables and decide if they are good enough for its purpose.
  
- The critical parameters for the pre-processing step are: 
+The critical parameters for the pre-processing step are: 
 
 1. **ppm_tolerance** - the maximal tolerated m/z deviation in consecutive MS1 scans in parts per million (ppm). Typically set to a generous multiple of the mass accuracy of the mass spectrometer; 
-2. **mz_tolerance** - the tolerance in Daltons for matching a MS1 peak m/z with a MS2 spectrum precursor m/z; 
-3. **rt_tolerance** - the tolerance in seconds used to enlarge the MS1 peaks boundaries and accept as a match all MS2 ions that have a retention time value that is within a MS1 peak range;
+2. **mz_tolerance** - the tolerance in Daltons for matching the m/z of a MS1 peak with the precursor m/z of a MS2 spectrum; 
+3. **rt_tolerance** - the tolerance in seconds used to enlarge the MS1 peaks boundaries and accept as a match all MS2 ions that have a retention time value within a listed MS1 peak range;
 4. **peak_width** - the expected approximate peak width in chromatographic space (MS1 peaks). Given as a range (min, max) in seconds.
  
  The first two critical parameters are more related to the mass spectrometrer equipment accuracy and the data resolution, while the third and fourth critical parameters are also related to the chromatographic method and the data quality (well defined MS1 peaks). Then, to better define the last two critical parameters, the user must know your data and/or inspect its chromatograms to visualize the MS1 peaks' shape and definition. The MS1 peaks' shape and definition can vary between different datasets coming from the same equipment and can also vary between different m/zs from the same dataset. Because of that, the **last two parameters are the most critical ones**, with the **peak_width** being the most critical of all.
 
- The user must take the following relations into account when choosing the parameters values: 
+It is also important to notice that the noise removal parameters of Pre-processing, used to remove minority peaks, have very small default values close to the baseline of evaluated samples. For different samples they could also compromise the correspondence between MS¹ and MS². By default, Pre-processing set a minimum intensity equal to 500 to consider a MS¹ peak (parameter **noise**) and only consider MS¹ peaks that have at least one ion with 750 of intensity (parameter **pre_filter**). If the minimum required MS¹ intensities are higher than the samples MS¹ baseline, real MS¹ peaks may be removed and the rate of non-correspondence between MS¹/MS² may increase (no matches in terms of m/z can be greatly affected here). The user must properly set the noise removal parameters values in Pre-processing to prevent this from happening (the minimum experimental intensity used to detect MS² ions is a good upper limit) and to better optimize the other critical parameters.
+
+The user must take the following relations into account when choosing the critical parameters values: 
  
 - ppm tolerance:
     - A small value can split MS1 peaks from the same ion into distinct peaks, with close but different m/zs
@@ -575,21 +586,21 @@ In order to optimize the pre-processing step, the user could follow two strategi
     - A small value can split large MS1 peaks 
     - A big value can join adjacent isomers 
   
-As you can see by now, this optimization will be a balance between the amount of effort that the user is willing to give and how good is the MS1 peaks definition accross the different m/zs of a dataset. 
+As you can see by now, this optimization will be a balance between the amount of effort that the user is willing to give and how good is the MS1 peaks definition across the different m/zs of a dataset. 
 
-At the end of the pre-processing step a diagnostic of its results is performed and stored in a log file, that will be named: 'logPreProcessStatisticsWarning' if a problem was detected in the diagnostic or simple 'logPreProcessStatistics' if no problem was detected. This log is saved to the directory named with the 'processed_data_name' inside the 'raw_data_path' folder, e.g. the pre-process output folder. 
+At the end of the pre-processing step a diagnostic of its results is performed and stored in a log file that will be named 'logPreProcessStatisticsWarning' if a problem is detected in the diagnostic, or will be simple named 'logPreProcessStatistics' if no problem is detected. This log is saved to the directory named with the 'processed_data_name' inside the 'raw_data_path' folder, e.g. the pre-process output folder. 
 
 The pre-process statistics log will start with the statistics of the percentage of MS2 spectra without a MS1 peak correspondence. This is presented using two variables, better described in the last section 4.3.3., which are: (1) **rate_MS2_no_MS1_mz** - the percentage of MS2 spectra without a MS1 m/z range correspondence; and (2) **rate_MS2_no_MS1_rt** - the percentage of MS2 spectra without a MS1 retention time range correspondence. These rates are computed for each sample and removing blank m/zs.
  
 If any of the not blank samples have one of these rates above a cutoff of 5%, a report is printted informing the top 5 problematic m/zs by sample. In these case the user should visualize the chromatogram of one or all (recommended) the printted m/zs to identify the problem(s). These could include bad defined peaks, for example jagged peaks or peaks with a long tail, or peaks with a width different from the values used in the **peak_width** parameter. The $NP^{3}$ MS workflow command *chr* can be used for this visualization or any other LC-MS/MS visualization tool. And then, the user have to decide to repeat the pre-process step with other parameters values or to accept this result. A descriptive statistics of these rates (mean, median and quartiles values) is also printted to help the user in this decision. When the job have a big number of samples it can be more reasonable to pay more attention to the mean/median values of these rates instead of expecting all samples to be below the cutoff (the best parameters for a given sample can give bad results in another sample). 
 
-At the end of the diagnostic of MS1 and MS2 correspondence, a diagnostic to check if real peaks are being splitted is also performed. It will count the number of MS1 peaks (possible isomers) by m/z for each sample and aggregate this counts into a single distributions. Then, if more than 5% of the m/zs have more than 30 MS1 peaks a warnings will be printted indicating that real peaks could have being splitted into mulitple smaller peaks. The user must evaluate if this is not expected for the dataset being used, and then choose to increase the maximum peak_width value to prevent this anomaly. The distribution of the number of m/zs by the number of MS1 peaks is stored in the file 'log_number_mzs_by_number_peaks.png' for further examination.
+At the end of the diagnostic of MS1 and MS2 correspondence, a diagnostic to check if real peaks are being split is also performed. It will count the number of MS1 peaks (possible isomers) by m/z for each sample and aggregate this counts into a single distributions. Then, if more than 5% of the m/zs have more than 30 MS1 peaks a warnings will be printed indicating that real peaks could have being split into multiple smaller peaks. The user must evaluate if this is not expected for the dataset being used, and then choose to increase the maximum peak_width value to prevent this anomaly. The distribution of the number of m/zs by the number of MS1 peaks is stored in the file 'log_number_mzs_by_number_peaks.png' for further examination.
 
-Following the diagnostic, a Beta suggestion for the **peak_width** and the **rt_tolerance** parameters values will be executed to help the user in this optimization. It starts by plotting the peak width distribution of the pre-process result, for all the MS1 peaks that had a MS2 correspondence and excluding blank m/zs. These ditribution will show the commom peak width returned by the LC-MS processing with the given parameters, then its important to notice that it will be biased by the parameters used, but it will also tend to go to the expected peak width for that dataset. For example, if the pre-process was executed with big values in the **peak_width** parameter, it will result in large MS1 peaks being detected even if that does not represent what is found in the dataset, because it will join adjacent peaks to fulfill the given **peak_width** values. And thats why we recommend the user to start with a pre setup of parameters that better represent your dataset.
+Following the diagnostic, a Beta suggestion for the **peak_width** and the **rt_tolerance** parameters values will be executed to help the user in this optimization. It starts by plotting the peak width distribution of the pre-process result, for all the MS1 peaks that had a MS2 correspondence and excluding blank m/zs. These distribution will show the common peak width returned by the LC-MS processing with the given parameters, then its important to notice that it will be biased by the parameters used, but it will also tend to go to the expected peak width for that dataset. For example, if the pre-process was executed with big values in the **peak_width** parameter, it will result in large MS1 peaks being detected even if that does not represent what is found in the dataset, because it will join adjacent peaks to fulfill the given **peak_width** values. And that's why we recommend the user to start with a pre setup of parameters that better represent your dataset.
 
 Depending on the diagnostic result, the user should choose to follow or not the suggested values and rerun the pre-process if needed. The peak width distribution of the pre-process result is stored in the file 'MS1_list_with_MS2_noBlank_peak_width_hist.png' to help the user in this decision.
 
-The user can also look at the table with the list of detected MS1 peaks that had a MS2 correspondence to better undersand the pre-process results. This table is named 'MS1_list_with_MS2.csv' and is located in the output folder of the pre-process step. When there is a target m/z, it is easier to look for it in this table to check if the results follow what is seeing in the chromatograms. Otherwise, the user could randomly choose a m/z to do it or use the problematic m/zs that appear in the diagnostic if a warning was emitted.
+The user can also look at the table with the list of detected MS1 peaks that had a MS2 correspondence to better understand the pre-process results. This table is named 'MS1_list_with_MS2.csv' and is located in the output folder of the pre-process step. When there is a target m/z, it is easier to look for it in this table to check if the results follow what is seeing in the chromatograms. Otherwise, the user could randomly choose a m/z to do it or use the problematic m/zs that appear in the diagnostic when a warning is emitted.
 
 ## 4.4. Step 3 and 4: Command *clustering*
  
@@ -638,6 +649,8 @@ The final integration step result is located inside the 'outs' directory in a fo
  
 ##### 4.4.2. *clustering* Examples
  
+Fake examples to execute the Clustering command:
+ 
 ```{r, eval=F} 
   $ node np3_workflow.js clustering --output_name "test_np3" --output_path 
     "/path/where/the/output/will/be/stored" --metadata 
@@ -645,6 +658,8 @@ The final integration step result is located inside the 'outs' directory in a fo
     "/path/to/the/raw/data/dir"
 ```
  
+Same example with different retention time tolerances:
+
 ```{r, eval=F} 
   $ node np3_workflow.js clustering -n "test_np3_rt_tol" -o 
     "/path/where/the/output/will/be/stored" -m 
@@ -684,7 +699,7 @@ The $NP^{3}$ MS workflow spectra clustering is performed in four steps:
  
 The NP3_MSCluster results are the MGF with the collection of consensus spectra from the outputted clusters and .clust files (in CSV format) with the cluster's information describing which scans were joined to make up the consensus spectra. In the data and in the blank clustering steps the resulting .clust files contains the spectra detected in the raw files (real SCANS), with the matched peak information, and in the subsequent clustering steps the SCANS are the clusters IDs (named msclusterID) of the consensus spectra created in the previous steps by the workflow Step 4.
  
-##### 4.4.4 *clustering* Step 4 Details
+##### 4.4.4. *clustering* Step 4 Details
  
 The spectra and peak area counts are performed by scanning and parsing the information present in the .clust files from the clustering output to compute the consensus spectra quantifications by sample. It aggregates the information of the clusters members to obtain the total counts (number of spectra and peak area) by sample and the consensus peak profile information. A unique cluster ID is given to the consensus spectra, named msclusterIDs.
  
@@ -790,6 +805,8 @@ When running Tremolo the 'identification' folder is also created (if not present
  
 ##### 4.5.2. *clean* Examples
  
+Fake example to execute the Cleaning command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js clean --metadata 
     "/path/to/the/metadata/file/test_np3_metadata.csv" 
@@ -873,6 +890,8 @@ For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md f
  
 ##### 4.6.2. *tremolo* Examples
  
+Fake example to execute the Tremolo command:
+ 
 ```{r, eval=F} 
   $ node np3_workflow.js tremolo --output_path 
     "/path/to/the/output/dir/test_np3/outs/test_np3/identifications" --mgf 
@@ -929,6 +948,8 @@ Where the 'output_name' is extracted from the 'output_path';
  
 ##### 4.7.2. *annotate_protonated* Examples
  
+Fake example to execute the Annotation [M+H]+ command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js annotate_protonated --metadata 
     "/path/to/the/metadata/file/test_np3_metadata.csv" 
@@ -1077,6 +1098,8 @@ One subfolder inside the 'count_tables' folder is created named 'merge' containi
  
 ##### 4.8.2. *merge* Examples
  
+Fake example to execute the Merging command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js merge --output_path "/path/to/the/output/dir/test_np3/outs/test_np3"
 ```
@@ -1132,6 +1155,8 @@ The correlation score will produce NA values with warnings if the counts of the 
  
 ##### 4.9.2. *corr* Examples
  
+Fake example to execute the Biocorrelation command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js corr --metadata "/path/to/the/metadata/file/test_np3_metadata.csv" 
     --count_file "/path/to/the/metadata/file/np3_job_spectra.csv"
@@ -1172,6 +1197,8 @@ Where the 'output_name' is extracted from the 'output_path';
  
 ##### 4.10.2. *mn* Examples
  
+Fake example to execute the Molecular Network of spectra similarity command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js mn --output_path "/path/to/the/output/dir/test_np3/outs/test_np3" 
     --similarity_mn 0.7 --verbose 1
@@ -1219,6 +1246,8 @@ If there is more than one GNPS result for a single msclusterID the results are c
  
 ##### 4.11.2. *gnps_result* Examples
  
+Fake example to use the GNPS Identification Join command:
+ 
 ```{r, eval=F} 
   $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" --result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" --ms_count_path "/path/to/the/output/NP3/count_files/count.csv"
 ```
@@ -1256,10 +1285,13 @@ PNG image(s) file(s) with the extracted chromatogram(s) of the selected sample(s
  
 ##### 4.12.2 *chr* Examples
  
+Fake example to execute the MS¹ Viewer command:
+
 ```{r, eval=F} 
   $ node np3_workflow.js chr --metadata "/path/to/the/metadata/file/test_np3_metadata.csv" 
     --data_name "test_np3" --raw_data_path "/path/to/the/raw/data/directory"
 ```
+
 ```{r, eval=F} 
   $ node np3_workflow.js chr -b "/path/to/the/metadata/file/test_np3_metadata.csv" 
     -d "/path/to/the/raw/data/directory"
@@ -1304,13 +1336,17 @@ Options for the command *spectra_viewer*:
 
 ##### 4.13.1. *spectra_viewer* Examples:
 
+Example to execute the MS² spectra viewer application:
+
 ```{r, eval=F}
   $ node np3_workflow.js spectra_viewer --port 8080
 ```
 
 ## 4.14. Command *test*
  
-Run some use cases to test the workflow consistency in all steps. Can be used to test if the installation was successful. It may take a long time; 30 minutes is expected. This option is intended for debugging purposes, and is not a part of the analysis workflow.
+Run the NP³ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
+
+It may take a long time; 30 minutes is expected. This option is intended for debugging purposes, and is not a part of the analysis workflow.
  
 Options for the command *test*:
  
@@ -1321,13 +1357,16 @@ Options for the command *test*:
  
 ##### 4.14.1. *test* Results:
  
-The testing jobs results. They are stores inside the test/Bra346 folder. The metadata files present in the test/Bra346 are used in the testing cases and should not be altered.
+The NP³ jobs for the tested datasets. They are stored inside the test/Bra346 folder in the repository. The metadata table files present in the test/Bra346 folder are used in the testing cases and should not be modified.
  
 ##### 4.14.2. *test* Examples:
  
+Example to execute the test suit from NP³ MS Workflow:
+
 ```{r, eval=F} 
   $ node np3_workflow.js test
 ```
+ 
  
 # References
  
