@@ -60,64 +60,80 @@ The workflow output is organized in folders and depending on the command can con
     - The bioactivity correlation scores, that can be used to rank the consensus spectra (Step 9)
 - The molecular networks of annotations and of similarity files from Steps 7 and 10
  
-# 2. Installation and Setup
- 
-$NP^{3}$ MS workflow includes a conda environment file for Unix and Windows, enabling users to install package dependencies.
- 
-First, download the workflow repository from the following link:
- 
-- https://github.com/danielatrivella/NP3_MS_Workflow
-  - Click on the green button named 'Code' and then click on the 'Download ZIP' option.
-      - The repository contains the entire Universal Natural Products Database (UNPD), so this download can take a while to finish. 
-  - Extract the zip file 
-  
-Then, download and install Anaconda with Python 3.8 from the following link: 
- 
-- https://www.anaconda.com/products/individual
-    - During installation on Windows OS check the option: 'Add Anaconda3 to my PATH environment variable' 
-        - If you do not check this option you have to manually add the conda executable to your PATH environment variables
-    - To install on Unix OS run the following terminal command in the folder where the Anaconda installer was downloaded (replace Anaconda_installer_name by the name of the file):
-    ```{r, eval=F} 
-      $ sh Anaconda_installer_name.sh
-    ```
-    -
-        - During installation when asked 'Do you wish the installer to initialize Anaconda3 by running conda init?' answer 'yes'
-        - If you answer 'no', then you need to manually type the command '$ conda init' before using Anaconda.
-            
-            
-To verify if the Anaconda installation was successful, open a **new** terminal window and type:
- 
-```{r, eval=F} 
-  $ conda
-```
- 
-If it outputs the conda help usage information you are good to go. 
- 
-Now, go the $NP^{3}$ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.
- 
-Then, create the $NP^{3}$ MS workflow conda environment to automatically install almost all the workflow programs and required packages using the following terminal command:
- 
-Unix OS:
-```{r, eval=F} 
-  $ conda env create -f environment_np3_unix.yml
-```
- 
-Windows OS:
-```{r, eval=F} 
-  $ conda env create -f environment_np3_win.yml
-```
- 
-The conda environment installation can be a slow process, more than 5 minutes is expected. If this is taking too long to finish (probable got stuck in the 'Solving environment' step), try executing the following command first and then retry the $NP^{3}$ MS workflow conda environment creation.
 
-```{r, eval=F} 
-  $ conda config --set channel_priority strict
-```
- 
-The $NP^{3}$ MS workflow conda environment must be created and activated before running the $NP^{3}$ MS workflow commands. If the $NP^{3}$ MS workflow environment was created successfully, activate it with the following command:
- 
-```{r, eval=F} 
-  $ conda activate np3
-```
+# 2. Installation and Setup
+
+## Installation with Conda and Mamba
+##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
+
+NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
+
+First, download or clone the workflow repository. 
+
+**Download** the repository:
+
+- Click on the green button named 'Code' and then click on the 'Download ZIP' option.
+    - The repository contains the entire Universal Natural Products Database (UNPD), so this download can take a while to finish. 
+- Extract the zip file 
+
+Or **clone** the repository:
+
+- Make sure you have Git installed (instruction in https://github.com/git-guides/install-git)
+- Open the command line in the folder you want to place this repository and then type:
+
+```{r, eval=F}  
+  $ git clone https://github.com/danielatrivella/NP3_MS_Workflow.git
+``` 
+
+Then download and install **miniforge** to install the conda environment with the mamba package included from the following link:
+
+- [Miniforge for Linux amd64](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh)
+- [Miniforge for Windows](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe)
+- [More OS and architectures](https://github.com/conda-forge/miniforge/releases)
+    - During installation on Windows OS check the option: 'Add to my PATH environment variable'  
+        - If you do not check this option you have to manually add the conda anda mamba executables to your PATH environment variables 
+    - To install on Unix OS run the following terminal command in the folder where the Anaconda installer was downloaded 
+        ```{r, eval=F}   
+          $ sh Miniforge3-Linux-x86_64.sh
+        ```      
+        - During installation when asked 'Do you wish the installer to initialize Anaconda3 by running conda init?' answer 'yes' 
+        - If you answer 'no', then you need to manually type the command `conda init` before using Mamba.
+    - If you already have a conda environment installed on your device, you can install the mamba package exclusively in the base environment with the command below, but it is recommended that you do a fresh install removing the old conda environment.
+        ```{r, eval=F} 
+          $ conda install conda-forge::mamba -y
+        ```
+
+For more detailed instructions, visit the [conda-forge/miniforge's github](https://github.com/conda-forge/miniforge)
+                   
+To verify if the Conda and Mamba installation was successful, open a **new** terminal window and type:   
+
+```{r, eval=F}   
+  $ mamba --version
+``` 
+
+If it outputs the `mamba`'s and `conda`'s versions you are good to go.    
+
+Now, go the NP³ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
+
+Then, create the $NP^{3}$ MS workflow conda environment to automatically install almost all the workflow programs and required packages using the following terminal command:
+
+Unix OS: 
+
+```{r, eval=F}   
+  $ mamba env create -f environment_np3_unix.yml 
+``` 
+
+Windows OS: 
+
+```{r, eval=F}   
+  $ mamba env create -f environment_np3_win.yml 
+``` 
+
+The $NP^{3}$ MS workflow conda environment must be created and activated before running the NP³ MS workflow commands. If the $NP^{3}$ MS workflow environment was created successfully, activate it with the following command: 
+
+```{r, eval=F}   
+  $ mamba activate np3 
+```   
  
 You should see the '(np3)' tag as the first thing in your terminal line. Every time you open a new terminal you must execute this command once again in order to activate the $NP^{3}$ MS workflow environment before entering the $NP^{3}$ MS workflow commands.
  
@@ -127,18 +143,6 @@ In the terminal execute the following command:
 ```{r, eval=F} 
   $ npm install shelljs@0.8.4 commander@5.1.0
 ```
- 
-<!-- And, for Unix OS only, configure the JAVA paths in R with the following command: -->
-<!-- ```{r, eval=F}  -->
-<!--   $ R CMD javareconf -->
-<!-- ``` -->
-<!--     + libcurl4-openssl-dev -->
-<!--     + libssl-dev -->
-<!--     + libxml2-dev -->
-<!--     + gcc-multilib -->
-<!--     + libnetcdf-dev -->
-<!--     + r-base-dev -->
-<!--     + r-cran-ncdf4 -->
  
 Make sure all programs and OS libraries were properly installed and continue to the remaining packages installation. If you could not install the environment or failed in any of the above steps go to the **manual** installation below.
  
@@ -213,7 +217,7 @@ If you did install the workflow dependencies using the conda environments, alway
  
  
 ```{r, eval=F} 
-  $ conda activate np3
+  $ mamba activate np3
 ```
  
 # 4. $NP^{3}$ MS Workflow Commands
