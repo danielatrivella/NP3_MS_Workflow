@@ -40,4 +40,6 @@ dependencies:
   - pip
   - pip:
     - termplotlib==0.3.8
+    - jinja2==3.0.3
+    - altair==4.2.2
 
