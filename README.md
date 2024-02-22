@@ -36,9 +36,10 @@ For the complete details of each command see the [NP³ MS workflow user manual](
 
 - - - -
 
-# Installation with Conda 
+# Installation with Conda and Mamba
+##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
 
-NP³ MS workflow includes a conda environment file for Unix and Windows, enabling users to install package dependencies.  
+NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
 First, download or clone the workflow repository. 
 
@@ -52,37 +53,43 @@ Or **clone** the repository:
 
 - Make sure you have Git installed (instruction in https://github.com/git-guides/install-git)
 - Open the command line in the folder you want to place this repository and then type:
+
 ``` 
 git clone https://github.com/danielatrivella/NP3_MS_Workflow.git
 ``` 
 
+Then download and install **miniforge** to install the conda environment with the mamba package included from the following link:
+- [Miniforge for Linux amd64](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh)
+- [Miniforge for Windows](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe)
+- [More OS and architectures](https://github.com/conda-forge/miniforge/releases)
 
-Then, download and install Anaconda with Python 3.8 from the following link:  
+    - During installation on Windows OS check the option: 'Add to my PATH environment variable'  
+        - If you do not check this option you have to manually add the conda anda mamba executables to your PATH environment variables 
 
-- https://www.anaconda.com/products/individual 
-
-    - During installation on Windows OS check the option: 'Add Anaconda3 to my PATH environment variable'  
-        - If you do not check this option you have to manually add the conda executable to your PATH environment variables 
-
-    - To install on Unix OS run the following terminal command in the folder where the Anaconda installer was downloaded (replace 'Anaconda_installer_name' by the name of the downloaded file): 
-
+    - To install on Unix OS run the following terminal command in the folder where the Anaconda installer was downloaded 
         ```  
-        sh Anaconda_installer_name.sh 
+        sh Miniforge3-Linux-x86_64.sh
         ```      
 
         - During installation when asked 'Do you wish the installer to initialize Anaconda3 by running conda init?' answer 'yes' 
 
-        - If you answer 'no', then you need to manually type the command `conda init` before using Anaconda. 
+        - If you answer 'no', then you need to manually type the command `conda init` before using Mamba.
 
+    - If you already have a conda environment installed on your device, you can install the mamba package exclusively in the base environment with the command below, but it is recommended that you do a fresh install removing the old conda environment.
+    
+    ```
+    conda install conda-forge::mamba -y
+    ```
+
+For more detailed instructions, visit the [conda-forge/miniforge's github](https://github.com/conda-forge/miniforge)
                    
-To verify if the Anaconda installation was successful, open a **new** terminal window and type:   
+To verify if the Conda and Mamba installation was successful, open a **new** terminal window and type:   
 
 ```  
-conda 
+mamba --version
 ``` 
 
-
-If it outputs the conda help usage information you are good to go.    
+If it outputs the `mamba`'s and `conda`'s versions you are good to go.    
 
 Now, go the NP³ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
 
@@ -91,25 +98,19 @@ Then, create the NP³ MS workflow conda environment to automatically install alm
 Unix OS: 
 
 ```  
-conda env create -f environment_np3_unix.yml 
+mamba env create -f environment_np3_unix.yml 
 ``` 
 
 Windows OS: 
 
 ```  
-conda env create -f environment_np3_win.yml 
+mamba env create -f environment_np3_win.yml 
 ``` 
-
-  - The conda environment installation can be a slow process, more than 5 minutes is expected. If this is taking too long to finish (probable got stuck in the 'Solving environment' step), try executing the following command first and then retry the NP³ MS workflow conda environment creation.
-  
-    ```
-    conda config --set channel_priority strict
-    ```
 
 The NP³ MS workflow conda environment must be created and activated before running the NP³ MS workflow commands. If the NP³ MS workflow environment was created successfully, activate it with the following command: 
 
 ```  
-conda activate np3 
+mamba activate np3 
 ```   
 
 You should see the '(np3)' tag as the first thing in your terminal line. Every time you open a new terminal you must execute this command once again in order to activate the NP³ MS workflow environment before using the NP³ MS workflow commands. 
@@ -152,7 +153,7 @@ Start by activating the NP³ MS workflow environment. Run the following command 
 
  
 ```  
-conda activate np3 
+mamba activate np3 
 ``` 
 
 Now, we can run the NP³ MS workflow with the provided metadata table. 
@@ -224,11 +225,11 @@ We strongly recommend to run the pre-process command (Step 2) separated when run
  
 For further analyses, after running the entire NP³ MS workflow, each step can be executed separately on the results obtained previously and with different tolerance parameter values and/or correlation groups, as needed. When running a specific command separately it is important not to modify the original output files, instead create a copy of those files. In this way, you may reproduce the workflow steps as needed when repeating any step.
  
-If you did install the workflow dependencies using the conda environments, always remember to activate the NP³ MS workflow environment before executing any of the workflow commands. To activate the NP³ MS workflow environment use the following command:
+If you did install the workflow dependencies using the conda and manba environments, always remember to activate the NP³ MS workflow environment before executing any of the workflow commands. To activate the NP³ MS workflow environment use the following command:
 
 
 ```  
-conda activate np3 
+mamba activate np3 
 ``` 
   
 ## NP³ MS Workflow Commands 
