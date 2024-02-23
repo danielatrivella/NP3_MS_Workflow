@@ -1290,7 +1290,7 @@ program
                 shell.echo('c++ not found, please ensure C++ is available and try again.');
                 shell.exit(1);
             } else {
-                resExec = shell.exec('c++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) norm_dot_product.cpp -o dotprod$(python3-config --extension-suffix)');
+                resExec = shell.exec('c++ -O3 -Wall -I/usr/include/ -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) norm_dot_product.cpp -o dotprod$(python3-config --extension-suffix)');
                 if (resExec.code) {
                     console.log(resExec.stdout);
                     console.log(resExec.stderr);
