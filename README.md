@@ -38,6 +38,7 @@ For the complete details of each command see the [NP³ MS workflow user manual](
 
 # Installation with Conda and Mamba
 ##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
+##  Currently the *windows installation is not working* in all PCs, we recommend users to use Linux instead.
 
 NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
@@ -101,7 +102,7 @@ Unix OS:
 mamba env create -f environment_np3_unix.yml 
 ``` 
 
-Windows OS: 
+Windows OS - NOT WORKING - failing with R bioconda packages that are not included in conda - sorry for that, we are looking for a solution: 
 
 ```  
 mamba env create -f environment_np3_win.yml 
