@@ -699,7 +699,8 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
     return(output_msg)
 }
 
-function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matched_peaks, max_chunk_spectra, verbose)
+function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matched_peaks, max_chunk_spectra,
+                     blank_expansion, verbose)
 {
     var step_name ='*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** \n';
     console.log(step_name);
@@ -722,6 +723,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matche
         shell.ShellString(step_name +
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(out_path+'/molecular_networking/logMnOutput');
     }
+    // SSMN filtered
     var step_name ='*** Filtering the SSMN - minimum matched peaks, top k neighbours and max component size  *** \n';
     console.log(step_name);
     var mn_file = out_path+'/molecular_networking/'+basename(out_path)+"_ssmn_w_"+
@@ -740,10 +742,35 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matche
             resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/molecular_networking/logMnOutput');
         console.log('\nERROR');
     } else {
+        console.log('\nDONE!\n');
+        shell.ShellString('\n' + step_name +
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(out_path+'/molecular_networking/logMnOutput');
+    }
+    // protonated mn - SSMN [M+H]+ and IVAMN [M+H]+
+    var step_name ='*** Creating the [M+H]+ networks without blanks - protonated SSMN and IVAMN *** \n';
+    console.log(step_name);
+    var ivamn_file = out_path+'/molecular_networking/'+basename(out_path)+
+        "_molecular_networking_annotations.selfloop";
+    var clean_table_file = out_path+'/count_tables/clean/'+basename(out_path)+
+        "_peak_area_clean_annotated.csv";
+
+    resExec = shell.exec(python3()+' '+__dirname+'/src/create_protonated_ssmn_ivamn.py '+ivamn_file+' '+mn_file+' '+
+        clean_table_file+' '+blank_expansion+' '+net_top_k+' '+max_component_size+ ' '+min_matched_peaks,
+        {async:false, silent:(verbose <= 0)});
+
+    if (resExec.code) {
+        if (verbose <= 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        shell.ShellString('\n' + step_name +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(out_path+'/molecular_networking/logMnOutput');
+        console.log('\nERROR');
+    } else {
         var mn_time = '\nDONE! \n======\nFinish Step 10 '+printTimeElapsed_bigint(start_mn, process.hrtime.bigint())+"\n======\n";
         console.log(mn_time);
         shell.ShellString('\n' + step_name +
-            resExec.stdout + '\n' + resExec.stderr + mn_time).toEnd(out_path+'/molecular_networking/logMnOutput');
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n' + mn_time).toEnd(out_path+'/molecular_networking/logMnOutput');
     }
 
     return(resExec.code)
@@ -1410,6 +1437,20 @@ program
         'threshold until each component has at most X nodes. \n\t\t\t\t\t' +
         'Keeping this value low makes very large networks (many nodes \n\t\t\t\t\t' +
         'and links) much easier to visualize.',200)
+    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
+        'share to be connected by an edge in the filtered SSMN. Connections ' +
+        'between spectra with less common peaks than this cutoff will be ' +
+        'removed when filtering the SSMN. Except for when one of the spectra ' +
+        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
+        'value, in this case the spectra must share at least 2 peaks. ' +
+        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
+    .option('--blank_expansion [x]', 'the distance of neighborhood nodes from the blanks in IVAMN to be \n\t\t\t\t\t' +
+        'selected for removal in the final protonated networks. \n\t\t\t\t\t' +
+        '(0) to only remove blanks nodes,  \n\t\t\t\t\t' +
+        '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
+        '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
+        'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
+        parseDecimal, 1)
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Steps 3 and 5).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln)\n\t\t\t\t\t' +
@@ -1470,13 +1511,6 @@ program
         'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
         'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
         'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
-    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
-        'share to be connected by an edge in the filtered SSMN. Connections ' +
-        'between spectra with less common peaks than this cutoff will be ' +
-        'removed when filtering the SSMN. Except for when one of the spectra ' +
-        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
-        'value, in this case the spectra must share at least 2 peaks. ' +
-        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed\n\t\t\t\t\t" +
         "in a chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased. To be used in Steps 5, 7 and 10",parseDecimal,3000)
@@ -1671,7 +1705,7 @@ program
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
             options.max_component_size, options.min_matched_peaks,
-            options.max_chunk_spectra,options.verbose);
+            options.max_chunk_spectra, options.blank_expansion, options.verbose);
 
         // if (options.metfrag_identification === "TRUE")
         // {
@@ -2280,6 +2314,20 @@ program
         'threshold until each network component has at most X nodes. \n\t\t\t\t\t' +
         'Keeping this value low makes very large networks (many nodes \n\t\t\t\t\t' +
         'and edges) much easier to visualize.',200)
+    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
+        'share to be connected by an edge in the filtered SSMN. Connections ' +
+        'between spectra with less common peaks than this cutoff will be ' +
+        'removed when filtering the SSMN. Except for when one of the spectra ' +
+        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
+        'value, in this case the spectra must share at least 2 peaks. ' +
+        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
+    .option('--blank_expansion [x]', 'the distance of neighborhood nodes from the blanks in IVAMN to be \n\t\t\t\t\t' +
+        'selected for removal in the final protonated networks. \n\t\t\t\t\t' +
+        '(0) to only remove blanks nodes,  \n\t\t\t\t\t' +
+        '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
+        '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
+        'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
+        parseDecimal, 1)
     .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
         'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
         'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
@@ -2289,13 +2337,6 @@ program
         'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
         'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
         'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
-    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
-        'share to be connected by an edge in the filtered SSMN. Connections ' +
-        'between spectra with less common peaks than this cutoff will be ' +
-        'removed when filtering the SSMN. Except for when one of the spectra ' +
-        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
-        'value, in this case the spectra must share at least 2 peaks. ' +
-        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
     .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing. ' +
         'x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1', parseDecimal, 2)
     .option('-e, --method [name]', 'a character string indicating which correlation coefficient is to be computed. One ' +
@@ -2401,7 +2442,7 @@ program
             // create MNs
             callCreatMN(options.output_path, options.similarity_mn, options.net_top_k,
                 options.max_component_size, options.min_matched_peaks,
-                options.max_chunk_spectra, options.verbose);
+                options.max_chunk_spectra, options.blank_expansion, options.verbose);
 
             // if (options.metfrag_identification === "TRUE")
             // {
@@ -2821,6 +2862,13 @@ program
         'have a number of fragment peaks smaller than the given min_matched_peaks ' +
         'value, in this case the spectra must share at least 2 peaks. ' +
         'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
+    .option('--blank_expansion [x]', 'the distance of neighborhood nodes from the blanks in IVAMN to be \n\t\t\t\t\t' +
+        'selected for removal in the final protonated networks. \n\t\t\t\t\t' +
+        '(0) to only remove blanks nodes,  \n\t\t\t\t\t' +
+        '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
+        '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
+        'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
+        parseDecimal, 1)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed in " +
         "a chunk at the same time. In case of memory issues this value should be decreased",parseDecimal,3000)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information', parseDecimal, 0)
@@ -2840,7 +2888,7 @@ program
         console.log('*** NP3 Molecular Networking Creation - Step 10 ***\n');
         callCreatMN(options.output_path, options.similarity_mn,
             options.net_top_k, options.max_component_size, options.min_matched_peaks,
-            options.max_chunk_spectra, options.verbose);
+            options.max_chunk_spectra, options.blank_expansion, options.verbose);
 
         console.log("MN "+printTimeElapsed_bigint(start_mn, process.hrtime.bigint()));
 
