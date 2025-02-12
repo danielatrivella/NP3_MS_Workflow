@@ -750,9 +750,9 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matche
     var step_name ='*** Creating the [M+H]+ networks without blanks - protonated SSMN and IVAMN *** \n';
     console.log(step_name);
     var ivamn_file = out_path+'/molecular_networking/'+basename(out_path)+
-        "_molecular_networking_annotations.selfloop";
+        "_ivamn.selfloop";
     var clean_table_file = out_path+'/count_tables/clean/'+basename(out_path)+
-        "_peak_area_clean_annotated.csv";
+        "_peak_area_clean_ann.csv";
 
     resExec = shell.exec(python3()+' '+__dirname+'/src/create_protonated_ssmn_ivamn.py '+ivamn_file+' '+mn_file+' '+
         clean_table_file+' '+blank_expansion+' '+net_top_k+' '+max_component_size+ ' '+min_matched_peaks,
@@ -1210,7 +1210,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.1.4',  '--version')
+    .version('1.1.5',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
