@@ -4,7 +4,7 @@ import numpy as np
 from itertools import chain
 import sys, os
 from mn_annotations_assign_protonated_representative import output_mn_annotations
-from molecular_network_filtering_library import loading_network, filter_component, filter_top_k, filter_min_matched_peaks, add_selfloops, output_graph
+from molecular_network_filtering_library import loading_network, print_net_info, filter_component, filter_top_k, filter_min_matched_peaks, add_selfloops, output_graph
 """
 This script creates de SSMN [M+H]+ filtered and the IVAMN [M+H]+ networks without blanks. 
 It uses as input the complete SSMN and the IVAMN networks, the IVAMN attribute table (protonated information) and the clean table. 
@@ -43,7 +43,7 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
         sys.exit("ERROR. The provided clean table file '" + clean_table_file + "' does not exists.")
 
     ## Create the IVAMN [M+H]+
-    print("Creating the IVAMN [M+H]+ network")
+    print("  * Creating the IVAMN [M+H]+ network *")
     # load ivamn and clean table
     ivamn = load_direct_network(ivamn_file)
     clean_table = pd.read_csv(clean_table_file, usecols=["msclusterID", "BLANKS_TOTAL", "protonated_representative"])
@@ -79,36 +79,39 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
     clean_table = clean_table.loc[clean_table.protonated_representative == 1, :]
     # save the IVAMN [M+H]+ network
     output_mn_annotations(ivamn, ivamn_file.replace(".selfloop", "_protonated.selfloop"))
+    print("\n    Done for IVAMN [M+H]+!")
+    print_net_info(ivamn, "IVAMN [M+H]+")
     del ivamn
-    print("\nDone for IVAMN [M+H]+!\n")
 
     ## Create the filtered SSMN [M+H]+
-    print("Creating the SSMN [M+H]+ network")
+    print("  * Creating the SSMN [M+H]+ network *")
     # 3. Use the nodes from IVAMN [M+H]+ to filter the SSMN and obtain the SSMN [M+H]+ network;
     print("\t3. Use the nodes from IVAMN [M+H]+ to filter the SSMN")
     protonated_nodes = clean_table.msclusterID.values
-    ssmn = loading_network(ssmn_file)
+    ssmn = loading_network(ssmn_file, remove_selfloops=True)
     ssmn.remove_nodes_from([n for n in ssmn if n not in protonated_nodes])
 
     # 4. Now, filter the SSMN [M+H]+ using the top_k, max_component size and min_matched_peaks arguments,
     # resulting in the SSMN [M+H]+ filtered.
     # filter min number of matched peaks
-    print("\t4. Filter the SSMN [M+H]+ using the top_k, max_component size and min_matched_peaks arguments")
+    print("\t4. Filter the SSMN [M+H]+ using the top_k, max_component size and min_matched_peaks")
     filter_min_matched_peaks(ssmn, min_matched_peaks)
     # filter top k and component size
     filter_top_k(ssmn, top_k)
     filter_component(ssmn, max_component_size)
-    # save result
-    ssmn_protonated_file = str(ssmn_file.replace('.selfloop', '_protonated') +
-                  '_mmp_' + str(min_matched_peaks) +
-                  '_k_' + str(top_k) + '_x_' + str(max_component_size) +
-                  '.selfloop')
     # Get single nodes and create selfloops
     add_selfloops(ssmn)
+    # save result
+    ssmn_protonated_file = str(ssmn_file.replace('.selfloop', '_protonated') +
+                  '_minMatchedPeaks_' + str(min_matched_peaks) +
+                  '_topK_' + str(top_k) + '_maxComponent_' + str(max_component_size) +
+                  '.selfloop')
     # Export the final SSMN [M+H]+ filtered
     output_graph(ssmn, ssmn_protonated_file)
-    print("\nDone for filtered SSMN [M+H]+!\n")
+    print("\n    Done for filtered SSMN [M+H]+!")
+    print_net_info(ssmn, "SSMN [M+H]+ filtered")
     return
+
 
 if __name__ == "__main__":
     import sys, os
