@@ -113,8 +113,8 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
     add_selfloops(ssmn)
     # save result
     ssmn_protonated_file = str(ssmn_file.replace('.selfloop', '_protonated') +
-                  '_minMatchedPeaks_' + str(min_matched_peaks) +
-                  '_topK_' + str(top_k) + '_maxComponent_' + str(max_component_size) +
+                  '_mmp_' + str(min_matched_peaks) +
+                  '_k_' + str(top_k) + '_x_' + str(max_component_size) +
                   '.selfloop')
     # Export the final SSMN [M+H]+ filtered
     output_graph(ssmn, ssmn_protonated_file)
