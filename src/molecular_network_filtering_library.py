@@ -6,7 +6,17 @@
 import networkx as nx
 import pandas as pd
 
-def loading_network(filename):
+def print_net_info(G, mn_name="network"):
+    print("\n  * Network "+mn_name+" info *\n")
+    G.name = mn_name
+    print("    "+nx.info(G).replace("\n","\n    "))
+    if G.is_directed():
+        print("    Number of components:", nx.number_weakly_connected_components(G))
+    else: # undirected
+        print("    Number of components:", nx.number_connected_components(G))
+    print("    Number of isolated nodes: ", nx.number_of_isolates(G)+nx.number_of_selfloops(G),"\n")
+
+def loading_network(filename, remove_selfloops=False):
     G_edges_list = pd.read_csv(filename)
     G_edges_list = G_edges_list.fillna('')
     G = nx.Graph()
@@ -24,6 +34,9 @@ def loading_network(filename):
         'msclusterID_source').to_dict()['num_peaks_source'], "num_peaks")
     nx.set_node_attributes(G, G_edges_list[['msclusterID_target', 'num_peaks_target']].drop_duplicates().set_index(
         'msclusterID_target').to_dict()['num_peaks_target'], "num_peaks")
+    #remove selfloops
+    if remove_selfloops:
+        G.remove_edges_from(nx.selfloop_edges(G))
 
     return G
 
@@ -46,9 +59,9 @@ def nodes_topk_cutoff(G, top_k):
     return node_cutoff_score
 
 def filter_top_k(G, top_k):
-    print("Filter Top_K", top_k,"neighbors")
+    print("  Filter Top_K", top_k,"neighbors")
     #Keeping only the top K scoring edges per node
-    print("Starting Number of Edges", len(G.edges()))
+    print("  Starting Number of Edges", len(G.edges()))
     #Doing this for each pair, makes sure they are in each other's top K
     # remove the edges that are not in at least one top k
     node_cutoff_score = nodes_topk_cutoff(G, top_k)
@@ -63,12 +76,12 @@ def filter_top_k(G, top_k):
             edge_to_remove.append(edge)
     for edge in edge_to_remove:
         G.remove_edge(edge[0], edge[1])
-    print("After Top K Mutual", len(G.edges()))
+    print("  After Top K Mutual", len(G.edges()))
 
 def filter_min_matched_peaks(G, min_matched):
-    print("Filter min_matched_peaks", min_matched, "fragment ions")
+    print("  Filter min_matched_peaks", min_matched, "fragment ions")
     # Keeping only the edges that have at least min_matched peaks in common
-    print("Starting Number of Edges", len(G.edges()))
+    print("  Starting Number of Edges", len(G.edges()))
     # Doing this for each pair,
     # remove the edges that do have at least min_matched peaks
     edge_to_remove = []
@@ -86,7 +99,7 @@ def filter_min_matched_peaks(G, min_matched):
                 edge_to_remove.append(edge)
     for edge in edge_to_remove:
         G.remove_edge(edge[0], edge[1])
-    print("After Min Matched Peak ", len(G.edges()))
+    print("  After Min Matched Peak ", len(G.edges()))
 
 def filter_component(G, max_component_size):
     if max_component_size == 0:
@@ -111,7 +124,7 @@ def filter_component(G, max_component_size):
                     prune_component(G, component, 0.001)
                 big_components_present = True
         i = i + 1
-    print("After", str(i),"rounds of Component Pruning", len(G.edges()))
+    print("  After", str(i),"rounds of Component Pruning", len(G.edges()))
 
 def get_edges_of_component(G, component):
     component_edges = {}
@@ -149,7 +162,7 @@ def add_selfloops(G):
                                               "num_peaks_source": G.nodes[iso]["num_peaks"],
                                               "num_peaks_target": G.nodes[iso]["num_peaks"]}))
 
-    print("Added {} selfloop edges".format(len(container_edge)))
+    print("  Added {} selfloop edges".format(len(container_edge)))
 
     # Insert all new edges
     G.add_edges_from(container_edge)
@@ -203,7 +216,6 @@ if __name__ == "__main__":
        "must share in order to be connected by an edge in the SSMN")
       sys.exit(1)
 
-
     G = loading_network(graph_file)
     total_nodes = set(G.nodes) # Keep original nodes list
     # filter min number of matched peaks
@@ -218,6 +230,8 @@ if __name__ == "__main__":
 
     # Get single nodes and create selfloops
     add_selfloops(G)
+    #print net info
+    print_net_info(G, "SSMN filtered")
 
     # Export
     output_graph(G, outName)
