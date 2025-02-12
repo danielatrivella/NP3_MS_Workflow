@@ -33,25 +33,29 @@ def flatten_list_of_lists(lsts):
 
 def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_expansion, top_k,
                                  max_component_size, min_matched_peaks):
-    if not os.path.isfile(ivamn_file):
-        sys.exit(
-            "ERROR. The provided molecular network of annotations (IVAMN) edges file '" + ivamn_file + "' does not exists.")
     if not os.path.isfile(ssmn_file):
-        sys.exit(
-            "ERROR. The provided molecular network of similarities (SSMN) edges file '" + ivamn_file + "' does not exists.")
+        sys.exit("ERROR. The provided molecular network of similarities (SSMN) edges file '" + ssmn_file +
+                 "' does not exists.")
     if not os.path.isfile(clean_table_file):
         sys.exit("ERROR. The provided clean table file '" + clean_table_file + "' does not exists.")
 
+    if not os.path.isfile(ivamn_file):
+        sys.exit("ERROR. The provided molecular network of annotations (IVAMN) edges file '" + ivamn_file +
+              "' does not exists. Thus, all nodes are considered protonated nodes.")
+
+
     ## Create the IVAMN [M+H]+
     print("  * Creating the IVAMN [M+H]+ network *")
-    # load ivamn and clean table
+    # load ivamn
     ivamn = load_direct_network(ivamn_file)
-    clean_table = pd.read_csv(clean_table_file, usecols=["msclusterID", "BLANKS_TOTAL", "protonated_representative"])
 
     # 1. remove blanks from IVAMN using the blank_expansion,
     # remove the blank nodes ancestors without considering the edges direction
     print("\t1. Remove blanks from IVAMN using the blank_expansion")
     if 'BLANKS_TOTAL' in pd.read_csv(clean_table_file, nrows=1).columns:
+        # read the clean table
+        clean_table = pd.read_csv(clean_table_file,
+                                  usecols=["msclusterID", "BLANKS_TOTAL", "protonated_representative"])
         blank_nodes_id = clean_table.loc[clean_table["BLANKS_TOTAL"] > 0, "msclusterID"].values
         uivamn = ivamn.to_undirected()
         nodes_to_remove = list(blank_nodes_id)
@@ -68,20 +72,26 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
         nodes_to_remove = np.unique(nodes_to_remove)
         ivamn.remove_nodes_from(nodes_to_remove)
         del(uivamn)
+        # filter in the clean table the not blank nodes from the IVAMN
+        clean_table = clean_table.loc[np.isin(clean_table.msclusterID.values, np.array(ivamn.nodes())), :]
+    else:
+        # read the clean table
+        clean_table = pd.read_csv(clean_table_file,
+                                  usecols=["msclusterID", "protonated_representative"])
 
     # 2. Select the [M+H]+ ions in the remaining IVAMN
-    # filter in the clean table the not blank nodes from the IVAMN
     print("\t2. Select the [M+H]+ ions in the remaining IVAMN")
-    clean_table = clean_table.loc[np.isin(clean_table.msclusterID.values, np.array(ivamn.nodes())),:]
-    # filter the [M+H]+ nodes
+    # filter the [M+H]+ nodes in ivamn
     nodes_to_remove = clean_table.loc[clean_table.protonated_representative == 0, "msclusterID"].values
     ivamn.remove_nodes_from(nodes_to_remove)
-    clean_table = clean_table.loc[clean_table.protonated_representative == 1, :]
     # save the IVAMN [M+H]+ network
     output_mn_annotations(ivamn, ivamn_file.replace(".selfloop", "_protonated.selfloop"))
     print("\n    Done for IVAMN [M+H]+!")
     print_net_info(ivamn, "IVAMN [M+H]+")
     del ivamn
+
+    # filter the [M+H]+ nodes in clean table
+    clean_table = clean_table.loc[clean_table.protonated_representative == 1, :]
 
     ## Create the filtered SSMN [M+H]+
     print("  * Creating the SSMN [M+H]+ network *")
@@ -108,7 +118,7 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
                   '.selfloop')
     # Export the final SSMN [M+H]+ filtered
     output_graph(ssmn, ssmn_protonated_file)
-    print("\n    Done for filtered SSMN [M+H]+!")
+    print("\n    Done for SSMN [M+H]+ filtered!")
     print_net_info(ssmn, "SSMN [M+H]+ filtered")
     return
 
@@ -131,11 +141,11 @@ if __name__ == "__main__":
             "filters - if the filtered SSMN is informed the resulting [M+H]+ network may be more fragmented;\n",
             " 3 - clean_table: Path to the clean table with the final list of consensus spectra - the nodes information "
             "of the networks (.csv);\n"
-            " 4 - blank_expansion: an int with the blanks neighbourhood to be removed from IVAMN, "
-            "(0) to not remove blanks neightbours, "
-            "(1) to remove nodes directly connected to a blank node, (2 or greater) to remove nodes in a distance equal "
-            "to 2 or greater from a blank node, or "
-            "(-1) to remove all possible neighbours of a blank node - remove blank cluster;\n"
+            " 4 - blank_expansion: an int with the distance of neighborhood nodes from the blanks in IVAMN to be "
+            "selected for removal in the final protonated networks. (0) to only remove blanks nodes,"
+            "(1) to remove nodes directly connected to a blank node, "
+            "(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, or "
+            "(-1) to remove all possible neighbours and ancestors of a blank node - remove blank clusters - from IVAMN;\n"
             " 5 - net_top_k: the maximum number of neighbor nodes for one single node in SSMN [M+H]+. "
             "The edge between two nodes are kept only if both nodes are within each other's TopK most similar nodes. "
             "For example, if this value is set at 20, then a single node may be connected to up to 20 other nodes. "
