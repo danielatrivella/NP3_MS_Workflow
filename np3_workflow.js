@@ -2610,10 +2610,9 @@ program
 program
     .command('annotate_protonated')
     .description('Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables ' +
-        'and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, ' +
+        'and creates the ionization variant annotation molecular network (IVAMN). It searches for adducts, neutral losses, multiple charges, ' +
         'dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. ' +
-        'Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus ' +
-        'spectra as putative [M+H]+ representatives.\n\n')
+        'Finally, it runs a link analysis in the IVAMN to assign some consensus spectra as putative [M+H]+ representatives.\n\n')
     .option('-m, --metadata <file>', 'path to the metadata table CSV file')
     .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the clean count tables. The job name will be extracted from here')
@@ -2707,7 +2706,7 @@ program
 
 program
     .command('merge')
-    .description('Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants. It ' +
+    .description('Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants in IVAMN. It ' +
         'creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. ' +
         'By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to ' +
         'better account for the quantifications of the true metabolites.\n\n')
@@ -2835,9 +2834,13 @@ program
 
 program
     .command('mn')
-    .description('Step 10: This command runs the creation of a molecular network of similarity based on the pairwise ' +
-        'spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched pekas, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network contains components that ' +
-        'represent the most analogous spectra, possible connecting spectra from similar chemical classes.\n\n')
+    .description('Step 10: This command runs the creation of a spectra similarity molecular network (SSMN) ' +
+        'which connects spectra based on the pairwise spectra similarity value above the given similarity cut-off. ' +
+        'Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched peaks, ' +
+        'to limit the number of neighbors of each node (number of links) to the top K most similar ones and ' +
+        'to limit the size of the components to a maximum number of nodes. The final filtered SSMN contains components that ' +
+        'represent the most analogous spectra, possible connecting spectra from similar chemical classes. ' +
+        'At the end, a [M+H]⁺ analysis is executed if IVAMN is present, and results in the protonated IVAMN and SSMN. \n\n')
     .option('-o, --output_path <path>', 'path to the output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the molecular_networking folder and inside it the similarity_tables folder. The job name will be extracted from here')
     .option('-w, --similarity_mn [x]', 'the minimum similarity score that must occur between a pair of ' +

@@ -27,13 +27,13 @@ The $NP^{3}$ MS workflow consists of ten major steps:
 * Step 2: Raw data pre-process, that enriches the MS2 spectra with MS1 chromatographic peak dimensions.
 * Step 3: Clustering of pre-processed MS2 spectra into a collection of consensus spectra.
 * Step 4: Quantification of consensus spectra per sample and computation of the sample type indicators.
-* Step 5: Pairwise similarity comparisons of consensus spectra and their quantifications cleaning based on the similarity values.
+* Step 5: Pairwise similarity comparisons of consensus spectra and cleaning of their quantifications based on the similarity values into a set of clean consensus spectra.
 * Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS and positive ion mode only).
 <!-- , and against the PubChem database using the MetFrag R package. -->
-* Step 7: Ionization variants annotation among concurrent consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a molecular network of annotations and assignment of the most likely [M+H]+ consensus spectra representatives (for positive ion mode only).
-* Step 8: Merge of consensus spectra quantifications based on the annotated variants and the [M+H]+ consensus spectra representatives (for positive ion mode only).
+* Step 7: Ionization variants annotation among concurrent clean consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a ionization variant annotation molecular network (IVAMN) and assignment of the most likely [M+H]+ consensus spectra representatives (for positive ion mode only).
+* Step 8: Merge of clean consensus spectra quantifications based on the annotated variants and the [M+H]+ representatives (for positive ion mode only).
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments.
-* Step 10: Creation of a molecular network of similarity based on the consensus spectra similarity.
+* Step 10: Creation of a spectra similarity molecular network (SSMN) based on the clean consensus spectra similarity and creation of the protonated networks IVAMN [M+H]+ and SSMN [M+H]+ filtered.
  
 This workflow also contains two interactive commands for data visualization:
  
@@ -58,7 +58,12 @@ The workflow output is organized in folders and depending on the command can con
     - The ionization variants annotations grouped by type (Step 7)
     - The list of [M+H]+ representatives, suggesting the number of metabolites in the samples (Step 7)
     - The bioactivity correlation scores, that can be used to rank the consensus spectra (Step 9)
-- The molecular networks of annotations and of similarity files from Steps 7 and 10
+- The molecular networks of annotations and of similarity files from Steps 7 and 10:
+    - IVAMN (Step 7)
+    - SSMN (Step 10) 
+    - SSMN filtered (Step 10)
+    - IVAMN [M+H]+ (Step 10)
+    - SSMN [M+H]+ filtered (Step 10)
  
 
 # 2. Installation and Setup
@@ -377,8 +382,14 @@ Options for the command *run*:
 - *\-g, \-\-similarity_blank* [x] :    the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-w, \-\-similarity_mn* [x] :     the minimum similarity score that must occur between a pair of consensus spectra to connect them with a link in the molecular network of similarity. Lower values will increase the components sizes by inducing the connection of less related spectra; and higher values will limit the components sizes to the opposite (default: 0.6) 
 - *\-t, \-\-rt_tolerance* [x,y]        : tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. It is directly applied to the retention time minimum (subtracted) and maximum (added) of the spectra. It enlarges the peak boundaries to deal with misaligned samples or ionization variant spectra. The first tolerance [x] is used in the data, blank and batches integration steps from the clustering Step 3 and in Steps 2 (if no previous result is provided) and 7 (chemical annotations); and the tolerance [y] is used in the final integration step from the clustering Step 3 and in the clean Step 5 (default: 1,2)
+- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-k, \-\-net_top_k* [x]            :     the maximum number of connections for one single node in the molecular network of similarity. A link between two nodes is kept only if both nodes are within each other's X most similar nodes. Keeping this value low makes very large networks (many nodes) much easier to visualize (default: 15)
 - *\-x, \-\-max_component_size* [x]   :     the maximum number of nodes that each component of the molecular network of similarity must have. The links of this network will be removed using an increasing cosine threshold until each component has at most X nodes. Keeping this value low makes very large networks (many nodes and links) much easier to visualize. (default: 200)
+- *\-\-blank_expansion* [x]      :   the distance of neighborhood nodes from the blanks in IVAMN to be 
+  					selected for removal in the final protonated networks. (0) to only remove blanks nodes,
+  					(1) to remove nodes directly connected to a blank node, 
+  					(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, 
+  					or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN  (default: 0)
 <!-- - \-m, \-\-model_dir [path]        : directory where model files are kept. If running MSCluster on Windows and not from the current directory you should specify the path to “Models Windows” (default: ./Models) -->
 <!-- - \-r, \-\-num_rounds [n]          : determines how many rounds are used for the hierarchical clustering (default: 20) -->
 <!-- - \-p, \-\-mixture_prob [x]        : the probability wrongfully adding a spectrum to a cluster (default: 0.4) -->
@@ -391,7 +402,6 @@ Options for the command *run*:
 - *\-u, \-\-rules* [x]              :   path to the CSV file following the NP3 rules table format with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. To be used by the annotation algorithm (Step 7) (default: "rules/np3_modifications.csv")
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
 - *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
-- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased. To be used in Steps 6, 7 and 10 (default: 3000)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (Step 9) (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process (Step 5) (default: "FALSE") -->
@@ -768,6 +778,7 @@ Options for the command *clean*:
 - *\-\-noise_cutoff* [x] :  A positive numeric value to scale the interquartile range (IQR) of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt value below this distribution median plus IQR*noise_cutoff after the clean Step 5. Or FALSE to disable it. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile) of the distribution. When no blank sample is present in the metadata, the full distribution is used. This cutoff will affect the spectra with with a low basePeakInt value that probably are noise features. If the clustering Step 3 resulted in more than 25000 spectra, the noise cutoff will be applied before the clean Step 5 to prevent a long processing time (default: "FALSE")
 - *\-u, \-\-rules* [x]              :   path to the CSV file with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses (Step 7). (default: "rules/np3_modifications.csv")
 - *\-c, \-\-scale_factor* [x]          :  the scaling method to be used in the fragmented peak's intensities before any dot product comparison (Step 5). Valid values are: 0 for the natural logarithm (ln) of the intensities; 1 for no scaling; and other values greater than zero for raising the fragment peaks intensities to the power of x (e.g. x = 0.5 is the square root scaling). [x] >= 0 (default: 0.5)
+- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-k, \-\-net_top_k* [x]            :     the maximum number of connections for one single node in the similarity molecular networking. An edge between two nodes is kept only if both nodes are within each other's X most similar nodes. This restriction is applied to the spectra following the msclusterID's order, so smaller m/z's are limited first. Keeping this value low makes very large networks (many nodes) much easier to visualize (default: 10)
 - *\-x, \-\-max_component_size* [x]    :    the maximum number of nodes that all component of 
                       the similarity molecular network must have. The edges of 
@@ -775,9 +786,13 @@ Options for the command *clean*:
                       threshold until each network component has at most X nodes. 
                       Keeping this value low makes very large networks (many nodes 
                       and edges) much easier to visualize. (default: 200)
+- *\-\-blank_expansion* [x]      :   the distance of neighborhood nodes from the blanks in IVAMN to be 
+  					selected for removal in the final protonated networks. (0) to only remove blanks nodes,
+  					(1) to remove nodes directly connected to a blank node, 
+  					(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, 
+  					or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN  (default: 0)
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
 - *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
-- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-l, \-\-parallel_cores* [x]       :   the number of cores to be used for parallel processing (Step 5). x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1 (default: 2)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process. (default: "FALSE") -->
@@ -915,11 +930,11 @@ Concatenate tremolo results in the count files:
  
 ## 4.7. Step 7: Command *annotate_protonated*
  
-Annotate possible ionization variants in the count tables and creates the molecular network of annotations (for positive ion mode only). It searches for adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragments based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some consensus spectra as putative [M+H]+ representatives. 
+Annotate possible ionization variants in the clean count tables and creates the ionization variant annotation molecular network (IVAMN) - for positive ion mode only. It searches for adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragments based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the IVAMN to assign some consensus spectra as putative [M+H]+ representatives. 
  
-The number of [M+H]+ cosensus spectra representative offer a suggestion to the number of real metabolites present in the samples.
+The number of [M+H]+ representatives offer a suggestion to the number of real metabolites present in the samples.
  
-The nodes of the molecular network of annotations are the collection of consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+).
+The nodes of the IVAMN are the set of clean consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+).
  
 Options for the command *annotate_protonated*:
  
@@ -940,12 +955,12 @@ Options for the command *annotate_protonated*:
  
 It creates inside the 'count_tables/clean' folder:
  
-- Two CSV files with the clean counts of spectra and peak area concatenated with the annotations result as new columns, named with the suffix '_annotated.csv'
+- Two CSV files with the clean counts of spectra and peak area concatenated with the annotations result as new columns, named with the suffix '_ann.csv'
  
 The 'molecular_networking' folder is created if not present yet, and inside it is created: 
  
-- The molecular network of annotations edge file named as '\<*output_name*\>_ivamn.selfloops';
-- One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
+- The IVAMN edge file named as '\<*output_name*\>_ivamn.selfloops';
+- One CSV table containing the IVAMN attributes and the assigned [M+H]+ representatives, named as 
     '\<*output_name*\>_ivamn_attributes.csv'
  
 Where the 'output_name' is extracted from the 'output_path';
@@ -962,7 +977,7 @@ Fake example to execute the Annotation [M+H]+ command:
  
 ##### 4.7.3. *annotate_protonated* Annotation Algorithm Details
  
-During the detection of a given metabolite in a MS experiment some ionization variants can occur, what adds more redundancy and ambiguity to the list of consensus spectra. To try to overcome this limitation of the technique a chemical annotation based on chemical rules and numerical equivalences is performed to detected some of the variations in the clean list of consensus spectra.
+During the detection of a given metabolite in a MS experiment some ionization variants can occur, what adds more redundancy and ambiguity to the list of consensus spectra. To try to overcome this limitation of the technique a chemical annotation based on chemical rules and numerical equivalences is performed to detected some of the variations in the clean set of consensus spectra and creates the IVAMN with the results.
  
 The ionization variants considered are adducts, neutral losses, multiple charge, multiple charge isotopic patterns, dimers/trimers, isotopes and in-source fragmentation. Adducts and dimers/trimers combined with neutral losses are also considered. Multiple charge isotopic pattern is considered looking at the MS2 and the MS1 list that do not have a consensus spectrum assigned to it, in the last case the detection is only signalize with a flag added to clean count tables.
  
@@ -1031,11 +1046,11 @@ Where,
  
 If more than one annotation of a same type is present for a given spectra, they are concatenated using a ';' character.
  
-##### 4.7.3. *annotate_protonated* Molecular Network of Annotation and Protonated Assignment Algorithm Details
+##### 4.7.3. *annotate_protonated* Ionization Variant Annotation Molecular Network (IVAMN) and Protonated Assignment Algorithm Details
  
-After the annotation algorithm a molecular network of annotations is created based on the detected chemical annotations. The nodes of this network are the collection of consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+). 
+After the annotation algorithm the ionization variant annotation molecular network (IVAMN) is created based on the detected chemical annotations. The nodes of this network are the clean consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+). 
  
-The molecular networks of annotations .selfloop file have the following columns, comma separated:
+The IVAMN .selfloop file have the following columns, comma separated:
  
 - "msclusterID_source" : the number of the msclusterID of the source node (ionization variant)
 - "msclusterID_target" : the number of the msclusterID of the target node (considered [M+H]+ ion)
@@ -1046,10 +1061,10 @@ The molecular networks of annotations .selfloop file have the following columns,
 - "numCommonSamples" : the number of samples that both the source and the target node appear
 - "componentIndex" : the component index of the source and target nodes
  
-Finally, an algorithm to assign some of the consensus spectra as the most likely [M+H]+ candidates is applied in the molecular network of annotations. This algorithm performs a link analysis to assign some nodes as representative [M+H]+ candidates in each component (set of interconnected nodes) of the molecular network of annotations. It works as follows: 
+Finally, an algorithm to assign some of the clean consensus spectra as the most likely [M+H]+ (protonated) candidates is applied in the IVAMN. This algorithm performs a link analysis in IVAMN to assign some nodes as representative [M+H]+ in each component (set of interconnected nodes) of this network. It works as follows: 
  
 1. First it runs the PageRank [13], a link analysis algorithm; 
-2. Then, for each component of the network it selects the node with the highest score in the PageRank algorithm as a putative [M+H]+ representant. 
+2. Then, for each component of IVAMN it selects the node with the highest score in the PageRank algorithm as a putative [M+H]+ representant. 
     - The nodes signalized as possible multiple charge ions are excluded from this selection, as well as ions annotated as neutral losses of a multiple charge node. 
     - In the case of a tie in the PageRank score between nodes that are in a same cycle (e.g., that have links pointing to each other), the node pointed by the link of the annotation with the lowest m/z error is used to select the putative [M+H]+ representant of the current iteration. If the tie is between nodes that are not in a same cycle, the node with the lowest ID is selected first; 
 3. Next it removes all the nodes ancestors to the node selected as representant (e.g., all nodes that have a path to this node) from the current component 
@@ -1168,34 +1183,43 @@ Fake example to execute the Biocorrelation command:
  
 ## 4.10. Step 10: Command *mn* (Molecular Networking)
  
-Creates the molecular network of similarity based on the pairwise spectra similarity value above a given cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched pekas, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network is organized into components of similar spectra, representing chemical and structurally related compounds.
+Creates a spectra similarity molecular network (SSMN) which connects spectra based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched peaks, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered SSMN contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes. At the end, a [M+H]+ analysis is executed if IVAMN is present, and results in the protonated IVAMN and protonated SSMN filtered. 
  
-The nodes of the molecular network of similarity are the collection of consensus spectra and the links of this network connects the spectra that have a similarity value above the *similarity_mn* cutoff and that passed the filters. The annotations from Step 7 are also included in the molecular network of similarity as labels when present.
+The nodes of the SSMN are the set of clean consensus spectra and the links of this network connects the spectra that have a similarity value above the *similarity_mn* cutoff and that passed the filters. The annotations from Step 7 are also included in the SSMN as labels when present.
  
 Options for the command *mn*:
  
 - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
 - *\-w, \-\-similarity_mn* [x]  : the minimum similarity score that must occur between a pair of consensus MS/MS spectra in order to create an edge in the molecular networking. Lower values will increase the component size of the clusters by inducing the connection of less related MS/MS spectra; and higher values will limit the components sizes to the opposite (default: 0.6)
+- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
 - *\-k, \-\-net_top_k* [x]          : the maximum number of connections for one single node in the similarity molecular networking. An edge between two nodes is kept only if both nodes are within each other's [x] most similar nodes. This restriction is applied to the spectra following the msclusterID's order, so smaller m/z's are limited first. Keeping this value low makes very large networks (many nodes) much easier to visualize (default: 10)
-- *\-x, \-\-max_component_size* [x]        the maximum number of nodes that all component of 
+- *\-x, \-\-max_component_size* [x]     :   the maximum number of nodes that all component of 
                       the similarity molecular network must have. The edges of 
                       this network will be removed using an increasing cosine 
                       threshold until each network component has at most X nodes. 
                       Keeping this value low makes very large networks (many nodes 
                       and edges) much easier to visualize. (default: 200)
-- *\-\-min_matched_peaks* [x]           :  The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are normalized and cleaned. (default: 6)
+- *\-\-blank_expansion* [x]      :   the distance of neighborhood nodes from the blanks in IVAMN to be 
+  					selected for removal in the final protonated networks. (0) to only remove blanks nodes,
+  					(1) to remove nodes directly connected to a blank node, 
+  					(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, 
+  					or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN  (default: 0)
 - *\-b, \-\-max_chunk_spectra* [name]           : Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000)
 - *\-v, \-\-verbose* [x]             : for values X\>0 show the scripts output information. (default: 0)
 - *\-h, \-\-help*                    : output usage information
  
 ##### 4.10.1. *mn* Results
  
-Two files with the molecular networks of similarity are created inside the 'molecular_networking' folder:
+Four files are created inside the 'molecular_networking' folder with the SSMN, the filtered SSMN, the protonated IVAMN and the protonated SSMN filtered:
  
-- One named '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>.selfloops' with the complete network, all links with a similarity value above the cut-off are present
+- One named '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>.selfloops' with the complete SSMN, all links with a similarity value above the cut-off are present
 - Another named 
 '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>_k_
-    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops' with the filtered network;
+    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops' with the filtered SSMN;
+- Another named 
+'\<*output_name*\>_ssmn_protonated_w_\<*similarity_mn*\>_k_
+    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops' with the protonated SSMN filtered;
+- And the '\<*output_name*\>_ivamn_protonated.selfloops' with the protonated IVAMN.
     
 Where the 'output_name' is extracted from the 'output_path';
  
@@ -1212,13 +1236,13 @@ Fake example to execute the Molecular Network of spectra similarity command:
  
 The molecular networks are a great way to visualize the table counts results. The resulting .selfloops edges files can be opened in graph visualization tools, such as Cytoscape [19] and Gephi [20]. Then the count tables can also be loaded to the networks to add the other nodes information present in these tables, by matching their msclusterIDs.
  
-The creation of the molecular network of similarity is based on the pairwise similarity comparison of the collection of consensus spectra using the shifted cosine similarity score (see Step 5 details), ranging from 0 (totally dissimilar) to 1 (completely identical). The nodes of the molecular networks of similarity are the collection of consensus spectra and the links of these networks connect two consensus spectra that have a similarity score greater or equal to the provided cosine similarity cut-off (default to 0.6 is used). 
+The creation of the spectra similarity molecular network (SSMN) is based on the pairwise similarity comparison of the clean consensus spectra using the shifted cosine similarity score (see Step 5 details), ranging from 0 (totally dissimilar) to 1 (completely identical). The nodes of the SSMN are the clean consensus spectra and the links of this network connect two consensus spectra that have a similarity score greater or equal to the provided cosine similarity cut-off (default to 0.6 is used). 
  
-The molecular network of similarity is further filtered by removing the links between spectra with a number of commom peaks that do not respect the minimum number of matched peaks parameter cut-off (default to at least 6 matched peaks), then limiting the number of links of each node to the top K most similar neighbors (default K equals 15 was used) and pruning the remaining links with an increasing cosine similarity cut-off to limit the components sizes to a provided maximum number of nodes (default of 200 nodes is used). These filtering was based in the GNPS molecular networking analysis code [8].
+The SSMN is further filtered by removing the links between spectra with a number of commom peaks that do not respect the minimum number of matched peaks parameter cut-off (default to at least 6 matched peaks), then limiting the number of links of each node to the top K most similar neighbors (default K equals 15 was used) and pruning the remaining links with an increasing cosine similarity cut-off to limit the components sizes to a provided maximum number of nodes (default of 200 nodes is used). These filtering was based in the GNPS molecular networking analysis code [8].
  
 If the resulting molecular network of similarity is too dense (many nodes and links forming a giant single component), the user can try to restrict the filters with a bigger similarity and minimum number of common peaks cut-offs (similarity_mn and min_matched_peaks parameters) and a smaller top K neighbors and component size cut-offs (net_top_k and max_component_size parameters).
  
-The molecular networks of similarity .selfloop files have the following columns, comma separated:
+The SSMN .selfloop files have the following columns, comma separated:
  
 - "msclusterID_source" : the number of the msclusterID of the source node spectrum
 - "msclusterID_target" : the number of the msclusterID of the target node spectrum
@@ -1229,7 +1253,17 @@ The molecular networks of similarity .selfloop files have the following columns,
 - "num_peaks_target": the number of fragment peaks in the target node spectrum after normalization and cleaning
 - "componentIndex" : the component index of the source and target nodes
  
-The molecular network of similarity is an undirected graph. The source and the target nodes could be shifted, their order do not matter but the source node has always a smaller msclusterID than the target node due to the implemented algorithm.
+The SSMN is an undirected graph. The source and the target nodes could be shifted, their order do not matter but the source node has always a smaller msclusterID than the target node due to the implemented algorithm.
+
+At the end, a [M+H]+ analysis is executed if IVAMN is present, and results in the protonated networks. It creates de SSMN [M+H]+ filtered and the IVAMN [M+H]+ networks without blanks. 
+It uses as input the complete SSMN and the IVAMN networks, the IVAMN attribute table (protonated information) and the clean table. 
+It works as follow: 
+
+1. In IVAMN the blank nodes are removed together with its neighbours and ancestors (or successors, ignores the links direction) if argument blank_expansion != 0, else only remove the blank nodes;
+2. Then the [M+H]+ are selected in the IVAMN with no blanks, resulting in the IVAMN [M+H]+ network;
+3. The nodes from IVAMN [M+H]+ are used to select the final nodes from the SSMN, resulting in the SSMN [M+H]+ network;
+4. Finally, the SSMN [M+H]+ is filtered using the min_matched_peaks, top_k and max_component size arguments, resulting in the SSMN [M+H]+ filtered.
+
  
 ## 4.11. Command *gnps_result*
  

@@ -12,7 +12,7 @@ It works as follow:
 1. In IVAMN the blank nodes are removed together with its neighbours if argument blank_expansion != 0, else only remove the blank nodes;
 2. Then the [M+H]+ are selected in the IVAMN with no blanks, resulting in the IVAMN [M+H]+ network;
 3. The nodes from IVAMN [M+H]+ are used to select the final nodes from the SSMN, resulting in the SSMN [M+H]+ network;
-4. Finally, the SSMN [M+H]+ is filtered using the top_k and max_component size arguments, resulting in the SSMN [M+H]+ filtered.
+4. Finally, the SSMN [M+H]+ is filtered using the min_matched_peaks, top_k and max_component size arguments, resulting in the SSMN [M+H]+ filtered.
 """
 
 def load_direct_network(edges_file):

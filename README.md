@@ -4,16 +4,16 @@
 
 - - - - 
 
-# Current Version 1.1.4
+# Current Version 1.1.5
 
 - NEW features:
-	- Added origin and class information to the UNPD compounds from NPClassifier, NPAtlas and ClassyFire.
-
+	- Creating the [M+H]⁺ networks directly in the pipeline (automated in step 10). Now the final output also contains the protonated IVAMN and SSMN in the molecular_networking output folder.
+ 
 - - - -
 
 # Tutorial Videos
 
-- [Tutorial 1](https://youtu.be/gtPhn5hPuuQ): Brief introduction, 'Getting Started' section and a [M+H]+ analysis
+- [Tutorial 1](https://youtu.be/gtPhn5hPuuQ): Brief introduction, 'Getting Started' section and a [M+H]⁺ analysis (which is now included in the current pipeline output)
 
 [![](https://markdown-videos.deta/youtube/gtPhn5hPuuQ)](https://youtu.be/gtPhn5hPuuQ)
 
@@ -293,12 +293,12 @@ Commands:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
 
-- **annotate_protonated** [options] : Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
+- **annotate_protonated** [options] : Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables and creates the ionization variant annotation molecular network (IVAMN). It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the IVAMN to assign some consensus spectra as putative [M+H]⁺ representatives.
     - List of mandatory options:
     - *\-m, \-\-metadata* \<file\>          : path to the metadata table CSV file
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'counts_table' folder and inside it the 'clean' subfolder with the clean count tables in CSV files. The name of the output folder will be used as the job name.
  
-- **merge** [options] : Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to better account for the quantifications of the true metabolites.
+- **merge** [options] : Step 8: (for positive ion mode only) This command runs the merge of the clean count tables based on the annotated variants in IVAMN. It creates new symbolic spectra candidates representing the union of each spectra with its annotated variants. By default the merge is only performed for the consensus spectra assigned as a [M+H]+ representative ion, to better account for the quantifications of the true metabolites.
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'counts_table' folder and inside it the 'clean' subfolder with the clean count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
@@ -309,7 +309,7 @@ Commands:
     - *\-b, \-\-metadata* \<file\>\     : path to the metadata table CSV file. Used to retrieve the biocorrelation groups
     - *\-c, \-\-count_file_path* \<file\> : path to the count table CSV file
  
-- **mn** [options] : Step 10: This command runs the creation of a molecular network of similarity based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered network contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes.
+- **mn** [options] : Step 10: This command runs the creation of a spectra similarity molecular network (SSMN) which connects spectra based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched peaks, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered SSMN contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes. At the end, a [M+H]⁺ analysis is executed if IVAMN is present, and results in the protonated IVAMN and protonated SSMN filtered. 
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
