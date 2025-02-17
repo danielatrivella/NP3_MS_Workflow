@@ -429,19 +429,20 @@ The final integration step result is located inside the 'outs' directory in a fo
 - The 'identifications' folder with the tremolo identification results;
 - The 'molecular_networking' folder containing: 
     - One subfolder named "similarity_tables" with the pairwise similarity tables (Step 5);
-    - Three molecular networks edge files (Steps 7 and 10): 
-        - the molecular network of annotations named as: 
-        
+    - Five molecular networks edge files (Steps 7 and 10): 
+        - The ionization variant annoation molecular network named as: \newline
           '\<*output_name*\>_ivamn.selfloops'
-        - the complete molecular network of spectra similarity named as :
-        
+        - The complete spectra similarity molecular network named as : \newline
           '\<*output_name*\>\_ssmn_w\_\<*similarity_mn*\>.selfloops', which contains all links with a similarity value above the cut-off
-        - the filtered molecular network of spectra similarity named as:
-        
-          '\<*output_name*\>\_ssmn_w_\<*similarity_mn*\>\_k_\<*net_top_k*\>\_x_\newline
+        - The filtered spectra similarity molecular network named as \newline
+          '\<*output_name*\>\_ssmn_w_\<*similarity_mn*\>\_k_\<*net_top_k*\>\_x_ \newline
            \<*max_component_size*\>.selfloops'
-    - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as:
-    
+        - The IVAMN [M+H]+ named as: \newline
+          '\<*output_name*\>\_ivamn_protonated.selfloops'
+        - The SSMN [M+H]+ filtered named as: \newline
+          '\<*output_name*\>\_ssmn_protonated\_w\_\<*similarity_mn*\>\_k\_\<*net_top_k*\>\_x\_ \newline 
+          \<*max_component_size*\>.selfloops'
+    - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as: \newline
       '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
  
  
@@ -812,9 +813,19 @@ One subfolder inside the 'count_tables' folder is created named 'clean' containi
 The 'molecular_networking' folder is also created if not present yet, and inside it is created: 
  
 - One subfolder named "similarity_tables" with the clean version of the pairwise table of similarity;
-- Two molecular networks edge files (Steps 7 and 10): the molecular network of annotations is named as '\<*output_name*\>_ivamn.selfloops' and the molecular network of similarity is named as 
-    '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>_k_
-    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops';
+- Five molecular networks edge files (Steps 7 and 10): 
+  - The ionization variant annoation molecular network named as: \newline
+  '\<*output_name*\>_ivamn.selfloops'
+  - The complete spectra similarity molecular network named as : \newline
+  '\<*output_name*\>\_ssmn_w\_\<*similarity_mn*\>.selfloops', which contains all links with a similarity value above the cut-off
+  - The filtered spectra similarity molecular network named as \newline
+    '\<*output_name*\>\_ssmn_w_\<*similarity_mn*\>\_k_\<*net_top_k*\>\_x_ \newline
+     \<*max_component_size*\>.selfloops'
+  - The IVAMN [M+H]+ named as: \newline
+    '\<*output_name*\>\_ivamn_protonated.selfloops'
+  - The SSMN [M+H]+ filtered named as: \newline
+    '\<*output_name*\>\_ssmn_protonated\_w\_\<*similarity_mn*\>\_k\_\<*net_top_k*\>\_x\_ \newline 
+    \<*max_component_size*\>.selfloops'
 - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
     '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
  
@@ -1212,14 +1223,16 @@ Options for the command *mn*:
  
 Four files are created inside the 'molecular_networking' folder with the SSMN, the filtered SSMN, the protonated IVAMN and the protonated SSMN filtered:
  
-- One named '\<*output_name*\>_ssmn_w_\<*similarity_mn*\>.selfloops' with the complete SSMN, all links with a similarity value above the cut-off are present
-- Another named 
-'\<*output_name*\>_ssmn_w_\<*similarity_mn*\>_k_
-    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops' with the filtered SSMN;
-- Another named 
-'\<*output_name*\>_ssmn_protonated_w_\<*similarity_mn*\>_k_
-    \<*net_top_k*\>_x_\<*max_component_size*\>.selfloops' with the protonated SSMN filtered;
-- And the '\<*output_name*\>_ivamn_protonated.selfloops' with the protonated IVAMN.
+- The complete spectra similarity molecular network named as : \newline
+'\<*output_name*\>\_ssmn_w\_\<*similarity_mn*\>.selfloops', which contains all links with a similarity value above the cut-off
+- The filtered spectra similarity molecular network named as \newline
+  '\<*output_name*\>\_ssmn_w_\<*similarity_mn*\>\_k_\<*net_top_k*\>\_x_ \newline
+   \<*max_component_size*\>.selfloops'
+- The IVAMN [M+H]+ named as: \newline
+  '\<*output_name*\>\_ivamn_protonated.selfloops'
+- The SSMN [M+H]+ filtered named as: \newline
+  '\<*output_name*\>\_ssmn_protonated\_w\_\<*similarity_mn*\>\_k\_\<*net_top_k*\>\_x\_ \newline 
+  \<*max_component_size*\>.selfloops'
     
 Where the 'output_name' is extracted from the 'output_path';
  
@@ -1287,7 +1300,11 @@ If there is more than one GNPS result for a single msclusterID the results are c
 Fake example to use the GNPS Identification Join command:
  
 ```{r, eval=F} 
-  $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" --result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" --ms_count_path "/path/to/the/output/NP3/count_files/count.csv"
+  $ node np3_workflow.js gnps_result --cluster_info_path 
+    "/path/to/the/output/dir/GNPS_result/clusterinfo/file" 
+    --result_specnets_DB_path 
+    "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" 
+    --ms_count_path "/path/to/the/output/NP3/count_files/count.csv"
 ```
  
 ##### 4.11.3. *gnps_result* Details
