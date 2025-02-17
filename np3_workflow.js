@@ -1450,7 +1450,7 @@ program
         '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
         '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
         'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
-        parseDecimal, 1)
+        parseDecimal, 0)
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Steps 3 and 5).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln)\n\t\t\t\t\t' +
@@ -2327,7 +2327,7 @@ program
         '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
         '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
         'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
-        parseDecimal, 1)
+        parseDecimal, 0)
     .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
         'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
         'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
@@ -2871,7 +2871,7 @@ program
         '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
         '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
         'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
-        parseDecimal, 1)
+        parseDecimal, 0)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed in " +
         "a chunk at the same time. In case of memory issues this value should be decreased",parseDecimal,3000)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information', parseDecimal, 0)
