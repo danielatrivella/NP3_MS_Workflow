@@ -310,19 +310,21 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
             '--out-dir "'+out_path+'\\outs\\'+name+'" --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
             ' --model-dir "'+parms.model_dir+'" --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
-            ' --tmp-dir "'+__dirname+'\\NP3_MSCluster\\tmp_'+parms.output_name+'_rmv"'+' --min-peaks-output '+min_numPeak_output+
+            ' --tmp-dir "'+__dirname+'\\NP3_MSCluster\\tmp_'+name+'_rmv"'+' --min-peaks-output '+min_numPeak_output+
             ' --scale-factor '+parms.scale_factor +' --verbose-level 10 --output-mgf --assign-charges --major-increment 100 ' +
             '--output-file-size '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose < min_verbose)});
     } else {
-        shell.mkdir("-p", '/tmp/NP3_MSCluster/tmp_'+parms.output_name+'_rmv');
+        const tmpDir = "/tmp/NP3_MSCluster/"+Math.random().toString(36).substring(2, 10);
+        const msclusterTmpDir = tmpDir+"/tmp_"+name+"_rmv";
+        shell.mkdir("-p", msclusterTmpDir);
         resExec = shell.exec(__dirname+'/NP3_MSCluster/NP3_MSCluster_bin --list '+spec+' --output-name '+name+' ' +
             '--out-dir '+out_path+'/outs/'+name+' --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
             ' --model-dir '+parms.model_dir+' --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
-            ' --tmp-dir /tmp/NP3_MSCluster/tmp_'+parms.output_name+'_rmv'+' --min-peaks-output '+min_numPeak_output+
+            ' --tmp-dir '+msclusterTmpDir+' --min-peaks-output '+min_numPeak_output+
             ' --scale-factor '+parms.scale_factor +' --verbose-level 10 --output-mgf --assign-charges --major-increment 100 ' +
             '--output-file-size '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose < min_verbose)});
-        shell.rm('-rf', '/tmp/NP3_MSCluster/tmp_'+parms.output_name+'_rmv');
+        shell.rm('-rf', tmpDir);
     }
     // save mscluster log file
     var log_output_path = out_path+'/outs/'+name+'/logClusteringOutput';
@@ -330,8 +332,8 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
         '\n*** Calling NP3_MSCluster for: '+name+' *** \n\n'+resExec.stdout+'\n'+
         resExec.stderr).to(log_output_path);
 
-    // remove tmp file and leave mscluster dir
-    shell.rm('-rf', __dirname+'/NP3_MSCluster/tmp_'+parms.output_name+'_rmv');
+    // remove  file and leave mscluster dir
+    shell.rm('-rf', __dirname+'/NP3_MSCluster/tmp_'+name+'_rmv');
     shell.rm('-rf', __dirname+'/NP3_MSCluster/out*');
     //shell.cd('..');
 
@@ -947,9 +949,11 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
 
     console.log(' Converting the mgf file to a pklbin file \n');
     // run the mgf file converter to pklbin
-    shell.mkdir("-p", "/tmp/ISDB_tremolo_NP3/Data/results/");
+    const tmpDir = "/tmp/ISDB_tremolo_NP3/" + Math.random().toString(36).substring(2, 10);
+    const tremoloTmpDirPath = tmpDir + "/Data/results";
+    shell.mkdir("-p", tremoloTmpDirPath);
     var resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/convert '+ mgf+
-        ' /tmp/ISDB_tremolo_NP3/Data/results/spectra_mgf_'+
+        tremoloTmpDirPath + '/spectra_mgf_'+
         output_name+'.pklbin', {async:false, silent: (verbose <= 0)});
 
     if (!resExec.code) { // error code is 0
@@ -972,8 +976,8 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
         __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p07.mgf " +
         __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p08.mgf " +
         __dirname+"/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf\n\n" +
-        "searchspectra=/tmp/ISDB_tremolo_NP3/Data/results/spectra_mgf_"+output_name+".pklbin\n\n" +
-        "RESULTS_DIR=/tmp/ISDB_tremolo_NP3/Data/results/Results_tremolo_"+output_name+".out\n\n" +
+        "searchspectra="+tremoloTmpDirPath+"/spectra_mgf_"+output_name+".pklbin\n\n" +
+        "RESULTS_DIR="+tremoloTmpDirPath+"/Results_tremolo_"+output_name+".out\n\n" +
         "tolerance.PM_tolerance="+mz_tol+"\n\n" +
         "search_decoy=0\n\n" +
         "SCORE_THRESHOLD="+sim_tol+"\n\n" +
@@ -981,13 +985,13 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
         "NODEIDX=0\n" +
         "NODECOUNT=1\n\n" +
         "SEARCHABUNDANCE=0\n" +
-        "SLGFLOADMODE=1").to('/tmp/ISDB_tremolo_NP3/Data/results/scripted_'+output_name+'.params');
+        "SLGFLOADMODE=1").to(tremoloTmpDirPath+'/scripted_'+output_name+'.params');
 
     console.log(' Running the tremolo search \n');
 
     // run the tremolo search
     resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/main_execmodule ExecSpectralLibrarySearch ' +
-        '/tmp/ISDB_tremolo_NP3/Data/results/scripted_'+output_name+'.params ',
+        +tremoloTmpDirPath+'/scripted_'+output_name+'.params ',
         {async:false, silent: (verbose_search === 0)});
     if (resExec.code) {
         if (verbose <= 0) {
@@ -1002,7 +1006,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
     }
 
     resExec = shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/treat.py ' +
-        '/tmp/ISDB_tremolo_NP3/Data/results/Results_tremolo_' +
+        tremoloTmpDirPath+'/Results_tremolo_' +
         output_name+'.out ' +output_path + ' ' +db_desc,
         {async:false, silent: (verbose <= 0)});
     if (resExec.code) {
@@ -1015,10 +1019,8 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
         console.log("DONE!\n");
     }
 
-    // removing tremolo output temporary files
-    shell.rm("/tmp/ISDB_tremolo_NP3/Data/results/*.out");
-    shell.rm("/tmp/ISDB_tremolo_NP3/Data/results/*.pklbin");
-    shell.rm("/tmp/ISDB_tremolo_NP3/Data/results/*.params");
+    // removing tremolo output temporary directory
+    shell.rm("-rf", tmpDir);
 
     var tremolo_end = "Tremolo search ended!\n======\nFinish Step 6 "+printTimeElapsed_bigint(start_tremolo, process.hrtime.bigint())+"\n======\n";
     console.log(tremolo_end);

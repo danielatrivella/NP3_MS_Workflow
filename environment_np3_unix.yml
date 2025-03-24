@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
   - defaults
-  - bokeh  
+  - bokeh
 dependencies:
   - nodejs=15.2.0
   - r-base=3.6.3
@@ -43,7 +43,6 @@ dependencies:
   - spec2vec=0.8.0
   - pip
   - pip:
-    - termplotlib==0.3.8
-    - jinja2==3.0.3
-    - altair==4.2.2
-
+      - termplotlib==0.3.8
+      - jinja2==3.0.3
+      - altair==4.2.2
