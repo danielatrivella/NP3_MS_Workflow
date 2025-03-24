@@ -952,7 +952,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
     const tmpDir = "/tmp/ISDB_tremolo_NP3/" + Math.random().toString(36).substring(2, 10);
     const tremoloTmpDirPath = tmpDir + "/Data/results";
     shell.mkdir("-p", tremoloTmpDirPath);
-    var resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/convert '+ mgf+
+    var resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/convert '+ mgf+ ' '+
         tremoloTmpDirPath + '/spectra_mgf_'+
         output_name+'.pklbin', {async:false, silent: (verbose <= 0)});
 
@@ -991,10 +991,10 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
 
     // run the tremolo search
     resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/main_execmodule ExecSpectralLibrarySearch ' +
-        +tremoloTmpDirPath+'/scripted_'+output_name+'.params ',
+        tremoloTmpDirPath+'/scripted_'+output_name+'.params',
         {async:false, silent: (verbose_search === 0)});
     if (resExec.code) {
-        if (verbose <= 0) {
+        if (verbose_search <= 0) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
         }
