@@ -300,7 +300,6 @@ function callClustering(options, output_path, specs_path) {
 
 function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_split_mgf, min_numPeak_output,
                        min_verbose) {
-    //shell.cd('NP3_MSCluster');
     console.log('*** Calling NP3_MSCluster for: '+name+' *** \n');
     var resExec;
 
@@ -314,7 +313,7 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
             ' --scale-factor '+parms.scale_factor +' --verbose-level 10 --output-mgf --assign-charges --major-increment 100 ' +
             '--output-file-size '+parms.max_chunk_spectra, {async:false, silent:(parms.verbose < min_verbose)});
     } else {
-        const tmpDir = "/tmp/NP3_MSCluster/"+Math.random().toString(36).substring(2, 10);
+        const tmpDir = "/tmp/NP3_MSCluster_"+Math.random().toString(36).substring(2, 10)+ "/";
         const msclusterTmpDir = tmpDir+"/tmp_"+name+"_rmv";
         shell.mkdir("-p", msclusterTmpDir);
         resExec = shell.exec(__dirname+'/NP3_MSCluster/NP3_MSCluster_bin --list '+spec+' --output-name '+name+' ' +
@@ -332,13 +331,11 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
         '\n*** Calling NP3_MSCluster for: '+name+' *** \n\n'+resExec.stdout+'\n'+
         resExec.stderr).to(log_output_path);
 
-    // remove  file and leave mscluster dir
+    // remove  tmp file created by NP3_MSCluster
     shell.rm('-rf', __dirname+'/NP3_MSCluster/tmp_'+name+'_rmv');
     shell.rm('-rf', __dirname+'/NP3_MSCluster/out*');
-    //shell.cd('..');
 
     if (resExec.code) {
-        //shell.cd('..');
         if (parms.verbose < min_verbose) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
@@ -949,7 +946,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
 
     console.log(' Converting the mgf file to a pklbin file \n');
     // run the mgf file converter to pklbin
-    const tmpDir = "/tmp/ISDB_tremolo_NP3/" + Math.random().toString(36).substring(2, 10);
+    const tmpDir = "/tmp/ISDB_tremolo_NP3_" + Math.random().toString(36).substring(2, 10) + "/";
     const tremoloTmpDirPath = tmpDir + "/Data/results";
     shell.mkdir("-p", tremoloTmpDirPath);
     var resExec = shell.exec(__dirname+'/src/ISDB_tremolo_NP3/Data/tremolo/convert '+ mgf+ ' '+
