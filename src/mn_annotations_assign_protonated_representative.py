@@ -5,7 +5,7 @@ import sys, os
 
 def output_mn_annotations(G, filename):
     # add selfloops
-    G.add_edges_from([(isolated_node,isolated_node,{"cosine": 1.0, "annotation": "", "mzError": 0, "rtError": 0,
+    G.add_edges_from([(isolated_node,isolated_node,{"cosine": 1.0, "annotation": "", "mzError": 0.0, "rtError": 0.0,
                                    "numCommonSamples": ""}) for isolated_node in nx.isolates(G)])
     #
     output_file = open(filename, "w")
@@ -21,10 +21,10 @@ def output_mn_annotations(G, filename):
             output_list = []
             output_list.append(str(edge[0]))
             output_list.append(str(edge[1]))
-            output_list.append(str(edge[2]["cosine"]))
+            output_list.append("{:.3f}".format(edge[2]["cosine"]))
             output_list.append(str(edge[2]["annotation"]))
-            output_list.append(str(edge[2]["mzError"]))
-            output_list.append(str(edge[2]["rtError"]))
+            output_list.append("{:.3f}".format(edge[2]["mzError"]))
+            output_list.append("{:.3f}".format(edge[2]["rtError"]))
             output_list.append(str(edge[2]["numCommonSamples"]))
             output_list.append(str(component_index))
             output_file.write(",".join(output_list) + "\n")
@@ -35,7 +35,9 @@ def mn_annotation_find_protonated(mn_annotation_edges_file, nodes_filename):
     if not os.path.isfile(nodes_filename):
         sys.exit("ERROR. The provided clean table file '"+nodes_filename+"' does not exists.")
 
-    ann_edges_table = pd.read_csv(mn_annotation_edges_file)
+    # read the ivamn and fix the msclusterID columns types to int
+    ann_edges_table = pd.read_csv(mn_annotation_edges_file,
+                                  dtype={'msclusterID_source': np.int64, 'msclusterID_target':np.int64})
 
     # create undirected graph from edges list and remove selfloops
     G = nx.DiGraph()
@@ -70,7 +72,7 @@ def mn_annotation_find_protonated(mn_annotation_edges_file, nodes_filename):
     G_nodes_info['protonated_representative'] = -1
     # assign the link analysis algorithm scores to the graph nodes attributes and set protonated_representative as zero
     for i in range(G_nodes_info.shape[0]):
-        # print(i)
+        #print(i)
         node_name = str(G_nodes_info.loc[i, 'msclusterID'])
         G_nodes_info.loc[i, 'in_degree'] = G.in_degree(node_name)
         G_nodes_info.loc[i, 'total_degree'] = G.degree(node_name)
