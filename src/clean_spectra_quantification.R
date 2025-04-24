@@ -389,7 +389,10 @@ if (!file.exists(file.path(output_path,
 batch_metadata <- readMetadataTable(path_batch_metadata)
 
 # read count files
-ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, guess_max = 5000))
+ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, 
+                                              guess_max = 5000,
+                                              col_types = cols(.default="?", 
+                                                               msclusterID="i")))
 ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "tremolo_")]
 ms_spectra_count$joinedIDs <- NA
 ms_spectra_count$numJoins <- 0
@@ -598,7 +601,9 @@ repeat
     # read count tables from last step
     ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
                                                             paste0(output_name,"_spectra_clean.csv")),
-                                                  guess_max = 5000))
+                                                  guess_max = 5000,
+                                                  col_types = cols(.default="?", 
+                                                                   msclusterID="i")))
   }
   
   # print(table_limit_size)
@@ -1127,7 +1132,9 @@ if (length(blanks_code) > 0)
   rm(blank_ids, blank_idx, blank_depth, blanks_neighbor, blanks_code, pairwise_sim_blanks)
   ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean",
                                                           paste0(output_name,"_spectra_clean.csv")),
-                                                guess_max = 5000))
+                                                guess_max = 5000,
+                                                col_types = cols(.default="?", 
+                                                                 msclusterID="i")))
   
   ms_spectra_count$BLANK_DIST <- ms_area_count$BLANK_DIST
 } else {
