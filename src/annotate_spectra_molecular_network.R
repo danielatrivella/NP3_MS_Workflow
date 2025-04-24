@@ -40,7 +40,7 @@ RMSE <- function(x, y){
 
 annFormat <- function(ann, sim, mzError, rtError, variant_ID, num_common_samples) {
   mzError <- round(as.numeric(mzError), 5)
-  variant_ID <- trimws(variant_ID)
+  variant_ID <- as.integer(trimws(variant_ID))
   paste0(ann, " (sim ", sim, " - mzE ", mzError, " - rtE ", rtError,")", 
          "[", variant_ID, "]", 
          "{", num_common_samples, "}")
@@ -49,7 +49,7 @@ annFormat <- function(ann, sim, mzError, rtError, variant_ID, num_common_samples
 save_annotation_net <- function(i, scans_annotations, scans_order, output_path,
                                 output_name) {
   #print(i)
-  scan_num <- scans_annotations[[1]][[i]]
+  scan_num <- as.integer(scans_annotations[[1]][[i]])
   annotations <- scans_annotations[[2]][[i]]
   annotations_i <- list(adducts = NA,
                         isotopes = NA,
@@ -107,7 +107,7 @@ save_annotation_net <- function(i, scans_annotations, scans_order, output_path,
       ann <- ann[rm_analog]
       annotations <- annotations[rm_analog]
       # write annotation network rows
-      ann_protonate_id_sources <- as.numeric(regmatches(annotations, 
+      ann_protonate_id_sources <- as.integer(regmatches(annotations, 
                                                         regexpr("(?<=\\[)[0-9]+(?=\\])", 
                                                                 annotations, perl = T)))
       ann_sim <- as.numeric(regmatches(annotations, 
@@ -271,7 +271,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
       variant[['rtError']] <- round(RMSE(unlist(prec[c('rtMin', 'rtMax')]), 
                                        unlist(variant[c('rtMin', 'rtMax')])), 2)
     }
-    variant_idx <- as.numeric(variant[['idx']])
+    variant_idx <- as.integer(variant[['idx']])
     # if analog annotation, add to both the prec and the variant ion
     if (grepl(pattern = "analog", ann)) {
       ms_area_clean[variant_idx, "annotation"] <<-
