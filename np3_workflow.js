@@ -1443,13 +1443,13 @@ program
     .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. Peaks in the\n\t\t\t\t\t' +
         'original MS/MS spectra that are closer than this get merged in\n\t\t\t\t\t' +
         'the clustering jobs (Step 3). Also used in the pre process (Step 2), in the\n\t\t\t\t\t' +
-        'spectra similarity comparisons and in the cleaning Step 5',
+        'spectra similarity comparisons and in cleaning (Step 5)',
         parseFloat, 0.05)
     .option('-z, --mz_tolerance [x]', 'this is the tolerance in Daltons for the m/z of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
         'and possibly joined. Used in the clustering jobs (Step 3),\n\t\t\t\t\t' +
         'in the cleaning (Step 5), in the library identifications (Step 6)\n\t\t\t\t\t' +
-        'and in the annotation of ionization variants (Step 7)', parseFloat, 0.025)
+        'and in the annotation of ionization variants (Step 7 - also used for the fragment tolerance of the annotations)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million\n\t\t\t\t\t' +
         '(ppm) to be used in the pre processing (Step 2). Typically set to a\n\t\t\t\t\t' +
         'generous multiple of the mass accuracy of the mass\n\t\t\t\t\t' +
@@ -1716,7 +1716,7 @@ program
                         counts_path+"_peak_area_clean.csv"]);
             }
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
-            // use the fragment_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
+            // use the mz_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
             resExec = callAnnotateCleanCounts(options, output_path,
                 options.mz_tolerance,options.mz_tolerance, options.rt_tolerance[0],
                 15);
