@@ -233,7 +233,7 @@ write_annotation_net_singletons_join_duplicated <- function(output_path,
 }
 
 
-# annoatate the spectra present in the clean table using numerical equivalances
+# annoatate the spectra present in the clean table using numerical equivalences
 # and chemical rules.
 # add the annotations to the clean table and create a molecular network of 
 # annotations with the results
@@ -241,7 +241,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
                                            path_batch_metadata, 
                                            modification_file="rules/np3_modifications.csv", 
                                            mz_tol=0.025, 
-                                           fragment_tol=0.05, rt_tol=2,
+                                           fragment_tol=0.025, rt_tol=2,
                                            ms2_peaks_intensity_cutoff=15,  # absolute intensity cutoff for fragmented MS2 peaks scaled from 0 to 1000
                                            scale_factor=0.5, 
                                            ion_mode="+",  # + or -
@@ -400,6 +400,14 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
                                           paste0(output_name,"_spectra_clean_ann.csv"))
     if (!file.exists(path_clean_area_count) || 
         !file.exists(path_clean_spectra_count)) {
+      # print in the error message the two possible names of the clean tables - 
+      # without and with annotations' info - concatenate both names
+      path_clean_area_count <- paste(file.path(output_path, "count_tables", "clean",
+                                               paste0(output_name,"_peak_area_clean.csv")), 
+                                     path_clean_area_count, sep=" or ")
+      path_clean_spectra_count <- paste(file.path(output_path, "count_tables", "clean",
+                                                  paste0(output_name,"_spectra_clean.csv")),
+                                        path_clean_spectra_count, sep=" or ")
       stop("The clean counts files '", path_clean_area_count,
            "' and '", path_clean_spectra_count,"' do not exists. ",
            "Provide a valid output path to where the csv files with the counts ",
@@ -418,8 +426,13 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
   }
   
   # read input
+  # fix integer column types that may trigger errors when matching ids or 
+  # performing comparisons
   ms_area_clean <- suppressMessages(read_csv(path_clean_area_count, 
-                                             guess_max=5000))
+                                             guess_max=5000,
+                                             col_types = cols(.default="?", 
+                                                              msclusterID="i", 
+                                                              numSpectra="i")))
   count_columns <- which(names(ms_area_clean) %in% 
                          paste0(batch_metadata$SAMPLE_CODE, "_area"))
 
@@ -549,7 +562,10 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
             "' do not exists. Some annotation heuristics will be disabled.")
     ms_no_spectra_count <- NULL
   } else {
-    ms_no_spectra_count <- suppressMessages(read_csv(path_ms1_count, guess_max = 5000))
+    ms_no_spectra_count <- suppressMessages(read_csv(path_ms1_count, 
+                                                     guess_max = 5000,
+                                                     col_types = cols(.default="?", 
+                                                                      msclusterID="i")))
     
     # add the batches in witch each mz appears
     count_columns_ms1 <- match(paste0(batch_metadata$SAMPLE_CODE, "_area"),
@@ -577,9 +593,25 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
   progress_anns <- unique(trunc(c(seq(from = 1, to = nscans, by = nscans/25), nscans)))
   cat(paste0("  |", paste0(rep(" ", length(progress_anns)), collapse = ""), "|\n  |", collapse = ""))
   scans_order <- scans_order[-1] # rm heading col
+  # Check if the scans from the pairwise table match the scans from the clean table
+  # if there is any inconsistence, stop the processing here
+  if (anyNA(match(ms_area_clean$msclusterID,scans_order)) || 
+      anyNA(match(scans_order,ms_area_clean$msclusterID))) {
+    stop("ERROR. An inconsistency was found between the scans list from the pairwise ",
+         "similarity table and the msclusterIDs from the clean count table.",
+         " There is a total of ", sum(is.na(match(ms_area_clean$msclusterID,scans_order))),
+         " mismatched msclusterID in the clean count table, equal to: ", 
+         paste(ms_area_clean$msclusterID[which(is.na(match(ms_area_clean$msclusterID,scans_order)))], sep=','),
+         " And a total of ", sum(is.na(match(scans_order, ms_area_clean$msclusterID))),
+         " mismatched scans in the clean pairwise similarity table, equal to: ", 
+         paste(scans_order[which(is.na(match(scans_order,ms_area_clean$msclusterID)))], sep=','), 
+         ". Report this error to the development team if there is no logical way to fix it, ", 
+         "probable a bug occuried in the clean MGF creation and in the pairwise similarity table computation.")
+  }
+  # start annotating ionization variant spectra
   for (i in seq_len(nscans))
   {
-    # cat(i)
+    #cat("\nStep i: ", i)  # debug in which step the error is occurring
     if (nrow(ms_area_clean) > length(scans_order)) {
       stop("Something went wrong in the annotation step, found an inconsistence in the counts table.",
            " The counts table have more rows than it should. Error row index = ",
@@ -588,7 +620,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
     if (i %in% progress_anns) {
       cat("=")
     }
-    # check if the clsuter was annotated in the count table, if yes set its network row
+    # check if the cluster was annotated in the count table, if yes set its network row
     if (is.na(ms_area_clean$annotation[[i]])) {
       annotation <- c()
     } else {
@@ -707,7 +739,7 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
     # get the samples idx in which the current cluster appears
     common_samples <- ms_peaks[cluster$idx, 4][[1]]
     
-    # remove from the peak clusters that do not share a batch with the current cluster
+    # remove from the peak the adjacent clusters that do not share a batch with the current cluster
     cluster_peak <- cluster_peak[sapply(ms_peaks[cluster_peak$idx,3], 
                                         function(x, source_batches) {
                                           any(x %in% source_batches)
@@ -1273,7 +1305,11 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
   cat("  * Done in", round(tf-t0, 2), units(tf-t0), "*\n\n")
   
   # read clean counts and bind the annotation columns
-  ms_area_clean <- suppressMessages(read_csv(path_clean_area_count, guess_max = 5000))
+  ms_area_clean <- suppressMessages(read_csv(path_clean_area_count, 
+                                             guess_max = 5000,
+                                             col_types = cols(.default="?", 
+                                                              msclusterID="i", 
+                                                              numSpectra="i")))
   # remove previous annotations columns if present
   ms_area_clean$isotope_ion <- NULL
   ms_area_clean$multicharge_ion <- NULL
@@ -1288,7 +1324,11 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
                                             paste0(output_name, "_peak_area_clean_ann.csv")))
   rm(ms_area_clean)
   
-  ms_spectra_count <- suppressMessages(read_csv(path_clean_spectra_count, guess_max = 5000))
+  ms_spectra_count <- suppressMessages(read_csv(path_clean_spectra_count, 
+                                                guess_max = 5000,
+                                                col_types = cols(.default="?", 
+                                                                 msclusterID="i", 
+                                                                 numSpectra="i")))
   # remove previous annotations columns if present
   ms_spectra_count$isotope_ion <- NULL
   ms_spectra_count$multicharge_ion <- NULL
