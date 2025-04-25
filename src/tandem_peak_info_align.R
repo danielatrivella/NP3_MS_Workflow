@@ -371,16 +371,29 @@ if (length(args) < 7) {
            "on the real data. The latter method is more accurate but prone to ", 
            "noise, while the former is more robust, but less exact.")
     fitgauss <- as.logical(args[[21]])
-    
-    names(args) <- c("data_name", "metadata", "raw_data_path", "rt_tolerance", 
-                     "mz_tolerance", "ppm_tolerance", "ion_mode", 
-                     "processed_data_name", "processed_data_overwrite",
-                     "peak_width", 
-                     "snthresh", "pre_filter", "min_fraction", "bw", "bin_size", 
-                     "max_features", "noise", "mz_center_fun", 
-                     "max_samples_batch_align", "integrate_method", "fit_gauss")
-    prettyNum(args)
+  } else {
+    # default values from most of the parms -  pre-process executed from run
+    args[[10]] <- paste(peak_width,collapse = ",")
+    args[[11]] <- snthresh
+    args[[12]] <- paste(prefilter, collapse = ",")
+    args[[13]] <- min_fraction
+    args[[14]] <- bw_win
+    args[[15]] <- bin_size
+    args[[16]] <- max_features
+    args[[17]] <- noise_tol
+    args[[18]] <- mzCenter_fun
+    args[[19]] <- n_samples_batch_align
+    args[[20]] <- integrate_method
+    args[[21]] <- fitgauss
   }
+  names(args) <- c("data_name", "metadata", "raw_data_path", "rt_tolerance", 
+                   "mz_tolerance", "ppm_tolerance", "ion_mode", 
+                   "processed_data_name", "processed_data_overwrite",
+                   "peak_width", 
+                   "snthresh", "pre_filter", "min_fraction", "bw", "bin_size", 
+                   "max_features", "noise", "mz_center_fun", 
+                   "max_samples_batch_align", "integrate_method", "fit_gauss")
+  prettyNum(args)
 }
 
 metadata <- readMetadataTable(path_batch_metadata, path_raw_data) 
