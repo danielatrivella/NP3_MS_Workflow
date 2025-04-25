@@ -854,7 +854,8 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
 
     if (parms.fragment_tolerance) // called from the run or clustering cmd, auto process
     {
-        resExec = shell.exec('Rscript '+__dirname+'/src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir+ ' ' +parms.rt_tolerance[0]+ ' ' +
+        // use default rt_tolerance=3 similar to the pre_process cmd
+        resExec = shell.exec('Rscript '+__dirname+'/src/tandem_peak_info_align.R ' + job + ' ' + metadata + ' ' + raw_dir+ ' ' +3+ ' ' +
             parms.fragment_tolerance + ' ' + parms.ppm_tolerance + ' ' + parms.ion_mode+' '+ parms.processed_data_name+' '+
             parms.processed_data_overwrite, {async: false, silent: (verbose <= 0), maxBuffer: 1024*1024*1024});
     } else { // called from the process cmd
@@ -1484,7 +1485,7 @@ program
         'It enlarges the peak boundaries to deal with misaligned samples\n\t\t\t\t\t' +
         'or ionization variant spectra. The first tolerance [x] is used \n\t\t\t\t\t' +
         'in the data, blank and batches integration steps from the clustering\n\t\t\t\t\t' +
-        'Step 3 and in Steps 2 (if no previous result is provided) and 7 (chemical annotations); \n\t\t\t\t\t' +
+        'Step 3 and 7 (chemical annotations); \n\t\t\t\t\t' +
         'and the tolerance [y] is used \n\t\t\t\t\t' +
         'in the final integration step from the clustering Step 3 and in the clean Step 5', splitListFloat, [1,2])
     .option('-k, --net_top_k [x]', 'the maximum number of connections for one single node in the\n\t\t\t\t\t' +
@@ -1882,7 +1883,8 @@ program
         'and accept as a match all MS2 ions that have a retention\n\t\t\t\t\t' +
         'time value that is within a MS1 peak range. This value is\n\t\t\t\t\t' +
         'applied to both sides of the MS1 peaks (RTmin - rt_tolerance\n\t\t\t\t\t' +
-        'and RTmax + rt_tolerance). Tries to overcome bad MS1 peak integrations.', parseFloat, 3)
+        'and RTmax + rt_tolerance). Tries to overcome bad MS1 peak integrations.\n\t\t\t\t\t' +
+        'This default value is also used in the pre-processing call from commands run and clustering.', parseFloat, 3)
     .option('-z, --mz_tolerance [x]', 'the tolerance in Daltons for matching a MS1 peak m/z \n\t\t\t\t\t'+ 
         'with a MS2 spectrum precursor m/z.', parseFloat, 0.05)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in consecutive MS1 scans in\n\t\t\t\t\t' +
