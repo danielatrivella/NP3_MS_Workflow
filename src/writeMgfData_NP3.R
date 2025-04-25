@@ -1,3 +1,6 @@
+Rcpp::sourceCpp(file.path(script_path(),
+                          'read_mgf_peak_list_R.cpp'))
+
 # MSnBase
 # Based on the code contributed by Guangchuang Yu <guangchuangyu@gmail.com>
 # Modified by Sebastian Gibb <mail@sebastiangibb.de>
@@ -43,7 +46,7 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
                         PEAK_AREA = PEAK_AREA[[i]], PEPMASS = PEPMASS[[i]],
                         INTO = INTO[[i]], SIZE = SIZE[[i]], CHARGE = CHARGE)
   })
-  sp_w <- sum(sp_w) # get the number of written spectrum
+  n_sp_w <- sum(sp_w) # get the number of written spectrum
   
   if (verbose)
     close(pb)
@@ -58,7 +61,7 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
   check_tags <- sapply(tags, function(tag) 
   {
     cat(".")
-    (sum(startsWith(wmgf, tag)) == sp_w)
+    (sum(startsWith(wmgf, tag)) == n_sp_w)
   })
   if (!all(check_tags))
   {
@@ -69,15 +72,16 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
          "Rerun the process to overwritte the corrupted file.")
   }
   rm(wmgf)
-  # check if the written scans number match the msclusterIDs list from the scans list
-  scans_list <- unlist(sapply(splist, function(sp) {scanIndex(sp)}))
+  # check if the written scans from the mgf match the msclusterIDs list from the scans list
+  # remove the scans that were not written because of few peaks (sp_w == 0)
+  scans_list <- unlist(sapply(which(sp_w == 1), function(i) {scanIndex(splist[[i]])}))
   mgf_header <- readMgfHeader(file_MGF)
   if (anyNA(match(scans_list, mgf_header$scans))) 
   {
     stop("ERROR. Problem with the written MGF, the following msclusterIDs are ",
          "missing from the list of written scans: ",
          paste(scans_list[which(is.na(match(scans_list,
-                                            mgf_header$scans)))], sep=","), 
+                                            mgf_header$scans)))], collapse=","), 
          ". Please report this inconsistency to the development team, ",
          "a bug probable ocurried when writting the mgf file.")
   }
@@ -85,7 +89,7 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
   if (any(duplicated(mgf_header$scans))) {
     stop("ERROR. Problem with the written MGF, duplicated scans were written.",
          "The following scans have duplicated values: ", 
-         paste(mgf_header$scans[duplicated(mgf_header$scans)],sep=","), 
+         paste(mgf_header$scans[duplicated(mgf_header$scans)],collapse=","), 
          ". Please report this inconsistency to the development team, ",
          "a bug probable ocurried when writting the mgf file.")
   }
@@ -350,7 +354,7 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
                         SIZE = ms_count_table$numSpectra[[i]], 
                         CHARGE = charge)
   })
-  sp_w <- sum(sp_w) # get the number of written spectrum
+  n_sp_w <- sum(sp_w) # get the number of written spectrum
   
   if (verbose)
     close(pb)
@@ -365,7 +369,7 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
   check_tags <- sapply(tags, function(tag) 
   {
     cat(".")
-    (sum(startsWith(wmgf, tag)) == sp_w)
+    (sum(startsWith(wmgf, tag)) == n_sp_w)
   })
   if (!all(check_tags))
   {
@@ -375,7 +379,8 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
          ". Error probably due to a connection problem, process aborted. ", 
          "Rerun the process to overwritte the corrupted file.")
   }
-  # check if the written scans number match the msclusterIDs list
+  # check if the written scans number match the msclusterIDs list,
+  # all scans must have been written here
   mgf_header <- readMgfHeader(file_MGF)
   if (anyNA(match(ms_count_table$msclusterID, mgf_header$scans))) 
   {
@@ -383,7 +388,7 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
          "missing from the list of written scans: ",
          paste(ms_count_table$msclusterID[which(
            is.na(match(ms_count_table$msclusterID, 
-                       mgf_header$scans)))], sep=","), 
+                       mgf_header$scans)))], collapse=","), 
          ". Please report this inconsistency to the development team, ",
          "a bug probable ocurried when writting the mgf file.")
   }
@@ -391,7 +396,7 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
   if (any(duplicated(mgf_header$scans))) {
     stop("ERROR. Problem with the written MGF, duplicated scans were written.",
          "The following scans have duplicated values: ", 
-         paste(mgf_header$scans[duplicated(mgf_header$scans)],sep=","), 
+         paste(mgf_header$scans[duplicated(mgf_header$scans)],collapse=","), 
          ". Please report this inconsistency to the development team, ",
          "a bug probable ocurried when writting the mgf file.")
   }
