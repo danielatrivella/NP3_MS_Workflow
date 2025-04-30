@@ -27,6 +27,7 @@ with open(db_file, 'rt') as f:
     mw_store = {}
     cas_store = {}
     pm_store = {}
+    inchikey_store = {}
     # store the NPClassifier and Classyfire columns : 'NPClassifier_class', 'NPClassifier_superclass', 'NPClassifier_pathway', 'NPClassifier_isglycoside', 'ClassyFire_subclass'
     npc_superclass_store = {}
     npc_class_store = {}
@@ -49,6 +50,7 @@ with open(db_file, 'rt') as f:
             mw_pos = row.index('mw')        
             cas_pos = row.index('cas')
             pm_pos = row.index('PARENTMASS')
+            inchikey_pos = row.index('inchik')
             # NPC columns index
             npc_superclass_pos = row.index('NPClassifier_class')
             npc_class_pos = row.index('NPClassifier_superclass')
@@ -69,6 +71,7 @@ with open(db_file, 'rt') as f:
             mw_store[row[unpd_id_pos]] = row[mw_pos]
             cas_store[row[unpd_id_pos]] = row[cas_pos]
             pm_store[row[unpd_id_pos]] = row[pm_pos]
+            inchikey_store[row[unpd_id_pos]] = row[inchikey_pos]
             npc_superclass_store[row[unpd_id_pos]] = row[npc_superclass_pos]
             npc_class_store[row[unpd_id_pos]] = row[npc_class_pos]
             npc_pathway_store[row[unpd_id_pos]] = row[npc_pathway_pos]
@@ -97,8 +100,8 @@ with open(result_file, 'rt') as f:
             #sharPeaks_id_pos = row.index('LibSearchSharedPeaks')
             row[0] = "msclusterID"
             header = row + ["SMILES"] + ["chemicalNames"] + ["molecularFormula"] + ["molecularWeight"] + ["CAS"] + \
-                     ["PARENTMASS"] + ["NPClassifier_superclass"] + ["NPClassifier_class"] + ["ClassyFire_subclass"] +\
-                     ["NPClassifier_pathway"] + ["NPClassifier_isglycoside"] + ["NPAtlas_id"] + \
+                     ["PARENTMASS"] + ["InChIKey"] + ["NPClassifier_superclass"] + ["NPClassifier_class"] + \
+                     ["ClassyFire_subclass"] + ["NPClassifier_pathway"] + ["NPClassifier_isglycoside"] + ["NPAtlas_id"] + \
                      ["NPAtlas_compound_names"] + ["NPAtlas_origin_type"] + ["NPAtlas_genus"] + ["NPAtlas_origin_species"]
         else:
             # store smiles and compoundName in the results
@@ -109,6 +112,7 @@ with open(result_file, 'rt') as f:
             temp += [mw_store[row[unpd_id_pos]]]
             temp += [cas_store[row[unpd_id_pos]]]
             temp += [pm_store[row[unpd_id_pos]]]
+            temp += [inchikey_store[row[unpd_id_pos]]]
             # npc data
             temp += [npc_superclass_store[row[unpd_id_pos]]]
             temp += [npc_class_store[row[unpd_id_pos]]]
