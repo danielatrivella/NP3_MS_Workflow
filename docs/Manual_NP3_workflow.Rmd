@@ -1,6 +1,6 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.1.4
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.1.6
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br]
   - Luiz F. G. Alves^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - luiz.alves@lnbio.cnpem.br]
@@ -746,9 +746,9 @@ The resulting clustering count table has *m* rows and at most 20 + *n* columns, 
 | \<X_1\>_\<Y\> | the count of Y in the sample X_1, where Y can be 'spectra' for the number of spectra or 'area' for the unique sum of peak areas in the sample with SAMPLE_CODE equals X_1 in the metadata table | numeric |
 | ... | | |
 | \<X_*n*\>_\<Y\>  | the other samples counts for this mslusterID | numeric |
-| BLANKS_TOTAL    | number of spectra or peak area that appeared in blank samples | numeric |
-| CONTROLS_TOTAL | number of spectra or peak area that appeared in control samples | numeric  |
-| BEDS_TOTAL | number of spectra or peak area that appeared in bed samples | numeric  |
+| BLANKS_TOTAL    | total number of spectra or peak area that appeared in blank samples | numeric |
+| CONTROLS_TOTAL | total number of spectra or peak area that appeared in control samples | numeric  |
+| BEDS_TOTAL | total number of spectra or peak area that appeared in bed samples | numeric  |
 | DESREPLICATION | concatenation of all the hit samples codes in which the spectra had a count greater than zero | string |
 | BFLAG | TRUE or FALSE indicating if there is a close m/z to the mzConsensus in any blank sample | boolean |
 | CFLAG | TRUE or FALSE indicating if there is a close m/z to the mzConsensus in any control sample | boolean |
@@ -908,16 +908,27 @@ Two files are created inside the 'output_path' folder (this folder is created if
     
 When the count_files are provided the following columns are added to them:
  
-- UNPD_IDs_tremolo : the UNPD IDs of the top_k identified spectra concatenated with a ';'
-- SMILES_tremolo    : the SMILES of the top_k identified spectra concatenated with a ','
-- chemicalNames_tremolo    : the chemical names of the top_k identified spectra concatenated with a ';'
-- molecularFormula_tremolo    : the molecular formula of the top_k identified spectra concatenated with a ';'
-- molecularWeight_tremolo    : the molecular weight of the top_k identified spectra concatenated with a ';'
-- CAS_tremolo    : the CAS number of the top_k identified spectra concatenated with a ';'
-- MQScore_tremolo    : the MQ score computed by tremolo of the top_k identified spectra concatenated with a ';'
-- mzErrorPPM_tremolo    : the m/z error in PPM for the top_k identified spectra concatenated with a ';'
-- numSharedPeaks_tremolo    : the number of shared peaks with the top_k identified spectra concatenated with a ';'
- 
+- tremolo_UNPD_IDs : the UNPD IDs of the top_k identified spectra concatenated with a ';'
+- tremolo_SMILES    : the SMILES of the top_k identified spectra concatenated with a ','. A comma is used here to allow including this information in cytoscape to visualize the nodes annotated identified structure
+- tremolo_chemicalNames    : the chemical names of the top_k identified spectra concatenated with a ';'
+- tremolo_InChIKey          : the InChIKey of the top_k identified spectra concatenated with a ';'
+- tremolo_molecularFormula    : the molecular formula of the top_k identified spectra concatenated with a ';'
+- tremolo_molecularWeight    : the molecular weight of the top_k identified spectra concatenated with a ';'
+- tremolo_CAS    : the CAS number of the top_k identified spectra concatenated with a ';'
+- tremolo_MQScore    : the MQ score computed by tremolo of the top_k identified spectra concatenated with a ';'. Similarity score, evaluates the quality of the match
+- tremolo_mzErrorPPM    : the m/z error in PPM for the top_k identified spectra concatenated with a ';'. Mass error, evaluates the quality of the match and signalizes analogs
+- tremolo_numSharedPeaks    : the number of shared peaks with the top_k identified spectra concatenated with a ';'. Shared peaks in the match, evaluates the quality of the match
+- tremolo_NPClassifier_superclass  : the chemical superclass from NPClassifier of the top_k identified spectra concatenated with a ';'
+- tremolo_NPClassifier_class	   : the chemical class from NPClassifier of the top_k identified spectra concatenated with a ';'
+- tremolo_ClassyFire_subclass	   : the chemical subclass from ClassyFire of the top_k identified spectra concatenated with a ';'
+- tremolo_NPClassifier_pathway	   : the chemical pathway from NPClassifier of the top_k identified spectra concatenated with a ';'
+- tremolo_NPClassifier_isglycoside	 : the chemical is glycoside tag from NPClassifier of the top_k identified spectra concatenated with a ';'
+- tremolo_NPAtlas_id	             : the NPAtlas ID of the top_k identified spectra concatenated with a ';'
+- tremolo_NPAtlas_compound_names	 : the compound names from NPAtlas of the top_k identified spectra concatenated with a ';'
+- tremolo_NPAtlas_origin_type	     : the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';'
+- tremolo_NPAtlas_genus	            : the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';'
+- tremolo_NPAtlas_origin_species     : the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';'
+
 For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md file and its documentation at src/ISDB_tremolo_NP3/Data/doc/Workflow_062016.pdf.
  
 ##### 4.6.2. *tremolo* Examples
@@ -1293,9 +1304,10 @@ Options for the command *gnps_result*:
  
 ##### 4.11.1. *gnps_result* Results
  
-The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_superclass", "gnps_class", "gnps_subclass" and "gnps_Ion_Source_Instrument". See the GNPS documentation for the description of these columns (https://ccms-ucsd.github.io/GNPSDocumentation/spectrumcuration/#adding-single-spectra).
+The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
+See the GNPS documentation for the description of these columns (https://ccms-ucsd.github.io/GNPSDocumentation/spectrumcuration/#adding-single-spectra).
  
-If there is more than one GNPS result for a single msclusterID the results are concatenated with a ';', except for the "gnps_Smiles" column which is concatenated with a ','.
+If there is more than one GNPS result for a single msclusterID the results are concatenated with a ';', except for the "gnps_Smiles" column which is concatenated with a ',' (ease visualization in cytoscape).
  
 ##### 4.11.2. *gnps_result* Examples
  
