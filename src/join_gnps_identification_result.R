@@ -129,7 +129,7 @@ lib_idres_scans <- dplyr::arrange(lib_idres_scans, msclusterID, desc(MQScore))
 
 # filter only the wanted columns
 # merge the ion source with the instrument
-gnps_columns_keep <- c('msclusterID', 'SpectrumID','Adduct','Smiles',
+gnps_columns_keep <- c('msclusterID', 'SpectrumID','Adduct','Smiles', 'InChIKey',
                        'CAS_Number','Compound_Name','LibMZ','MZErrorPPM',
                        'MQScore','LibraryQualityString','SharedPeaks','Organism',
                        'npclassifier_superclass', 'npclassifier_class', 'npclassifier_pathway', # old gnps columns for npclassifier result 'superclass','class','subclass',
