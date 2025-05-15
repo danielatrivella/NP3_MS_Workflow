@@ -6,7 +6,8 @@ almost.unique <- function(x, tol = sqrt(.Machine$double.eps))
   x[!d]
 }
 
-
+#
+# functions to read the metadata for running the np3 workflow major steps
 readMetadataTable <- function(path_metadata, path_raw_data = NULL) 
 {
   metadata <- read.csv(path_metadata, stringsAsFactors = FALSE, 
@@ -78,6 +79,60 @@ checkMetadataFormat <- function(metadata, path_raw_data) {
          paste(metadata$SAMPLE_TYPE[which(!(metadata$SAMPLE_TYPE %in% 
                                                     c("blank", "sample", "control", "bed", "hit")))], collapse = ", "),
          "Accepted values are 'sample', 'hit', 'blank', 'control' or 'bed'.")
+  }
+  
+  return(metadata)
+}
+
+#
+# functions to read the metadata for joining jobs
+readMetadataTableJoinJobs <- function(path_metadata, path_jobs_data = NULL) 
+{
+  metadata <- read.csv(path_metadata, stringsAsFactors = FALSE, 
+                       comment.char = "", strip.white = TRUE, colClasses = "character")
+  
+  return(checkJoinJobsMetadataFormat(metadata, path_jobs_data))
+}
+
+
+checkJoinJobsMetadataFormat <- function(metadata, path_jobs_data) {
+  names(metadata) <- toupper(names(metadata))
+  
+  # check columns
+  mandatory_columns <- c("JOBNAME", "JOB_CODE")
+  
+  if (!all(mandatory_columns %in% names(metadata)))
+  {
+    stop("Wrong join jobs metadata file format. It should have at least 2 columns named as follow:
+  - JOBNAME: must contain the jobs final name, without the path.
+  - JOB_CODE: must contain a unique syntactically valid job code identifying each job to be joined", 
+         call. = F)
+  }
+  
+  # create the jobs path concatenating the jobs data path to the jobname
+  if (!is.null(path_jobs_data)) {
+    metadata$JOBPATH <- file.path(path_jobs_data, metadata$JOBNAME, 'outs', metadata$JOBNAME)
+  }
+  
+  # check if the sample codes are syntatic valid names
+  if (!all(make.names(metadata$JOB_CODE) == metadata$JOB_CODE))
+  {
+    stop("Wrong join jobs metadata file format. The following jobs do not have a syntactically valid job code:\n", 
+         paste(metadata$JOB_CODE[which(make.names(metadata$JOB_CODE) != metadata$JOB_CODE)], collapse = ", "),
+         "\nThe job code must be a unique *syntactically valid* name consisting of ", 
+         "letters, numbers, and underscore characters, starting with a letter. ",
+         "R reserved words are not syntactically valid names. Spaces are ignored.")
+  }
+  
+  # check if the job codes are unique names
+  if (any(duplicated(metadata$JOB_CODE)))
+  {
+    stop("Wrong join jobs metadata file format. The following jobs have duplicated job codes:\n", 
+         paste(metadata$JOB_CODE[duplicated(metadata$JOB_CODE)], 
+               collapse = ", "),
+         "\nThe job code must be a *unique* syntactically valid name consisting of ", 
+         "letters, numbers, and underscore characters, starting with a letter. ",
+         "R reserved words are not syntactically valid names.")
   }
   
   return(metadata)
