@@ -297,16 +297,72 @@ function callClustering(options, output_path, specs_path) {
     shell.ShellString(step_time).toEnd(logOutputPath);
 }
 
+function callClusteringJoinJobs(options, output_path, specs_path) {
+    const start_clust = process.hrtime.bigint();
+    console.log('*** Integrating Jobs ***\n');
+    shell.mkdir("-p", output_path+"/outs/"+options.output_name);
+    logOutputPath = callMSCluster(options, options.similarity,specs_path+'/out_spec_lists.txt', options.output_name, output_path,
+        -1, true, options.min_peaks_output, 1);
+
+    // call count by sub job - similar to subCluster count - mantein job id
+    output_path = output_path+"/outs/"+options.output_name
+    callCountSpectraBySubJobID(output_path, options.output_name, options.metadata_join, options.jobs_data_path, options.mz_tolerance,
+        logOutputPath, options.verbose)
+
+    var step_time = '\nDONE clustering and counting spectra from joined jobs!\n' + printTimeElapsed_bigint(start_clust,
+        process.hrtime.bigint())+ "\n";
+    console.log(step_time);
+    shell.ShellString(step_time).toEnd(logOutputPath);
+
+    // for analysing the clustering counts
+    callAnalyseCount(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
+        output_path+"/count_tables/analyseCountClustering",
+        logOutputPath);
+
+    // concatenate spectra peak list
+    callExtractPeakList(options.output_name, output_path+"/mgf/",
+        output_path+"/count_tables/"+options.output_name+"_peak_area.csv",
+        output_path+"/count_tables/"+options.output_name+"_spectra.csv",
+        options.fragment_tolerance, options.scale_factor, logOutputPath);
+    /*
+    // Create Groups coluns listed at metadata
+    // TODO - this should use the metadata concatenated from the original joined jobs
+    callGroupsfunc(options.metadata,
+        output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv",
+        logOutputPath, options.verbose);
+    callGroupsfunc(options.metadata,
+        output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
+        logOutputPath, options.verbose);
+    */
+
+    // call plot basePeakInt distribution!!
+    callPlotBasePeakIntDistribution(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
+        options.bflag_cutoff, logOutputPath, options.verbose);
+
+    step_time = '\n======\nFinish Steps 3 and 4 for joining jobs! ' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n======\n";
+    console.log(step_time);
+    shell.ShellString(step_time).toEnd(logOutputPath);
+}
+
 
 function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_split_mgf, min_numPeak_output,
                        min_verbose) {
     console.log('*** Calling NP3_MSCluster for: '+name+' *** \n');
+    // select the retention time to use
+    var rt_tolerance;
+    if (rt_tol_i >= 0) {
+        // normal flow, rt tol is a list of two values
+        rt_tolerance = parms.rt_tolerance[rt_tol_i]
+    } else {
+        // when joining jobs the rt tol is a single value
+        rt_tolerance = parms.rt_tolerance
+    }
     var resExec;
 
     if (isWindows())
     {
         resExec = shell.exec('"'+__dirname+'\\NP3_MSCluster\\NP3_MSCluster_bin.exe" --list "'+spec+'" --output-name "'+name+'" ' +
-            '--out-dir "'+out_path+'\\outs\\'+name+'" --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
+            '--out-dir "'+out_path+'\\outs\\'+name+'" --rt-tolerance '+rt_tolerance+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
             ' --model-dir "'+parms.model_dir+'" --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
             ' --tmp-dir "'+__dirname+'\\NP3_MSCluster\\tmp_'+name+'_rmv"'+' --min-peaks-output '+min_numPeak_output+
@@ -317,7 +373,7 @@ function callMSCluster(parms, sim_tol, spec, name, out_path, rt_tol_i, keep_spli
         const msclusterTmpDir = tmpDir+"/tmp_"+name+"_rmv";
         shell.mkdir("-p", msclusterTmpDir);
         resExec = shell.exec(__dirname+'/NP3_MSCluster/NP3_MSCluster_bin --list '+spec+' --output-name '+name+' ' +
-            '--out-dir '+out_path+'/outs/'+name+' --rt-tolerance '+parms.rt_tolerance[rt_tol_i]+
+            '--out-dir '+out_path+'/outs/'+name+' --rt-tolerance '+rt_tolerance+
             ' --fragment-tolerance '+parms.fragment_tolerance+' --window '+parms.mz_tolerance+' --similarity '+sim_tol+
             ' --model-dir '+parms.model_dir+' --sqs 0.0 --num-rounds '+parms.num_rounds+' --mixture-prob '+parms.mixture_prob+
             ' --tmp-dir '+msclusterTmpDir+' --min-peaks-output '+min_numPeak_output+
@@ -391,6 +447,31 @@ function callCountSpectraBySubClusterID(out_path, name, isFinal, metadata, proce
     console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_batches.R '+out_path+' '+name+' '+isFinal+' '+
         metadata+' '+processed_dir+' '+mz_tol, {async:false, silent:(verbose <= 0)});
+
+    if (resExec.code) {
+        if (verbose <= 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        console.log('\nERROR');
+        shell.ShellString('\n' + step_name +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputPath);
+        process.exit(1);
+    } else {
+        console.log('\nDONE!\n');
+        shell.ShellString('\n'+ step_name +
+            resExec.stdout+'\n'+resExec.stderr + '\nDONE!\n').toEnd(logOutputPath);
+    }
+}
+
+function callCountSpectraBySubJobID(out_path, name, metadata_jobs, jobs_data_dir, mz_tol, logOutputPath, verbose)
+{
+    // TODO rm isFinal = TRUE always
+    // TODO creating script
+    var step_name = '*** Step 4 - Counting peak area and spectra by subjobs '+name+' *** \n';
+    console.log(step_name);
+    var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_jobs.R '+out_path+' '+name+' '+jobs_data_dir+' '+
+        metadata_jobs+' '+mz_tol, {async:false, silent:(verbose <= 0)});
 
     if (resExec.code) {
         if (verbose <= 0) {
@@ -1033,6 +1114,32 @@ function callCreateBatchLists(metadata, raw_data_path, output_path, output_name,
     try {
         var resExec = shell.exec('Rscript '+__dirname+'/src/create_batch_lists.R ' + metadata + ' ' + raw_data_path + ' ' +
             output_path + ' ' + output_name + ' ' + processed_data_name, {async: false, silent: (verbose <= 0)});
+    } catch (e) {
+        if (verbose <= 0) {
+            console.log(e);
+        }
+        console.log("\nERROR");
+        process.exit(1);
+    }
+    if (resExec.code) {
+        if (verbose <= 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        console.log('\nERROR');
+        process.exit(1);
+    } else {
+        console.log('\nDONE! '+printTimeElapsed_bigint(start_batchlist, process.hrtime.bigint())+"\n");
+    }
+}
+
+function callCreateBatchListsJoinJobs(metadata, jobs_data_path, output_path, output_name, verbose)
+{
+    const start_batchlist = process.hrtime.bigint();
+    console.log('*** Step 3 - Creating the NP3_MSCluster specification lists for '+output_name+' - Joining jobs ***\n');
+    try {
+        var resExec = shell.exec('Rscript '+__dirname+'/src/create_batch_lists_join_jobs.R ' + metadata + ' ' +
+            jobs_data_path + ' ' + output_path + ' ' + output_name, {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
             console.log(e);
@@ -3047,6 +3154,316 @@ program
         console.log('  $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" ' +
             '--result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" ' +
             '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv"');
+    });
+
+program
+    .command('join_jobs')
+    .description('Command join separated jobs into a single united job. ' +
+        'Concatenate different jobs without the need of running them all together again. ' +
+        'Needs a different metadata defining the jobs to be joined and their reference codes. ' +
+        'Use the clean result from the jobs to perform again the clustering of all together, then proceed to the clean step,' +
+        'update the original annotations with the final clean consensus spectra and merge the IVAMNS, ' +
+        'compare the final spectra pairwise, skip merge step and ' +
+        'finally compute the united molecular networking with the joined result.\n\n')
+    .option('-n, --output_name <name>', 'the job name. It will be used to name the output directory and \n\t\t\t\t\t' +
+        'the results from joining the jobs. It must have less than 80 characters.\n',
+        checkJobNameMaxLength)
+    .option('-m, --metadata_join <file>', 'path to the metadata table CSV file difening the jobs to be joined. Different format, see manual.\n')
+    .option('-d, --jobs_data_path <path>', 'path to the folder containing the input jobs result to be joined, \n' +
+        'this should contain their previous NP3 result and their clean mgf and tables will be used.\n\t\t\t\t\t')
+    .option('-o, --output_path <path>', 'path to where the output directory will be created\n')
+    .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. Peaks in the\n\t\t\t\t\t' +
+        'original spectra that are closer than this get merged by\n\t\t\t\t\t' +
+        'the NP3_MSCluster algorithm. Also used in the pre process (Step 2)\n', parseFloat, 0.05)
+    .option('-z, --mz_tolerance [x]', 'this is the tolerance in Daltons for the m/z of the\n\t\t\t\t\t' +
+        'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
+        'and possibly joined. Used in the clustering job and\n\t\t\t\t\t' +
+        'in the library identifications (Step 6)', parseFloat, 0.025)
+    .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
+        'to be used in the pre-processing step if ran\n\t\t\t\t\t', parseFloat, 5)
+    .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
+        'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
+    .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
+        'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
+        'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
+        'is used by spec2vec in the spectra comparison and the matchms library is used to compute \n\t\t\t\t\t' +
+        'the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine \n\t\t\t\t\t' +
+        'function is used. One of "np3_shifted_cosine" or "spec2vec".', convertSimilarityFunc, "np3_shifted_cosine")
+    .option('-s, --similarity [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
+        'clustering, starts in 0.70 and decrease to X in 15 rounds\n\t\t\t\t\t', parseFloat, 0.6)
+    .option('-g, --similarity_blank [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
+        'clustering of the blank clustering steps, starts in 0.70\n\t\t\t\t\t' +
+        'and decrease to X in 15 rounds. Only used in the \n\t\t\t\t\t' +
+        'clustering of blank samples (column SAMPLE\\_TYPE equals\n\t\t\t\t\t' +
+        '\'blank\' in the metadata table)', parseFloat, 0.3)
+    .option('-t, --rt_tolerance [x,y]', 'tolerances in seconds for the retention time width of the\n\t\t\t\t\t' +
+        'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
+        'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
+        'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t', parseFloat, 2)
+    .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
+        'intensities before any dot product comparison (Step 3).\n\t\t\t\t\t' +
+        'Valid values are: 0 for the natural logarithm (ln) of the\n\t\t\t\t\t' +
+        'intensities; 1 for no scaling; and other values greater\n\t\t\t\t\t' +
+        'than zero for raising the fragment peaks intensities to\n\t\t\t\t\t' +
+        'the power of x (e.g. x = 0.5 is the square root scaling).\n\t\t\t\t\t' +
+        '[x] >= 0', parseFloat, 0.5)
+    .option('-e, --method [name]', 'a character string indicating which correlation coefficient is\n\t\t\t\t\t' +
+        'to be computed. One of "pearson", "kendall", or "spearman"\n\t\t\t\t\t', convertMethodCorr,"spearman")
+    .option('-x, --min_peaks_output [x]', 'the minimum number of fragment peaks that a spectrum must have\n\t\t\t\t\t' +
+        'to be outputted after the final clustering step. Spectra\n\t\t\t\t\t' +
+        'with less than x fragmented peaks will be discarded. x >= 1\n\t\t\t\t\t',5)
+    .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
+        'the Tremolo tool should be used for the spectral matching\n\t\t\t\t\t' +
+        'against the ISDB from the UNPD', toupper, "TRUE")
+    .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
+        'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
+        'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
+        'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
+        'spectra acquired on qTOFs.',toupper,"TRUE")
+    .option('--max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search of ' +
+        'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
+        'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
+        'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
+    .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing\n\t\t\t\t\t' +
+        'in Step 5 spectra comparison. x = 1 for disabling parallelization and x > 2\n\t\t\t\t\t' +
+        'for enabling it. x >= 1', parseDecimal, 2)
+    .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra to be loaded and processed in a\n\t\t\t\t\t" +
+        "chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
+        "value should be decreased",parseDecimal,3000)
+    .option('-v, --verbose [x]', 'for values X>0 show the scripts output information\n\t\t\t\t\t', parseDecimal, 0)
+    .action(function(options) {
+        // check mandatory params
+        if (typeof options.output_name === 'undefined') {
+            console.error('\nMissing the mandatory \'output_name\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.metadata_join === 'undefined') {
+            console.error('\nMissing the mandatory \'metadata_join\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.jobs_data_path === 'undefined') {
+            console.error('\nMissing the mandatory \'jobs_data_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.output_path === 'undefined' || options.output_path === "undefined") {
+            console.error('\nMissing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        // check some parameters values
+        ["similarity", "similarity_blank"].forEach(function(parm)
+        {
+            var value = options[parm];
+            if (isNaN(value) || value > 1 || value < 0)
+            {
+                console.error('\nERROR. Wrong '+parm+' parameter value. The '+parm+' threshold must be a positive numeric value less than 1.0. Execution aborted.');
+                process.exit(1);
+            }
+        });
+        if (isNaN(options.fragment_tolerance) || options.fragment_tolerance < 0)
+        {
+            console.error('\nERROR. Wrong fragment_tolerance parameter value. The fragment tolerance must be a positive numeric value given in Daltons. Execution aborted.');
+            process.exit(1);
+        }
+        if (isNaN(options.mz_tolerance) || options.mz_tolerance < 0)
+        {
+            console.error('\nERROR. Wrong mz_tolerance parameter value. The m/z mz_tolerance must be a positive numeric value given in Daltons. Execution aborted.');
+            process.exit(1);
+        }
+        if (isNaN(options.ppm_tolerance) || options.ppm_tolerance < 0)
+        {
+            console.error('\nERROR. Wrong ppm_tolerance parameter value. The PPM tolerance must be a positive numeric value. Execution aborted.');
+            process.exit(1);
+        }
+
+        const start_clust = process.hrtime.bigint();
+        // run workflow
+        console.log('*** NP3 MS Workflow Join Jobs for \'' +options.output_name+ '\' - Steps 3 to 10 without merge ***\n');
+
+        // set model dir
+        // directory where model files are kept. If running MSCluster on Windows and not from the current
+        // directory you should specify the path to 'Models_Windows'
+        options.model_dir = defaultModelDir();
+        // set num of rounds
+        // determines how many rounds are used for the hierarchical clustering. [n] <= 20.
+        options.num_rounds = 15;
+        // set mixture probability
+        // the probability wrongfully adding a spectrum to a cluster. [x] < 0.5
+        options.mixture_prob = 0.4;
+
+        var output_path;
+        var specs_path;
+
+        if (isWindows())
+        {
+            output_path = options.output_path+"\\"+options.output_name;
+            specs_path = output_path + "\\spec_lists";
+        } else {
+            output_path = options.output_path+"/"+options.output_name;
+            specs_path = output_path + "/spec_lists";
+        }
+
+        // check if the output path already exists, do not overwrite it
+        if (shell.test('-e', output_path))
+        {
+            console.log("ERROR: The provided output path already exists, delete it or change the output directory name and retry. \nPath:" + output_path);
+            process.exit()
+        }
+
+        callCreateBatchListsJoinJobs(options.metadata_join, options.jobs_data_path, output_path, options.output_name,
+            options.verbose);
+
+        // save run parameters values
+        shell.ShellString('NP3 MS Workflow - version '+ options.parent.version() +'\n\n').toEnd(output_path+'/logRunParms');
+        shell.ShellString('output_name: '+options.output_name + "\n\ncmd: \n\n").toEnd(output_path+'/logRunParms');
+        shell.ShellString(options.parent.rawArgs.join(' ')).toEnd(output_path+'/logRunParms');
+
+        options.bflag_cutoff = 1.5; // just to plot the vertical lines in the basePeakInt distribution
+
+        // run clustering step for joining jobs
+        callClusteringJoinJobs(options, output_path, specs_path);
+
+        // clean output folder
+        // remove specs folder
+        shell.rm('-rf', specs_path);
+
+        output_path = output_path+"/outs/"+options.output_name;
+
+        // create molecular networking output dir
+        shell.mkdir("-p", output_path+ "/molecular_networking/similarity_tables");
+        // call pairwise comparison for the clustered spectra
+        var out_clustered_spec_comp = callPairwiseComparision(options.output_name, output_path + "/molecular_networking/similarity_tables",
+            output_path+"/mgf/", options.fragment_tolerance,
+            options.scale_factor, options.trim_mz, options.max_shift, options.parallel_cores,
+            options.similarity_function, options.verbose);
+
+        /*
+        // TODO refactor clean to compute areas from the count table when joining jobs
+        // refactor annotation step for joining jobs -> use original ivamns and map old ids to the new ids -> concat all ivamns into one joined net
+        // select protonated again? mantain original protonated info?
+        // build a joined metadata with the original samples to compute correlation and groups? automatic, the metadatas names should be in the metadata_join for each defined job
+        // remove mass dissipation in the clustering from area and spectra count
+        resExec = callCleanClusteringCounts(options, output_path, options.mz_tolerance,
+            options.rt_tolerance, options.fragment_tolerance, '',
+            out_clustered_spec_comp);
+
+
+        var counts_path = output_path+"/count_tables/"+options.output_name;
+        //resExec = 0
+        if (!resExec) // if the clean was succesful, continue for annotation, correlation and merge
+        {
+            counts_path = output_path+"/count_tables/clean/"+options.output_name;
+            var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
+            // call tremolo with the clean mgf and merge results with clean counts files
+            if (!isWindows() && options.tremolo_identification === "TRUE") {
+                tremoloIdentification(options.output_name, output_path + "/identifications",
+                    output_path+"/mgf/"+options.output_name+"_clean.mgf",
+                    options.mz_tolerance,0.2, 10, options.verbose, 0);
+                // renameTremoloJoinedIds(counts_path+"_spectra_clean.csv",
+                //     output_path+ "/identifications/tremolo_results.csv", options.verbose);
+                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
+                    10, [counts_path+"_spectra_clean.csv",
+                        counts_path+"_peak_area_clean.csv"]);
+            }
+            // annotate spectra variants in the clean counts and create the molecular networking of annotations
+            // use the mz_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
+            resExec = callAnnotateCleanCounts(options, output_path,
+                options.mz_tolerance,options.mz_tolerance, options.rt_tolerance[0],
+                15);
+
+            if (resExec) {
+                // annotation step failed, use the clean tables instead
+                // call correlation for the cleaned peak area count and spectra area count
+                callComputeCorrelation(options.metadata, counts_path+"_peak_area_clean.csv",
+                    options.method, 0, clean_log_output, options.verbose);
+                callComputeCorrelation(options.metadata, counts_path+"_spectra_clean.csv",
+                    options.method, 0, clean_log_output, options.verbose);
+            } else {
+                // annotation worked
+                // call correlation for the cleaned peak area count and spectra area count
+                callComputeCorrelation(options.metadata, counts_path + "_peak_area_clean_ann.csv",
+                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
+                    options.verbose);
+                callComputeCorrelation(options.metadata, counts_path + "_spectra_clean_ann.csv",
+                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
+                    options.verbose);
+            }
+
+            callMergeCounts(output_path, options.output_name,
+                options.raw_data_path + '/' + options.processed_data_name, options.metadata,
+                "TRUE", options.method, options.verbose);
+        } else {
+            // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
+            var clustering_log_output = output_path+"/logClusteringOutput";
+            // call tremole and merge the results with the clustering counts files
+            if (!isWindows() && options.tremolo_identification === "TRUE") {
+                // tremolo search for not windows OS
+                tremoloIdentification(options.output_name, output_path + "/identifications",
+                    output_path+"/mgf/"+options.output_name+"_all.mgf",
+                    options.mz_tolerance,0.2, 10, options.verbose, 0);
+                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
+                    10, [counts_path+"_spectra.csv",
+                        counts_path+"_peak_area.csv"]);
+            }
+
+            // call correlation for the mscluster peak area count
+            callComputeCorrelation(options.metadata, counts_path+"_peak_area.csv",
+                options.method, 0, clustering_log_output, options.verbose);
+
+            // call correlation for the mscluster spectra count
+            callComputeCorrelation(options.metadata, counts_path+"_spectra.csv",
+                options.method, 0,  clustering_log_output, options.verbose);
+        }
+        callCreatMN(output_path, options.similarity_mn, options.net_top_k,
+            options.max_component_size, options.min_matched_peaks,
+            options.max_chunk_spectra, options.blank_expansion, options.verbose);
+        */
+
+        var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
+        console.log(clust_end_msg);
+        shell.ShellString(clust_end_msg+"\n").toEnd(output_path+'/logRunParms');
+
+        // TODO skipping for now
+        /*
+        if (options.verbose >= 10) {
+            console.log("\n*** TESTING ***\n\n");
+
+            checkCountsConsistency(output_path+"/outs/"+options.output_name,
+                options.raw_data_path+"/"+options.processed_data_name,
+                options.metadata, options.min_peaks_output,
+                true, false, false);
+        }
+        */
+    })
+    .on('--help', function() {
+        console.log('');
+        console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
+        console.log('');
+        console.log('RESULTS:');
+        console.log('');
+        console.log("TODO UPDATED A directory inside the *output\_path* named with the *output\_name* containing:\n" +
+            "- A copy of the *metadata* file and the command line parameters values used in a file " +
+            "named 'logRunParms', for reproducibility\n" +
+            "- a folder named 'outs' with the clustering steps results in separate folders containing:\n" +
+            "- A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as " +
+            "'<step\_name>\_(spectra|peak\_area).csv'.\n" +
+            "- Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)\n" +
+            "- A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files\n" +
+            "- A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n" +
+            "The clustering steps results folders are named as 'B\_\<DATA_COLLECTION_BATCH\>\_\<X\>' where " +
+            "*\<DATA\_COLLECTION\_BATCH\>* is the data collection batch number in the metadata file of each group of " +
+            "samples and *\<X\>* is 0 if it is a data clustering step or 1 if it is a blank clustering step.\n\n" +
+            "The final integration step result is located inside the 'outs' directory in a folder named with the " +
+            "*output\_name* and it also contains the tremolo identification results inside the " +
+            "'identifications' folder.");
+        console.log('');
+        console.log('EXAMPLES:');
+        console.log('');
+        console.log('  $ node np3_workflow.js clustering --output_name "test_np3" --output_path "/path/where/the/output/will/be/stored" ' +
+            '--metadata "/path/to/the/metadata/file/test_np3_metadata.csv" --raw_data_path "/path/to/the/raw/data/dir"');
+        console.log('');
+        console.log('  $ node np3_workflow.js clustering -n "test_np3_rt_tol" -o "/path/where/the/output/will/be/stored" ' +
+            '-m "/path/to/the/metadata/file/test_np3_metadata.csv" -d "/path/to/the/raw/data/dir" ' +
+            '-t 3.5,5');
     });
 
 program
