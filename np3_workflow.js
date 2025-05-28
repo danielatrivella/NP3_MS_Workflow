@@ -300,6 +300,9 @@ function callClustering(options, output_path, specs_path) {
 function callClusteringJoinJobs(options, output_path, specs_path) {
     const start_clust = process.hrtime.bigint();
     console.log('*** Integrating Jobs ***\n');
+    // copy metadata table of join jobs 
+    shell.cp(options.metadata_join, output_path);
+    // create the final output directory
     shell.mkdir("-p", output_path+"/outs/"+options.output_name);
     logOutputPath = callMSCluster(options, options.similarity,specs_path+'/out_spec_lists.txt', options.output_name, output_path,
         -1, true, options.min_peaks_output, 1);
@@ -1133,13 +1136,13 @@ function callCreateBatchLists(metadata, raw_data_path, output_path, output_name,
     }
 }
 
-function callCreateBatchListsJoinJobs(metadata, jobs_data_path, output_path, output_name, verbose)
+function callCreateBatchListsJoinJobs(metadata, jobs_data_path, path_pre_processed_dir, output_path, output_name, verbose)
 {
     const start_batchlist = process.hrtime.bigint();
     console.log('*** Step 3 - Creating the NP3_MSCluster specification lists for '+output_name+' - Joining jobs ***\n');
     try {
         var resExec = shell.exec('Rscript '+__dirname+'/src/create_batch_lists_join_jobs.R ' + metadata + ' ' +
-            jobs_data_path + ' ' + output_path + ' ' + output_name, {async: false, silent: (verbose <= 0)});
+            jobs_data_path + ' ' + path_pre_processed_dir + ' ' + output_path + ' ' + output_name, {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
             console.log(e);
@@ -3170,7 +3173,11 @@ program
         checkJobNameMaxLength)
     .option('-m, --metadata_join <file>', 'path to the metadata table CSV file difening the jobs to be joined. Different format, see manual.\n')
     .option('-d, --jobs_data_path <path>', 'path to the folder containing the input jobs result to be joined, \n' +
-        'this should contain their previous NP3 result and their clean mgf and tables will be used.\n\t\t\t\t\t')
+        'this should contain their previous NP3 result, named accoardly to what is specified in the metadata_join. \n' +
+        'Their clean mgf and quantification tables will be used.\n\t\t\t\t\t')
+    .option('-y, --pre_processed_dir_path <path>', 'path to the folder containing the input jobs pre processing result, \n' +
+        'this should contain all the original jobs previous NP3 pre processing result in separated folders named \n' +
+        'accoardly to what is specified in the metadata_join.\n\t\t\t\t\t')
     .option('-o, --output_path <path>', 'path to where the output directory will be created\n')
     .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. Peaks in the\n\t\t\t\t\t' +
         'original spectra that are closer than this get merged by\n\t\t\t\t\t' +
@@ -3245,6 +3252,10 @@ program
             console.error('\nMissing the mandatory \'jobs_data_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
             process.exit(1);
         }
+        if (typeof options.pre_processed_dir_path === 'undefined') {
+            console.error('\nMissing the mandatory \'pre_processed_dir_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
         if (typeof options.output_path === 'undefined' || options.output_path === "undefined") {
             console.error('\nMissing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
             process.exit(1);
@@ -3309,7 +3320,8 @@ program
             process.exit()
         }
 
-        callCreateBatchListsJoinJobs(options.metadata_join, options.jobs_data_path, output_path, options.output_name,
+        callCreateBatchListsJoinJobs(options.metadata_join, options.jobs_data_path, options.pre_processed_dir_path,
+            output_path, options.output_name,
             options.verbose);
 
         // save run parameters values
