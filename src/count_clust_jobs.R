@@ -85,7 +85,8 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   {
     countFile$joinedJobsIDs <- paste0(countFile$msclusterID, "_", jobcode)
   }
-  # TODO filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, to exclude any other column that the user may create
+  # TODO filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, 
+  # to exclude any other column that the user may create
   countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", "joinedJobsIDs", "basePeakInt",
                              names(countFile)[
                                !((names(countFile) %in%
@@ -156,13 +157,10 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
         joinedJobsIDs = paste0(count_subjobs[[subJob+1]][
           count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse joinedJobsIDs
         basePeakInt = max(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6])),  # max basePeakInt # TODO add basePeakInt as the max - check if this is the wanted behavior or continue to sum
-        # here the area cols are also summed because concurrent spectra that 
-        # share a peak Id were joined in the original jobs cleanning step, 
-        #so here we are probaly joining spectra with different peakIds and thus different peak areas
-        # TODO check if the above is valide - if not: area should be recomputed or ignored here ? how it is done in the integration step?
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6])),  # max basePeakInt
+        # sum the remaining columns - spectra counts
         colSums(count_subjobs[[subJob+1]][   
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5)], na.rm = TRUE)))  
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5,-6)], na.rm = TRUE)))  
     }))
     
     # if peakId is not missing, aggregate them
@@ -179,7 +177,7 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
                                              split = ";"))), collapse = ";")
     
     countJobs <- countJobs[, !(names(countJobs) %in% 
-                                       c("msclusterID", "peakIds", "scans", "joinedJobsIDs"))]
+                               c("msclusterID", "peakIds", "scans", "joinedJobsIDs"))]
     # sum counts from all file indexes
     if (NROW(countJobs) > 1)
     {
@@ -292,6 +290,8 @@ if (bedControlsCode || controlsCode || blanksCode)
     flagColumns
     })))
 }
+
+# TODO compute the peak are here correctly - using the original pre process data
 
 # order columns to separate spectra and area count 
 clusterArea <- clusterList[, c("msclusterID","numSpectra",
