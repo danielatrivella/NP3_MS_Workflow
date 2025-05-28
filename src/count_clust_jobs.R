@@ -80,12 +80,16 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   countFile <- read.csv(file.path(path_jobs_data, x, "outs", x, "count_tables", 
                                   "clean", paste0(x, "_spectra_clean_ann.csv")), 
                         stringsAsFactors = F, comment.char = "")
-  # create the jobIds column equals the msclusterID_JobCode
-  countFile$jobIds <- paste0(countFile$msclusterID, "_", jobcode)
-  countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", "jobIds", "basePeakInt",
+  # create the joinedJobsIDs column equals the msclusterID_JobCode if it does not exists
+  if (is.null(countFile$joinedJobsIDs)) 
+  {
+    countFile$joinedJobsIDs <- paste0(countFile$msclusterID, "_", jobcode)
+  }
+  # TODO filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, to exclude any other column that the user may create
+  countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", "joinedJobsIDs", "basePeakInt",
                              names(countFile)[
                                !((names(countFile) %in%
-                                    c("mzConsensus", "msclusterID", "peakIds", "scans", "jobIds", 
+                                    c("mzConsensus", "msclusterID", "peakIds", "scans", "joinedJobsIDs", 
                                       "basePeakInt", "joinedIDs", 
                                       "numSpectra", "rtMean", "rtMin", "rtMax", "sumInts",
                                       "BFLAG", "CFLAG", "BEDFLAG", "HFLAG", "DESREPLICATION",
@@ -94,7 +98,8 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
                                       "protonated_rtError_sum",
                                       "peaksList", "peaksInt", "adducts", "isotopes",
                                       "dimers", "multiCharges", "fragments", "analogs")) | 
-                                                  startsWith(names(countFile), "tremolo_"))])]
+                                   startsWith(names(countFile), "tremolo_") | 
+                                   startsWith(names(countFile), "gnps_"))])]
   # read area table and concatenate _area columns
   countFile_area <- read.csv(file.path(path_jobs_data, x, "outs", x, "count_tables", 
                                   "clean", paste0(x, "_peak_area_clean_ann.csv")), 
@@ -135,26 +140,27 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
   # get peak and area count by cluster
   clustersMembers <- bind_rows(lapply(unique(clust_file$clustId), function(id)
   {
-    # print(id)
+    #cat("\n- Start counting clustId: ", id)
     clust_members <- clust_file[clust_file$clustId == id,]
     
     # aggregate counts for the same fileIndex
     countJobs <- bind_rows(lapply(unique(clust_members$fileIndex), function(subJob)
     {
+      #cat("\n- Start counting subJob: ", subJob)
       ids <- clust_members[clust_members$fileIndex == subJob, "scanNumber"]
       return(c(list(peakIds = paste0(count_subjobs[[subJob+1]][
         count_subjobs[[subJob+1]]$msclusterID %in% ids, 3], 
         collapse = ";"), # collapse peaksIds
         scans = paste0(count_subjobs[[subJob+1]][
           count_subjobs[[subJob+1]]$msclusterID %in% ids, 4], collapse = ";"), # collapse scans
-        jobIds = paste0(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse jobIds
+        joinedJobsIDs = paste0(count_subjobs[[subJob+1]][
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse joinedJobsIDs
         basePeakInt = max(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6])),  # max basePeakInt
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6])),  # max basePeakInt # TODO add basePeakInt as the max - check if this is the wanted behavior or continue to sum
         # here the area cols are also summed because concurrent spectra that 
         # share a peak Id were joined in the original jobs cleanning step, 
         #so here we are probaly joining spectra with different peakIds and thus different peak areas
-        # TODO check if the above is valide - if not: area should get the colMeans, with 0 values as NA to prevent summing the same peak area more than one time
+        # TODO check if the above is valide - if not: area should be recomputed or ignored here ? how it is done in the integration step?
         colSums(count_subjobs[[subJob+1]][   
           count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5)], na.rm = TRUE)))  
     }))
@@ -168,12 +174,12 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
     }
     # get scans and aggregate them
     scans <- paste0(countJobs$scans[!is.na(countJobs$scans)], collapse = ";")
-    # aggregate the unique jobIDs
-    jobIds <- paste0(unique(unlist(strsplit(countJobs$jobIds[!is.na(countJobs$jobIds)], 
+    # aggregate the unique joinedJobsIDs
+    joinedJobsIDs <- paste0(unique(unlist(strsplit(countJobs$joinedJobsIDs[!is.na(countJobs$joinedJobsIDs)], 
                                              split = ";"))), collapse = ";")
     
     countJobs <- countJobs[, !(names(countJobs) %in% 
-                                       c("msclusterID", "peakIds", "scans", "jobIds"))]
+                                       c("msclusterID", "peakIds", "scans", "joinedJobsIDs"))]
     # sum counts from all file indexes
     if (NROW(countJobs) > 1)
     {
@@ -201,7 +207,7 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
                   rtMax = clust_members$rtMax[[1]],
                   peakIds = peakIds,
                   scans = scans,
-                  jobIds = jobIds,
+                  joinedJobsIDs = joinedJobsIDs,
                   sumInts = clust_members$precursorInt[[1]]),
              countJobs))
   }))
@@ -226,7 +232,7 @@ rm(scans_list)
 clusterList <- clusterList[, c("msclusterID","numSpectra", 
                                "mzConsensus", "rtMean", "rtMin",
                                "rtMax", "peakIds", "scans", 
-                               "jobIds", "sumInts", "basePeakInt",
+                               "joinedJobsIDs", "sumInts", "basePeakInt",
                                names(clusterList)[endsWith(names(clusterList),
                                                            "_spectra")],
                                names(clusterList)[endsWith(names(clusterList),
@@ -291,7 +297,7 @@ if (bedControlsCode || controlsCode || blanksCode)
 clusterArea <- clusterList[, c("msclusterID","numSpectra",
                                "mzConsensus", "rtMean",
                                "rtMin", "rtMax", "peakIds", "scans",
-                               "jobIds", "sumInts", "basePeakInt",
+                               "joinedJobsIDs", "sumInts", "basePeakInt",
                                names(clusterList)[endsWith(names(clusterList),
                                                            "_area")],
                                c("BFLAG", "CFLAG", "BEDFLAG")[
@@ -305,7 +311,7 @@ names(clusterArea)[endsWith(names(clusterArea), "_TOTAL_area")] <- gsub("_area$"
 clusterArea <- clusterArea[, c("msclusterID","numSpectra",
                                "mzConsensus", "rtMean",
                                "rtMin", "rtMax", "peakIds", "scans",
-                               "jobIds", "sumInts", "basePeakInt",
+                               "joinedJobsIDs", "sumInts", "basePeakInt",
                                names(clusterArea)[endsWith(names(clusterArea),
                                                            "_area")],
                                c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
@@ -319,7 +325,7 @@ clusterArea <- clusterArea[, c("msclusterID","numSpectra",
 clusterList <- clusterList[, c("msclusterID","numSpectra",
                                "mzConsensus", "rtMean",
                                "rtMin", "rtMax", "peakIds", "scans",
-                               "jobIds", "sumInts", "basePeakInt",
+                               "joinedJobsIDs", "sumInts", "basePeakInt",
                                names(clusterList)[endsWith(names(clusterList),
                                                            "_spectra")],
                                c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
