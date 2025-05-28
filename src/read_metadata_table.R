@@ -86,32 +86,48 @@ checkMetadataFormat <- function(metadata, path_raw_data) {
 
 #
 # functions to read the metadata for joining jobs
-readMetadataTableJoinJobs <- function(path_metadata, path_jobs_data = NULL) 
+readMetadataTableJoinJobs <- function(path_metadata, path_jobs_data = NULL, 
+                                      path_pre_processed_dir = NULL) 
 {
   metadata <- read.csv(path_metadata, stringsAsFactors = FALSE, 
-                       comment.char = "", strip.white = TRUE, colClasses = "character")
+                       comment.char = "", strip.white = TRUE, 
+                       colClasses = "character")
   
-  return(checkJoinJobsMetadataFormat(metadata, path_jobs_data))
+  return(checkJoinJobsMetadataFormat(metadata, path_jobs_data, 
+                                     path_pre_processed_dir))
 }
 
 
-checkJoinJobsMetadataFormat <- function(metadata, path_jobs_data) {
+checkJoinJobsMetadataFormat <- function(metadata, path_jobs_data, path_pre_processed_dir) {
   names(metadata) <- toupper(names(metadata))
   
   # check columns
-  mandatory_columns <- c("JOBNAME", "JOB_CODE")
+  mandatory_columns <- c("JOBNAME", "JOB_CODE", "METADATA_NAME", 
+                         "PRE_PROCESSED_DATA_NAME", "JOINED_JOB")
   
   if (!all(mandatory_columns %in% names(metadata)))
   {
     stop("Wrong join jobs metadata file format. It should have at least 2 columns named as follow:
-  - JOBNAME: must contain the jobs final name, without the path.
-  - JOB_CODE: must contain a unique syntactically valid job code identifying each job to be joined", 
+  - JOBNAME: must contain the jobs final name, without the path;
+  - JOB_CODE: must contain a unique syntactically valid job code identifying each job to be joined;
+  - METADATA_NAME: must contain the name of the metadata table of the original np3 job if this is not a joined job, or the name of the metadata_join table of the joined job;
+  - PRE_PROCESSED_DATA_NAME: must contain the nome of the pre process directory of this job, if this is not a joined job. Otherwise, empty;
+  - JOINED_JOB: must contain 0 or 1 defining if this is a original np3 job (0) or a joined job result (1) from a join_jobs process, from different original np3 jobs.", 
          call. = F)
   }
   
   # create the jobs path concatenating the jobs data path to the jobname
   if (!is.null(path_jobs_data)) {
-    metadata$JOBPATH <- file.path(path_jobs_data, metadata$JOBNAME, 'outs', metadata$JOBNAME)
+    metadata$JOB_PATH <- file.path(path_jobs_data, metadata$JOBNAME, 'outs', metadata$JOBNAME)
+    
+    if (!all(file.exists(metadata$JOB_PATH))) 
+    {
+      stop("Checking the join jobs metadata failed for '", output_name, 
+           "'. The jobs paths of the following jobs code do not exists:\n", 
+           paste(metadata$JOB_CODE[!file.exists(metadata$JOB_PATH)], 
+                 collapse = ","),
+           "\nPlease check if the jobs names and path are correctly defined in the join metadata and parameter and retry.")
+    }
   }
   
   # check if the sample codes are syntatic valid names
@@ -133,6 +149,32 @@ checkJoinJobsMetadataFormat <- function(metadata, path_jobs_data) {
          "\nThe job code must be a *unique* syntactically valid name consisting of ", 
          "letters, numbers, and underscore characters, starting with a letter. ",
          "R reserved words are not syntactically valid names.")
+  }
+  
+  # check if the JOINED_JOB column contains only 1 or 0 values
+  if (!all(metadata$JOINED_JOB %in% c(0,1))) 
+  {
+    stop("Wrong join jobs metadata file format. The following jobs do not have a valid JOINED_JOB value:\n", 
+         paste(metadata$JOB_CODE[!(metadata$JOINED_JOB %in% c(0,1))], collapse=", "),
+         "\nThe JOINED_JOB must be a 0 or 1 value indicating if the respective ", 
+         "job is an original np3 job or a np3 joined job from different original np3 jobs. ")
+  }
+  
+  # if the directory pointing to the path where the pre processed results are located
+  # is informed, also check if all the pre_processing are present - 
+  # remove the joined jobs from the checking if any
+  if (!is.null(path_pre_processed_dir) && any(metadata$JOINED_JOB == 0))
+  {
+    metadata$PRE_PROCESSED_DATA_PATH[metadata$JOINED_JOB == 0] <- file.path(path_pre_processed_dir, metadata$PRE_PROCESSED_DATA_NAME[metadata$JOINED_JOB == 0])
+    
+    if (!all(file.exists(metadata$PRE_PROCESSED_DATA_PATH[metadata$JOINED_JOB == 0]))) 
+    {
+      stop("Checking the join jobs metadata failed for '", output_name, 
+           "'. The pre processed data paths of the following jobs code do not exists:\n", 
+           paste(metadata$JOB_CODE[!file.exists(metadata$PRE_PROCESSED_DATA_PATH)], 
+                 collapse = "\n"),
+           "\nPlease check if the jobs names and path are correctly defined in the join metadata and parameter and retry.")
+    }
   }
   
   return(metadata)
