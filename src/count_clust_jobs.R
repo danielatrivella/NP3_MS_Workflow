@@ -17,6 +17,7 @@ script_path <- function() {
   }
 }
 source(file.path(script_path(), "read_metadata_table.R"))
+source(file.path(script_path(), "count_peak_area.R"))
 
 # from package bazar
 almost.unique <- function(x, tol = sqrt(.Machine$double.eps))
@@ -63,15 +64,14 @@ if (length(args) < 3) {
   }
   path_jobs_metadata <- normalizePath(path_jobs_metadata)
   
-  metadata <- readMetadataTableJoinJobs(path_jobs_metadata, path_jobs_data)
-  
   mz_tol <- as.numeric(args[[5]])
 } 
 
+# read the join jobs metadata
+metadata <- readMetadataTableJoinJobs(path_jobs_metadata, path_jobs_data)
+
 # get the count of spectra of the subjobs
-# remove columns with mz, rt, sumInts  or flags columns or
-# peaks list and int in string or ionization variants annotation cols 
-# or tremolo result
+# and select only necessary columns that will be kept in the process
 # TODO see if these columns are necessary - or maxarea, numjoins, meanInt, blankdist and protonated cols
 count_subjobs <- lapply(metadata$JOBNAME, function(x)
 {
@@ -85,34 +85,13 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   {
     countFile$joinedJobsIDs <- paste0(countFile$msclusterID, "_", jobcode)
   }
-  # TODO filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, 
-  # to exclude any other column that the user may create
-  countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", "joinedJobsIDs", "basePeakInt",
-                             names(countFile)[
-                               !((names(countFile) %in%
-                                    c("mzConsensus", "msclusterID", "peakIds", "scans", "joinedJobsIDs", 
-                                      "basePeakInt", "joinedIDs", 
-                                      "numSpectra", "rtMean", "rtMin", "rtMax", "sumInts",
-                                      "BFLAG", "CFLAG", "BEDFLAG", "HFLAG", "DESREPLICATION",
-                                      "BLANK_DIST","maxArea","numJoins", "meanInt",
-                                      "protonated_representative", "protonated_mzError_sum",
-                                      "protonated_rtError_sum",
-                                      "peaksList", "peaksInt", "adducts", "isotopes",
-                                      "dimers", "multiCharges", "fragments", "analogs")) | 
-                                   startsWith(names(countFile), "tremolo_") | 
-                                   startsWith(names(countFile), "gnps_"))])]
-  # read area table and concatenate _area columns
-  countFile_area <- read.csv(file.path(path_jobs_data, x, "outs", x, "count_tables", 
-                                  "clean", paste0(x, "_peak_area_clean_ann.csv")), 
-                        stringsAsFactors = F, comment.char = "")
-  # retrieve the peak area and total columns
-  countFile_area <- countFile_area[,c("msclusterID",
-                                      names(countFile_area)[endsWith(names(countFile_area), "_area") | 
-                                                              endsWith(names(countFile_area), "_TOTAL")])]
-  # rename the area TOTAL columns with a suffix equals _area, to separate them at the end
-  names(countFile_area)[endsWith(names(countFile_area), "_TOTAL")] <- paste0(names(countFile_area)[endsWith(names(countFile_area), "_TOTAL")], "_area")
-  countFile <- left_join(countFile, countFile_area, by="msclusterID")
-  rm(countFile_area)
+  # filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, 
+  # this excludes any other column that the user may create
+  countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", 
+                             "joinedJobsIDs",  
+                             names(countFile)[endsWith(names(countFile), "_spectra")])]
+  # not retrieving the peak area count, it will be correctly computed at the end
+  # return the count of spectra
   countFile
 })
 names(count_subjobs) <- metadata$JOB_CODE
@@ -155,12 +134,10 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
         scans = paste0(count_subjobs[[subJob+1]][
           count_subjobs[[subJob+1]]$msclusterID %in% ids, 4], collapse = ";"), # collapse scans
         joinedJobsIDs = paste0(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse joinedJobsIDs
-        basePeakInt = max(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6])),  # max basePeakInt
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";")), # collapse joinedJobsIDs
         # sum the remaining columns - spectra counts
         colSums(count_subjobs[[subJob+1]][   
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5,-6)], na.rm = TRUE)))  
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5)], na.rm = TRUE)))  
     }))
     
     # if peakId is not missing, aggregate them
@@ -230,118 +207,156 @@ rm(scans_list)
 clusterList <- clusterList[, c("msclusterID","numSpectra", 
                                "mzConsensus", "rtMean", "rtMin",
                                "rtMax", "peakIds", "scans", 
-                               "joinedJobsIDs", "sumInts", "basePeakInt",
+                               "joinedJobsIDs", "sumInts",
                                names(clusterList)[endsWith(names(clusterList),
-                                                           "_spectra")],
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_TOTAL")],
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_ion")],
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_area")])]
+                                                           "_spectra")])]
 
 ## check count sum
 if (sum(clusterList$numSpectra) != 
     sum(clusterList[,names(clusterList)[endsWith(names(clusterList), "_spectra")]])) {
-  stop("Spectra count sum check failed. Could not count number of spectra.")
+  stop("Spectra count sum check failed. Could not correctly count the total number of spectra. ",
+       "Something went wrong in the quantification step. Please contact the dev team.")
 }
 
-# add flag columns based on the total columns present in the final joined counts
-# compute indicators
-blanksCode <- "BLANKS_TOTAL" %in% names(clusterList)
-controlsCode <- "CONTROLS_TOTAL" %in% names(clusterList)
-bedControlsCode <- "BEDS_TOTAL" %in% names(clusterList)
-# DESREPLICATION AND HITS flag will be ignored here
+# compute the peak area here correctly - using the original pre process data 
+# from the original samples
+# compute peak area count and the base peak int
+clusterArea <- compute_peak_areas_joined_jobs(output_path, 
+                                              clusterList$msclusterID,
+                                              clusterList$scans,
+                                              clusterList$peakIds, 
+                                              clusterList$joinedJobsIDs)
+clusterArea <- bind_cols(clusterList[, c("msclusterID","numSpectra", 
+                                         "mzConsensus", "rtMean", "rtMin",
+                                         "rtMax", "peakIds", "scans", 
+                                         "joinedJobsIDs", "sumInts")],
+                         clusterArea)
+clusterList$basePeakInt <- clusterArea$basePeakInt
 
-if (blanksCode) {
+# retrieve the original jobs samples metadata to recompute the sample types indicators, 
+# for both spectra and area count
+metadata_samples <- readMetadataTable(file.path(output_path, "../..", 
+                                                "original_samples_METADATA.csv"))
+
+# compute indicators
+blanksCode <- metadata_samples[metadata_samples$SAMPLE_TYPE == "blank", "SAMPLE_CODE"]
+controlsCode <- metadata_samples[metadata_samples$SAMPLE_TYPE =="control", "SAMPLE_CODE"]
+bedControlsCode <- metadata_samples[metadata_samples$SAMPLE_TYPE == "bed", "SAMPLE_CODE"]
+hitsCode <- metadata_samples[metadata_samples$SAMPLE_TYPE == "hit", "SAMPLE_CODE"]
+
+if (length(hitsCode) > 0) {
+  hitsCode <- paste0(hitsCode, "_spectra")
+  mz_hits <- lapply(hitsCode, function(y){
+    almost.unique(unlist(clusterList[clusterList[,y] > 0, "mzConsensus"], use.names = FALSE))})
+}
+if (length(blanksCode) > 0) {
+  clusterList <- mutate(clusterList, 
+                        BLANKS_TOTAL = rowSums(select(clusterList, paste0(blanksCode,"_spectra"))))
+  clusterArea <- mutate(clusterArea,
+                        BLANKS_TOTAL = rowSums(select(clusterArea, paste0(blanksCode,"_area"))))
+  
   mz_blank <- almost.unique(clusterList[clusterList$BLANKS_TOTAL > 0, "mzConsensus"][[1]], mz_tol)
   mz_blank_up <- mz_blank + mz_tol # upper bound
   mz_blank <- mz_blank - mz_tol # lower bound
 }
-if (controlsCode) {
+if (length(controlsCode) > 0) {
+  clusterList <- mutate(clusterList, 
+                        CONTROLS_TOTAL = rowSums(select(clusterList, paste0(controlsCode,"_spectra"))))
+  clusterArea <- mutate(clusterArea,
+                        CONTROLS_TOTAL = rowSums(select(clusterArea, paste0(controlsCode,"_area"))))
+  
   mz_control <- almost.unique(clusterList[clusterList$CONTROLS_TOTAL > 0, "mzConsensus"][[1]], mz_tol)
   mz_control_up <- mz_control + mz_tol # upper bound
   mz_control <- mz_control - mz_tol # lower bound
 }
-if (bedControlsCode) {
+if (length(bedControlsCode) > 0) {
+  clusterList <- mutate(clusterList, 
+                        BEDS_TOTAL = rowSums(select(clusterList, paste0(bedControlsCode,"_spectra"))))
+  clusterArea <- mutate(clusterArea,
+                        BEDS_TOTAL = rowSums(select(clusterArea, paste0(bedControlsCode,"_area"))))
+  
   mz_bed_control <- almost.unique(clusterList[clusterList$BEDS_TOTAL > 0, "mzConsensus"][[1]], mz_tol)
   mz_bed_control_up <- mz_bed_control + mz_tol # upper bound
   mz_bed_control <- mz_bed_control - mz_tol # lower bound
 }
 
-# add BFLAG and CFLAG and and BEDFLAG
-if (bedControlsCode || controlsCode || blanksCode)
+# add BFLAG and CFLAG and DESREPLICATION and HFLAG and BEDFLAG
+if (length(bedControlsCode) > 0 || length(controlsCode) > 0 || length(blanksCode) > 0 || length(hitsCode) > 0)
 {
   clusterList <- bind_cols(clusterList, 
                            bind_rows(lapply(seq_along(clusterList$mzConsensus), 
     function(i)
     {
-    x <- clusterList$mzConsensus[[i]]
-    
-    flagColumns = list()
-    
-    if (blanksCode)
-    flagColumns <- c(flagColumns, BFLAG = any(x >= mz_blank & x <= mz_blank_up))
-    if (controlsCode)
-    flagColumns <- c(flagColumns, CFLAG = any(x >= mz_control & x <= mz_control_up))
-    if (bedControlsCode)
-    flagColumns <- c(flagColumns, BEDFLAG = any(x >= mz_bed_control & x <= mz_bed_control_up))
-    
-    flagColumns
+      x <- clusterList$mzConsensus[[i]]
+      
+      flagColumns = list()
+      
+      if (length(hitsCode) > 0) {
+        # get the hit samples in which the mass x appears
+        hflag <- unlist(sapply(seq_along(mz_hits), function(j){
+          if (any(x >= mz_hits[[j]] - mz_tol & x <= mz_hits[[j]] + mz_tol))
+            return(hitsCode[[j]])
+          else
+            return(NULL)
+        }))
+        
+        if (is.null(hflag))
+          hflag <- NA
+        else
+          hflag <- paste(hflag, collapse = ";")
+        
+        if (length(hitsCode) > 0)
+          desrep <- paste(hitsCode[which(clusterList[i, hitsCode] > 0)], collapse = ";")
+        else
+          desrep <- NA
+        
+        flagColumns <- c(flagColumns, HFLAG = hflag, 
+                         DESREPLICATION = ifelse(desrep != "", 
+                                                 desrep, NA))
+      }
+      if (length(blanksCode) > 0)
+        flagColumns <- c(flagColumns, BFLAG = any(x >= mz_blank & x <= mz_blank_up))
+      if (length(controlsCode) > 0)
+        flagColumns <- c(flagColumns, CFLAG = any(x >= mz_control & x <= mz_control_up))
+      if (length(bedControlsCode) > 0)
+        flagColumns <- c(flagColumns, BEDFLAG = any(x >= mz_bed_control & x <= mz_bed_control_up))
+      
+      flagColumns
     })))
+  clusterArea <- bind_cols(clusterArea, clusterList[,
+                                                    names(clusterList)[names(clusterList) %in%
+                                                                         c("BFLAG", "CFLAG", "BEDFLAG", "HFLAG", "DESREPLICATION")]])
 }
 
-# TODO compute the peak are here correctly - using the original pre process data
-
-# order columns to separate spectra and area count 
-clusterArea <- clusterList[, c("msclusterID","numSpectra",
-                               "mzConsensus", "rtMean",
-                               "rtMin", "rtMax", "peakIds", "scans",
-                               "joinedJobsIDs", "sumInts", "basePeakInt",
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_area")],
-                               c("BFLAG", "CFLAG", "BEDFLAG")[
-                                   c("BFLAG", "CFLAG", "BEDFLAG") %in%
-                                     names(clusterList)],
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_ion")])]
-# rename the area TOTAL columns removing the suffix equals _area
-names(clusterArea)[endsWith(names(clusterArea), "_TOTAL_area")] <- gsub("_area$", "", names(clusterArea)[endsWith(names(clusterArea), "_TOTAL_area")])
-# reorder columns to put the total at the end
+# order columns using the metadata SAMPLE_CODE order
+clusterList <- clusterList[, c("msclusterID","numSpectra", 
+                               "mzConsensus", "rtMean", 
+                               "rtMin", "rtMax", "peakIds", "scans", "joinedJobsIDs",
+                               "sumInts", "basePeakInt",
+                               paste0(metadata_samples$SAMPLE_CODE,"_spectra"), 
+                               c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
+                                 "DESREPLICATION", "BFLAG", "CFLAG", "BEDFLAG", "HFLAG")[
+                                   c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
+                                     "DESREPLICATION", "BFLAG", "CFLAG", "BEDFLAG", "HFLAG") %in% 
+                                     names(clusterList)])]
 clusterArea <- clusterArea[, c("msclusterID","numSpectra",
                                "mzConsensus", "rtMean",
-                               "rtMin", "rtMax", "peakIds", "scans",
-                               "joinedJobsIDs", "sumInts", "basePeakInt",
-                               names(clusterArea)[endsWith(names(clusterArea),
-                                                           "_area")],
+                               "rtMin", "rtMax", "peakIds", "scans", "joinedJobsIDs",
+                               "sumInts", "basePeakInt",
+                               paste0(metadata_samples$SAMPLE_CODE,"_area"),
                                c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
-                                 "BFLAG", "CFLAG", "BEDFLAG")[
+                                 "DESREPLICATION", "BFLAG", "CFLAG", "BEDFLAG", "HFLAG")[
                                    c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
-                                     "BFLAG", "CFLAG", "BEDFLAG") %in%
-                                     names(clusterArea)],
-                               names(clusterArea)[endsWith(names(clusterArea),
-                                                           "_ion")])]
-# filter the spectra count columns
-clusterList <- clusterList[, c("msclusterID","numSpectra",
-                               "mzConsensus", "rtMean",
-                               "rtMin", "rtMax", "peakIds", "scans",
-                               "joinedJobsIDs", "sumInts", "basePeakInt",
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_spectra")],
-                               c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
-                                 "BFLAG", "CFLAG", "BEDFLAG")[
-                                   c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
-                                     "BFLAG", "CFLAG", "BEDFLAG") %in%
-                                     names(clusterList)],
-                               names(clusterList)[endsWith(names(clusterList),
-                                                           "_ion")])]
+                                     "DESREPLICATION", "BFLAG", "CFLAG", "BEDFLAG", "HFLAG") %in%
+                                     names(clusterArea)])]
 
-
+# save the quantification table
 dir.create(file.path(output_path, "count_tables"), showWarnings = FALSE)
+# save count by number of spectra
 write.csv(clusterList, 
           file = file.path(output_path, "count_tables", paste0(output_name, "_spectra.csv")), 
           row.names = FALSE)
-# save count by area
+# save count by peak area
 write.csv(clusterArea,
           file = file.path(output_path, "count_tables", paste0(output_name, "_peak_area.csv")),
           row.names = FALSE)
