@@ -176,6 +176,21 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
     orig_samples_metadata <- orig_samples_metadata[, c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE",
                                                        colnames(orig_samples_metadata)[!(colnames(orig_samples_metadata) %in% c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE"))])]
   }
+  
+  # check if the sample_codes are unique names among jobs - 
+  # these will be necessary in the following workflow steps, for referencing the quantification columns
+  if (any(duplicated(orig_samples_metadata$SAMPLE_CODE)))
+  {
+    stop("Wrong original samples metadata file format from the joining jobs. The following samples among jobs have duplicated sample codes:\n", 
+         paste(orig_samples_metadata$SAMPLE_CODE[duplicated(orig_samples_metadata$SAMPLE_CODE)], 
+               collapse = ", "),
+         "\nThe sample code must be a *unique* syntactically valid name consisting of ", 
+         "letters, numbers, and underscore characters, starting with a letter. ",
+         "R reserved words are not syntactically valid names. When joining jobs, ",
+         "the sample codes must also be *unique* among the different jobs.")
+  }
+  
+  # save the original jobs samples metadata
   write.csv(orig_samples_metadata, 
             file = file.path(output_path, "original_samples_METADATA.csv"),
             row.names = FALSE)
