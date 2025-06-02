@@ -60,9 +60,9 @@ RMSE <- function(x, y) {
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 3) {
   stop("Two arguments must be supplied to clean and annotate the counts:\n", 
-       " 1 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;\n",
-       " 2 - Path to the output data folder, inside the outs directory of the clustering result folder. ", 
+       " 1 - Path to the output data folder, inside the outs directory of the clustering result folder. ", 
        "It should contain the mgf folder, the peak area count CSV and the spectra count CSV. The data name will be extracted from here.;\n", 
+       " 2 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;\n",
        " 3 - Path to the pre processed data folder were the MGFs were created. Used to compute the peak areas;\n",
        " 4 - The precursor m/z tolerance in Da;\n",
        " 5 - The similarity tolerance to JOIN mass dissipation spectra;\n",
@@ -75,14 +75,7 @@ if (length(args) < 3) {
        " 11 - The maximum number of spectra (rows) to be processed at a time.",
        call.=FALSE)
 } else {
-  path_batch_metadata <- file.path(args[[1]])
-  if (!file.exists(path_batch_metadata))
-  {
-    stop("The CSV batch metadata file '", path_batch_metadata, 
-         "' do not exists. Provide a valid path to where the metadata is located.")
-  }
-  
-  output_path <- file.path(args[[2]])
+  output_path <- file.path(args[[1]])
   if (!dir.exists(output_path))
   {
     stop("The job output folder '", output_path, 
@@ -106,11 +99,38 @@ if (length(args) < 3) {
          "of spectra is located.")
   }
   
-  processed_data_path <- file.path(args[[3]])
-  if (!dir.exists(processed_data_path))
-  {
-    stop("The processed data folder '", processed_data_path, 
-         "' do not exists. Provide a valid path to where the pre processed MGFs are located.")
+  path_batch_metadata <- args[[2]]
+  if (path_batch_metadata == "-1") {
+    # this is a joinig job process, the metadata should be extracted from the 
+    # default path to the original samples metadata - located in the output path
+    joining_jobs <- TRUE
+    path_batch_metadata <- file.path(output_path, "../..", 
+                                            "original_samples_METADATA.csv")
+    if (!file.exists(path_batch_metadata))
+    {
+      stop("The metadata with the original samples from the joined jobs '", path_batch_metadata,
+           "' do not exists. Provide a valid output path to where the csv file with  ",
+           "the default samples metadata is located.")
+    }
+  } else {
+    joining_jobs <- FALSE
+    path_batch_metadata <- file.path(args[[2]])
+    if (!file.exists(path_batch_metadata))
+    {
+      stop("The CSV batch metadata file '", path_batch_metadata, 
+           "' do not exists. Provide a valid path to where the metadata is located.")
+    }
+  }
+  
+  if (!joining_jobs) {
+    # ignore the pre processed data dir when joining jobs, 
+    # this info will be extracted from the jobs metadata
+    processed_data_path <- file.path(args[[3]])
+    if (!dir.exists(processed_data_path))
+    {
+      stop("The processed data folder '", processed_data_path, 
+           "' do not exists. Provide a valid path to where the pre processed MGFs are located.")
+    }
   }
   
   if (length(args) > 11) {
@@ -209,6 +229,8 @@ scaleInts <- function(ints, scale_factor)
   return(round(ints,5))
 }
 
+# aggregate the rows of the similarity table for the joined spectra ids
+# use the maximum among values to aggregate the similarities
 aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types, 
                                 nscans, sim_file, table_limit_size) 
 {
@@ -264,28 +286,50 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
       mirror_matrix_tri_upper(sim_chunk, from_row, to_row-1)
     
     # aggregate columns
-    sim_chunk[,x_rows-1] <- matrix(apply(sim_chunk, 1, function(x) {
-      sapply(joined_ids, function(j) max(x[j-1], na.rm = T))}),
-      ncol = length(x_rows_chunk), byrow = TRUE)
+    # only if the selected cols for aggregation are greater or equal than from_row
+    # else, only rm the aggregated ones - their values are NA here, no need of aggregating
+    select_cols_ge_from_row <- (x_rows-1 >= from_row)
+    if (any(x_rows-1 >= from_row)) {
+      sim_chunk[,(x_rows-1)[select_cols_ge_from_row]] <- matrix(apply(sim_chunk, 1, function(x) {
+        sapply(joined_ids[select_cols_ge_from_row], function(j) max(x[j-1], na.rm = T))}),
+        ncol = length((x_rows-1)[select_cols_ge_from_row]), byrow = TRUE)
+    }
     sim_chunk <- sim_chunk[, !rm_rows[-1]] # rm first column of scans number
     
-    # if any joined id is inside the read chunk, agregate the rows
+    # if any joined id is inside the read chunk, aggregate the rows
+    # only aggregate rows with at least one not NA value, which are the columns >= from_row
+    # or with at least one not NA value
     if (any(x_rows_chunk)) 
     {
       sim_chunk[x_rows[x_rows_chunk]-from_row,] <- apply(sim_chunk, 2, function(x) {
         sapply(joined_ids[x_rows_chunk], 
-               function(j) max(x[j-from_row], na.rm = T))})
+               function(j) {
+                 if (!all(is.na(x[j-from_row]))) {
+                   max(x[j-from_row], na.rm = T)
+                 } else {
+                   NA
+                 }})
+      })
       # remove already aggregated rows
       sim_chunk <- sim_chunk[!rm_rows[(from_row+1):to_row], ]
     }
     
     # make lower triangle equals zero
     zero_matrix_tri_down(sim_chunk, from_row - n_joins, from_row - n_joins + nrow(sim_chunk)-1)
+    # zero all columns with index <= from_row - n_joins - 1, these should be NA
+    sim_chunk[,1:(from_row - n_joins - 1)] <- 0
+    # check if there is still any NA value in the matrix, if yes something went wrong
+    if (any(is.na(sim_chunk)) || any(is.infinite(sim_chunk))) {
+      stop("ERROR when aggregating the similarity table. ",
+           "There is still a NA or infinite value in the table, some indexing may have",
+           " gone wrong - all values should be valid and greater or equal than zero here.",
+           " Please contact the dev team.")
+    }
     
-    # add scans order first column
+    # add the scans order as the first column
     sim_chunk <- cbind(scans_order[(from_row+1):to_row][!rm_rows[(from_row+1):to_row]], 
                        sim_chunk)
-    
+    # store the current chunk of the similarity table
     write_csv(as.data.frame(sim_chunk), 
               path = file.path(output_path, 
                                "molecular_networking/similarity_tables", 
@@ -310,7 +354,8 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
                      "molecular_networking/similarity_tables",
                      paste0("similarity_table_", output_name, "_aggMax.csv")),
            force = TRUE)
-    stop("Wrong similarity table dimension after aggregation, something went wrong. Process Aborted.")
+    stop("Wrong similarity table dimension after aggregation, something went wrong. Process Aborted.",
+         " Please contact the dev team.")
   }
   # if number of rows is correct, then save clean table and remove the tmp
   file.copy(from = file.path(output_path,
@@ -327,6 +372,7 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
 }
 
 # function to merge the count table by column
+# rules to merge each column
 merge_counts <- function(col_name, x)
 {
   switch(col_name,
@@ -339,7 +385,7 @@ merge_counts <- function(col_name, x)
          numSpectra =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,sumInts = sum(x[[col_name]]),
          basePeakInt=max(as.numeric(x[[col_name]])),
          BEDFLAG=,BFLAG =,CFLAG = any(as.logical(x[[col_name]])),
-         HFLAG=,DESREPLICATION=,scans=
+         HFLAG=,DESREPLICATION=,scans=,joinedJobsIDs=
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                   NA),
@@ -858,11 +904,24 @@ ms_area_count <- ms_spectra_count
 names(ms_area_count)[count_columns] <- sub(pattern = "_spectra",
                                            replacement = "_area", fixed = TRUE,
                                            x = names(ms_area_count)[count_columns])
-peak_areas_base_peak_int <- compute_peak_area(processed_data_path,
-                                              ms_area_count$msclusterID,
-                                              lapply(ms_area_count$scans, function(x) strsplit(x, ";")[[1]]),
-                                              lapply(ms_area_count$peakIds, function(x) strsplit(x, ";")[[1]]),
-                                              batch_metadata)
+if (!joining_jobs) 
+{
+  # this is the default flow of np3, compute the peak areas using the provided
+  # pre processed data path
+  peak_areas_base_peak_int <- compute_peak_area(processed_data_path,
+                                                ms_area_count$msclusterID,
+                                                lapply(ms_area_count$scans, function(x) strsplit(x, ";")[[1]]),
+                                                lapply(ms_area_count$peakIds, function(x) strsplit(x, ";")[[1]]),
+                                                batch_metadata)
+} else {
+  # this is the join_jobs flow, compute the peak areas using all the original samples
+  # pre processed data
+  peak_areas_base_peak_int <- compute_peak_areas_joined_jobs(output_path, 
+                                                             ms_area_count$msclusterID,
+                                                             ms_area_count$scans,
+                                                             ms_area_count$peakIds, 
+                                                             ms_area_count$joinedJobsIDs)
+}
 # assign the peak areas following the count columns order 
 # and also add the base peak intensity (last column)
 ms_area_count[,count_columns] <- peak_areas_base_peak_int[,
@@ -875,14 +934,8 @@ rm(peak_areas_base_peak_int)
 ms_area_count$maxArea <- ms_spectra_count$maxArea <- apply(ms_area_count[,count_columns], 1, max)
 ms_area_count$meanInt <- ms_spectra_count$meanInt <- ms_area_count$sumInts / ms_area_count$numSpectra
 
-
 # apply the Noise cutoff filter based on the basePeakInt <= noisy_cutoff
 if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff)) {
-  # scans_order2 <- c(-1, unlist(read.csv(file.path(output_path,
-  #                                                "molecular_networking/similarity_tables",
-  #                                                paste0("similarity_table_", output_name, "_aggMax.csv")),
-  #                                      stringsAsFactors = FALSE, nrows= 1,
-  #                                      strip.white = TRUE, header = FALSE)[-1]))
   order_table <- match(scans_order[-1], ms_spectra_count$msclusterID)
   if (any(is.na(order_table))) {
     stop("Wrong matching between the pairwise similarity table and the provided count table. Something went wrong in the pairwise similarity table computation.")
