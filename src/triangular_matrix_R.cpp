@@ -13,6 +13,7 @@ using namespace std;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
+// make the lower triangular matrix between cols [m,n) equals zero
 // [[Rcpp::export]]
 void zero_matrix_tri_down(Rcpp::NumericMatrix x_, int m, int n) {
   arma::mat M( x_.begin(), x_.nrow(), x_.ncol(), false ) ;
