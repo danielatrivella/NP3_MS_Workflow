@@ -3391,13 +3391,14 @@ program
             options.rt_tolerance, options.fragment_tolerance, '-1',
             out_clustered_spec_comp);
 
-        // refactor annotation step for joining jobs -> use original ivamns and map old ids to the new ids -> concat all ivamns into one joined net
+        // TODO refactor annotation step for joining jobs -> use original ivamns and map old ids to the new ids -> concat all ivamns into one joined net
         // select protonated again? mantain original protonated info?
-        /*
-       var counts_path = output_path+"/count_tables/"+options.output_name;
-       //resExec = 0
-       if (!resExec) // if the clean was succesful, continue for annotation, correlation and merge
-       {
+        // TODO pass the original samples metadata to the correlation step
+
+        var counts_path = output_path+"/count_tables/"+options.output_name;
+        //resExec = 0
+        if (!resExec) // if the clean was succesful, continue for annotation, correlation and merge
+        {
            counts_path = output_path+"/count_tables/clean/"+options.output_name;
            var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
            // call tremolo with the clean mgf and merge results with clean counts files
@@ -3411,6 +3412,7 @@ program
                    10, [counts_path+"_spectra_clean.csv",
                        counts_path+"_peak_area_clean.csv"]);
            }
+           /*
            // annotate spectra variants in the clean counts and create the molecular networking of annotations
            // use the mz_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
            resExec = callAnnotateCleanCounts(options, output_path,
@@ -3434,11 +3436,12 @@ program
                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                    options.verbose);
            }
+            */
 
-           callMergeCounts(output_path, options.output_name,
-               options.raw_data_path + '/' + options.processed_data_name, options.metadata,
-               "TRUE", options.method, options.verbose);
-       } else {
+           //callMergeCounts(output_path, options.output_name,
+            //   options.raw_data_path + '/' + options.processed_data_name, options.metadata,
+            //   "TRUE", options.method, options.verbose);
+        } else {
            // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
            var clustering_log_output = output_path+"/logClusteringOutput";
            // call tremole and merge the results with the clustering counts files
@@ -3451,19 +3454,19 @@ program
                    10, [counts_path+"_spectra.csv",
                        counts_path+"_peak_area.csv"]);
            }
-
+            /*
            // call correlation for the mscluster peak area count
            callComputeCorrelation(options.metadata, counts_path+"_peak_area.csv",
                options.method, 0, clustering_log_output, options.verbose);
-
            // call correlation for the mscluster spectra count
            callComputeCorrelation(options.metadata, counts_path+"_spectra.csv",
                options.method, 0,  clustering_log_output, options.verbose);
-       }
-       callCreatMN(output_path, options.similarity_mn, options.net_top_k,
+             */
+        }
+        callCreatMN(output_path, options.similarity_mn, options.net_top_k,
            options.max_component_size, options.min_matched_peaks,
            options.max_chunk_spectra, options.blank_expansion, options.verbose);
-       */
+
 
         var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
         console.log(clust_end_msg);
