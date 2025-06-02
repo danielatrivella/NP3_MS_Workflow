@@ -690,7 +690,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
 
         // when joining jobs: call groups using the original samples metadata - set the correct path
         if (parms.metadata === "-1") {
-            parms.metadata = output_path + "../../" + "original_samples_METADATA.csv"
+            parms.metadata = output_path + "/../../" + "original_samples_METADATA.csv"
         }
         callGroupsfunc(parms.metadata,
             clean_output_path+output_name+"_peak_area_clean.csv",
@@ -2309,7 +2309,7 @@ program
 
         if (shell.test('-e', output_path))
         {
-            console.log("ERROR: The provided output path already exists, delete it or change the output directory name and retry. \nPath:" + output_path);
+            console.log("ERROR: The provided output path already exists, delete it or change the output directory name and retry. \nPath: " + output_path);
             process.exit()
             //shell.rm('-r', output_path)
         }
@@ -3192,6 +3192,10 @@ program
         'in the library identifications (Step 6)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
         'to be used in the pre-processing step if ran\n\t\t\t\t\t', parseFloat, 5)
+    .option('-t, --rt_tolerance [x,y]', 'tolerances in seconds for the retention time width of the\n\t\t\t\t\t' +
+        'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
+        'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
+        'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t', parseFloat, 2)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
         'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
@@ -3207,10 +3211,32 @@ program
         'and decrease to X in 15 rounds. Only used in the \n\t\t\t\t\t' +
         'clustering of blank samples (column SAMPLE\\_TYPE equals\n\t\t\t\t\t' +
         '\'blank\' in the metadata table)', parseFloat, 0.3)
-    .option('-t, --rt_tolerance [x,y]', 'tolerances in seconds for the retention time width of the\n\t\t\t\t\t' +
-        'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
-        'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
-        'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t', parseFloat, 2)
+    .option('--bflag_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
+        'of the blank spectra basePeakInt distribution from the clustering result and to allow spectra with a basePeakInt\n\t\t\t\t\t' +
+        'value below this distribution median plus IQR*bflag_cutoff to be\n\t\t\t\t\t' +
+        'joined with a blank spectrum during the clean Step 5, without relying on the similarity value.\n\t\t\t\t\t' +
+        'Or FALSE to disable it.\n\t\t\t\t\t' +
+        'The IQR is the range between the 1st quartile (25th quantile) and the\n\t\t\t\t\t' +
+        '3rd quartile (75th quantile) of the distribution. The spectra with a\n\t\t\t\t\t' +
+        'basePeakInt value <= median + IQR*bflag_cutoff (from the\n\t\t\t\t\t' +
+        'blank spectra basePeakInt distribution) and BFLAG TRUE will be joined to a blank spectrum\n\t\t\t\t\t' +
+        'in the clean Step 5. This cutoff will affect the spectra with BFLAG TRUE\n\t\t\t\t\t' +
+        'that would not get joined to a blank spectra when relying only on the\n\t\t\t\t\t' +
+        'similarity cutoff. This is a turn around to the fact that blank spectra\n\t\t\t\t\t' +
+        'have low quality spectra and thus can not fully rely on the similarity values.',
+        parseBFLAGcutoff, 1.5)
+    .option('--noise_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
+        'of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt\n\t\t\t\t\t' +
+        'value below this distribution median plus IQR*noise_cutoff after the clean Step 5.\n\t\t\t\t\t' +
+        'Or FALSE to disable it.\n\t\t\t\t\t' +
+        'The IQR is the range between the 1st quartile (25th quantile) and the\n\t\t\t\t\t' +
+        '3rd quartile (75th quantile) of the distribution. \n\t\t\t\t\t' +
+        'When no blank sample is present in the metadata, the full distribution is used. \n\t\t\t\t\t' +
+        'This cutoff will affect the spectra with with a low\n\t\t\t\t\t' +
+        'basePeakInt value that probably are noise features. \n\t\t\t\t\t' +
+        'If the clustering Step 3 resulted in more than 25000 spectra, \n\t\t\t\t\t' +
+        'the noise cutoff will be applied before the clean Step 5 to prevent a long processing time',
+        parseNOISEcutoff, "FALSE")
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Step 3).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln) of the\n\t\t\t\t\t' +
@@ -3320,7 +3346,7 @@ program
         // check if the output path already exists, do not overwrite it
         if (shell.test('-e', output_path))
         {
-            console.log("ERROR: The provided output path already exists, delete it or change the output directory name and retry. \nPath:" + output_path);
+            console.log("ERROR: The provided output path already exists, delete it or change the output directory name and retry. \nPath: " + output_path);
             process.exit()
         }
 
@@ -3362,7 +3388,7 @@ program
         options.metadata = "-1"
         // call clean to remove mass dissipation in the clustering result - clean quantifications from area and spectra count
         resExec = callCleanClusteringCounts(options, output_path, options.mz_tolerance,
-            options.rt_tolerance, options.fragment_tolerance, '',
+            options.rt_tolerance, options.fragment_tolerance, '-1',
             out_clustered_spec_comp);
 
         // refactor annotation step for joining jobs -> use original ivamns and map old ids to the new ids -> concat all ivamns into one joined net
