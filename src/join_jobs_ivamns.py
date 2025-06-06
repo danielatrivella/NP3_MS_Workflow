@@ -9,6 +9,7 @@
 import os, sys
 import pandas as pd
 import numpy as np
+from mn_annotations_assign_protonated_representative import mn_annotation_find_protonated
 
 #  Root Mean Square Error (RMSE) is a metric used to evaluate the difference between predicted and actual values
 # used to compute the rt error between annotated nodes
@@ -220,9 +221,8 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
                 # order columns and store the att table
                 job_ivamn_att = job_ivamn_att[['msclusterID', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
                                                'multicharge_ion', 'isotope_ion']]
-                job_ivamn_att.to_csv(
-                    os.path.join(output_path, "molecular_networking", output_name + "_ivamn_attributes_tmp.csv"),
-                    index=False)
+                job_ivamn_att_path = os.path.join(output_path, "molecular_networking", output_name + "_ivamn_attributes.csv")
+                job_ivamn_att.to_csv(job_ivamn_att_path, index=False)
         # rm current ivamn att table
         del job_ivamn_att
 
@@ -285,16 +285,25 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
         # round mzError again
         job_ivamn.loc[i, "mzError"] = np.round(job_ivamn.loc[i, "mzError"], 3)
 
-    # TODO remove annotations with low similarity? check rules again - fragment > 0.2?
+    # remove annotations of fragments with similarity values < 0.2
+    job_ivamn = job_ivamn.loc[~(job_ivamn.annotation.str.contains("fragment") & (job_ivamn.cosine < 0.2)), :]
     # order columns of the final ivamn
     job_ivamn = job_ivamn[['msclusterID_source', 'msclusterID_target', 'cosine', 'annotation', 'mzError',
                            'rtError', 'rtError_new', 'numCommonSamples']]
     # sort by msclusterID_source and msclusterID_target and save final IVAMN
     job_ivamn.sort_values(by=["msclusterID_source", "msclusterID_target"], inplace=True, ignore_index=True)
-    job_ivamn.to_csv(os.path.join(output_path, "molecular_networking", output_name + "_ivamn.selfloop"),
-                     index=False)
+    job_ivamn_path = os.path.join(output_path, "molecular_networking", output_name + "_ivamn.selfloop")
+    job_ivamn.to_csv(job_ivamn_path, index=False)
     # TODO create the direct ivamn net and store it to retrieve the componentIndex?
     # TODO store final ivamn and rename ivamn att table
+    # TODO join multicharge_ion and isotope_ion cols to the clean table
+    job_ivamn_att = pd.read_csv(job_ivamn_att_path, low_memory=False,
+                                usecols=['msclusterID', 'multicharge_ion', 'isotope_ion'])
+    clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
+    clean_counts = clean_counts.merge(job_ivamn_att, how="left", on="msclusterID")
+    clean_counts.to_csv(clean_counts_path, index=False)
+    # call find protonatederge
+    mn_annotation_find_protonated(job_ivamn_path, clean_counts_path)
 
 
 if __name__ == "__main__":
