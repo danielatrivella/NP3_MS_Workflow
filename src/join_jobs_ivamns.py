@@ -19,18 +19,20 @@ def rmse(predicted, actual):
 # read the join original jobs metadata
 # for each original job being joined, read its IVAMN and map its msclusterID to the joined msclusterID
 # then concatenate the IVAMNS and merge duplicated edges
-def join_jobs_ivamns(output_path):
+def join_jobs_ivamns(output_path, max_chunk=3000):
     if not os.path.isdir(output_path):
         sys.exit("ERROR. The provided output path directory '"+output_path+"' does not exists.")
     output_name = os.path.basename(output_path)
 
+    print("* Joining the Original IVAMNs of the Joined Jobs * ")
     # read the clean quantifications of the output_name job
     clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name+"_peak_area_clean.csv")
     if not os.path.isfile(clean_counts_path):
         sys.exit("ERROR. The clean quantification of the current joining jobs '" + clean_counts_path +
                  "' does not exists.")
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False, usecols=['msclusterID', 'joinedJobsIDs',
-                                                                             'rtMean', 'rtMin', 'rtMax'])
+                                                                             'mzConsensus', 'rtMean', 'rtMin', 'rtMax'])
+    clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 
     # read the default join original jobs metadata, from it extract the Job name, code and path
     original_jobs_metadata_path = os.path.join(output_path, "../..", "join_original_jobs_METADATA.csv")
@@ -38,6 +40,20 @@ def join_jobs_ivamns(output_path):
         sys.exit("ERROR. The metadata table with the original joined jobs '" + original_jobs_metadata_path +
                  "' does not exists.")
     jobs_metadata = pd.read_csv(original_jobs_metadata_path)
+
+    # check if the similarity table exists
+    sim_table_path = os.path.join(output_path, "molecular_networking", "similarity_tables",
+                                  "similarity_table_" + output_name + "_clean.csv")
+    if not os.path.isfile(sim_table_path):
+        sys.exit("ERROR. The clean similarity table of the current job being joined with name '" + output_name +
+                 "' does not exists." +
+                 " The following path constructed with the provided output_path is not valid: '" + sim_table_path +
+                 "'.")
+
+    if max_chunk < 2:
+        print("WARNING: the max_chunk parameter have a very low value smaller than 2. ",
+              "It will be set to 3000 as the default value.")
+        max_chunk = 3000
 
     # for each job code plus one iteration for integration of current output_name (final one):
     # read its ivamn, map the original msclusterID of each job to the joined jobs IDs
@@ -52,11 +68,13 @@ def join_jobs_ivamns(output_path):
             job_ivamn_att_path = os.path.join(output_path, "molecular_networking",
                                               output_name + "_ivamn_attributes_tmp.csv")
             job_code = output_name
+            print("    - Integrating and reducing the mapped IVAMNs for current joined job " + job_code)
         else:
             job_code = jobs_metadata.JOB_CODE[i]
             # read the ivamn attribute table
             job_ivamn_att_path = os.path.join(jobs_metadata.JOB_PATH[i], "molecular_networking",
                                                  jobs_metadata.JOBNAME[i]+"_ivamn_attributes.csv")
+            print("    - Mapping and reducing the IVAMN of job code " + job_code)
         if not os.path.isfile(job_ivamn_att_path):
             sys.exit("ERROR. The IVAMN attribute table of the original job with code '"+job_code +
                      "' does not exists. The following path extracted from the joined jobs metadata is not valid: '" +
@@ -69,11 +87,11 @@ def join_jobs_ivamns(output_path):
             job_ivamn_att["msclusterID_job"] = job_ivamn_att.msclusterID.astype(str)+ "_" + job_code
             try:
                 job_ivamn_att["msclusterID_new"] = [clean_counts.msclusterID.values[
-                     clean_counts.joinedJobsIDs.str.contains("(^"+id + "$|^" + id + ";|;" + id + "$|;" + id + ";)", regex=True)][0]
+                     clean_counts.joinedJobsIDs.str.contains("^"+id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True)][0]
                  for id in job_ivamn_att.msclusterID_job.values]
             except IndexError:
                 # error if any id is not found and indexing the first position of values return an error
-                missing_ids = np.asarray([clean_counts.joinedJobsIDs.str.contains("(^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";)", regex=True).any()
+                missing_ids = np.asarray([clean_counts.joinedJobsIDs.str.contains("^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True).any()
                  for id in job_ivamn_att.msclusterID_job.values])
                 sys.exit("ERROR. Index error when mapping the original job '" + job_code +
                          "' with the joined jobs IDs. The following original IDs are missing from the joined clean table: " +
@@ -144,6 +162,7 @@ def join_jobs_ivamns(output_path):
                                  index=False, mode='a', header=False)
             else:
                 # if this is the final integration step, overwrite the tmp file
+                job_ivamn.sort_values(by=["msclusterID_source", "msclusterID_target"], inplace=True, ignore_index=True)
                 job_ivamn.to_csv(os.path.join(output_path, "molecular_networking", output_name + "_ivamn_tmp.selfloop"),
                                  index=False)
         # rm current ivamn
@@ -194,23 +213,103 @@ def join_jobs_ivamns(output_path):
                              "does not match with the number of rows in its clean quantification table (" +
                              str(clean_counts.shape[0]) +
                              "). Something went wrong when integrating the joined IVAMNs and reducing redundancies.")
+                # order the att table by the msclusterID column
+                job_ivamn_att.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
+                # add 'mzConsensus', 'rtMean', 'rtMin', 'rtMax' columns to the ivamn att table from the clean table
+                job_ivamn_att[['mzConsensus', 'rtMean', 'rtMin', 'rtMax']] = clean_counts[['mzConsensus', 'rtMean', 'rtMin', 'rtMax']]
+                # order columns and store the att table
+                job_ivamn_att = job_ivamn_att[['msclusterID', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
+                                               'multicharge_ion', 'isotope_ion']]
                 job_ivamn_att.to_csv(
                     os.path.join(output_path, "molecular_networking", output_name + "_ivamn_attributes_tmp.csv"),
                     index=False)
         # rm current ivamn att table
         del job_ivamn_att
 
-    # TODO at the end recompute rtError and retrieve the new cosine for each available edge
+    # At the end, after the joined ivamn integration
+    # recompute rtError and retrieve the new cosine for each available edge
+    # also recompute number of common samples and create the direct net to retrieve the componentIndex
+    job_ivamn = pd.read_csv(job_ivamn_path,
+                            dtype={'msclusterID_source': np.int64, 'msclusterID_target': np.int64},
+                            low_memory=False, usecols=['msclusterID_source', 'msclusterID_target', 'annotation',
+                                                       'mzError', 'rtError'])
+    # sort the job_ivamn by the minimum msclusterID - create column msclusterID_min - then use this to retrieve
+    # the cosine from the pairwise table by chunks, when the current min > max_chunk, read the next chunk of the pairwise table
+    # always read the cosine from the min msclusterID x max msclusterID in the edge
+    job_ivamn[['msclusterID_min', 'msclusterID_max']] = job_ivamn[['msclusterID_source', 'msclusterID_target']].apply(
+        lambda x: [min(x), max(x)], axis=1, result_type="expand")
+    job_ivamn.sort_values(by=['msclusterID_min'], inplace=True, ignore_index=True)
+    # read the clean_counts again to retrieve the quantification columns by samples - used to compute the number of common samples
+    clean_counts = pd.read_csv(clean_counts_path, low_memory=False) #, usecols=['msclusterID', 'joinedJobsIDs', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax'])
+    # filter columns 'msclusterID', 'joinedJobsIDs', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax' and the ones that ends with _area
+    clean_counts = clean_counts[np.concatenate((np.asarray(['msclusterID', 'joinedJobsIDs', 'mzConsensus',
+                                                            'rtMean', 'rtMin', 'rtMax']),
+                                clean_counts.columns[clean_counts.columns.str.endswith("_area")].values))]
+    clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
+    # get the count_columns indexes to perform and xand operation for each edge
+    counts_cols_idx = np.where(clean_counts.columns.str.endswith("_area"))[0]
+    # read the similarity table by chunk - sim_table_path e max_chunk
+    sim_table = pd.read_csv(sim_table_path, low_memory=False, nrows=max_chunk)
+    current_chunk = 0  # set the first line of the sim_table
+    # for each edge in the new joined ivamn, retrieve and recompute the rtError, cosine and numCommonSamples
+    print("    - Recomputing the edges' attributes of the joined IVAMN ")
+    for i in range(job_ivamn.shape[0]):
+        # the idx position of the connected nodes in the clean_counts and similarity table - same ordering
+        source_i = np.where(clean_counts.msclusterID == job_ivamn.msclusterID_min[i])[0]
+        target_i = np.where(clean_counts.msclusterID == job_ivamn.msclusterID_max[i])[0]
+        # recompute the rtError
+        rtMean_i, rtMin_i, rtMax_i = clean_counts.loc[source_i, ['rtMean', 'rtMin', 'rtMax']].values[0]
+        rtMean_i_j, rtMin_i_j, rtMax_i_j = clean_counts.loc[target_i, ['rtMean', 'rtMin', 'rtMax']].values[0]
+        # compute the rtError for blank and not blank nodes
+        if (((rtMin_i == 0) | (rtMin_i_j == 0)) & ((rtMax_i == 1000000) | (rtMax_i_j == 1000000))):
+            # this is an edge between a blank node, use only the rtMean to compute the rtError
+            rtError_i = np.round(rmse(rtMean_i, rtMean_i_j), 2)
+        else:
+            # this is an edge between not blank nodes, use the rtMin and rtMax to compute the rtError
+            rtError_i = np.round(rmse(np.asarray([rtMin_i,rtMax_i]), np.asarray([rtMin_i_j,rtMax_i_j])), 2)
+        # set the new rtError to the ivamn net
+        #TODO remove _new at the end
+        job_ivamn.loc[i, "rtError_new"] = rtError_i
+        # recompute the numCommonSamples
+        num_common_samples = (clean_counts.iloc[np.concatenate((source_i,target_i)),
+                                                counts_cols_idx] > 0).all(0).sum()
+        job_ivamn.loc[i, "numCommonSamples"] = np.int64(num_common_samples)
+        # retrieve the new cosine
+        if source_i >= current_chunk+max_chunk:
+            # read next chunk of the sim_table
+            sim_table = pd.read_csv(sim_table_path, low_memory=False, nrows=max_chunk, skiprows=source_i[0]+1,
+                                    header=None, names=sim_table.columns)
+            current_chunk = source_i[0]
+        pairwise_sim = sim_table.iloc[source_i-current_chunk, target_i + 1].values[0]
+        job_ivamn.loc[i, "cosine"] = np.round(pairwise_sim, 3)
+        # round mzError again
+        job_ivamn.loc[i, "mzError"] = np.round(job_ivamn.loc[i, "mzError"], 3)
+
+    # TODO remove annotations with low similarity? check rules again - fragment > 0.2?
+    # order columns of the final ivamn
+    job_ivamn = job_ivamn[['msclusterID_source', 'msclusterID_target', 'cosine', 'annotation', 'mzError',
+                           'rtError', 'rtError_new', 'numCommonSamples']]
+    # sort by msclusterID_source and msclusterID_target and save final IVAMN
+    job_ivamn.sort_values(by=["msclusterID_source", "msclusterID_target"], inplace=True, ignore_index=True)
+    job_ivamn.to_csv(os.path.join(output_path, "molecular_networking", output_name + "_ivamn.selfloop"),
+                     index=False)
+    # TODO create the direct ivamn net and store it to retrieve the componentIndex?
+    # TODO store final ivamn and rename ivamn att table
 
 
 if __name__ == "__main__":
+    max_chunk = 3000
     if len(sys.argv) > 1:
         # print(sys.argv)
         output_path = sys.argv[1]
+        if len(sys.argv) > 2:
+            max_chunk = int(sys.argv[2])
     else:
         print("Error: One argument must be supplied to join the original IVAMNs of jobs being joined inside the join_jobs command flow:\n",
         " 1 - output_path: Path to the final output directory of the job currently being joined, ",
-        "named with the output_name inside the 'outs' directory.\n")
+        "named with the output_name inside the 'outs' directory;\n",
+        " 2 - max_chunk: Maximum number of rows of the pairwise similarity table to be loaded and ",
+        "processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000).\n")
         sys.exit(1)
     # call join jobs IVAMNs
-    join_jobs_ivamns(output_path)
+    join_jobs_ivamns(output_path, max_chunk)
