@@ -177,8 +177,8 @@ def mn_annotation_find_protonated(mn_annotation_edges_file, nodes_filename):
         protonated_mzerror = [edge[2]['mzError'] for edge in Gk.edges(data=True)]
         # pd.Series(protonated_mzerror).describe()
         protonated_rterror = [edge[2]['rtError'] for edge in Gk.edges(data=True)]
-        G_nodes_info.loc[idx, 'protonated_mzError_sum'] = np.round(np.sum(protonated_mzerror), 5)
-        G_nodes_info.loc[idx, 'protonated_rtError_sum'] = np.round(np.sum(protonated_rterror), 5)
+        G_nodes_info.loc[idx, 'protonated_mzError_sum'] = np.round(np.sum(protonated_mzerror), 3)
+        G_nodes_info.loc[idx, 'protonated_rtError_sum'] = np.round(np.sum(protonated_rterror), 2)
         G_nodes_info.loc[idx, 'protonated_num_ancestors_edges'] = len(protonated_rterror)
 
     # save the mn of annotations attributes in a new table file
