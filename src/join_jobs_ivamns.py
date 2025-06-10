@@ -357,6 +357,7 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
                                           output_name + "_ivamn_tmp.selfloop"))
     os.remove(os.path.join(output_path, "molecular_networking",
                                               output_name + "_ivamn_attributes_tmp.csv"))
+    # TODO parse the resulting annotations in the ivamn to columns and add to the clean quantification
 
 
 if __name__ == "__main__":

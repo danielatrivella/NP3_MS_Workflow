@@ -203,7 +203,6 @@ def mn_annotation_find_protonated(mn_annotation_edges_file, nodes_filename):
         clean_table[['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']] = G_nodes_info[
             ['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']]
         clean_table.to_csv(nodes_filename, index=False)
-    # TODO parse the resulting annotations in the ivamn to columns and add to the clean quantification
 
 
 if __name__ == "__main__":
