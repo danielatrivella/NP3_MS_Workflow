@@ -193,10 +193,17 @@ def mn_annotation_find_protonated(mn_annotation_edges_file, nodes_filename):
     clean_table[['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']] = G_nodes_info[['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']]
     clean_table.to_csv(nodes_filename, index=False)
     if 'peak_area' in nodes_filename:
-        nodes_filename =  nodes_filename.replace('peak_area', 'spectra')
+        nodes_filename = nodes_filename.replace('peak_area', 'spectra')
         clean_table = pd.read_csv(nodes_filename, low_memory=False)
         clean_table[['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']] = G_nodes_info[['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']]
         clean_table.to_csv(nodes_filename, index=False)
+    else:
+        nodes_filename = nodes_filename.replace('spectra', 'peak_area')
+        clean_table = pd.read_csv(nodes_filename, low_memory=False)
+        clean_table[['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']] = G_nodes_info[
+            ['protonated_representative', 'protonated_mzError_sum', 'protonated_rtError_sum']]
+        clean_table.to_csv(nodes_filename, index=False)
+    # TODO parse the resulting annotations in the ivamn to columns and add to the clean quantification
 
 
 if __name__ == "__main__":
