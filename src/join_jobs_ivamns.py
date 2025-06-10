@@ -4,7 +4,7 @@
 # using the joinedJobsIDs of the clean table as reference
 # duplicated edges are merged at the end and
 # finally the protonated script is executed for the final IVAMN and the final list of protonated_representatives
-# is merged with th eoriginal protonated thata have in-degree > 0 in the final net.
+# is merged with the original protonated that have in-degree > 0 in the final net.
 # TODO avaliate how to write the joined annotations to the clean table as columns similar to the annotation script
 
 import os, sys
@@ -13,7 +13,7 @@ import numpy as np
 from mn_annotations_assign_protonated_representative import mn_annotation_find_protonated
 
 #  Root Mean Square Error (RMSE) is a metric used to evaluate the difference between predicted and actual values
-# used to compute the rt error between annotated nodes
+# used here to compute the rt error between annotated nodes
 def rmse(predicted, actual):
     return np.sqrt(np.mean((predicted - actual)**2))
 
@@ -219,11 +219,9 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
                              "). Something went wrong when integrating the joined IVAMNs att table and reducing redundancies.")
                 # order the att table by the msclusterID column
                 job_ivamn_att.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
-                # add 'mzConsensus', 'rtMean', 'rtMin', 'rtMax' columns to the ivamn att table from the clean table
-                #job_ivamn_att[['mzConsensus', 'rtMean', 'rtMin', 'rtMax']] = clean_counts[['mzConsensus', 'rtMean', 'rtMin', 'rtMax']]
                 # order columns and store the att table
-                job_ivamn_att = job_ivamn_att[['msclusterID', #'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
-                                               'multicharge_ion', 'isotope_ion', 'protonated_representative']]
+                job_ivamn_att = job_ivamn_att[['msclusterID', 'multicharge_ion', 'isotope_ion',
+                                               'protonated_representative']]
                 job_ivamn_att.rename(columns={'protonated_representative': 'protonated_representative_old'}, inplace=True)
                 job_ivamn_att.to_csv(job_ivamn_att_path, index=False)
         # rm current ivamn att table
@@ -313,8 +311,7 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
     job_ivamn_att.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
     clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
-    # TODO remove protonated_representative_old - just to check here
-    clean_counts[['multicharge_ion', 'isotope_ion', 'protonated_representative_old']] = job_ivamn_att[['multicharge_ion', 'isotope_ion', 'protonated_representative_old']]
+    clean_counts[['multicharge_ion', 'isotope_ion']] = job_ivamn_att[['multicharge_ion', 'isotope_ion']]
     clean_counts.to_csv(clean_counts_path, index=False)
     # also merge in the spectra count
     clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_spectra_clean.csv")
