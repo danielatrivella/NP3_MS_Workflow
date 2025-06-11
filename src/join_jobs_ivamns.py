@@ -306,13 +306,15 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
     job_ivamn_path = os.path.join(output_path, "molecular_networking", output_name + "_ivamn.selfloop")
     job_ivamn.to_csv(job_ivamn_path, index=False)
     # join the multicharge_ion and isotope_ion cols from tmp ivamn att to the clean table
+    # store in the clean table _ann
     job_ivamn_att = pd.read_csv(job_ivamn_att_path, low_memory=False,
                                 usecols=['msclusterID', 'multicharge_ion', 'isotope_ion', 'protonated_representative_old'])
     job_ivamn_att.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
     clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
     clean_counts[['multicharge_ion', 'isotope_ion']] = job_ivamn_att[['multicharge_ion', 'isotope_ion']]
-    clean_counts.to_csv(clean_counts_path, index=False)
+    clean_counts.to_csv(os.path.join(output_path, "count_tables", "clean", output_name + "_peak_area_clean_ann.csv"),
+                        index=False)
     # also merge in the spectra count
     clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_spectra_clean.csv")
     if not os.path.isfile(clean_counts_path):
@@ -321,9 +323,10 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
     clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
     clean_counts[['multicharge_ion', 'isotope_ion']] = job_ivamn_att[['multicharge_ion', 'isotope_ion']]
-    clean_counts.to_csv(clean_counts_path, index=False)
+    clean_counts.to_csv(os.path.join(output_path, "count_tables", "clean", output_name + "_spectra_clean_ann.csv"),
+                        index=False)
     # set the path to the peak area count again
-    clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_peak_area_clean.csv")
+    clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_peak_area_clean_ann.csv")
     # call find protonated - this will create the final ivamn att table and add componentIndex to the IVAMN
     mn_annotation_find_protonated(job_ivamn_path, clean_counts_path)
     # merge the final ivamn att table
@@ -346,7 +349,7 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
     clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
     clean_counts['protonated_representative'] = job_ivamn_att_final['protonated_representative']
     clean_counts.to_csv(clean_counts_path, index=False)
-    clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_spectra_clean.csv")
+    clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_spectra_clean_ann.csv")
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
     clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
     clean_counts['protonated_representative'] = job_ivamn_att_final['protonated_representative']
@@ -357,7 +360,6 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
                                           output_name + "_ivamn_tmp.selfloop"))
     os.remove(os.path.join(output_path, "molecular_networking",
                                               output_name + "_ivamn_attributes_tmp.csv"))
-    # TODO parse the resulting annotations in the ivamn to columns and add to the clean quantification
 
 
 if __name__ == "__main__":
