@@ -36,7 +36,18 @@ if (length(args) < 3) {
   output_path <- file.path(output_path, "molecular_networking") 
   
   sim_min <- round(as.numeric(args[[2]]), 2)
+  if (is.na(sim_min)) {
+    stop("The provided similarity cutoff to connect a pair of spectra have ", 
+         "an invalid value. Please correctly set this parameter value.")
+  }
   max_rows <- as.integer(args[[3]])
+  if (is.na(max_rows)) {
+    warning("The provided maximum number of rows to be processed at a time from ", 
+         "the similarity table have an invalid value. This parameter will be ",
+         "automatically set to 3000 (default). ",
+         "Please correctly set this parameter if another value is wanted.")
+    max_rows <- 3000
+  }
 }
 
 cat("Loading package readr, dplyr, dlls...\n")
