@@ -790,20 +790,16 @@ function callJoinJobsAnnotations(parms, output_path)
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
 
-    //TODO parse the resulting annotations in the ivamn to columns and add to the clean_ann quantification
-    // if successful remove the clean counts table
-    /*
-    var step_name = '*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n';
+    // parse the resulting annotations in the ivamn to columns and add to the clean_ann quantification
+    var step_name = '*** Step 7 - Parse and format the resulting annotations in the joined IVAMN by ionization variants to columns in the clean counts table *** \n';
     console.log(step_name);
-    const start_protonated = process.hrtime.bigint();
-    var output_name = basename(output_path);
-    var mn_annotations_path = output_path + '/molecular_networking/' +
-        output_name + "_ivamn.selfloop";
+    const start_parse_annotations = process.hrtime.bigint();
+
     var peak_area_clean_path = output_path + "/count_tables/clean/" +
         output_name+"_peak_area_clean_ann.csv";
 
-    var resExec = shell.exec(python3()+' '+__dirname+'/src/mn_annotations_assign_protonated_representative.py '+
-        mn_annotations_path+' '+peak_area_clean_path, {async:false, silent:(parms.verbose === 0)});
+    var resExec = shell.exec('Rscript '+__dirname+'/src/joined_ivamn_to_columns.R '+ output_path,
+        {async:false, silent:(parms.verbose === 0)});
 
     if (resExec.code) {
         if (parms.verbose === 0) {
@@ -816,9 +812,9 @@ function callJoinJobsAnnotations(parms, output_path)
     } else {
         console.log('\nDONE!\n');
         shell.ShellString(step_name +
-            resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed_bigint(start_protonated, process.hrtime.bigint())+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed_bigint(start_parse_annotations, process.hrtime.bigint())+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
     }
-    */
+
     var finish_step = '\n======\nFinish Step 7 '+printTimeElapsed_bigint(start_ann, process.hrtime.bigint())+"\n======\n";
     console.log(finish_step);
     shell.ShellString(finish_step).toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
@@ -841,7 +837,7 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
         if (shell.test('-d', mgf_path)) {
             mgf_path = mgf_path +'/'+out_name+'_all.mgf'
         }
-        var resExec = shell.exec('python '+__dirname+'/src/pairwise_similarity_spec2vec.py '+out_name+' '+mgf_path+' '+out_path+' '+
+        var resExec = shell.exec(python3()+' '+__dirname+'/src/pairwise_similarity_spec2vec.py '+out_name+' '+mgf_path+' '+out_path+' '+
             bin_size+' '+trim_mz, {async:false, silent:(verbose <= 0)});
     } else {
         console.log("* Using the NP3 shifted cosine function to compute the spectra comparisons");
@@ -3325,6 +3321,35 @@ program
     .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing\n\t\t\t\t\t' +
         'in Step 5 spectra comparison. x = 1 for disabling parallelization and x > 2\n\t\t\t\t\t' +
         'for enabling it. x >= 1', parseDecimal, 2)
+    .option('-w, --similarity_mn [x]', 'the minimum similarity score that must occur between a pair of ' +
+        'consensus MS/MS spectra in order to create an edge in the molecular networking. Lower values will increase the ' +
+        'component size of the clusters by inducing the connection of less related MS/MS spectra; and higher values will ' +
+        ' limit the components sizes to the opposite', parseFloat, 0.6)
+    .option('-k, --net_top_k [x]', 'the maximum number of connection for one single node in the\n\t\t\t\t\t' +
+        'similarity molecular networking. An edge between two nodes\n\t\t\t\t\t' +
+        'is kept only if both nodes are within each other\'s [x]\n\t\t\t\t\t' +
+        'most similar nodes. Keeping this value low makes \n\t\t\t\t\t' +
+        'very large networks (many nodes) much easier to visualize',15)
+    .option('-x, --max_component_size [x]', 'the maximum number of nodes that all component of \n\t\t\t\t\t' +
+        'the similarity molecular network must have. The edges of \n\t\t\t\t\t' +
+        'this network will be removed using an increasing cosine \n\t\t\t\t\t' +
+        'threshold until each network component has at most X nodes. \n\t\t\t\t\t' +
+        'Keeping this value low makes very large networks (many nodes \n\t\t\t\t\t' +
+        'and edges) much easier to visualize.', 200)
+    .option('--min_matched_peaks [x]', 'The minimum number of common peaks that two spectra must ' +
+        'share to be connected by an edge in the filtered SSMN. Connections ' +
+        'between spectra with less common peaks than this cutoff will be ' +
+        'removed when filtering the SSMN. Except for when one of the spectra ' +
+        'have a number of fragment peaks smaller than the given min_matched_peaks ' +
+        'value, in this case the spectra must share at least 2 peaks. ' +
+        'The fragment peaks count is performed after the spectra are normalized and cleaned.', parseDecimal, 6)
+    .option('--blank_expansion [x]', 'the distance of neighborhood nodes from the blanks in IVAMN to be \n\t\t\t\t\t' +
+        'selected for removal in the final protonated networks. \n\t\t\t\t\t' +
+        '(0) to only remove blanks nodes,  \n\t\t\t\t\t' +
+        '(1) to remove nodes directly connected to a blank node, \n\t\t\t\t\t' +
+        '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
+        'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
+        parseDecimal, 0)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra to be loaded and processed in a\n\t\t\t\t\t" +
         "chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased",parseDecimal,3000)
@@ -3471,12 +3496,11 @@ program
                    10, [counts_path+"_spectra_clean.csv",
                        counts_path+"_peak_area_clean.csv"]);
            }
-
            // annotate spectra variants in the clean counts and create the molecular networking of annotations
             // refactored annotation step for joining jobs -> join original ivamns and map old ids to the new ids ->
             // concat all ivamns into one joined net, removing redundancies
             // select protonated again and merge with original protonated, with an in-degree > 0 in the final IVAMN
-           resExec = callJoinJobsAnnotations(parms, output_path);
+           resExec = callJoinJobsAnnotations(options, output_path);
 
            if (resExec) {
                // joining annotation step failed, use the clean tables instead
