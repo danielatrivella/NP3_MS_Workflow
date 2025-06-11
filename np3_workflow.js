@@ -764,6 +764,67 @@ function callAnnotateCleanCounts(parms, output_path, mz_tol, fragment_tol, rt_to
     return(resExec.code);
 }
 
+function callJoinJobsAnnotations(parms, output_path)
+{
+    var step_name = '*** Step 7 - Joining the Annotations of ionization variants in the Original Jobs of the clean ' +
+        'counts table, creating the joined molecular network of annotations (IVAMN) and Assigning the putative [M+H]+ ' +
+        'spectra representatives in the joined IVAMN *** \n';
+    console.log(step_name);
+    const start_ann = process.hrtime.bigint();
+
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/join_jobs_ivamns.py '+output_path+' '+
+        parms.max_chunk_spectra, {async:false, silent:(parms.verbose === 0)});
+
+    if (resExec.code) {
+        if (parms.verbose === 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        shell.ShellString(step_name +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+        console.log('\nERROR');
+        return(resExec.code);
+    } else {
+        console.log('\nDONE!\n');
+        shell.ShellString(step_name +
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+    }
+
+    //TODO parse the resulting annotations in the ivamn to columns and add to the clean_ann quantification
+    // if successful remove the clean counts table
+    /*
+    var step_name = '*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** \n';
+    console.log(step_name);
+    const start_protonated = process.hrtime.bigint();
+    var output_name = basename(output_path);
+    var mn_annotations_path = output_path + '/molecular_networking/' +
+        output_name + "_ivamn.selfloop";
+    var peak_area_clean_path = output_path + "/count_tables/clean/" +
+        output_name+"_peak_area_clean_ann.csv";
+
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/mn_annotations_assign_protonated_representative.py '+
+        mn_annotations_path+' '+peak_area_clean_path, {async:false, silent:(parms.verbose === 0)});
+
+    if (resExec.code) {
+        if (parms.verbose === 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        console.log('\nERROR');
+        shell.ShellString(step_name +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+    } else {
+        console.log('\nDONE!\n');
+        shell.ShellString(step_name +
+            resExec.stdout + '\n' + resExec.stderr + '\nDONE! '+printTimeElapsed_bigint(start_protonated, process.hrtime.bigint())+'\n').toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+    }
+    */
+    var finish_step = '\n======\nFinish Step 7 '+printTimeElapsed_bigint(start_ann, process.hrtime.bigint())+"\n======\n";
+    console.log(finish_step);
+    shell.ShellString(finish_step).toEnd(output_path+"/count_tables/clean/logAnnotateOutput");
+    return(resExec.code);
+}
+
 function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, max_shift,
                                  cores_parallel, similarity_function, verbose)
 {
@@ -3371,7 +3432,9 @@ program
         // clean output folder
         // remove specs folder
         shell.rm('-rf', specs_path);
-
+        // set the original samples metadata - to be used in the correlation step
+        metadata_original_samples = output_path+"/original_samples_METADATA.csv";
+        // set the final output path inside the outs dir
         output_path = output_path+"/outs/"+options.output_name;
 
         // create molecular networking output dir
@@ -3391,56 +3454,48 @@ program
             options.rt_tolerance, options.fragment_tolerance, '-1',
             out_clustered_spec_comp);
 
-        // TODO refactor annotation step for joining jobs -> use original ivamns and map old ids to the new ids -> concat all ivamns into one joined net
-        // select protonated again? mantain original protonated info?
-        // TODO pass the original samples metadata to the correlation step
-
+        // pass the original samples metadata to the correlation step
+        // set the path to the count tables
         var counts_path = output_path+"/count_tables/"+options.output_name;
         //resExec = 0
         if (!resExec) // if the clean was succesful, continue for annotation, correlation and merge
         {
-           counts_path = output_path+"/count_tables/clean/"+options.output_name;
-           var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
-           // call tremolo with the clean mgf and merge results with clean counts files
-           if (!isWindows() && options.tremolo_identification === "TRUE") {
+            counts_path = output_path+"/count_tables/clean/"+options.output_name;
+            var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
+            // call tremolo with the clean mgf and merge results with clean counts files
+            if (!isWindows() && options.tremolo_identification === "TRUE") {
                tremoloIdentification(options.output_name, output_path + "/identifications",
                    output_path+"/mgf/"+options.output_name+"_clean.mgf",
                    options.mz_tolerance,0.2, 10, options.verbose, 0);
-               // renameTremoloJoinedIds(counts_path+"_spectra_clean.csv",
-               //     output_path+ "/identifications/tremolo_results.csv", options.verbose);
                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
                    10, [counts_path+"_spectra_clean.csv",
                        counts_path+"_peak_area_clean.csv"]);
            }
-           /*
+
            // annotate spectra variants in the clean counts and create the molecular networking of annotations
-           // use the mz_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
-           resExec = callAnnotateCleanCounts(options, output_path,
-               options.mz_tolerance,options.mz_tolerance, options.rt_tolerance[0],
-               15);
+            // refactored annotation step for joining jobs -> join original ivamns and map old ids to the new ids ->
+            // concat all ivamns into one joined net, removing redundancies
+            // select protonated again and merge with original protonated, with an in-degree > 0 in the final IVAMN
+           resExec = callJoinJobsAnnotations(parms, output_path);
 
            if (resExec) {
-               // annotation step failed, use the clean tables instead
-               // call correlation for the cleaned peak area count and spectra area count
-               callComputeCorrelation(options.metadata, counts_path+"_peak_area_clean.csv",
+               // joining annotation step failed, use the clean tables instead
+               // call correlation for the cleaned peak area count and spectra count
+               callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area_clean.csv",
                    options.method, 0, clean_log_output, options.verbose);
-               callComputeCorrelation(options.metadata, counts_path+"_spectra_clean.csv",
+               callComputeCorrelation(metadata_original_samples, counts_path+"_spectra_clean.csv",
                    options.method, 0, clean_log_output, options.verbose);
            } else {
                // annotation worked
                // call correlation for the cleaned peak area count and spectra area count
-               callComputeCorrelation(options.metadata, counts_path + "_peak_area_clean_ann.csv",
+               callComputeCorrelation(metadata_original_samples, counts_path + "_peak_area_clean_ann.csv",
                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                    options.verbose);
-               callComputeCorrelation(options.metadata, counts_path + "_spectra_clean_ann.csv",
+               callComputeCorrelation(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                    options.verbose);
            }
-            */
-
-           //callMergeCounts(output_path, options.output_name,
-            //   options.raw_data_path + '/' + options.processed_data_name, options.metadata,
-            //   "TRUE", options.method, options.verbose);
+           // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
            // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
            var clustering_log_output = output_path+"/logClusteringOutput";
@@ -3454,19 +3509,17 @@ program
                    10, [counts_path+"_spectra.csv",
                        counts_path+"_peak_area.csv"]);
            }
-            /*
+
            // call correlation for the mscluster peak area count
-           callComputeCorrelation(options.metadata, counts_path+"_peak_area.csv",
+           callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area.csv",
                options.method, 0, clustering_log_output, options.verbose);
            // call correlation for the mscluster spectra count
-           callComputeCorrelation(options.metadata, counts_path+"_spectra.csv",
+           callComputeCorrelation(metadata_original_samples, counts_path+"_spectra.csv",
                options.method, 0,  clustering_log_output, options.verbose);
-             */
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
            options.max_component_size, options.min_matched_peaks,
            options.max_chunk_spectra, options.blank_expansion, options.verbose);
-
 
         var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
         console.log(clust_end_msg);
