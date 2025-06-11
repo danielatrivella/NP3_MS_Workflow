@@ -133,9 +133,11 @@ if (length(corr_sets) == 0)
   q("no")
 }
 
-# check corr group columns
+# check corr group columns, convert missing or NA values to 0
 corr_sets <- unlist(sapply(corr_sets, function(corr_column) {
-  metadata[metadata[,corr_column] == "",corr_column]  <<- 0
+  # cat(corr_column,"\n")
+  metadata[((metadata[,corr_column] == "") | 
+              (is.na(metadata[,corr_column]))),corr_column] <<- 0
   if (!all(metadata[,corr_column] %in% c(0, 1)))
   {
     warning("The correlation group of the '", names(metadata)[corr_column], 
