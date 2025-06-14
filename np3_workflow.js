@@ -1359,6 +1359,22 @@ function checkMNConsistency(output_path, mn_tol, top_k, max_component_size, min_
     return res_all;
 }
 
+function checkJoinedJobConsistency(output_path, mz_tol)
+{
+    output_name = basename(output_path);
+    var res_all = "*** checkJoinJobsConsistency of job "+output_name+" ***\n\n";
+
+    // check joined jobs consistency
+    console.log('\n*** Testing the consistency of the clean counts for the joined job '+output_name+' ***\n');
+    resExec = shell.exec(python3()+' '+__dirname+'/test/test_join_jobs.py ' + output_path+' '+mz_tol,
+        {async: false, silent: false});
+    if (resExec.code) {
+        console.log('\nERROR');
+    }
+    res_all = res_all + resExec.stdout.toString()+"\n"+resExec.stderr.toString() + "\n";
+    return res_all;
+}
+
 function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path) {
     // check molecular networking consistency
     console.log('\n*** Joining the GNPS identification to the NP3 counts tables ***\n');
@@ -3548,18 +3564,23 @@ program
         var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
         console.log(clust_end_msg);
         shell.ShellString(clust_end_msg+"\n").toEnd(output_path+'/logRunParms');
-
-        // TODO skipping for now
-        /*
+        
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
 
-            checkCountsConsistency(output_path+"/outs/"+options.output_name,
+            checkJoinedJobConsistency(output_path, options.mz_tolerance);
+
+            checkCleanMNConsistency(output_path, options.similarity, options.similarity_mn,
+                options.rt_tolerance, options.mz_tolerance, options.net_top_k,
+                options.max_component_size, options.min_matched_peaks);
+            /* TODO, adapt counts consistency for joined job? pre process from multiple jobs
+            checkCountsConsistency(output_path,
                 options.raw_data_path+"/"+options.processed_data_name,
                 options.metadata, options.min_peaks_output,
                 true, false, false);
+             */
         }
-        */
+
     })
     .on('--help', function() {
         console.log('');
