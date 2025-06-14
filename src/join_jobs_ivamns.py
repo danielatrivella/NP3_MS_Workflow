@@ -5,7 +5,7 @@
 # duplicated edges are merged at the end and
 # finally the protonated script is executed for the final IVAMN and the final list of protonated_representatives
 # is merged with the original protonated that have in-degree > 0 in the final net.
-# TODO avaliate how to write the joined annotations to the clean table as columns similar to the annotation script
+# the joined annotations will be written to the clean table as columns in another script
 
 import os, sys
 import pandas as pd
@@ -16,6 +16,24 @@ from mn_annotations_assign_protonated_representative import mn_annotation_find_p
 # used here to compute the rt error between annotated nodes
 def rmse(predicted, actual):
     return np.sqrt(np.mean((predicted - actual)**2))
+
+# remove edges with the invalid ann below the sim cutoff
+# check if the selected edges to remove also contain another type of annotation, if yes only remove the fragment type
+#not_valid_ann = neutral losses < 0.2, fragments < 0.2 or isotopes < 0.75 with low cosine
+#not_valid_ann="(\\[M\\+H-NH3]\\+)|(\\[M\\+H-H2O]\\+)|(\\[M\\+H-NH3-H2O]\\+)" or "(fragments)" or "(\\[M\\+1\\]\\+)"
+def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=1.0):
+    # remove edges with only the invalid annotation and below the cutoff
+    ivamn = ivamn.loc[~(ivamn.annotation.str.fullmatch(not_valid_ann) & (ivamn.cosine < cosine_cutoff)), :].copy()
+    # remove the invalid annotation from edges below the cutoff and with more than one annotation
+    # check if any of the groups is present, them extract them and remove them from the annotations of each edge
+    ann_with_not_valid = (ivamn.annotation.str.contains(not_valid_ann.replace("(","").replace(")",""), regex=True) &
+                          (ivamn.cosine < cosine_cutoff))
+    if ann_with_not_valid.any():
+        # extract the matched string
+        matched_not_valid_ann = ivamn.annotation[ann_with_not_valid].str.extract(not_valid_ann)[0].values
+        ivamn.loc[ann_with_not_valid, "annotation"] = np.asarray([ann.replace(matched_not_valid_ann[i],"").lstrip(";").rstrip(";").replace(";;",";")
+                                                       for i, ann in enumerate(ivamn.annotation[ann_with_not_valid].values)])
+    return ivamn
 
 
 # read the join original jobs metadata
@@ -287,14 +305,22 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
         # round mzError again
         job_ivamn.loc[i, "mzError"] = np.round(job_ivamn.loc[i, "mzError"], 3)
 
-    print("    - Removing fragment's annotations with low cosine and adding selfloop edges to the IVAMN")
+    print("    - Removing fragment's and neutral losses annotations with similarity < 0.2 and isotope annotations with similarity < 0.75")
     # remove annotations of fragments with similarity values < 0.2
-    job_ivamn = job_ivamn.loc[~(job_ivamn.annotation.str.contains("fragment") & (job_ivamn.cosine < 0.2)), :]
+    # remove annotations of isotopes with similarity values < 0.75, of neutral losses with similarity values < 0.2
+    # defined the regex to select the not valid annotations using groups: ()
+    job_ivamn = remove_not_valid_ann_from_ivamn(job_ivamn, not_valid_ann="(fragment)", cosine_cutoff=0.2)
+    job_ivamn = remove_not_valid_ann_from_ivamn(job_ivamn, not_valid_ann="(\\[M\\+H-NH3]\\+)|(\\[M\\+H-H2O]\\+)|(\\[M\\+H-NH3-H2O]\\+)",
+                                                cosine_cutoff=0.2)
+    job_ivamn = remove_not_valid_ann_from_ivamn(job_ivamn,
+                                                not_valid_ann="(\\[M\\+1\\]\\+)",
+                                                cosine_cutoff=0.75)
     # order columns of the final ivamn
     job_ivamn = job_ivamn[['msclusterID_source', 'msclusterID_target', 'cosine', 'annotation', 'mzError',
                            'rtError', 'numCommonSamples']]
     # sort by msclusterID_source and msclusterID_target and save final IVAMN
     job_ivamn.sort_values(by=["msclusterID_source", "msclusterID_target"], inplace=True, ignore_index=True)
+    print("    - Adding selfloop edges to the IVAMN")
     # add to the IVAMN the selfloop edges connecting the isolated nodes
     isolated_nodes = clean_counts.msclusterID[~(clean_counts.msclusterID.isin(job_ivamn.msclusterID_source) |
                                                 clean_counts.msclusterID.isin(job_ivamn.msclusterID_target))].values
@@ -305,6 +331,7 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
     # save the final IVAMN
     job_ivamn_path = os.path.join(output_path, "molecular_networking", output_name + "_ivamn.selfloop")
     job_ivamn.to_csv(job_ivamn_path, index=False)
+    print("    - Adding the multicharge_ion and isotope_ion to the clean count tables")
     # join the multicharge_ion and isotope_ion cols from tmp ivamn att to the clean table
     # store in the clean table _ann
     job_ivamn_att = pd.read_csv(job_ivamn_att_path, low_memory=False,
@@ -327,6 +354,7 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
                         index=False)
     # set the path to the peak area count again
     clean_counts_path = os.path.join(output_path, "count_tables", "clean", output_name + "_peak_area_clean_ann.csv")
+    print("\n* Assigning the putative [M+H]+ spectra representatives in the joined IVAMN and merging with original [M+H]+ that have in-degree > 0 *")
     # call find protonated - this will create the final ivamn att table and add componentIndex to the IVAMN
     mn_annotation_find_protonated(job_ivamn_path, clean_counts_path)
     # merge the final ivamn att table
