@@ -316,8 +316,12 @@ aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types,
     
     # make lower triangle equals zero
     zero_matrix_tri_down(sim_chunk, from_row - n_joins, from_row - n_joins + nrow(sim_chunk)-1)
+    
     # zero all columns with index <= from_row - n_joins - 1, these should be NA
-    sim_chunk[,1:(from_row - n_joins - 1)] <- 0
+    # when (from_row - n_joins - 1) > 1, this is not the first chunk and there will be NA columns left
+    if ((from_row - n_joins - 1) >= 1) {
+      sim_chunk[,1:(from_row - n_joins - 1)] <- 0
+    }
     # check if there is still any NA value in the matrix, if yes something went wrong
     if (any(is.na(sim_chunk)) || any(is.infinite(sim_chunk))) {
       stop("ERROR when aggregating the similarity table. ",
@@ -619,7 +623,9 @@ repeat
       # started with step 0, then read count tables from last step
       ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
                                                               paste0(output_name,"_spectra_clean.csv")),
-                                                    guess_max = 5000))
+                                                    guess_max = 5000,
+                                                    col_types = cols(.default="?", 
+                                                                     msclusterID="i")))
     }
   } else { 
     # after first step read the lines of all joined clusters
@@ -660,7 +666,7 @@ repeat
   i <- 1
   while (i <= nscans) 
   {
-    # cat(i)
+    #cat("i: ", i, "\n")
     if (n_progress > 0 && i == progress_joins[[1]]) {
       progress_joins <- progress_joins[-1]
       n_progress <- n_progress - 1
@@ -792,7 +798,12 @@ repeat
     {
       i <- i + 1
       next()
-    } 
+    } else if (nrow(cluster_peak) == 0) 
+    {
+      stop("Error in the similarity table aggMax, the current cluster is not ",
+           "adjacent to itself - diagonal probable different from 1.0. ",
+           "Something went wrong in the similarity table aggMax construction.")
+    }
     num_joins <- num_joins + nrow(cluster_peak) - 1
     
     # get the cluster_peak members pos in the count table
