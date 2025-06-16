@@ -165,13 +165,14 @@ checkJoinJobsMetadataFormat <- function(metadata, path_jobs_data, path_pre_proce
   # remove the joined jobs from the checking if any
   if (!is.null(path_pre_processed_dir) && any(metadata$JOINED_JOB == 0))
   {
-    metadata$PRE_PROCESSED_DATA_PATH[metadata$JOINED_JOB == 0] <- file.path(path_pre_processed_dir, metadata$PRE_PROCESSED_DATA_NAME[metadata$JOINED_JOB == 0])
+    metadata$PRE_PROCESSED_DATA_PATH[metadata$JOINED_JOB == 0] <- file.path(path_pre_processed_dir, 
+                                                                            metadata$PRE_PROCESSED_DATA_NAME[metadata$JOINED_JOB == 0])
     
     if (!all(file.exists(metadata$PRE_PROCESSED_DATA_PATH[metadata$JOINED_JOB == 0]))) 
     {
       stop("Checking the join jobs metadata failed for '", output_name, 
            "'. The pre processed data paths of the following jobs code do not exists:\n", 
-           paste(metadata$JOB_CODE[!file.exists(metadata$PRE_PROCESSED_DATA_PATH)], 
+           paste(metadata$JOB_CODE[metadata$JOINED_JOB == 0 & !file.exists(metadata$PRE_PROCESSED_DATA_PATH)], 
                  collapse = "\n"),
            "\nPlease check if the jobs names and path are correctly defined in the join metadata and parameter and retry.")
     }
