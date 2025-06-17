@@ -46,7 +46,13 @@ compute_peak_area <- function(processed_data_path, msclusterIDs, scans_count,
   # compute the peak area for each sample code
   peak_areas <- Reduce(bind_cols, lapply(metadata$SAMPLE_CODE, function(x)
   {
-    mgf_data <- readMgfHeader(file.path(processed_data_path, paste0(x, '_peak_info.mgf')))
+    preprocessed_mgf_path <- file.path(processed_data_path, paste0(x, '_peak_info.mgf'))
+    if (!file.exists(preprocessed_mgf_path)) {
+      stop("Error computing the peak area of sample code ",x,
+           ". Its pre processed MGF file does not exists: ", preprocessed_mgf_path, 
+           ". Please provide a valid path to where the pre processed data is located.")
+    }
+    mgf_data <- readMgfHeader(preprocessed_mgf_path)
     mgf_data$scans <- paste0(mgf_data$scans, "_", x)
     
     peak_area_x <- bind_rows(lapply(seq_len(length(scans_count)), function(i)
