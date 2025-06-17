@@ -3573,12 +3573,12 @@ program
             checkCleanMNConsistency(output_path, options.similarity, options.similarity_mn,
                 options.rt_tolerance, options.mz_tolerance, options.net_top_k,
                 options.max_component_size, options.min_matched_peaks);
-            /* TODO, adapt counts consistency for joined job? pre process from multiple jobs
+            // adapted counts consistency for joined job - pre process from multiple jobs
+            // not calling merge
             checkCountsConsistency(output_path,
-                options.raw_data_path+"/"+options.processed_data_name,
-                options.metadata, options.min_peaks_output,
-                true, false, false);
-             */
+                options.pre_processed_dir_path,
+                metadata_original_samples, options.min_peaks_output,
+                true, true, false);
         }
 
     })
