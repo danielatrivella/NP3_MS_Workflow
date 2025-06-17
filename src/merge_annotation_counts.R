@@ -36,7 +36,7 @@ merge_counts <- function(col_name, x)
                   paste(unique(unlist(strsplit(x[[col_name]][
                     !is.na(x[[col_name]])], ";"))), collapse = ";"), 
                   NA),
-         precursorMz=,scans = paste(x[[col_name]], collapse = ";"),
+         precursorMz=,scans=,joinedJobsIDs= paste(x[[col_name]], collapse = ";"),
          sumInts =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,numSpectra=,numJoins=
            sum(x[[col_name]]),
          basePeakInt=max(as.numeric(x[[col_name]])),
@@ -309,26 +309,37 @@ if (!dir.exists(file.path(output_path, "count_tables", "merge")))
   dir.create(file.path(output_path, "count_tables", "merge"), showWarnings = FALSE)
 
 # compute peak area
-batch_metadata <- readMetadataTable(path_batch_metadata)
-cat("\n  ** Computing Peak Area by Sample ** \n\n")
 ms_area_count <- ms_spectra_count
 count_columns <- which(endsWith(names(ms_area_count), "_spectra"))
 names(ms_area_count)[count_columns] <- sub(pattern = "_spectra",
                                            replacement = "_area", fixed = TRUE,
                                            x = names(ms_area_count)[count_columns])
-peak_areas_base_peak_int <- compute_peak_area(processed_data_path,
-                                              ms_area_count$msclusterID,
-                                              lapply(ms_area_count$scans, function(x) strsplit(x, ";")[[1]]),
-                                              lapply(ms_area_count$peakIds, function(x) strsplit(x, ";")[[1]]),
-                                              batch_metadata)
+# check if this is a joined jobs, if yes call compute peak area from joined jobs
+if (!("joinedJobsIDs" %in% names(ms_spectra_count))) {
+  # this is the default flow of np3, compute the peak areas using the provided
+  # pre processed data path
+  batch_metadata <- readMetadataTable(path_batch_metadata)
+  cat("\n  ** Computing Peak Area by Sample ** \n\n")
+  peak_areas_base_peak_int <- compute_peak_area(processed_data_path,
+                                                ms_area_count$msclusterID,
+                                                lapply(ms_area_count$scans, function(x) strsplit(x, ";")[[1]]),
+                                                lapply(ms_area_count$peakIds, function(x) strsplit(x, ";")[[1]]),
+                                                batch_metadata)
+} else {
+  # this is the join_jobs flow, compute the peak areas using all the original samples
+  # pre processed data
+  cat("\n  ** Computing Peak Area by Original Sample of the Joined jobs ** \n\n")
+  peak_areas_base_peak_int <- compute_peak_areas_joined_jobs(output_path, 
+                                                             ms_area_count$msclusterID,
+                                                             ms_area_count$scans,
+                                                             ms_area_count$peakIds, 
+                                                             ms_area_count$joinedJobsIDs)
+}
 # order the peak area columns from the metadata with the order present in the count table
 ms_area_count[,count_columns] <- peak_areas_base_peak_int[,
                                                           match(names(ms_area_count)[count_columns],
                                                                 names(peak_areas_base_peak_int)[-ncol(peak_areas_base_peak_int)])]
 ms_spectra_count$basePeakInt <- ms_area_count$basePeakInt <- peak_areas_base_peak_int$basePeakInt
-names(ms_area_count)[count_columns] <- sub(pattern = "_spectra",
-                                           replacement = "_area", fixed = TRUE,
-                                           x = names(ms_area_count)[count_columns])
 
 write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "merge", 
                                              paste0(output_name, "_spectra_merged_ann.csv")))
