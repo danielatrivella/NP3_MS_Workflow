@@ -8,8 +8,9 @@ import numpy as np
 # check the final joined job present in the provides output_path folder, inside the outs dir
 # use the original jobs metadata to retrieve the original clean tables, check one job at a time
 # and accumulate errors
-# check if multicharge ions are maintained
 # check if all original sample codes are present in the final clean table
+# check if msclusterIDs and m/zs are maintained
+# check if multicharge and isotope ions are maintained
 def check_joined_jobs(output_path, mz_tolerance=0.025):
     if not os.path.isdir(output_path):
         sys.exit("ERROR. The provided output path directory '" + output_path + "' does not exists.")
@@ -36,7 +37,7 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
     # check if all m/zs are kept within tolerance (ignore rt) - missing m/z
     for i in range(jobs_metadata.shape[0]):
         job_code = jobs_metadata.JOB_CODE[i]
-        print("    - Checking the msclusterIDs and m/z's of job code " + job_code)
+        print("    - Checking the msclusterIDs, m/z's, multicharge and isotope ions of job code " + job_code)
         # read the clean table
         job_clean_path = os.path.join(jobs_metadata.JOB_PATH[i], "count_tables", "clean",
                                           jobs_metadata.JOBNAME[i] + "_peak_area_clean_ann.csv")
@@ -50,6 +51,7 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
                                                 'multicharge_ion', 'isotope_ion'])
 
         job_clean_counts["msclusterID_job"] = job_clean_counts.msclusterID.astype(str) + "_" + job_code
+        # check if all msclusterIDs were kept
         # search for partial matches with the original IDs
         kept_msclsuterIDs = np.asarray([clean_counts.joinedJobsIDs.str.contains(
                                                     "^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True).any()
@@ -60,6 +62,30 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
             print("        - A total of ", str(num_missing_id_job[i]),
                   " msclusterIDs were not found in the final joined clean counts, which are: ",
                   ",".join(job_clean_counts.msclusterID_job[~kept_msclsuterIDs].values.astype(str)))
+
+        # check if all kept msclusterIDs maintained their multicharge and isotope ion column values >= than the original
+        # 0 -> 1 or 0
+        # 1 -> 1
+        where_msclsuterIDs = np.concatenate([np.where(clean_counts.joinedJobsIDs.str.contains(
+            "^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True))[0]
+                                             for id in job_clean_counts.msclusterID_job.values[kept_msclsuterIDs]])
+        kept_multicharge_ion = (job_clean_counts.multicharge_ion[kept_msclsuterIDs].values <=
+                                clean_counts.multicharge_ion[where_msclsuterIDs].values)
+        if not kept_multicharge_ion.all():
+            n_inconsistency += sum(~kept_multicharge_ion)
+            print("      - ERROR: A total of ", str(sum(~kept_multicharge_ion)),
+                  " msclusterIDs with multicharge ions set to 1 from original job code ", job_code,
+                  "were not kept as multicharge ions in the final joined counts, which are: ",
+                  ",".join(job_clean_counts.msclusterID_job[kept_msclsuterIDs][~kept_multicharge_ion].values.astype(str)))
+        kept_isotope_ion = (job_clean_counts.isotope_ion[kept_msclsuterIDs].values <=
+                            clean_counts.isotope_ion[where_msclsuterIDs].values)
+        if not kept_isotope_ion.all():
+            n_inconsistency += sum(~kept_isotope_ion)
+            print("      - ERROR: A total of ", str(sum(~kept_isotope_ion)),
+                  " msclusterIDs with isotope ions set to 1 from original job code ", job_code,
+                  "were not kept as isotope ions in the final joined counts, which are: ",
+                  ",".join(job_clean_counts.msclusterID_job[kept_msclsuterIDs][~kept_isotope_ion].values.astype(str)))
+
         # search for each m/z within tolerance
         kept_mzs = np.asarray([((clean_counts.mzConsensus - 3*mz_tolerance <= mz) & (clean_counts.mzConsensus + mz_tolerance*3 >= mz)).any()
                                for mz in job_clean_counts.mzConsensus])
@@ -68,8 +94,8 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
                   " m/z consensus from original job code ", job_code,
                   "are missing in the final joined counts, which are: ",
                   ",".join(job_clean_counts.mzConsensus[~kept_mzs].values.astype(str)))
-        # sum misiing mzs
-        n_inconsistency += sum(~kept_mzs)
+            # sum misiing mzs
+            n_inconsistency += sum(~kept_mzs)
 
     # sum missing mscluster ids
     n_inconsistency += sum(num_missing_id_job)
