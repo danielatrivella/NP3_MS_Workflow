@@ -18,8 +18,8 @@ Rcpp::sourceCpp(file.path(script_path(),
 Rcpp::sourceCpp(file.path(script_path(),
                           '../src/read_mgf_peak_list_R.cpp'))
 
-library(stringr)
-library(readr)
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(readr))
 
 sim_tol <- 0.55
 mn_tol <- 0.6

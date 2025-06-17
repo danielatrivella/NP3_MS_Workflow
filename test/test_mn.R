@@ -15,8 +15,8 @@ script_path <- function() {
 }
 Rcpp::sourceCpp(file.path(script_path(),
                           '../src/triangular_matrix_R.cpp'))
-library(stringr)
-library(readr)
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(readr))
 
 mn_tol <- 0.6
 top_k <- 15
