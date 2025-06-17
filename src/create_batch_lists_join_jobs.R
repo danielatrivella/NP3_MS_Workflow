@@ -112,7 +112,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
     # remaining original samples in the list if any
     
     # read all the original joined jobs metadata
-    if (sum(metadata$JOINED_JOB == 1))
+    if (sum(metadata$JOINED_JOB == 1) == 1)
     {
       # only one joined job to join
       i <- which(metadata$JOINED_JOB == 1)
@@ -122,7 +122,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
       orig_joined_jobs_metadata$JOINED_JOB_CODE <- metadata$JOB_CODE[i]
     } else {
       # more than one joined job to join
-      orig_joined_jobs_metadata <- bind_rows(sapply(which(metadata$JOINED_JOB == 1), 
+      orig_joined_jobs_metadata <- bind_rows(lapply(which(metadata$JOINED_JOB == 1), 
         function(i) {
           m_join <- readMetadataTableJoinJobs(file.path(metadata$JOB_PATH[i], "../..", 
                                                         "join_original_jobs_METADATA.csv"), 
