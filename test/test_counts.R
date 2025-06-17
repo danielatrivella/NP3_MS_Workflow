@@ -29,7 +29,7 @@ if (length(args) < 5) {
        " 1 - Path to the processed data folder (where the original MGFs are);\n",
        " 2 - Path to the spectra count table;\n", 
        " 3 - Path to the peak area count table;\n", 
-       " 4 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;\n",
+       " 4 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks; For join_jobs this is the original samples metadata;\n",
        " 5 - Number of minimum peaks used to output a MS2 spectra - will be used to validate the MS2 completeness in the job",
        call.=FALSE)
 } else {
@@ -70,6 +70,25 @@ ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, guess_max = 10
 ms_area_count <- suppressMessages(read_csv(path_area_count, guess_max = 10000))
 metadata <- readMetadataTable(path_metadata)
 n_inconsistency <- 0
+
+convert_sample_processed_data_path <- function(is_join_jobs, processed_data_path) {
+  if (!is_join_jobs) {
+    convert_processed_data_path <- function(x) {
+      return(processed_data_path)
+    }
+  } else {
+    # join_jobs
+    metadata_jobs <- readMetadataTableJoinJobs(file.path(dirname(path_metadata),
+                                                         "join_original_jobs_METADATA.csv"))
+    convert_processed_data_path <- function(x) {
+      return(metadata_jobs$PRE_PROCESSED_DATA_PATH[metadata_jobs$JOB_CODE == x][1])
+    }
+  }
+  return(convert_processed_data_path)
+}
+
+retrieve_processed_data_path <- convert_sample_processed_data_path(is_join_jobs=("joinedJobsIDs" %in% names(ms_spectra_count)),
+                                                                   processed_data_path = processed_data_path)
 
 # check if the count tables are consistent
 if (!isTRUE(all.equal(unlist(ms_spectra_count[,c("mzConsensus", "rtMean", "rtMin", "rtMax", "sumInts", "basePeakInt",
@@ -142,7 +161,14 @@ real_headers_total <- tibble(msclusterId = 0,
 # scan header is consistent for each msclusterId - i = which(ms_spectra_count$msclusterID == 193)
 wrong_scans <- lapply(metadata$SAMPLE_CODE, function(x)
 {
-  mgf_data <- readMgfHeader(file.path(processed_data_path, paste0(x, '_peak_info.mgf')))
+  preprocessed_mgf_path <- file.path(retrieve_processed_data_path(metadata$JOB_CODE[metadata$SAMPLE_CODE == x]), 
+                                     paste0(x, '_peak_info.mgf'))
+  if (!file.exists(preprocessed_mgf_path)) {
+    stop("Error checking peakId, peak areas and scan header consistency of sample code ",x,
+         ". Its pre processed MGF file does not exists: ", preprocessed_mgf_path, 
+         ". Please provide a valid path to where the pre processed data is located.")
+  }
+  mgf_data <- readMgfHeader(preprocessed_mgf_path)
   mgf_data$scans <- paste0(mgf_data$scans, "_", x)
   
   # check consistency for each msclusterId
