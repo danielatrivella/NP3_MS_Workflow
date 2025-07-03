@@ -1292,25 +1292,158 @@ It works as follow:
 
 ## 4.11. Command *join_jobs* 
 
-  Command to join original $NP^{3}$ jobs (results of the run command) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. Use the clean results from the original jobs and execute the pipeline from step 3 to the end with some modifications and adaptations. 
+  Command to join original $NP^{3}$ jobs (results of the run command) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. It uses the clean results from the original jobs and execute the pipeline from step 3 to 10 with some modifications and adaptations, except for step 8 which is skipped. 
+  
   This command performs the clustering of all the clean data from the original jobs together, then proceed the workflow to the clean step, next update the original ionization annotations with the final joined clean consensus spectra and merge the original IVAMNS, compare the final joined consensus spectra pairwise, skip merge step, finally compute the molecular networking with the joined result and compute the biocorrelation using the original samples metadata of all original jobs together.
+  
   The *join_jobs* can be used to join the results from multiple original jobs and 
 also from previous joined jobs with a new original or joined job. There is no limit for
-joining $NP^{3}$ results, coming from the *run* or the *join_job* commands.
+joining $NP^{3}$ results, coming from the *run* or the *join_job* commands. The user must only ensure that all sample's code is unique across the different original jobs being joined (SAMPLE_CODE column from the original samples' metadata).
+
+The following subsections define how to create the metadata_join, its expected format, the data organization to execute this command and details on its methods.
+
+Options for the command *join_jobs*:
+ 
+- *-n, --output_name* <name> : the job name. It will be used to name the output directory and 
+  					the results from joining the jobs. It must have less than 80 characters.
+  
+- *-m, --metadata_join* <file> : path to the metadata table CSV file defining the jobs to be joined. Different format, see manual.
+- *-d, --jobs_data_path* <path> : path to the folder containing the input jobs result to be joined, 
+  this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. 
+  Their clean mgf and quantification tables will be used.
+- *-y, --pre_processed_dir_path* <path> : path to the folder containing the input jobs pre processing result, 
+  this should contain all the original jobs previous NP3 pre processing result in separated folders named 
+  accordingly to what is specified in the metadata_join.
+- *-o, --output_path* <path> : path to where the output directory will be created
+- *-f, --fragment_tolerance* [x] : the tolerance in Daltons for fragment peaks. Peaks in the
+  					original spectra that are closer than this get merged by
+  					the NP3_MSCluster algorithm. Also used in the pre process (Step 2)
+   (default: 0.05)
+- *-z, --mz_tolerance* [x] : this is the tolerance in Daltons for the m/z of the
+  					precursor that determines if two spectra will be compared
+  					and possibly joined. Used in the clustering job and
+  					in the library identifications (Step 6) (default: 0.025)
+- *-p, --ppm_tolerance* [x] : the maximal tolerated m/z deviation in parts per million (ppm)
+  					to be used in the pre-processing step if ran
+  					 (default: 5)
+- *-t, --rt_tolerance* [x,y] : tolerances in seconds for the retention time width of the
+  					precursor that determines if two spectra will be compared
+  					and possibly joined. It is directly applied to the retention
+  					time minimum (subtracted) and maximum (added) of the spectra.
+  					 (default: 2)
+- *-a, --ion_mode* [x] : the precursor ion mode. One of the following numeric values
+  					corresponding to a ion adduct type: '1' = [M+H]+ or 
+  					'2' = [M-H]- (default: 1)
+- *-i, --similarity_function* [x] : the similarity function to be used in the spectra comparison 
+  					to create the pairwise similarity table after clustering and clean steps. 
+  					If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) 
+  					is used by spec2vec in the spectra comparison and the matchms library is used to compute 
+  					the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine 
+  					function is used. One of "np3_shifted_cosine" or "spec2vec". (default: "np3_shifted_cosine")
+- *-s, --similarity* [x] : the minimum similarity to be consider in the hierarchical
+  					clustering, starts in 0.70 and decrease to X in 15 rounds
+  					 (default: 0.6)
+- *-g, --similarity_blank* [x] : the minimum similarity to be consider in the hierarchical
+  					clustering of the blank clustering steps, starts in 0.70
+  					and decrease to X in 15 rounds. Only used in the 
+  					clustering of blank samples (column SAMPLE\_TYPE equals
+  					'blank' in the metadata table) (default: 0.3)
+- *--bflag_cutoff* [x] : A positive numeric value to scale the interquartile range (IQR)
+  					of the blank spectra basePeakInt distribution from the clustering result and to allow spectra with a basePeakInt
+  					value below this distribution median plus IQR*bflag_cutoff to be
+  					joined with a blank spectrum during the clean Step 5, without relying on the similarity value.
+  					Or FALSE to disable it.
+  					The IQR is the range between the 1st quartile (25th quantile) and the
+  					3rd quartile (75th quantile) of the distribution. The spectra with a
+  					basePeakInt value <= median + IQR*bflag_cutoff (from the
+  					blank spectra basePeakInt distribution) and BFLAG TRUE will be joined to a blank spectrum
+  					in the clean Step 5. This cutoff will affect the spectra with BFLAG TRUE
+  					that would not get joined to a blank spectra when relying only on the
+  					similarity cutoff. This is a turn around to the fact that blank spectra
+  					have low quality spectra and thus can not fully rely on the similarity values. (default: 1.5)
+- *--noise_cutoff* [x] : A positive numeric value to scale the interquartile range (IQR)
+  					of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt
+  					value below this distribution median plus IQR*noise_cutoff after the clean Step 5.
+  					Or FALSE to disable it.
+  					The IQR is the range between the 1st quartile (25th quantile) and the
+  					3rd quartile (75th quantile) of the distribution. 
+  					When no blank sample is present in the metadata, the full distribution is used. 
+  					This cutoff will affect the spectra with with a low
+  					basePeakInt value that probably are noise features. 
+  					If the clustering Step 3 resulted in more than 25000 spectra, 
+  					the noise cutoff will be applied before the clean Step 5 to prevent a long processing time (default: "FALSE")
+- *-c, --scale_factor* [x] : the scaling method to be used in the fragmented peak's
+  					intensities before any dot product comparison (Step 3).
+  					Valid values are: 0 for the natural logarithm (ln) of the
+  					intensities; 1 for no scaling; and other values greater
+  					than zero for raising the fragment peaks intensities to
+  					the power of x (e.g. x = 0.5 is the square root scaling).
+  					[x] >= 0 (default: 0.5)
+- *-e, --method* [name] : a character string indicating which correlation coefficient is
+  					to be computed. One of "pearson", "kendall", or "spearman"
+  					 (default: "spearman")
+- *-x, --min_peaks_output* [x] : the minimum number of fragment peaks that a spectrum must have
+  					to be outputted after the final clustering step. Spectra
+  					with less than x fragmented peaks will be discarded. x >= 1
+  					 (default: 5)
+- *-j, --tremolo_identification* [x] : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if
+  					the Tremolo tool should be used for the spectral matching
+  					against the ISDB from the UNPD (default: "TRUE")
+- *-r, --trim_mz* [x] : A logical "TRUE" or "FALSE" indicating if the spectra fragmented 
+  					peaks around the precursor m/z +-20 Da should be deleted 
+  					before the pairwise comparisons. If "TRUE" this removes the 
+  					residual precursor ion, which is frequently observed in MS/MS 
+  					spectra acquired on qTOFs. (default: "TRUE")
+- *--max_shift* [x] : Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts
+                                       greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same
+                                       compound. (default: 200)
+- *-l, --parallel_cores* [x] : the number of cores to be used for parallel processing
+  					in Step 5 spectra comparison. x = 1 for disabling parallelization and x > 2
+  					for enabling it. x >= 1 (default: 2)
+- *-w, --similarity_mn* [x] : the minimum similarity score that must occur between a pair of consensus MS/MS spectra in order to create an edge in the molecular networking. Lower
+                                       values will increase the component size of the clusters by inducing the connection of less related MS/MS spectra; and higher values will  limit the
+                                       components sizes to the opposite (default: 0.6)
+- *-k, --net_top_k* [x] : the maximum number of connection for one single node in the
+  					similarity molecular networking. An edge between two nodes
+  					is kept only if both nodes are within each other's [x]
+  					most similar nodes. Keeping this value low makes 
+  					very large networks (many nodes) much easier to visualize (default: 15)
+- *-x, --max_component_size* [x] : the maximum number of nodes that all component of 
+  					the similarity molecular network must have. The edges of 
+  					this network will be removed using an increasing cosine 
+  					threshold until each network component has at most X nodes. 
+  					Keeping this value low makes very large networks (many nodes 
+  					and edges) much easier to visualize. (default: 200)
+- *--min_matched_peaks* [x] : The minimum number of common peaks that two spectra must share to be connected by an edge in the filtered SSMN. Connections between spectra with less
+                                       common peaks than this cutoff will be removed when filtering the SSMN. Except for when one of the spectra have a number of fragment peaks smaller than
+                                       the given min_matched_peaks value, in this case the spectra must share at least 2 peaks. The fragment peaks count is performed after the spectra are
+                                       normalized and cleaned. (default: 6)
+- *--blank_expansion* [x] : the distance of neighborhood nodes from the blanks in IVAMN to be 
+  					selected for removal in the final protonated networks. 
+  					(0) to only remove blanks nodes,  
+  					(1) to remove nodes directly connected to a blank node, 
+  					(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, 
+  					or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN  (default: 0)
+- *-b, --max_chunk_spectra* [x] : Maximum number of spectra to be loaded and processed in a
+  					chunk at the same time. In case of memory issues this
+  					value should be decreased (default: 3000)
+- *-v, --verbose* [x] : for values X>0 show the scripts output information
+  					 (default: 0)
+- *-h, --help* : display help for command
+
 
 ##### 4.11.1. *join_jobs* Results
 
-RESULTS:
-
 A directory inside the *output_path* named with the *output_name* containing:
+
 - A copy of the *metadata_join* file and the command line parameters values used in a file named 'logRunParms', for reproducibility.
 - Two automatically created metadata tables containing: one the original samples concatenated in a single file 'original_samples_METADATA.csv'; and other with the original np3 jobs that were joined in this process in a file named 'join_original_jobs_METADATA.csv'. For reproducibility and future joins with this result.
-- A folder named 'outs' with the clustering result of the joined jobs in a single subfolder named with the *output_name* containing:
-  - A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as '<step_name>_(spectra|peak_area).csv'. And inside it the clean tables in a folder named 'clean'.
-  - Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).
-  - A third subfolder named 'mgf' with the resulting clean consensus spectra in MGF files.
-  - A fourth subfolder named 'identifications' with the tremolo identification results in a csv table.
-  - A fifth subfolder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.
+- A folder named 'outs' with the clustering result of the joined jobs in a single sub folder named with the *output_name* containing:
+  - A sub folder named 'count_tables' with the Step 4 quantification in CSV tables named as '<step_name>_(spectra|peak_area).csv'. And inside it the clean tables in a folder named 'clean'.
+  - Another sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).
+  - A third sub folder named 'mgf' with the resulting clean consensus spectra in MGF files.
+  - A fourth sub folder named 'identifications' with the tremolo identification results in a csv table.
+  - A fifth sub folder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.
   - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output.
 
 ##### 4.11.1. *join_jobs* Examples
@@ -1327,44 +1460,32 @@ Join the joined job from A and B with original job C.
 
 ##### 4.11.1. *join_jobs* Metadata_join creation
 
-  The *metadata_join* table defines the $NP^{3}$ jobs to be united, it defines the joining jobs reference names and original pre processing result. It also defines if the joining jobs came from a *run* or a *join_jobs* commands result. 
-  This table has the same format as the original samples' metadata, it must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata file was finished it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
+  The *metadata_join* table defines the $NP^{3}$ jobs to be united, it defines the joining jobs reference names, original samples' metadata name and original pre processing result. It also defines if the joining jobs came from a *run* (called here original jobs) or a *join_jobs* command result. 
+  This table has the same format as the original samples' metadata, it must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata_join file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata_join file was finished it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
  
 A metadata_join template file is available in the $NP^{3}$ MS workflow repository, named 'METADATA_JOIN_TEMPLATE.csv'. TODO create this template
  
 The metadata_join table must contain the following mandatory columns (in uppercase):
  
-- JOBNAME \- TODO the raw data file names (including extensions but not including complete paths). The accepted file format is mzXML or mzML (mzData format could also be used, but was not vastly tested).
-- JOB_CODE \- TODO unique and syntactically valid (see below) names for each file. The use of the same SAMPLE_CODE in more than one entry will generate an error. A syntactically valid name must start with a letter and consist of letters, numbers, and underscore characters. R reserved words (https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Reserved-words) are not syntactically valid names. The SAMPLE_CODE names will be used to name and reference the pre-processed files in Step 2 and to name the output count table's columns of Steps 3 to 9.
-- METADATA_NAME \- TODO
-- PRE_PROCESSED_DATA_NAME \- TODO
-- JOINED_JOB \- TODO
- 
+- JOBNAME \- the name of the job to be joined. This name must be equal to the *output_name* used to obtain this job result, it must match the job final results naming. This name will be used to retrieve the job data to perform the joining.
+- JOB_CODE \- unique and syntactically valid (see below) name for each job. The use of the same JOB_CODE in more than one entry will generate an error. A syntactically valid name must start with a letter and consist of letters, numbers, and underscore characters. R reserved words (https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Reserved-words) are not syntactically valid names. The JOB_CODE name will be used to reference the original $NP^{3}$ jobs and to keep the joined msclusterIDs track.
+- METADATA_NAME \- the name of the original samples' metadata table used to execute the job, if this job is a result of the *run* command (JOINED_JOB column equals 0). This must be the complete file name with extension of the samples metadata, it will be used to automatically retrieve this data from the job result. If this job is a result of the *join_jobs* command (JOINED_JOB column equals 1), this metadata name will not be used, instead the metadata with the original samples will be used by default. 
+- PRE_PROCESSED_DATA_NAME \- the name of the folder with the pre processing result of the job. It will be used to retrieve the pre processed data of the job.
+- JOINED_JOB \- A 0 or 1 column value to define if this job is the result of a original job coming from a *run* command execution (0) or if it is the result of a joined job coming from another join_jobs command execution (1).
 
-The samples' groupings, correlations and bioactivities will be retrieved from the original jobs samples metadata. There information is not defined here.
- 
 The user is free to add any additional column to the metadata_join file, for example to add relevant descriptions for each job. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the job being joined. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata_join file.
+
+The samples' groupings, correlations and bioactivities will be retrieved from the samples' metadata of the original jobs. These information is not defined here.
 
 ##### 4.11.1. *join_jobs* Data Organization
 
-TODO 3 coisas
-Um novo metadata contendo os jobs a serem unidos​
+The data organization to execute the *join_jobs* command must contain three things (defined by mandatory parameters):
 
-Uma pasta contendo o resultado do np³ dos jobs a serem unidos:​
+1. A metadata_join table defining the jobs to be united and following the format and mandatory columns defined in the previous section (parameter *metadata_join*).
+2. A folder containing the results of the original $NP^{3}$ jobs to be united or united by any included joined job, all jobs defined in the metadata_join must be placed inside this folder (parameter *jobs_data_path*). The data to be united will be retrieved from here.
+3. And a folder containing the results of the pre processing of the original $NP^{3}$ jobs to be united or united by any included joined job (paramater *pre_processed_dir_path*). The data to correctly compute the peak area of the final joined clean consensus spectra will be retrieved from here.
 
-Join_jobs/​
-
-Bra346​
-
-ma9​
-
-Uma pasta contendo o pre process dos jobs originais sendo unidos​
-
-Pre_process_join_jobs/​
-
-Preprocess_bra​
-
-Preprocess_ma9​
+In a project intended to continue grow with new jobs being collected and processed, this structure must be kept to continuous join a new processed dataset.
 
 ##### 4.11.1. *join_jobs* Details
 
@@ -1375,6 +1496,8 @@ peak area recalculations for correct values
 how the annotate_protonated step 7 occurs
 
 why merge is skipped and that it can be executed a posteriori
+
+- the sample codes from the original jobs being united must be unique among all joined jobs, this will through an error if not true.
 
 ## 4.12. Command *gnps_result*
  
