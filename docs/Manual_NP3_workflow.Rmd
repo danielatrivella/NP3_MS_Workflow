@@ -1290,8 +1290,93 @@ It works as follow:
 3. The nodes from IVAMN [M+H]+ are used to select the final nodes from the SSMN, resulting in the SSMN [M+H]+ network;
 4. Finally, the SSMN [M+H]+ is filtered using the min_matched_peaks, top_k and max_component size arguments, resulting in the SSMN [M+H]+ filtered.
 
+## 4.11. Command *join_jobs* 
+
+  Command to join original $NP^{3}$ jobs (results of the run command) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. Use the clean results from the original jobs and execute the pipeline from step 3 to the end with some modifications and adaptations. 
+  This command performs the clustering of all the clean data from the original jobs together, then proceed the workflow to the clean step, next update the original ionization annotations with the final joined clean consensus spectra and merge the original IVAMNS, compare the final joined consensus spectra pairwise, skip merge step, finally compute the molecular networking with the joined result and compute the biocorrelation using the original samples metadata of all original jobs together.
+  The *join_jobs* can be used to join the results from multiple original jobs and 
+also from previous joined jobs with a new original or joined job. There is no limit for
+joining $NP^{3}$ results, coming from the *run* or the *join_job* commands.
+
+##### 4.11.1. *join_jobs* Results
+
+RESULTS:
+
+A directory inside the *output_path* named with the *output_name* containing:
+- A copy of the *metadata_join* file and the command line parameters values used in a file named 'logRunParms', for reproducibility.
+- Two automatically created metadata tables containing: one the original samples concatenated in a single file 'original_samples_METADATA.csv'; and other with the original np3 jobs that were joined in this process in a file named 'join_original_jobs_METADATA.csv'. For reproducibility and future joins with this result.
+- A folder named 'outs' with the clustering result of the joined jobs in a single subfolder named with the *output_name* containing:
+  - A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as '<step_name>_(spectra|peak_area).csv'. And inside it the clean tables in a folder named 'clean'.
+  - Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).
+  - A third subfolder named 'mgf' with the resulting clean consensus spectra in MGF files.
+  - A fourth subfolder named 'identifications' with the tremolo identification results in a csv table.
+  - A fifth subfolder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.
+  - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output.
+
+##### 4.11.1. *join_jobs* Examples
+
+Join original jobs A and B.
+```{r, eval=F}
+$ node np3_workflow.js join_jobs --output_name "test_join_a_b" --output_path "/path/where/the/output/will/be/stored" --metadata_join "/path/to/the/metadata_join/file/test_np3_join_a_b_metadata.csv" --pre_processed_dir_path "/path/to/the/dir/with/joining/jobs/pre/process/results"--jobs_data_path "/path/where/the/joining/jobs/output/is/stored"
+```
+
+Join the joined job from A and B with original job C.
+```{r, eval=F} 
+  $ node np3_workflow.js join_jobs -n "test_join_ab_c" -o "/path/where/the/output/will/be/stored" -m "/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y "/path/to/the/dir/with/joining/jobs/pre/process/results" -d "/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10
+```
+
+##### 4.11.1. *join_jobs* Metadata_join creation
+
+  The *metadata_join* table defines the $NP^{3}$ jobs to be united, it defines the joining jobs reference names and original pre processing result. It also defines if the joining jobs came from a *run* or a *join_jobs* commands result. 
+  This table has the same format as the original samples' metadata, it must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata file was finished it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
  
-## 4.11. Command *gnps_result*
+A metadata_join template file is available in the $NP^{3}$ MS workflow repository, named 'METADATA_JOIN_TEMPLATE.csv'. TODO create this template
+ 
+The metadata_join table must contain the following mandatory columns (in uppercase):
+ 
+- JOBNAME \- TODO the raw data file names (including extensions but not including complete paths). The accepted file format is mzXML or mzML (mzData format could also be used, but was not vastly tested).
+- JOB_CODE \- TODO unique and syntactically valid (see below) names for each file. The use of the same SAMPLE_CODE in more than one entry will generate an error. A syntactically valid name must start with a letter and consist of letters, numbers, and underscore characters. R reserved words (https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Reserved-words) are not syntactically valid names. The SAMPLE_CODE names will be used to name and reference the pre-processed files in Step 2 and to name the output count table's columns of Steps 3 to 9.
+- METADATA_NAME \- TODO
+- PRE_PROCESSED_DATA_NAME \- TODO
+- JOINED_JOB \- TODO
+ 
+
+The samples' groupings, correlations and bioactivities will be retrieved from the original jobs samples metadata. There information is not defined here.
+ 
+The user is free to add any additional column to the metadata_join file, for example to add relevant descriptions for each job. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the job being joined. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata_join file.
+
+##### 4.11.1. *join_jobs* Data Organization
+
+TODO 3 coisas
+Um novo metadata contendo os jobs a serem unidos​
+
+Uma pasta contendo o resultado do np³ dos jobs a serem unidos:​
+
+Join_jobs/​
+
+Bra346​
+
+ma9​
+
+Uma pasta contendo o pre process dos jobs originais sendo unidos​
+
+Pre_process_join_jobs/​
+
+Preprocess_bra​
+
+Preprocess_ma9​
+
+##### 4.11.1. *join_jobs* Details
+
+TODO
+steps difference
+peak area recalculations for correct values
+
+how the annotate_protonated step 7 occurs
+
+why merge is skipped and that it can be executed a posteriori
+
+## 4.12. Command *gnps_result*
  
 Join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'all identifications') workflows to the count tables of the NP3 clustering or clean steps (Steps 3 or 5)
  
@@ -1302,14 +1387,14 @@ Options for the command *gnps_result*:
 - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the $NP^{3}$ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
 - *\-h, \-\-help* : output usage information
  
-##### 4.11.1. *gnps_result* Results
+##### 4.12.1. *gnps_result* Results
  
 The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
 See the GNPS documentation for the description of these columns (https://ccms-ucsd.github.io/GNPSDocumentation/spectrumcuration/#adding-single-spectra).
  
 If there is more than one GNPS result for a single msclusterID the results are concatenated with a ';', except for the "gnps_Smiles" column which is concatenated with a ',' (ease visualization in cytoscape).
  
-##### 4.11.2. *gnps_result* Examples
+##### 4.12.2. *gnps_result* Examples
  
 Fake example to use the GNPS Identification Join command:
  
@@ -1321,7 +1406,7 @@ Fake example to use the GNPS Identification Join command:
     --ms_count_path "/path/to/the/output/NP3/count_files/count.csv"
 ```
  
-##### 4.11.3. *gnps_result* Details
+##### 4.12.3. *gnps_result* Details
  
 The GNPS library identifications results should be obtained with the collection of consensus spectra present in the $NP^{3}$ MS workflow output MGF files, from the clustering (Step 3) or the clean (Step 5) results. In the cleaning Step 5 some consensus spectra can be joined, mostly due to the fragmented clusters case. Then, if the clean count table is informed for a library identification result obtained with the MGF from the clustering Step 3, the *gnps_result* will aggregate the identification results of the joined consensus spectra from Step 5 into a single result, using as reference the column 'joinedIDs'.
  
@@ -1330,7 +1415,7 @@ In the GNPS Molecular Networking (MN) workflow result, the 'clusterinfo' file co
 In the GNPS Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
 
  
-## 4.12. Command *chr*
+## 4.13. Command *chr*
  
 Runs the R interactive script to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and saves to PNG image(s) file(s). Depending on the provided parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file. In the interactive prompt is possible to select a mz and/or retention time window to better visualize interesting parts of the sample's chromatograms. The plots can be grouped by data collection batch, by a selection of samples, or all the samples can be plotted together.
  
@@ -1348,11 +1433,11 @@ Options for the command *chr*:
 <!-- - \-t, \-\-rt_range [X,Y]         two numeric separate by comma ',' without spaces and with decimal point equals dot '.' defining the lower and upper boundary for the retention time range/window(s) for the chromatogram(s). If not specified or 'NULL', a chromatogram representing the full retention time range is extracted (default: NULL) -->
 - *\-h, \-\-help*                   output usage information
  
-##### 4.12.1. *chr* Results
+##### 4.13.1. *chr* Results
  
 PNG image(s) file(s) with the extracted chromatogram(s) of the selected sample(s) and grouped as specified in the options.
  
-##### 4.12.2 *chr* Examples
+##### 4.13.2 *chr* Examples
  
 Fake example to execute the MS¹ Viewer command:
 
@@ -1393,7 +1478,7 @@ Fake example to execute the MS¹ Viewer command:
 <!--     --data_name "data_np3" --raw_data_path "/path/to/the/raw/data/directory" -->
 <!-- ``` -->
  
-## 4.13. Command *spectra_viewer*
+## 4.14. Command *spectra_viewer*
 
 This command runs the Streamlit interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. Currently, it is only supported for Unix OS.
   It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
@@ -1403,7 +1488,7 @@ Options for the command *spectra_viewer*:
 - *\-p, \-\-port* [port_number]  localhost server port number (default: "8501")
 - *\-h, \-\-help*              output usage information
 
-##### 4.13.1. *spectra_viewer* Examples:
+##### 4.14.1. *spectra_viewer* Examples:
 
 Example to execute the MS² spectra viewer application:
 
@@ -1411,7 +1496,7 @@ Example to execute the MS² spectra viewer application:
   $ node np3_workflow.js spectra_viewer --port 8080
 ```
 
-## 4.14. Command *test*
+## 4.15. Command *test*
  
 Run the NP³ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
 
@@ -1424,11 +1509,11 @@ Options for the command *test*:
 - *\-s, \-\-skip* [x]       :  Skip to test x (default: 1)
 - *\-h, \-\-help*              output usage information
  
-##### 4.14.1. *test* Results:
+##### 4.15.1. *test* Results:
  
 The NP³ jobs for the tested datasets. They are stored inside the test/Bra346 folder in the repository. The metadata table files present in the test/Bra346 folder are used in the testing cases and should not be modified.
  
-##### 4.14.2. *test* Examples:
+##### 4.15.2. *test* Examples:
  
 Example to execute the test suit from NP³ MS Workflow:
 
