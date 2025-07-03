@@ -62,7 +62,7 @@ if (length(args) < 3) {
   stop("Two arguments must be supplied to clean and annotate the counts:\n", 
        " 1 - Path to the output data folder, inside the outs directory of the clustering result folder. ", 
        "It should contain the mgf folder, the peak area count CSV and the spectra count CSV. The data name will be extracted from here.;\n", 
-       " 2 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;\n",
+       " 2 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks; if this is a join_jobs result the metadata must be set as '-1';\n",
        " 3 - Path to the pre processed data folder were the MGFs were created. Used to compute the peak areas;\n",
        " 4 - The precursor m/z tolerance in Da;\n",
        " 5 - The similarity tolerance to JOIN mass dissipation spectra;\n",
@@ -412,7 +412,7 @@ merge_counts <- function(col_name, x)
 }
 
 
-# create clean similarity file
+# create the aggMax similarity file - copy from the clustering sim table
 if (!file.exists(file.path(output_path, 
                            "molecular_networking/similarity_tables", 
                            paste0("similarity_table_", output_name, ".csv"))))
@@ -430,10 +430,12 @@ if (!file.exists(file.path(output_path,
                            "molecular_networking/similarity_tables", 
                            paste0("similarity_table_", output_name, ".csv")),
                  sim_file, overwrite = TRUE))
+  {
     stop("The pairwise similarity table file '", file.path(output_path, 
                                                            "molecular_networking/similarity_tables", 
                                                            paste0("similarity_table_", output_name, ".csv")),
          "' could not be copied. Give write privileges to the current user.")
+  } 
 }
 
 batch_metadata <- readMetadataTable(path_batch_metadata)
@@ -524,10 +526,10 @@ if (any(is.na(order_table))) {
 ms_spectra_count <- ms_spectra_count[order_table,]
 
 # apply the noise cutoff filter before the clean step if the number of rows is
-# greater than 25k, what can cause a slow processing
+# greater than 15k, what can cause a slow processing
 # apply the Noise cutoff filter based on the basePeakInt <= noisy_cutoff
 if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff) && 
-    nrow(ms_spectra_count) > 25000) {
+    nrow(ms_spectra_count) > 15000) {
   cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <=",
       NOISE_cutoff,"**\n")
   spectra_to_keep <- (ms_spectra_count$basePeakInt > NOISE_cutoff)
@@ -619,8 +621,10 @@ repeat
                              n_max = table_limit_size, skip = 1, 
                              col_names = F, col_types = col_types)
     
-    if (step_join == 1 && blanks_flag) {
-      # started with step 0, then read count tables from last step
+    if (step_join == 1 && blanks_flag && num_joins_total > 0) {
+      # started with step 0, then if there was at least one joining and
+      # num_joins_total > 0 -> read count tables from last step
+      # otherwise continue to use the clustering table in step 1
       ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
                                                               paste0(output_name,"_spectra_clean.csv")),
                                                     guess_max = 5000,
@@ -639,7 +643,7 @@ repeat
                                                "molecular_networking/similarity_tables", 
                                                paste0("similarity_table_", output_name, "_aggMax.csv")), 
                                      DataFrameCallback$new(function(x, pos) 
-                                       subset(x, `-1` %in% joined_ids)), 
+                                       subset(x, unlist(x[1]) %in% joined_ids)), 
                                      col_names = TRUE, col_types = col_types)
     # get preceding scans sim info
     pairwise_sim[,-1] <- pairwise_sim[,-1] + t(read_csv(file.path(output_path, 
@@ -715,7 +719,7 @@ repeat
                                                    "molecular_networking/similarity_tables", 
                                                    paste0("similarity_table_", output_name, "_aggMax.csv")), 
                                          DataFrameCallback$new(function(x, pos) 
-                                           subset(x, `-1` %in% joined_ids)), 
+                                           subset(x, unlist(x[1]) %in% joined_ids)), 
                                          col_names = TRUE, col_types = col_types)
         # get preceding scans sim info
         pairwise_sim[,-1] <- pairwise_sim[,-1] + t(read_csv(file.path(output_path, 
@@ -945,6 +949,8 @@ rm(peak_areas_base_peak_int)
 ms_area_count$maxArea <- ms_spectra_count$maxArea <- apply(ms_area_count[,count_columns], 1, max)
 ms_area_count$meanInt <- ms_spectra_count$meanInt <- ms_area_count$sumInts / ms_area_count$numSpectra
 
+#stop("Check sim aggMax!!")
+
 # apply the Noise cutoff filter based on the basePeakInt <= noisy_cutoff
 if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff)) {
   order_table <- match(scans_order[-1], ms_spectra_count$msclusterID)
@@ -1145,7 +1151,7 @@ if (length(blanks_code) > 0)
   pairwise_sim_blanks <- read_csv_chunked(file.path(output_path, 
                                                     "molecular_networking/similarity_tables", 
                                                     paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                          DataFrameCallback$new(function(x, pos) subset(x, `-1` %in% blank_ids)), 
+                                          DataFrameCallback$new(function(x, pos) subset(x, unlist(x[1]) %in% blank_ids)), 
                                           col_names = TRUE, col_types = col_types)
   # use similarity proportional to the neighbor similarity* their similarity to each neighbor
   blanks_neighbor[[1]] <- which(colSums(pairwise_sim_blanks[,-1] >= sim_tol) > 0)
@@ -1153,7 +1159,7 @@ if (length(blanks_code) > 0)
   pairwise_sim_blanks <- read_csv(file.path(output_path, 
                                             "molecular_networking/similarity_tables", 
                                             paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                  col_names = TRUE, paste(sapply(scans_order, 
+                                  col_names = TRUE, col_types = paste(sapply(scans_order, 
                                                                  function(i, x) ifelse(i %in% x, "d", "-"), 
                                                                  blank_ids), 
                                                           collapse = ""))
@@ -1174,14 +1180,14 @@ if (length(blanks_code) > 0)
                                                       "molecular_networking/similarity_tables", 
                                                       paste0("similarity_table_", output_name, "_aggMax.csv")), 
                                             DataFrameCallback$new(function(x, pos) 
-                                              subset(x, `-1` %in% scans_order[-1][blank_idx])), 
+                                              subset(x, unlist(x[1]) %in% scans_order[-1][blank_idx])), 
                                             col_names = TRUE, col_types = col_types)
     blanks_neighbor[[depth]] <- which(colSums(pairwise_sim_blanks[,-1] >= sim_tol) > 0)
     # get blanks similarity cols
     pairwise_sim_blanks <- read_csv(file.path(output_path, 
                                               "molecular_networking/similarity_tables", 
                                               paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                    col_names = TRUE, paste0("-", paste(sapply(seq_along(scans_order[-1]), 
+                                    col_names = TRUE, col_types = paste0("-", paste(sapply(seq_along(scans_order[-1]), 
                                                                                function(i, x) ifelse(i %in% x, "d", "-"), 
                                                                                blank_idx), 
                                                                         collapse = "")))
