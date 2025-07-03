@@ -6,6 +6,7 @@
 # finally the protonated script is executed for the final IVAMN and the final list of protonated_representatives
 # is merged with the original protonated that have in-degree > 0 in the final net.
 # the joined annotations will be written to the clean table as columns in another script
+# If noise cutoff is informed, also remove original spectra below the minimum basePeakInt from the final clean table
 
 import os, sys
 import pandas as pd
@@ -21,7 +22,7 @@ def rmse(predicted, actual):
 # check if the selected edges to remove also contain another type of annotation, if yes only remove the fragment type
 #not_valid_ann = neutral losses < 0.2, fragments < 0.2 or isotopes < 0.75 with low cosine
 #not_valid_ann="(\\[M\\+H-NH3]\\+)|(\\[M\\+H-H2O]\\+)|(\\[M\\+H-NH3-H2O]\\+)" or "(fragments)" or "(\\[M\\+1\\]\\+)"
-def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=1.0):
+def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=0.0):
     # remove edges with only the invalid annotation and below the cutoff
     ivamn = ivamn.loc[~(ivamn.annotation.str.fullmatch(not_valid_ann) & (ivamn.cosine < cosine_cutoff)), :].copy()
     # remove the invalid annotation from edges below the cutoff and with more than one annotation
@@ -39,7 +40,7 @@ def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=1.0):
 # read the join original jobs metadata
 # for each original job being joined, read its IVAMN and map its msclusterID to the joined msclusterID
 # then concatenate the IVAMNS and merge duplicated edges
-def join_jobs_ivamns(output_path, max_chunk=3000):
+def join_jobs_ivamns(output_path, max_chunk=3000, noise_cutoff=False):
     if not os.path.isdir(output_path):
         sys.exit("ERROR. The provided output path directory '"+output_path+"' does not exists.")
     output_name = os.path.basename(output_path)
@@ -51,8 +52,16 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
         sys.exit("ERROR. The clean quantification of the current joining jobs in terms of peak area '" +
                  clean_counts_path + "' does not exists.")
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False, usecols=['msclusterID', 'joinedJobsIDs',
-                                                                             'mzConsensus', 'rtMean', 'rtMin', 'rtMax'])
+                                                                             'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
+                                                                             'basePeakInt'])
     clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
+    # compute a noise cutoff as the minimum basePeakInt after union if noise cutoff is enabled
+    # use the min basePeakInt in the final clean table as the basePeakInt cutoff
+    if noise_cutoff:
+        basePeakInt_noise_cutoff = clean_counts.basePeakInt.min()
+        print("  - Noise cut-off was enabled and set to ", str(basePeakInt_noise_cutoff))
+    else:  # noise cutoff is disabled
+        basePeakInt_noise_cutoff = 0
 
     # read the default join original jobs metadata, from it extract the Job name, code and path
     original_jobs_metadata_path = os.path.join(output_path, "../..", "join_original_jobs_METADATA.csv")
@@ -102,9 +111,26 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
         job_ivamn_att = pd.read_csv(job_ivamn_att_path, low_memory=False,
                                     usecols=['msclusterID', 'multicharge_ion', 'isotope_ion',
                                              'protonated_representative'])
+        # also read basePeakInt from the clean table of the original file and remove spectra by the noise cutoff if enabled
+        # remove nodes and edges between removed nodes using the noise cutoff
         if i < jobs_metadata.shape[0]:
             # if this is not the final integration step
-            # map the msclusterID_job to the new joinedJobs msclusterID
+            # remove msclusterIDs with basePeakInt below the cutoff if enabled
+            # and then map the msclusterID_job to the new joinedJobs msclusterID
+
+            if noise_cutoff:
+                job_clean_path = os.path.join(jobs_metadata.JOB_PATH[i], "count_tables", "clean",
+                                                  jobs_metadata.JOBNAME[i] + "_peak_area_clean_ann.csv")
+                if not os.path.isfile(job_clean_path):
+                    sys.exit("ERROR. The clean table of the original job with code '" + job_code +
+                             "' does not exists. The following path extracted from the joined jobs metadata is not valid: '" +
+                             job_clean_path + "'.")
+                job_clean = pd.read_csv(job_clean_path, low_memory=False, usecols=['msclusterID', 'basePeakInt'])
+                valid_msclusterIDs = job_clean.msclusterID[job_clean.basePeakInt >= basePeakInt_noise_cutoff]
+                del job_clean
+                # filter job_ivamn_att and then filter ivamn net edges
+                job_ivamn_att = job_ivamn_att.loc[job_ivamn_att.msclusterID.isin(valid_msclusterIDs),]
+
             job_ivamn_att["msclusterID_job"] = job_ivamn_att.msclusterID.astype(str)+ "_" + job_code
             try:
                 job_ivamn_att["msclusterID_new"] = [clean_counts.msclusterID.values[
@@ -145,14 +171,21 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
             # map the msclusterID_job to the new joinedJobs msclusterID
             # use the ivamn attribute table with the original msclusterIDs as index to map the source and target IDs to
             # # the msclusterID_new in the joined jobs
-            job_ivamn["msclusterID_source_new"] = job_ivamn_att.loc[
-                job_ivamn.msclusterID_source.values, "msclusterID_new"].values
-            job_ivamn["msclusterID_target_new"] = job_ivamn_att.loc[
-                job_ivamn.msclusterID_target.values, "msclusterID_new"].values
-            job_ivamn = job_ivamn.drop(["msclusterID_source", "msclusterID_target"], 1)
-            # rename the new msclusterID columns
-            job_ivamn.rename(columns={'msclusterID_source_new': 'msclusterID_source',
-                                      'msclusterID_target_new': 'msclusterID_target'}, inplace=True)
+            # first remove the edges between not valid nodes
+            if noise_cutoff:
+                # filter ivamn net edges between valid msclusterIDs
+                job_ivamn = job_ivamn.loc[(job_ivamn.msclusterID_source.isin(valid_msclusterIDs) &
+                                           job_ivamn.msclusterID_target.isin(valid_msclusterIDs)), :]
+            if job_ivamn.shape[0] > 0:
+                # if any valid edges left, proceed for the mapping
+                job_ivamn["msclusterID_source_new"] = job_ivamn_att.loc[
+                    job_ivamn.msclusterID_source.values, "msclusterID_new"].values
+                job_ivamn["msclusterID_target_new"] = job_ivamn_att.loc[
+                    job_ivamn.msclusterID_target.values, "msclusterID_new"].values
+                job_ivamn = job_ivamn.drop(["msclusterID_source", "msclusterID_target"], 1)
+                # rename the new msclusterID columns
+                job_ivamn.rename(columns={'msclusterID_source_new': 'msclusterID_source',
+                                          'msclusterID_target_new': 'msclusterID_target'}, inplace=True)
         duplicated_joined_edges = np.where(job_ivamn.loc[:,["msclusterID_source","msclusterID_target"]].duplicated(keep=False))[0]
         first_duplicated_edges = duplicated_joined_edges[
             np.where(~job_ivamn.loc[duplicated_joined_edges, ["msclusterID_source","msclusterID_target"]].duplicated(keep="first"))[0]]
@@ -273,6 +306,8 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
     sim_table = pd.read_csv(sim_table_path, low_memory=False, nrows=max_chunk)
     current_chunk = 0  # set the first line of the sim_table
     # for each edge in the new joined ivamn, retrieve and recompute the rtError, cosine and numCommonSamples
+    job_ivamn['cosine'] = 0
+    job_ivamn['numCommonSamples'] = 0
     print("    - Recomputing the edges' attributes of the joined IVAMN ")
     for i in range(job_ivamn.shape[0]):
         # the idx position of the connected nodes in the clean_counts and similarity table - same ordering
@@ -392,17 +427,23 @@ def join_jobs_ivamns(output_path, max_chunk=3000):
 
 if __name__ == "__main__":
     max_chunk = 3000
+    noise_cutoff = False
     if len(sys.argv) > 1:
         # print(sys.argv)
         output_path = sys.argv[1]
         if len(sys.argv) > 2:
             max_chunk = int(sys.argv[2])
+            if len(sys.argv) > 3:
+                noise_cutoff = bool(float(sys.argv[3]))
     else:
         print("Error: One argument must be supplied to join the original IVAMNs of jobs being joined inside the join_jobs command flow:\n",
         " 1 - output_path: Path to the final output directory of the job currently being joined, ",
         "named with the output_name inside the 'outs' directory;\n",
         " 2 - max_chunk: Maximum number of rows of the pairwise similarity table to be loaded and ",
-        "processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000).\n")
+        "processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000);\n",
+        " 3 - noise_cutoff: A boolean True or False indicating if the noise cutoff was enable in cleaning, if yes ",
+        "remove spectra from original samples with a basePeakInt < minimum basePeakInt in the final joined clean table; ",
+        "otherwise do nothing (default: False).\n")
         sys.exit(1)
     # call join jobs IVAMNs
-    join_jobs_ivamns(output_path, max_chunk)
+    join_jobs_ivamns(output_path, max_chunk, noise_cutoff)
