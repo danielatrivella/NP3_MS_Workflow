@@ -9,9 +9,9 @@ import numpy as np
 # use the original jobs metadata to retrieve the original clean tables, check one job at a time
 # and accumulate errors
 # check if all original sample codes are present in the final clean table
-# check if msclusterIDs and m/zs are maintained
+# check if msclusterIDs and m/zs are maintained (for spectra with basePeakInt above the current min when noise_cutoff was used)
 # check if multicharge and isotope ions are maintained
-def check_joined_jobs(output_path, mz_tolerance=0.025):
+def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
     if not os.path.isdir(output_path):
         sys.exit("ERROR. The provided output path directory '" + output_path + "' does not exists.")
     output_name = os.path.basename(output_path)
@@ -23,6 +23,9 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
         sys.exit("ERROR. The clean quantification of the current joining jobs in terms of peak area with annotations '" +
                  clean_counts_path + "' does not exists.")
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
+
+    if noise_cutoff:
+        min_basePeakInt = clean_counts.basePeakInt.min()
 
     # read the default original joined jobs metadata, from it extract the Job name, code and path
     original_jobs_metadata_path = os.path.join(output_path, "../..", "join_original_jobs_METADATA.csv")
@@ -48,7 +51,13 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
                      job_clean_path + "'.")
         job_clean_counts = pd.read_csv(job_clean_path, low_memory=False,
                                        usecols=['msclusterID', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
-                                                'multicharge_ion', 'isotope_ion'])
+                                                'multicharge_ion', 'isotope_ion', 'basePeakInt'])
+        # remove here the msclusterID with low basePeakInt when noise_cutoff is enabled
+        if noise_cutoff:
+            job_clean_counts = job_clean_counts.loc[job_clean_counts.basePeakInt >= min_basePeakInt,:]
+            # if no spectra is left, skip to next sample
+            if job_clean_counts.shape[0] == 0:
+                continue
 
         job_clean_counts["msclusterID_job"] = job_clean_counts.msclusterID.astype(str) + "_" + job_code
         # check if all msclusterIDs were kept
@@ -125,16 +134,20 @@ def check_joined_jobs(output_path, mz_tolerance=0.025):
 
 if __name__ == "__main__":
     mz_tol = 0.025
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         # print(sys.argv)
         output_path = sys.argv[1]
-        if len(sys.argv) > 2:
-            mz_tol = float(sys.argv[2])
+        noise_cutoff = bool(float(sys.argv[2]))
+        if len(sys.argv) > 3:
+            mz_tol = float(sys.argv[3])
     else:
-        print("Error: One argument must be supplied to check the final joined jobs consistency within the original jobs ids and sample codes:\n",
+        print("Error: Two arguments must be supplied to check the final joined jobs consistency within the original jobs ids and sample codes:\n",
               " 1 - output_path: Path to the final output directory of the joined job, ",
               "named with the output_name inside the 'outs' directory;\n",
-              " 2 - mz_tolerance: the tolerance in Daltons to assume two precursor masses the same (default: 0.025).")
+              " 2 - noise_cutoff: a boolean True or False indicating if the noise_cutoff was used in the np3 join_jobs processing "
+              "and thus spectra with a low basePeakInt (values smaller the current minimum basePeakInt) should be "
+              "ignored from the original jobs being checked (spectra that were probable removed by the noise cutoff).\n"
+              " 3 - mz_tolerance: the tolerance in Daltons to assume two precursor masses the same (default: 0.025).")
         sys.exit(1)
     # call check joined job
-    check_joined_jobs(output_path, mz_tol)
+    check_joined_jobs(output_path, noise_cutoff, mz_tol)
