@@ -2017,10 +2017,10 @@ program
             "- A copy of the *metadata* and the *rules* files and the command line parameters values used in a file " +
             "named 'logRunParms', for reproducibility\n" +
             "- A folder named 'outs' with the clustering steps results in separate folders containing:\n" +
-            "    - A subfolder named 'count_tables' with the Step 4 quantification in CSV tables named as " +
+            "    - A sub folder named 'count_tables' with the Step 4 quantification in CSV tables named as " +
             "'<step\_name>\_(spectra|peak\_area).csv'.\n" +
-            "    - Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)\n" +
-            "    - A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files\n" +
+            "    - Onother sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)\n" +
+            "    - A third sub folder named 'mgf' with the resulting clusters consensus spectra in MGF files\n" +
             "    - A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n" +
             "The clustering steps results folders are named as 'B\_\<DATA_COLLECTION_BATCH\>\_\<X\>' where " +
             "*\<DATA\_COLLECTION\_BATCH\>* is the data collection batch number in the metadata file of each group of " +
@@ -2030,11 +2030,11 @@ program
             "The final integration step result is located inside the 'outs' directory in a folder named with the " +
             "*output\_name*. This folder contains the final counts and is where the user will find the final results. " +
             "It also contains the following data:\n" +
-            "- Inside the 'count_tables' folder two subfolders named 'clean' and 'merge' containing CSV tables with the " +
+            "- Inside the 'count_tables' folder two sub folders named 'clean' and 'merge' containing CSV tables with the " +
             "counts from Steps 5, 7, 8 and 9;\n" +
             "- The 'identifications' folder with the tremolo identification results;\n" +
             "- The 'molecular_networking' folder containing:\n" +
-            "    - One subfolder named \"similarity_tables\" with the pairwise similarity tables;\n" +
+            "    - One sub folder named \"similarity_tables\" with the pairwise similarity tables;\n" +
             "    - Three molecular networks edge files (Steps 7 and 10): \n" +
             "        - the molecular network of annotations named as '\<output\_name\>\_ivamn.selfloops'\n" +
             "        - the complete molecular network of similarity named as '\<output\_name\>\_ssmn\_w\_" +
@@ -2467,10 +2467,10 @@ program
             "- A copy of the *metadata* file and the command line parameters values used in a file " +
             "named 'logRunParms', for reproducibility\n" +
             "- a folder named 'outs' with the clustering steps results in separate folders containing:\n" +
-            "- A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as " +
+            "- A sub folder named 'count_tables' with the Step 4 quantifications in CSV tables named as " +
             "'<step\_name>\_(spectra|peak\_area).csv'.\n" +
-            "- Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)\n" +
-            "- A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files\n" +
+            "- Onother sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)\n" +
+            "- A third sub folder named 'mgf' with the resulting clusters consensus spectra in MGF files\n" +
             "- A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n" +
             "The clustering steps results folders are named as 'B\_\<DATA_COLLECTION_BATCH\>\_\<X\>' where " +
             "*\<DATA\_COLLECTION\_BATCH\>* is the data collection batch number in the metadata file of each group of " +
@@ -2738,13 +2738,13 @@ program
         console.log('');
         console.log('RESULTS:');
         console.log('');
-        console.log('One subfolder inside the \'count_tables\' folder is created named \'clean\' containing:\n' +
+        console.log('One sub folder inside the \'count_tables\' folder is created named \'clean\' containing:\n' +
             '    - A text file named \'analyseCountClusteringClean\' with the clean count analyses\n' +
             '    - Two CSV files with the clustering counts of spectra and peak area cleanned and annotated, named with the ' +
             'suffix \'_clean_ann.csv\'\n' +
             '    - CSV files with the correlation columns added are also included when there is a biocorrelation result\n' +
             'The \'molecular_networking\' folder is also created if not present yet, and inside it: \n' +
-            '    - One subfolder named "similarity_tables" with the clean version of the pairwise table of similarity;\n' +
+            '    - One sub folder named "similarity_tables" with the clean version of the pairwise table of similarity;\n' +
             '    - Two molecular networking\'s edge files: the MN of annotations is named as ' +
             '\'<*output\\_name*>_ivamn.selfloops\' and the MN of similarity is named as ' +
             '\'<*output\\_name*>_ssmn_w_<*similarity_mn*>_k_<*net_top_k*>_x_<*max_component_size*>.selfloop\', where the ' +
@@ -3026,7 +3026,7 @@ program
         console.log('');
         console.log('RESULTS:');
         console.log('');
-        console.log('One subfolder inside the \'count_tables\' folder is created named \'merge\' containing:\n' +
+        console.log('One sub folder inside the \'count_tables\' folder is created named \'merge\' containing:\n' +
             '- Two CSV files with the cleaned and annotated counts of spectra and peak area merged and new symbolic ' +
             'clusters added as new rows, named with the suffix \'_merged_ann.csv\';\n' +
             '- CSV files with the correlation columns added are also included when there is a biocorrelation result.');
@@ -3254,13 +3254,13 @@ program
     .option('-n, --output_name <name>', 'the job name. It will be used to name the output directory and \n\t\t\t\t\t' +
         'the results from joining the jobs. It must have less than 80 characters.\n',
         checkJobNameMaxLength)
-    .option('-m, --metadata_join <file>', 'path to the metadata table CSV file difening the jobs to be joined. Different format, see manual.\n')
+    .option('-m, --metadata_join <file>', 'path to the metadata table CSV file defining the jobs to be joined. Different format, see manual.\n')
     .option('-d, --jobs_data_path <path>', 'path to the folder containing the input jobs result to be joined, \n' +
-        'this should contain their previous NP3 result, named accoardly to what is specified in the metadata_join. \n' +
+        'this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. \n' +
         'Their clean mgf and quantification tables will be used.\n\t\t\t\t\t')
     .option('-y, --pre_processed_dir_path <path>', 'path to the folder containing the input jobs pre processing result, \n' +
         'this should contain all the original jobs previous NP3 pre processing result in separated folders named \n' +
-        'accoardly to what is specified in the metadata_join.\n\t\t\t\t\t')
+        'accordingly to what is specified in the metadata_join.\n\t\t\t\t\t')
     .option('-o, --output_path <path>', 'path to where the output directory will be created\n')
     .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. Peaks in the\n\t\t\t\t\t' +
         'original spectra that are closer than this get merged by\n\t\t\t\t\t' +
@@ -3600,14 +3600,14 @@ program
             "- Two automatically created metadata tables containing: one the original samples concatenated in a single file " +
             "'original_samples_METADATA.csv'; and other with the original np3 jobs that were joined in this process in a " +
             "file named 'join_original_jobs_METADATA.csv'. For reproducibility and future joins with this result.\n" +
-            "- A folder named 'outs' with the clustering result of the joined jobs in a single subfolder named with " +
+            "- A folder named 'outs' with the clustering result of the joined jobs in a single sub folder named with " +
             "the *output\_name* containing:\n" +
-            "  - A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as " +
+            "  - A sub folder named 'count_tables' with the Step 4 quantification in CSV tables named as " +
             "'<step\_name>\_(spectra|peak\_area).csv'. And inside it the clean tables in a folder named 'clean'.\n" +
-            "  - Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).\n" +
-            "  - A third subfolder named 'mgf' with the resulting clean consensus spectra in MGF files.\n" +
-            "  - A fourth subfolder named 'identifications' with the tremolo identification results in a csv table.\n" +
-            "  - A fifth subfolder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.\n" +
+            "  - Another sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).\n" +
+            "  - A third sub folder named 'mgf' with the resulting clean consensus spectra in MGF files.\n" +
+            "  - A fourth sub folder named 'identifications' with the tremolo identification results in a csv table.\n" +
+            "  - A fifth sub folder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.\n" +
             "  - A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n");
         console.log('');
         console.log('EXAMPLES:');
