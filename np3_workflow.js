@@ -773,7 +773,7 @@ function callJoinJobsAnnotations(parms, output_path)
     const start_ann = process.hrtime.bigint();
 
     var resExec = shell.exec(python3()+' '+__dirname+'/src/join_jobs_ivamns.py '+output_path+' '+
-        parms.max_chunk_spectra, {async:false, silent:(parms.verbose === 0)});
+        parms.max_chunk_spectra+' '+parms.noise_cutoff, {async:false, silent:(parms.verbose === 0)});
 
     if (resExec.code) {
         if (parms.verbose === 0) {
@@ -1359,14 +1359,18 @@ function checkMNConsistency(output_path, mn_tol, top_k, max_component_size, min_
     return res_all;
 }
 
-function checkJoinedJobConsistency(output_path, mz_tol)
+function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
 {
     output_name = basename(output_path);
     var res_all = "*** checkJoinJobsConsistency of job "+output_name+" ***\n\n";
+    var noise_cutoff = 1;
+    if (noise_cutoff_parm === "FALSE") {
+        noise_cutoff = 0;
+    }
 
     // check joined jobs consistency
     console.log('\n*** Testing the consistency of the clean counts for the joined job '+output_name+' ***\n');
-    resExec = shell.exec(python3()+' '+__dirname+'/test/test_join_jobs.py ' + output_path+' '+mz_tol,
+    resExec = shell.exec(python3()+' '+__dirname+'/test/test_join_jobs.py ' + output_path+' '+noise_cutoff+' '+mz_tol,
         {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
@@ -3238,13 +3242,12 @@ program
 
 program
     .command('join_jobs')
-    .description('Command join separated jobs into a single united job. ' +
-        'Concatenate different jobs without the need of running them all together again. ' +
-        'Needs a different metadata defining the jobs to be joined and their reference codes. ' +
-        'Use the clean result from the jobs to perform again the clustering of all together, then proceed to the clean step,' +
-        'update the original annotations with the final clean consensus spectra and merge the IVAMNS, ' +
-        'compare the final spectra pairwise, skip merge step and ' +
-        'finally compute the united molecular networking with the joined result.\n\n')
+    .description('Command to join original np3 jobs (results of the run command) into a single united job. ' +
+        'Command to join original $NP^{3}$ jobs (results of the run command) into a single united job. Concatenate ' +
+        'different jobs without the need of running them all together again. Uses a different metadata, called ' +
+        '*metadata_join*, defining the jobs to be joined and their reference codes, the names of their original ' +
+        'metadata and pre processing directory. Use the clean results from the original jobs and execute the pipeline ' +
+        'from step 3 to the end with some modifications. \n\n')
     .option('-n, --output_name <name>', 'the job name. It will be used to name the output directory and \n\t\t\t\t\t' +
         'the results from joining the jobs. It must have less than 80 characters.\n',
         checkJobNameMaxLength)
@@ -3568,7 +3571,7 @@ program
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
 
-            checkJoinedJobConsistency(output_path, options.mz_tolerance);
+            checkJoinedJobConsistency(output_path, options.noise_cutoff, options.mz_tolerance);
 
             checkCleanMNConsistency(output_path, options.similarity, options.similarity_mn,
                 options.rt_tolerance, options.mz_tolerance, options.net_top_k,
@@ -3588,30 +3591,32 @@ program
         console.log('');
         console.log('RESULTS:');
         console.log('');
-        console.log("TODO UPDATED A directory inside the *output\_path* named with the *output\_name* containing:\n" +
-            "- A copy of the *metadata* file and the command line parameters values used in a file " +
-            "named 'logRunParms', for reproducibility\n" +
-            "- a folder named 'outs' with the clustering steps results in separate folders containing:\n" +
-            "- A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as " +
-            "'<step\_name>\_(spectra|peak\_area).csv'.\n" +
-            "- Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)\n" +
-            "- A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files\n" +
-            "- A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n" +
-            "The clustering steps results folders are named as 'B\_\<DATA_COLLECTION_BATCH\>\_\<X\>' where " +
-            "*\<DATA\_COLLECTION\_BATCH\>* is the data collection batch number in the metadata file of each group of " +
-            "samples and *\<X\>* is 0 if it is a data clustering step or 1 if it is a blank clustering step.\n\n" +
-            "The final integration step result is located inside the 'outs' directory in a folder named with the " +
-            "*output\_name* and it also contains the tremolo identification results inside the " +
-            "'identifications' folder.");
+        console.log("A directory inside the *output\_path* named with the *output\_name* containing:\n" +
+            "- A copy of the *metadata_join* file and the command line parameters values used in a file " +
+            "named 'logRunParms', for reproducibility.\n" +
+            "- Two automatically created metadata tables containing: one the original samples concatenated in a single file " +
+            "'original_samples_METADATA.csv'; and other with the original np3 jobs that were joined in this process in a " +
+            "file named 'join_original_jobs_METADATA.csv'. For reproducibility and future joins with this result.\n" +
+            "- A folder named 'outs' with the clustering result of the joined jobs in a single subfolder named with " +
+            "the *output\_name* containing:\n" +
+            "  - A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as " +
+            "'<step\_name>\_(spectra|peak\_area).csv'. And inside it the clean tables in a folder named 'clean'.\n" +
+            "  - Onother subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).\n" +
+            "  - A third subfolder named 'mgf' with the resulting clean consensus spectra in MGF files.\n" +
+            "  - A fourth subfolder named 'identifications' with the tremolo identification results in a csv table.\n" +
+            "  - A fifth subfolder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.\n" +
+            "  - A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n");
         console.log('');
         console.log('EXAMPLES:');
         console.log('');
-        console.log('  $ node np3_workflow.js clustering --output_name "test_np3" --output_path "/path/where/the/output/will/be/stored" ' +
-            '--metadata "/path/to/the/metadata/file/test_np3_metadata.csv" --raw_data_path "/path/to/the/raw/data/dir"');
+        console.log('  $ node np3_workflow.js join_jobs --output_name "test_join_a_b" --output_path "/path/where/the/output/will/be/stored" ' +
+            '--metadata_join "/path/to/the/metadata_join/file/test_np3_join_a_b_metadata.csv" ' +
+            '--pre_processed_dir_path "/path/to/the/dir/with/joining/jobs/pre/process/results"' +
+            '--jobs_data_path "/path/where/the/joining/jobs/output/is/stored"');
         console.log('');
-        console.log('  $ node np3_workflow.js clustering -n "test_np3_rt_tol" -o "/path/where/the/output/will/be/stored" ' +
-            '-m "/path/to/the/metadata/file/test_np3_metadata.csv" -d "/path/to/the/raw/data/dir" ' +
-            '-t 3.5,5');
+        console.log('  $ node np3_workflow.js join_jobs -n "test_join_ab_c" -o "/path/where/the/output/will/be/stored" ' +
+            '-m "/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y "/path/to/the/dir/with/joining/jobs/pre/process/results" ' +
+            '-d "/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10');
     });
 
 program
@@ -3753,7 +3758,7 @@ program
         var unit_test_res = ['@@@@@ UNIT TEST NP3 Shifted cosine @@@@@\n'];
         var test_res = ['@@@@@ TEST 1 @@@@@\n','@@@@@ TEST 2 @@@@@\n','@@@@@ TEST 3 @@@@@\n','@@@@@ TEST 4 @@@@@\n','@@@@@ TEST 5 @@@@@',
             '@@@@@ TEST 6 @@@@@','@@@@@ TEST 7 @@@@@','@@@@@ TEST 8 @@@@@','@@@@@ TEST 9 @@@@@',
-            '@@@@@ TEST 10 @@@@@'];
+            '@@@@@ TEST 10 @@@@@', '@@@@@ TEST 11 @@@@@', '@@@@@ TEST 12 @@@@@'];
         var resExec;
 
         // start with the unit tests
@@ -4079,6 +4084,58 @@ program
                 console.log('DONE!\n');
             }
             console.log("\n\n");
+        }
+
+        // # test metadata with all samples in one data collection batch and one blank
+        // only with samples different from the one_collection set
+        if (options.skip <= 11) {
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_another_collection_diff');
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@ Test 11 - L754_bacs_another_collection_diff - run @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' run -n L754_bacs_another_collection_diff ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_another_collection_diff.csv ' +
+                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
+                '-o '+__dirname+'/test/L754_bacs/ -y processed_data_another_collection -j '+options.tremolo+' -b 100 ' +
+                '-v 11 -t 5,10 -q '+options.pre_process+
+                ' --bflag_cutoff 1.5 --noise_cutoff 1.5',
+                {async:false, silent:true});
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emmited msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[10] = test_res[10] + '\n\nEXEC ERROR';
+                console.log('ERROR\n');
+            } else {
+                test_res[10] = test_res[10] + resExec.stdout.split('*** TESTING ***\n\n')[1];
+                console.log('DONE!\n');
+            }
+            //console.log("\n\n");
+        }
+
+        // test join_jobs command joining one_collections with another_collection
+        if (options.skip <= 12) {
+            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_join_collections');
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@ Test 12 - L754_bacs_join_collections - join_jobs @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' join_jobs -n L754_bacs_join_collections ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
+                '-y '+__dirname+'/test/L754_bacs/mzxml ' + '-d ' + __dirname+'/test/L754_bacs/ '+
+                '-o '+__dirname+'/test/L754_bacs/ -j '+options.tremolo +
+                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5',
+                {async:false, silent:true});
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emmited msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[11] = test_res[11] + '\n\nEXEC ERROR';
+                console.log('ERROR\n');
+            } else {
+                test_res[11] = test_res[11] + resExec.stdout.split('*** TESTING ***\n\n')[1];
+                console.log('DONE!\n');
+            }
+            //console.log("\n\n");
         }
 
         console.log("-------------------------------------------------------\n");
