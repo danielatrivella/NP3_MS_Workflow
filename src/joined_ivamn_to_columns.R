@@ -3,18 +3,6 @@
 # the annotation columns to be added to the clean counts tables
 # use reverse engineering from the original annotation flow
 ##
-script_path <- function() {
-  cmdArgs <- commandArgs(trailingOnly = FALSE)
-  needle <- "--file="
-  match <- grep(needle, cmdArgs)
-  if (length(match) > 0) {
-    # Rscript
-    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
-  } else {
-    # 'source'd via R console
-    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
-  }
-}
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
@@ -85,6 +73,7 @@ annFormat <- function(ann, sim, mzError, rtError, variant_ID, num_common_samples
 }
 
 convert_ivamn_annotation_columns <- function(output_path) {
+  output_path <- normalizePath(output_path)
   output_name <- basename(output_path)
   path_clean_area_count <- file.path(output_path, "count_tables", "clean",
                                      paste0(output_name,"_peak_area_clean_ann.csv"))
@@ -113,42 +102,45 @@ convert_ivamn_annotation_columns <- function(output_path) {
   # remove selfloops - NA annotations
   ivamn <- ivamn[!is.na(ivamn$annotation),]
   
-  # for each target, extract the income edges annotations
-  # and convert them to the annotations columns
-  ivamn <- ivamn %>% arrange(msclusterID_target)
-  
-  # create a table to store the formated annotation by ionization variant type
-  # the analogs are not added here
-  mspectra_annotation <- data.frame(list(msclusterID = unique(ivamn$msclusterID_target), 
-                                         adducts = NA,
-                                         isotopes = NA,
-                                         dimers = NA,
-                                         multiCharges = NA,
-                                         fragments = NA))
-  # for each msclusterID in the target list, retrive its annotations from
-  # income edges and format them to be added to the counts table
-  for (i in seq_along(mspectra_annotation$msclusterID)) {
-    # retrieve the income edges of msID, separate its annotations by ;
-    # for each annotation convert them to the annFormat
-    # and then, separate them by type
-    msID <- mspectra_annotation$msclusterID[[i]]
-    edges_msID <- ivamn[ivamn$msclusterID_target == msID,]
-    for (j in seq_len(nrow(edges_msID))) {
-        edge_annFormat <- annFormat(edges_msID$annotation[[j]], sim=edges_msID$cosine[[j]], 
-                  mzError=edges_msID$mzError[[j]], rtError=edges_msID$rtError[[j]], 
-                  variant_ID=edges_msID$msclusterID_source[[j]], 
-                  num_common_samples=edges_msID$numCommonSamples[[j]])
-        # store the valid annotations by ionizaion variant type
-        for (ion_type in names(edge_annFormat)[!is.na(edge_annFormat)]) {
-          mspectra_annotation[i, ion_type] <- ifelse(
-            is.na(mspectra_annotation[i, ion_type]), 
-            edge_annFormat[[ion_type]],
-            paste(mspectra_annotation[i, ion_type], 
-                  edge_annFormat[[ion_type]], sep = ";"))
-        }
+  # if no annotations are present, skip conversion
+  # set the columns as empty cols
+  if (nrow(ivamn) > 0) {
+    # for each target, extract the income edges annotations
+    # and convert them to the annotations columns
+    ivamn <- ivamn %>% arrange(msclusterID_target)
+    
+    # create a table to store the formated annotation by ionization variant type
+    # the analogs are not added here
+    mspectra_annotation <- data.frame(list(msclusterID = unique(ivamn$msclusterID_target), 
+                                           adducts = NA,
+                                           isotopes = NA,
+                                           dimers = NA,
+                                           multiCharges = NA,
+                                           fragments = NA))
+    # for each msclusterID in the target list, retrive its annotations from
+    # income edges and format them to be added to the counts table
+    for (i in seq_along(mspectra_annotation$msclusterID)) {
+      # retrieve the income edges of msID, separate its annotations by ;
+      # for each annotation convert them to the annFormat
+      # and then, separate them by type
+      msID <- mspectra_annotation$msclusterID[[i]]
+      edges_msID <- ivamn[ivamn$msclusterID_target == msID,]
+      for (j in seq_len(nrow(edges_msID))) {
+          edge_annFormat <- annFormat(edges_msID$annotation[[j]], sim=edges_msID$cosine[[j]], 
+                    mzError=edges_msID$mzError[[j]], rtError=edges_msID$rtError[[j]], 
+                    variant_ID=edges_msID$msclusterID_source[[j]], 
+                    num_common_samples=edges_msID$numCommonSamples[[j]])
+          # store the valid annotations by ionizaion variant type
+          for (ion_type in names(edge_annFormat)[!is.na(edge_annFormat)]) {
+            mspectra_annotation[i, ion_type] <- ifelse(
+              is.na(mspectra_annotation[i, ion_type]), 
+              edge_annFormat[[ion_type]],
+              paste(mspectra_annotation[i, ion_type], 
+                    edge_annFormat[[ion_type]], sep = ";"))
+          }
+      }
     }
-  }
-  
+  } 
   # append the annotation columns to the clean quantification files
   # count by peak area
   ms_clean_count <- suppressMessages(read_csv(path_clean_area_count, 
@@ -158,8 +150,12 @@ convert_ivamn_annotation_columns <- function(output_path) {
                                                               numSpectra="i")))
   # remove annotation columns if already exists (previous run)
   ms_clean_count[,c("adducts","isotopes","dimers","multiCharges","fragments")] <- NULL
-  ms_clean_count <- left_join(ms_clean_count, mspectra_annotation, 
-                             by="msclusterID")
+  if (nrow(ivamn) > 0) {
+    ms_clean_count <- left_join(ms_clean_count, mspectra_annotation,
+                                by="msclusterID")
+  } else {
+    ms_clean_count[,c("adducts","isotopes","dimers","multiCharges","fragments")] <- NA
+  }
   write_csv(ms_clean_count, path = path_clean_area_count)
   # count by number of spectra
   ms_clean_count <- suppressMessages(read_csv(path_clean_spectra_count, 
@@ -169,8 +165,12 @@ convert_ivamn_annotation_columns <- function(output_path) {
                                                                numSpectra="i")))
   # remove annotation columns if already exists (previous run)
   ms_clean_count[,c("adducts","isotopes","dimers","multiCharges","fragments")] <- NULL
-  ms_clean_count <- left_join(ms_clean_count, mspectra_annotation, 
-                              by="msclusterID")
+  if (nrow(ivamn) > 0) {
+    ms_clean_count <- left_join(ms_clean_count, mspectra_annotation, 
+                                by="msclusterID")
+  } else {
+    ms_clean_count[,c("adducts","isotopes","dimers","multiCharges","fragments")] <- NA
+  }
   write_csv(ms_clean_count, path = path_clean_spectra_count)
   
   # TODO avaliate if analogs should be retrieved again
