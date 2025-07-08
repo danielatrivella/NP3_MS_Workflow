@@ -1,6 +1,6 @@
 # script to join the ivamns from different jobs being joined
 # first the original msclusterIDs of each IVAMN is mapped to their msclusterID + _ + JOB_CODE
-# then the original msclusterIDs with job code will be replaces by the new msclusterID of the joined job
+# then the original msclusterIDs with job code will be replaced by the new msclusterID of the joined job
 # using the joinedJobsIDs of the clean table as reference
 # duplicated edges are merged at the end and
 # finally the protonated script is executed for the final IVAMN and the final list of protonated_representatives
