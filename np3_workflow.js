@@ -3184,73 +3184,15 @@ program
             '--similarity_mn 0.7 --verbose 1');
     });
 
-program
-    .command('gnps_result')
-    .description('This command join the GNPS library identification result from the Molecular Networking (download clustered spectra) or ' +
-        'the Library Search (download all identifications) workflows to the count tables of the NP3 clustering or clean steps\n\n')
-    .option('-i, --cluster_info_path [path]', 'If joining the result of a Molecular Networking job, ' +
-        'this should be the path to the file inside the folder named ' +
-        '\'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow.', "")
-    .option('-s, --result_specnets_DB_path <path>', 'If joining the result of a Molecular Networking job,' +
-        ' this should be the path to the file inside the folder named ' +
-        '\'result_specnets_DB\'; and if this is the result of a Library Search workflow,' +
-        'this should be the path to the file inside the downloaded folder')
-    .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
-        'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
-        'exists in the same path (or the opposite), it will merge the GNPS results to both files')
-    .action(function(options) {
-        if (typeof options.cluster_info_path === 'undefined') {
-            console.error('\nMissing the mandatory \'cluster_info_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-            process.exit(1);
-        }
-        if (typeof options.result_specnets_DB_path === 'undefined') {
-            console.error('\nMissing the mandatory \'result_specnets_DB_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-            process.exit(1);
-        }
-        if (typeof options.count_file_path === 'undefined') {
-            console.error('\nMissing the mandatory \'count_file_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-            process.exit(1);
-        }
-
-        const start_gnpsjoin = process.hrtime.bigint();
-        // run workflow
-        console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
-
-        callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
-            options.count_file_path);
-
-        console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
-    })
-    .on('--help', function() {
-        console.log('');
-        console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
-        console.log('');
-        console.log('RESULTS:');
-        console.log('');
-        console.log('The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", ' +
-            '"gnps_Adduct", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", ' +
-            '"gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_superclass", ' +
-            '"gnps_class", "gnps_subclass" and "gnps_Ion_Source_Instrument". See the GNPS documentation for the ' +
-            'description of these columns.\n' +
-            '\n' +
-            'If there is more than one GNPS result for a single msclusterID the results are concatenated with a ' +
-            '\';\', except for the "gnps_Smiles" column which is concatenated with a \',\'.');
-        console.log('');
-        console.log('EXAMPLES:');
-        console.log('');
-        console.log('  $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" ' +
-            '--result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" ' +
-            '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv"');
-    });
 
 program
     .command('join_jobs')
-    .description('Command to join original np3 jobs (results of the run command) into a single united job. ' +
-        'Command to join original $NP^{3}$ jobs (results of the run command) into a single united job. Concatenate ' +
-        'different jobs without the need of running them all together again. Uses a different metadata, called ' +
-        '*metadata_join*, defining the jobs to be joined and their reference codes, the names of their original ' +
-        'metadata and pre processing directory. Use the clean results from the original jobs and execute the pipeline ' +
-        'from step 3 to the end with some modifications and adaptations. \n\n')
+    .description('Command to join NP3 jobs (results of the *run* or the *join_jobs* commands) into a single united job. ' +
+        'Concatenate different jobs without the need of running them all together again. ' +
+        'Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, ' +
+        'the names of their original metadata and pre processing directory. ' +
+        'It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 ' +
+        'with some modifications and adaptations, except for Step 8 which is skipped. \n\n')
     .option('-n, --output_name <name>', 'the job name. It will be used to name the output directory and \n\t\t\t\t\t' +
         'the results from joining the jobs. It must have less than 80 characters.\n',
         checkJobNameMaxLength)
@@ -3511,66 +3453,66 @@ program
             var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
             // call tremolo with the clean mgf and merge results with clean counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
-               tremoloIdentification(options.output_name, output_path + "/identifications",
-                   output_path+"/mgf/"+options.output_name+"_clean.mgf",
-                   options.mz_tolerance,0.2, 10, options.verbose, 0);
-               mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
-                   10, [counts_path+"_spectra_clean.csv",
-                       counts_path+"_peak_area_clean.csv"]);
-           }
-           // annotate spectra variants in the clean counts and create the molecular networking of annotations
+                tremoloIdentification(options.output_name, output_path + "/identifications",
+                    output_path+"/mgf/"+options.output_name+"_clean.mgf",
+                    options.mz_tolerance,0.2, 10, options.verbose, 0);
+                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
+                    10, [counts_path+"_spectra_clean.csv",
+                        counts_path+"_peak_area_clean.csv"]);
+            }
+            // annotate spectra variants in the clean counts and create the molecular networking of annotations
             // refactored annotation step for joining jobs -> join original ivamns and map old ids to the new ids ->
             // concat all ivamns into one joined net, removing redundancies
             // select protonated again and merge with original protonated, with an in-degree > 0 in the final IVAMN
-           resExec = callJoinJobsAnnotations(options, output_path);
+            resExec = callJoinJobsAnnotations(options, output_path);
 
-           if (resExec) {
-               // joining annotation step failed, use the clean tables instead
-               // call correlation for the cleaned peak area count and spectra count
-               callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area_clean.csv",
-                   options.method, 0, clean_log_output, options.verbose);
-               callComputeCorrelation(metadata_original_samples, counts_path+"_spectra_clean.csv",
-                   options.method, 0, clean_log_output, options.verbose);
-           } else {
-               // annotation worked
-               // call correlation for the cleaned peak area count and spectra area count
-               callComputeCorrelation(metadata_original_samples, counts_path + "_peak_area_clean_ann.csv",
-                   options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
-                   options.verbose);
-               callComputeCorrelation(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
-                   options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
-                   options.verbose);
-           }
-           // skip the merge step when joining jobs - the user may run it separated if necessary
+            if (resExec) {
+                // joining annotation step failed, use the clean tables instead
+                // call correlation for the cleaned peak area count and spectra count
+                callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area_clean.csv",
+                    options.method, 0, clean_log_output, options.verbose);
+                callComputeCorrelation(metadata_original_samples, counts_path+"_spectra_clean.csv",
+                    options.method, 0, clean_log_output, options.verbose);
+            } else {
+                // annotation worked
+                // call correlation for the cleaned peak area count and spectra area count
+                callComputeCorrelation(metadata_original_samples, counts_path + "_peak_area_clean_ann.csv",
+                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
+                    options.verbose);
+                callComputeCorrelation(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
+                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
+                    options.verbose);
+            }
+            // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
-           // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
-           var clustering_log_output = output_path+"/logClusteringOutput";
-           // call tremole and merge the results with the clustering counts files
-           if (!isWindows() && options.tremolo_identification === "TRUE") {
-               // tremolo search for not windows OS
-               tremoloIdentification(options.output_name, output_path + "/identifications",
-                   output_path+"/mgf/"+options.output_name+"_all.mgf",
-                   options.mz_tolerance,0.2, 10, options.verbose, 0);
-               mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
-                   10, [counts_path+"_spectra.csv",
-                       counts_path+"_peak_area.csv"]);
-           }
+            // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
+            var clustering_log_output = output_path+"/logClusteringOutput";
+            // call tremole and merge the results with the clustering counts files
+            if (!isWindows() && options.tremolo_identification === "TRUE") {
+                // tremolo search for not windows OS
+                tremoloIdentification(options.output_name, output_path + "/identifications",
+                    output_path+"/mgf/"+options.output_name+"_all.mgf",
+                    options.mz_tolerance,0.2, 10, options.verbose, 0);
+                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
+                    10, [counts_path+"_spectra.csv",
+                        counts_path+"_peak_area.csv"]);
+            }
 
-           // call correlation for the mscluster peak area count
-           callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area.csv",
-               options.method, 0, clustering_log_output, options.verbose);
-           // call correlation for the mscluster spectra count
-           callComputeCorrelation(metadata_original_samples, counts_path+"_spectra.csv",
-               options.method, 0,  clustering_log_output, options.verbose);
+            // call correlation for the mscluster peak area count
+            callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area.csv",
+                options.method, 0, clustering_log_output, options.verbose);
+            // call correlation for the mscluster spectra count
+            callComputeCorrelation(metadata_original_samples, counts_path+"_spectra.csv",
+                options.method, 0,  clustering_log_output, options.verbose);
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
-           options.max_component_size, options.min_matched_peaks,
-           options.max_chunk_spectra, options.blank_expansion, options.verbose);
+            options.max_component_size, options.min_matched_peaks,
+            options.max_chunk_spectra, options.blank_expansion, options.verbose);
 
         var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
         console.log(clust_end_msg);
         shell.ShellString(clust_end_msg+"\n").toEnd(output_path+'/logRunParms');
-        
+
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
 
@@ -3621,6 +3563,67 @@ program
             '-m "/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y "/path/to/the/dir/with/joining/jobs/pre/process/results" ' +
             '-d "/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10');
     });
+
+
+program
+    .command('gnps_result')
+    .description('This command join the GNPS library identification result from the Molecular Networking (download clustered spectra) or ' +
+        'the Library Search (download all identifications) workflows to the count tables of the NP3 clustering or clean steps\n\n')
+    .option('-i, --cluster_info_path [path]', 'If joining the result of a Molecular Networking job, ' +
+        'this should be the path to the file inside the folder named ' +
+        '\'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow.', "")
+    .option('-s, --result_specnets_DB_path <path>', 'If joining the result of a Molecular Networking job,' +
+        ' this should be the path to the file inside the folder named ' +
+        '\'result_specnets_DB\'; and if this is the result of a Library Search workflow,' +
+        'this should be the path to the file inside the downloaded folder')
+    .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
+        'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
+        'exists in the same path (or the opposite), it will merge the GNPS results to both files')
+    .action(function(options) {
+        if (typeof options.cluster_info_path === 'undefined') {
+            console.error('\nMissing the mandatory \'cluster_info_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.result_specnets_DB_path === 'undefined') {
+            console.error('\nMissing the mandatory \'result_specnets_DB_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.count_file_path === 'undefined') {
+            console.error('\nMissing the mandatory \'count_file_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+
+        const start_gnpsjoin = process.hrtime.bigint();
+        // run workflow
+        console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
+
+        callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
+            options.count_file_path);
+
+        console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
+    })
+    .on('--help', function() {
+        console.log('');
+        console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
+        console.log('');
+        console.log('RESULTS:');
+        console.log('');
+        console.log('The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", ' +
+            '"gnps_Adduct", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", ' +
+            '"gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_superclass", ' +
+            '"gnps_class", "gnps_subclass" and "gnps_Ion_Source_Instrument". See the GNPS documentation for the ' +
+            'description of these columns.\n' +
+            '\n' +
+            'If there is more than one GNPS result for a single msclusterID the results are concatenated with a ' +
+            '\';\', except for the "gnps_Smiles" column which is concatenated with a \',\'.');
+        console.log('');
+        console.log('EXAMPLES:');
+        console.log('');
+        console.log('  $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" ' +
+            '--result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" ' +
+            '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv"');
+    });
+
 
 program
     .command('chr')
