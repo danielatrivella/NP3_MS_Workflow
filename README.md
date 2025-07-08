@@ -4,10 +4,13 @@
 
 - - - - 
 
-# Current Version 1.1.6
+# Current Version 1.1.7
 
 - NEW features:
-  - Included [spec2vec](https://github.com/iomega/spec2vec_gnps_data_analysis?tab=readme-ov-file) function as a possibility for the spectra similarity comparison in step 5, using model trained on UniqueInchikey subset (12,797 spectra). The user may select to use spec2vec or NP3 shifted cosine function using the similarity_function parameter.
+  - A new command called *join_jobs* was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. It uses the clean results from the provided NP³ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations. The *join_jobs* can be used to join the results from multiple original jobs and also from previous joined jobs with a new original or joined job.
+      - The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
+  
+  - (1.1.6) The [spec2vec](https://github.com/iomega/spec2vec_gnps_data_analysis?tab=readme-ov-file) function was included as a possibility for the spectra similarity comparison in step 5, using model trained on UniqueInchikey subset (12,797 spectra). The user may select to use spec2vec or NP3 shifted cosine function using the similarity_function parameter.
   - (1.1.5) Creating the [M+H]⁺ networks directly in the pipeline (automated in step 10). Now the final output also contains the protonated IVAMN and SSMN in the molecular_networking output folder.
  
 - - - -
@@ -313,6 +316,14 @@ Commands:
 - **mn** [options] : Step 10: This command runs the creation of a spectra similarity molecular network (SSMN) which connects spectra based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched peaks, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered SSMN contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes. At the end, a [M+H]⁺ analysis is executed if IVAMN is present, and results in the protonated IVAMN and protonated SSMN filtered. 
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
+ 
+- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. It uses the clean results from the provided NP³ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations, except for Step 8 which is skipped.
+    - List of mandatory options:
+    - *\-n, \-\-output_name* \<name\>     :   the job name. It will be used to name the output directory and the results from joining the jobs. It must have less than 80 characters.
+    - *\-m, \-\-metadata_join* \<file\>    :  path to the metadata_join table CSV file defining the jobs to be joined. Different format, see manual.
+    - *\-d, \-\-jobs_data_path* \<path\>   :  path to the folder containing the input jobs result to be joined, this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. Their clean mgf and quantification tables will be used.
+    - *\-y, \-\-pre_processed_dir_path* \<path\> :  path to the folder containing the input jobs pre processing result, this should contain all the original jobs previous NP3 pre processing result in separated folders named accordingly to what is specified in the metadata_join.
+    - *\-o, \-\-output_path* \<path\>    :    path to where the output directory will be created
  
 - **gnps_result** [options] : This command join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'All identifications') workflows to the count tables of the NP³ clustering or clean steps. 
     - List of mandatory options:
