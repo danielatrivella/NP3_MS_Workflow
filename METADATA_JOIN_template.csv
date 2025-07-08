@@ -1,0 +1,3 @@
+JOBNAME,JOB_CODE,METADATA_NAME,PRE_PROCESSED_DATA_NAME,JOINED_JOB
+bra_030725,Bra346,Bra346_METADATA.csv,bra_preprocess,0
+ma9_030725,MA9,MA9_sameConcentration.csv,ma9_preprocess,0
