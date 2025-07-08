@@ -1294,7 +1294,7 @@ It works as follow:
 
   Command to join $NP^{3}$ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. It uses the clean results from the provided $NP^{3}$ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations, except for Step 8 which is skipped. 
   
-  The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided in smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
+  The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
   
   This command performs the clustering of all the clean data from the provided jobs together, then proceed the workflow to the clean step, compare the final joined consensus spectra pairwise, next update the original ionization annotations with the final joined clean consensus spectra and merge the original IVAMNS, recompute the [M+H]+ and keep some of the original protonated, compute the biocorrelation using the original samples metadata with all original jobs together and finally compute the molecular networking with the joined result.
   
