@@ -369,7 +369,7 @@ For more details about the samples order and the behavior of the clustering step
 
 ### Cite
 
-[NP3 MS Workflow](https://pubs.acs.org/doi/10.1021/acs.analchem.3c0582): An Open-Source Software System to Empower Natural Product-Based Drug Discovery Using Untargeted Metabolomics
+[NP3 MS Workflow](https://pubs.acs.org/doi/10.1021/acs.analchem.3c05829): An Open-Source Software System to Empower Natural Product-Based Drug Discovery Using Untargeted Metabolomics
 
 Cristina F. Bazzano, Rafael de Felicio, Luiz Fernando Giolo Alves, Jonas Henrique Costa, Raquel Ortega, Bruna Domingues Vieira, Raquel Peres Morais-Urano, Luciana Costa Furtado, Everton L. F. Ferreira, Juliana R. Gubiani, Roberto G. S. Berlinck, Leticia V. Costa-Lotufo, Guilherme P. Telles, and Daniela B. B. Trivella
 
