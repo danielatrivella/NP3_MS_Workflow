@@ -64,7 +64,7 @@ def join_jobs_ivamns(output_path, max_chunk=3000, noise_cutoff=False):
         basePeakInt_noise_cutoff = 0
 
     # read the default join original jobs metadata, from it extract the Job name, code and path
-    original_jobs_metadata_path = os.path.join(output_path, "../..", "join_original_jobs_METADATA.csv")
+    original_jobs_metadata_path = os.path.join(output_path, "../..", "original_jobs_METADATA_JOIN.csv")
     if not os.path.isfile(original_jobs_metadata_path):
         sys.exit("ERROR. The metadata table with the original joined jobs '" + original_jobs_metadata_path +
                  "' does not exists.")

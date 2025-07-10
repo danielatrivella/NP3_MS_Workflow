@@ -156,7 +156,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
   
   # read the default metadata
   metadata_joined_jobs <- readMetadataTableJoinJobs(file.path(output_path, "../..", 
-                                                              "join_original_jobs_METADATA.csv"))
+                                                              "original_jobs_METADATA_JOIN.csv"))
   metadata_samples <- readMetadataTable(file.path(output_path, "../..", 
                                                   "original_samples_METADATA.csv"))
   

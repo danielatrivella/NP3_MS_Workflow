@@ -28,7 +28,7 @@ def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
         min_basePeakInt = clean_counts.basePeakInt.min()
 
     # read the default original joined jobs metadata, from it extract the Job name, code and path
-    original_jobs_metadata_path = os.path.join(output_path, "../..", "join_original_jobs_METADATA.csv")
+    original_jobs_metadata_path = os.path.join(output_path, "../..", "original_jobs_METADATA_JOIN.csv")
     if not os.path.isfile(original_jobs_metadata_path):
         sys.exit("ERROR. The metadata table with the original joined jobs '" + original_jobs_metadata_path +
                  "' does not exists.")

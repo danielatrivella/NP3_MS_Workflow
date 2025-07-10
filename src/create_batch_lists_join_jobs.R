@@ -107,7 +107,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
   # otherwise, save the join jobs metadata directly
   if (any(metadata$JOINED_JOB == 1)) {
     # there is a joined job in the list of jobs to be joined,
-    # extract the original joined jobs metadata (join_original_jobs_METADATA.csv)
+    # extract the original joined jobs metadata (original_jobs_METADATA_JOIN.csv)
     # for each joined job in the list and concatenate this metadata with the 
     # remaining original samples in the list if any
     
@@ -117,7 +117,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
       # only one joined job to join
       i <- which(metadata$JOINED_JOB == 1)
       orig_joined_jobs_metadata <- readMetadataTableJoinJobs(file.path(metadata$JOB_PATH[i], "../..", 
-                                                    "join_original_jobs_METADATA.csv"), 
+                                                    "original_jobs_METADATA_JOIN.csv"),
                                           path_jobs_data, path_pre_processed_dir)
       orig_joined_jobs_metadata$JOINED_JOB_CODE <- metadata$JOB_CODE[i]
     } else {
@@ -125,7 +125,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
       orig_joined_jobs_metadata <- bind_rows(lapply(which(metadata$JOINED_JOB == 1), 
         function(i) {
           m_join <- readMetadataTableJoinJobs(file.path(metadata$JOB_PATH[i], "../..", 
-                                                        "join_original_jobs_METADATA.csv"), 
+                                                        "original_jobs_METADATA_JOIN.csv"),
                                               path_jobs_data, path_pre_processed_dir)
           m_join$JOINED_JOB_CODE <- metadata$JOB_CODE[i]
           m_join
@@ -143,7 +143,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
   # if there is no joined job in the list of jobs to be joined, 
   # save the join jobs metadata directly
   write.csv(metadata, 
-            file = file.path(output_path, "join_original_jobs_METADATA.csv"),
+            file = file.path(output_path, "original_jobs_METADATA_JOIN.csv"),
             row.names = FALSE)
   
   # Then concatenate the original samples metadata 

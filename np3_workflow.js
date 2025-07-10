@@ -3541,7 +3541,7 @@ program
             "named 'logRunParms', for reproducibility.\n" +
             "- Two automatically created metadata tables containing: one the original samples concatenated in a single file " +
             "'original_samples_METADATA.csv'; and other with the original np3 jobs that were joined in this process in a " +
-            "file named 'join_original_jobs_METADATA.csv'. For reproducibility and future joins with this result.\n" +
+            "file named 'original_jobs_METADATA_JOIN.csv'. For reproducibility and future joins with this result.\n" +
             "- A folder named 'outs' with the clustering result of the joined jobs in a single sub folder named with " +
             "the *output\_name* containing:\n" +
             "  - A sub folder named 'count_tables' with the Step 4 quantification in CSV tables named as " +

@@ -79,7 +79,7 @@ convert_sample_processed_data_path <- function(is_join_jobs, processed_data_path
   } else {
     # join_jobs
     metadata_jobs <- readMetadataTableJoinJobs(file.path(dirname(path_metadata),
-                                                         "join_original_jobs_METADATA.csv"))
+                                                         "original_jobs_METADATA_JOIN.csv"))
     convert_processed_data_path <- function(x) {
       return(metadata_jobs$PRE_PROCESSED_DATA_PATH[metadata_jobs$JOB_CODE == x][1])
     }
