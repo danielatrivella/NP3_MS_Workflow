@@ -32,7 +32,7 @@ The $NP^{3}$ MS workflow consists of ten major steps:
 <!-- , and against the PubChem database using the MetFrag R package. -->
 * Step 7: Ionization variants annotation among concurrent clean consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a ionization variant annotation molecular network (IVAMN) and assignment of the most likely [M+H]+ consensus spectra representatives (for positive ion mode only).
 * Step 8: Merge of clean consensus spectra quantifications based on the annotated variants and the [M+H]+ representatives (for positive ion mode only).
-* Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments.
+* Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments. It also computes the quantification grouping.
 * Step 10: Creation of a spectra similarity molecular network (SSMN) based on the clean consensus spectra similarity and creation of the protonated networks IVAMN [M+H]+ and SSMN [M+H]+ filtered.
  
 The Steps 2 to 10 can be automatically executed with the $NP^{3}$ command **run**. And different results from the $NP^{3}$ MS Workflow may be joined using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results.
@@ -60,7 +60,7 @@ The workflow output is organized in folders and depending on the command can con
     - The libraries identification results (Step 6)
     - The ionization variants annotations grouped by type (Step 7)
     - The list of [M+H]+ representatives, suggesting the number of metabolites in the samples (Step 7)
-    - The bioactivity correlation scores, that can be used to rank the consensus spectra (Step 9)
+    - The bioactivity correlation scores, that can be used to rank the consensus spectra. And the quantification grouping (Step 9)
 - The molecular networks of annotations and of similarity files from Steps 7 and 10:
     - IVAMN (Step 7)
     - SSMN (Step 10) 
@@ -351,7 +351,7 @@ The metadata table may contain the following optional columns:
  
 - BIOACTIVITY_\<NAME\> - zero or more columns starting with the prefix "BIOACTIVITY_" followed by a unique name \<NAME\> defining different bioactivities values for each sample. Set it to a positive number (greater or equal than zero) indicating the sample bioactivity score, it could be an inhibition or an activation of a target. These values should be normalized, e.g., from 0 to 100, to be used in the correlation computation.
 - COR_\<NAME\> - zero or more columns starting with the prefix "COR_" followed by a unique name \<NAME\> defining the correlation group. Each one of these columns must have values 0 or 1. If the sample spectra or peak area count is to be used in the COR_\<NAME\> correlation with each defined bioactivity scores (BIOACTIVITY_\<NAME\> columns), set it to 1. Otherwise, set it to 0. In Step 9 each one of these columns will result in a new column for each available bioactivity score in the output count tables, containing the bioactivity correlation scores computed with the respectively selected samples. For better correlation results the selected groups of samples should belong to the same bioactivity peak, e.g., a selection that contains very active, middle active and not active samples of a same bioactivity peak (a 'hit'). We strongly recommend to use the blank, bed and control samples in this selection to eliminate false positives. Bioactivity data must be collected from chemical samples at the same concentration. LC-MS/MS data must be collected from the chemical samples at the same concentration. This will guarantee real correlations, especially if the samples and bioactivity data come from a screening of natural product samples.
-- GR_\<NAME\> - zero or more columns starting with the prefix "GR_" followed by a unique name \<NAME\> defining a set of groups. Each of those columns may have one or more tags to label a group of samples. A column "GR_\<NAME\>" with groups "\<g1\>", "\<g2\>" and "\<g3\>" will bind at the final count tables the columns "\<NAME_g1\>", "\<NAME_g2\>" and "\<NAME_g3\>" with the sum of peak areas or number of spectra of the samples that belongs to each group for each m/z row. 
+- GR_\<NAME\> - zero or more columns starting with the prefix "GR_" followed by a unique name \<NAME\> defining a set of grouping for the spectra quantification. Each of those columns may have one or more tags to label a group of samples. A column "GR_\<NAME\>" with groups "\<g1\>", "\<g2\>" and "\<g3\>" will bind to the final count tables the columns "\<NAME_g1\>", "\<NAME_g2\>" and "\<NAME_g3\>" containing the sum of peak areas or number of spectra of the samples that belongs to each group for each m/z row. 
 \newline For example, to create a set called **colors** with the groups **red**, **green** and **blue**, add to the metadata the column "GR_colors", tag the samples that belongs to the groups **red**, **green** and **blue** by filling the rows (you may have empty observations if it is necessary) and it will bind the columns **colors_red**, **colors_green** and **colors_blue** to the final count tables.
  
 The user is free to add any additional column to the metadata file, for example to add relevant descriptions for each file. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the job samples. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata file.
@@ -426,7 +426,7 @@ A directory inside the *output_path* named with the *output_name* containing:
     - A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files
     - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output. 
  
-The clustering steps results folders are named as 'B_\<DATA_COLLECTION_BATCH\>_\<X\>' where \<*DATA_COLLECTION_BATCH*\> is the data collection batch number in the metadata file of each group of samples and \<*X*\> is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
+The clustering steps results folders are named as 'B\_\<DATA\_COLLECTION_BATCH\>\_\<X\>' where *DATA\_COLLECTION\_BATCH* is the data collection batch number in the metadata file of each group of samples and *X* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
  
 The final integration step result is located inside the 'outs' directory in a folder named with the *output_name*. This folder contains the final counts and is where the user will find the final results. It also contains the following data:
  
@@ -624,7 +624,7 @@ The user can also look at the table with the list of detected MS1 peaks that had
 
 ## 4.4. Step 3 and 4: Command *clustering*
  
-Runs the NP3_MSCluster algorithm to perform the clustering of pre-processed MS/MS data into a collection of consensus spectra. It relies on spectra similarity and chromatographic dimensions. Then, runs the consensus spectra quantification to parse the clustering results and count the number of spectra and of peak area by sample. Finally, it computes appropriate indicators based on the sample's types. It can also run the library spectra identifications (Step 6), and if necessary, it runs Step 2.
+Runs the NP3_MSCluster algorithm to perform the clustering of pre-processed MS/MS data into a collection of consensus spectra. It relies on spectra similarity and chromatographic dimensions. Then, runs the consensus spectra quantification (Step 4) to parse the clustering results and count the number of spectra and of peak area by sample. Finally, it computes appropriate indicators based on the sample's types. It can also run the library spectra identifications (Step 6), and if necessary, it runs Step 2.
  
 Options for the command *clustering*:
  
@@ -663,7 +663,7 @@ A directory inside the *output_path* named with the *output_name* containing:
     - A subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files
     - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output. 
  
-The clustering steps results folders are named as 'B_\<DATA_COLLECTION_BATCH\>_\<X\>' where *\<DATA_COLLECTION_BATCH\>* is the data collection batch number in the metadata file of each group of samples and *\<X\>* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
+The clustering steps results folders are named as 'B\_\<DATA\_COLLECTION\_BATCH\>\_\<X\>' where *DATA\_COLLECTION\_BATCH\* is the data collection batch number in the metadata file of each group of samples and *X* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
  
 The final integration step result is located inside the 'outs' directory in a folder named with the *output_name*. This folder contains the final counts and is where the user will find the final results. It also contains the tremolo identification results inside the 'identifications' folder.
  
@@ -719,7 +719,7 @@ The $NP^{3}$ MS workflow spectra clustering is performed in four steps:
  
 The NP3_MSCluster results are the MGF with the collection of consensus spectra from the outputted clusters and .clust files (in CSV format) with the cluster's information describing which scans were joined to make up the consensus spectra. In the data and in the blank clustering steps the resulting .clust files contains the spectra detected in the raw files (real SCANS), with the matched peak information, and in the subsequent clustering steps the SCANS are the clusters IDs (named msclusterID) of the consensus spectra created in the previous steps by the workflow Step 4.
  
-##### 4.4.4. *clustering* Step 4 Details
+##### 4.4.4. *clustering quantification* Step 4 Details
  
 The spectra and peak area counts are performed by scanning and parsing the information present in the .clust files from the clustering output to compute the consensus spectra quantifications by sample. It aggregates the information of the clusters members to obtain the total counts (number of spectra and peak area) by sample and the consensus peak profile information. A unique cluster ID is given to the consensus spectra, named msclusterIDs.
  
@@ -1183,10 +1183,12 @@ Table: Merge Count Tables New Columns
 Runs the R script to compute for each consensus spectra the biocorrelation score between its count of spectra or peak area by sample and the samples bioactivity score. The biocorrelation is performed for each correlation group defined in the metadata table (columns named with the prefix "BIOACTIVITY_" and "COR_"). The correlation can be performed with any of the following methods: 'pearson', 'kendall' or 'spearman' (default).
  
 The bioactivity score can be used to rank the consensus spectra and to select the most possible candidates responsible for the observed hits in bioactivity experiments. This information can also be visualized in the molecular networks and applied for the discovery of active compounds, as done in [15].
+
+After the biocorrelation computations, this command computes the grouping of the quantification defined in the metadata table (column named with prefix "GR_"). These groups may be used to aggregate any characteristics of the samples.
  
 Options for the command *corr*:
  
-- *\-b, \-\-metadata* \<file\>\     : path to the metadata table CSV file. Used to retrieve the biocorrelation groups
+- *\-b, \-\-metadata* \<file\>\     : path to the metadata table CSV file. Used to retrieve the biocorrelation groups and quantification grouping. For a joined job, this must be the original samples metadata table.
 - *\-c, \-\-count_file_path* \<file\>\ \ \ \ \ \ \ \ \ \ : path to the count table CSV file
 - *\-e, \-\-method* [name]\ \ \ \ \ \ \ \ \ \ \ : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (default: spearman)
 - *\-b, \-\-bio_cutoff* [name]\ \ \ \  : a bioactivity cutoff value. Bioactivities in the metadata table that are less than the bio_cutoff value will be set to zero. (default: 0)
@@ -1195,7 +1197,10 @@ Options for the command *corr*:
  
 ##### 4.9.1. *corr* Results
  
-A CSV table in the count_file directory named as '\<count_file\>_corr_\<method\>.csv', without the count_file extension. The new tables contain the original count tables plus for each correlation group and bioactivity score, as defined in the metadata table and new columns with the correlation scores of each consensus spectrum. Also, in a copy of this table, named with the suffix \'_bioAct.csv\', new rows are added with the bioactivities scores of each sample placed above the original counts table header (first rows).
+A CSV table in the count_file directory named as 
+'\<count\_file\_name\>\_corr\_\<method\>.csv', where the count\_file\_name is the name of the provided count_file table. The new tables contain the original count tables data plus new columns with the correlation scores of each consensus spectrum for each correlation group and bioactivity score, as defined in the metadata table. It may also contain new columns for the quantification grouping, if defined in the metadata.
+
+Another table is also created as a copy of the first table, named with the suffix 'bioAct' as '\<count\_file\_name\>\_corr\_\<method\>\_bioAct.csv', containing new rows at the beginning of the table with the bioactivities scores of each sample placed above the original counts table header (first rows).
  
 In the metadata table the columns with a bioactivity score must be named with the prefix "BIOACTIVITY_" and the columns with the correlation groups (samples to be used in each correlation) must be named with the prefix "COR_".
 The correlation score will produce NA values with warnings if the counts of the selected samples are all equal 0 or if the bioactivity of the selected samples are all the same, and it will produce "CTE" if the counts of the selected samples have the same values (standard deviation equals 0). 
@@ -1492,7 +1497,7 @@ The metadata_join table must contain the following mandatory columns (in upperca
 
 The user is free to add any additional column to the metadata_join file, for example to add relevant descriptions for each job. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the jobs being joined. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata_join file.
 
-The samples' groupings, correlations and bioactivities will be retrieved from the samples' metadata of the original jobs. These information is not defined here.
+The samples' quantification groupings, correlations and bioactivities will be retrieved from the samples' metadata of the original jobs. These information is not defined here. The original samples metadata automatically created in the setup of this command may be used a posteriori to add new biocorrelations or quantification groupings to the joining results, and the command *corr* may be used to recompute them.
 
 ##### 4.11.4. *join_jobs* Data Organization
 
@@ -1518,7 +1523,7 @@ Next, the join_jobs workflow proceeds to the cleaning (Step 5), which is execute
 
 The annotate_protonated step was replaced here by a procedure to merge the ionization annotations of the original jobs being joined and then to recompute the [M+H]+ while keeping some of the original protonated representatives. The join_jobs flow of Step 7 is as follow: first it retrieves the IVAMNs of all the original jobs and map the msclusterIDs to the new joined ids, selfloops are removed and duplicated edges are merged. The edges attributes are recomputed with the new similarity values, the mzError receives the mean value of the merged edges and the rtError is recomputed again for the joined msclusterIDs. The annotations rules are applied again and removes any invalid annotation (similarity cutoff), any resulting empty edge is removed. This result in the final joined IVAMN, selfloops are added again at the end for the missing nodes. Then, the find protonated script is executed for the final joined IVAMN, resulting in a new list of [M+H]+ ions (column protonated_representatives = 1). This list is further merged with the original protonated_representatives that have an in-degree > 0 in the final joined IVAMN (keep [M+H]+ with valid annotations), this prevent loosing relevant information from the original jobs. Finally, a new script parses the information present in the final joined IVAMN and writes them as annotation columns to the joined clean tables, with a similar format to the main flow. The only missing column here is the 'analogs' one, which is not recomputed in the new procedure. The rest of the ionization annotation columns and the protonated_representative are written to the clean tables and to the joined IVAMN attribute table.
 
-Next, the join_jobs workflow skips Step 8, the merging may result in too much additional data and may be executed separated by the user at the end of this procedure if needed. To execute the merge with the join_jobs result the user must inform the created original samples metadata as the metadata parameter. Then, the join_jobs command proceeds to the biocorrelation (Step 9), using the automatically created original samples metadata to perform the correlations and any grouping present in the original metadatas. At the end of this command, the user may add new correlations, bioactivities or groups to the original samples metadata and execute this step again.
+Next, the join_jobs workflow skips Step 8, the merging may result in too much additional data and may be executed separated by the user at the end of this procedure if needed. To execute the merge with the join_jobs result the user must inform the created original samples metadata as the metadata parameter. Then, the join_jobs command proceeds to the biocorrelation (Step 9), using the automatically created original samples metadata to perform the correlations and any grouping present in the original metadatas. At the end of this command, the user may add new correlations, bioactivities or quantification groupings to the original samples metadata and execute this step again (using command *corr*).
 
 The join_jobs workflow ends with the molecular networking (Step 10) similar to the main flow. The data organization of the output is similar to the main flow and the additional steps may be executed the same way.
 
