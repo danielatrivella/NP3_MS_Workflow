@@ -476,6 +476,8 @@ function callCountSpectraBySubJobID(out_path, name, metadata_jobs, jobs_data_dir
 
 function callComputeCorrelationGrouping(metadata, counts, method, bio_cutoff, logOutputPath, verbose)
 {
+    // call groups separately, before the biocorrelation
+    callGroupsfunc(metadata, counts, logOutputPath, verbose);
     //# params:
     //   #$1 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;
     //   #$2 - Path to the CSV spectra count file;
@@ -506,8 +508,7 @@ function callComputeCorrelationGrouping(metadata, counts, method, bio_cutoff, lo
         shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
     }
 
-    // call groups separately, after the biocorrelation
-    callGroupsfunc(metadata, counts, logOutputPath, verbose);
+
 }
 
 function callAnalyseCount(counts, out_path, logOutputPath)
@@ -949,7 +950,7 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
 
 function callGroupsfunc(metadata_path, count_tables, logOutputPath, verbose)
 {
-    var step_name = '*** Creating groups based on the metadata grouping information *** \n';
+    var step_name = '*** Step 9 - Creating the quantification groupings based on the metadata information *** \n';
     console.log(step_name);
     var resExec = shell.exec(python3()+' '+__dirname+'/src/groups.py --metadata '+metadata_path+' --count_file_path '+count_tables+
     ' -q True', {async:false, silent: (verbose <= 0)});
@@ -3009,7 +3010,7 @@ program
     .command('corr')
     .description('Step 9: This command runs the bioactivity correlation to rank the consensus spectra based on the ' +
         'scores computed for the selection of samples and bioactivity values present in the metadata table. It also ' +
-        'computes the quantification groupings defined in the metadata table (after the biocorrelations, if any).\n\n')
+        'computes the quantification groupings defined in the metadata table (before the biocorrelations, if any).\n\n')
     .option('-m, --metadata <file>', 'path to the metadata table CSV file. Used to retrieve the biocorrelation groups and quantification grouping. ' +
         'For a joined job, this must be the original samples metadata table.')
     .option('-c, --count_file_path <file>', 'path to the count table CSV file')

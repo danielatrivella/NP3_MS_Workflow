@@ -1184,7 +1184,7 @@ Runs the R script to compute for each consensus spectra the biocorrelation score
  
 The bioactivity score can be used to rank the consensus spectra and to select the most possible candidates responsible for the observed hits in bioactivity experiments. This information can also be visualized in the molecular networks and applied for the discovery of active compounds, as done in [15].
 
-After the biocorrelation computations, this command computes the grouping of the quantification defined in the metadata table (column named with prefix "GR_"). These groups may be used to aggregate any characteristics of the samples.
+Before the biocorrelation computations, this command computes the grouping of the quantification defined in the metadata table (column named with prefix "GR_"). These groups may be used to aggregate any characteristics of the samples.
  
 Options for the command *corr*:
  
