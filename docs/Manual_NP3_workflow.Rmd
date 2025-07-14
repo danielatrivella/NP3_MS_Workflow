@@ -7,7 +7,7 @@ author:
   - Rafael de Felicio^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
   - Daniela B. B. Trivella^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
   - Guilherme P. Telles^[Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - gpt@ic.unicamp.br]
-date: January, 2022 
+date: July, 2025 
 output:
   pdf_document: default
   html_document:
@@ -18,7 +18,7 @@ output:
  
 The $NP^{3}$ MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics research focused on drug discovery with optimizations towards natural products. 
 
-The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples and constructs molecular networks to improve the analysis and visualization of the results.
+The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions) and constructs molecular networks to improve the analysis and visualization of the results.
 
  
 The $NP^{3}$ MS workflow consists of ten major steps:
@@ -35,6 +35,8 @@ The $NP^{3}$ MS workflow consists of ten major steps:
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments.
 * Step 10: Creation of a spectra similarity molecular network (SSMN) based on the clean consensus spectra similarity and creation of the protonated networks IVAMN [M+H]+ and SSMN [M+H]+ filtered.
  
+The Steps 2 to 10 can be automatically executed with the $NP^{3}$ command **run**. And different results from the $NP^{3}$ MS Workflow may be joined using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results.
+ 
 This workflow also contains two interactive commands for data visualization:
  
 * The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
@@ -44,10 +46,11 @@ Furthermore, the user can manually identify the resulting consensus spectra agai
  
 ## 1.1 Data
  
-The input for the $NP^{3}$ MS workflow are LC-MS/MS raw data files in mzXML or mzML formats (mzData format could also be used, but was not vastly tested). It supports only the positive ([M+H]+) ion mode. The negative ([M-H]-) ion mode could also be used, but the Steps 7 and 8 were not vastly tested for it and could lead to undesired results. 
+The main input for the $NP^{3}$ MS workflow are LC-MS/MS raw data files in mzXML or mzML formats (mzData format could also be used, but was not vastly tested). It supports only the positive ([M+H]+) ion mode. The negative ([M-H]-) ion mode could also be used, but the Steps 7 and 8 were not vastly tested for it and could lead to undesired results. 
 
 The workflow output is organized in folders and depending on the command can contain: 
  
+- The pre-processed spectra in MGF files, containing all detected and filtered MS2 enriched with MS1 information.
 - The collection of consensus spectra from Step 3 and Step 5 in MGF files
 - The consensus spectra quantification results in CSV files, referred to as count tables. The count tables contains a consensus spectra ID, named msclusterID (representing a m/z and a retention time interval), by row and its quantifications and indicators by column. The following count tables are created:
     - Clustering count tables (Step 4)
@@ -65,6 +68,7 @@ The workflow output is organized in folders and depending on the command can con
     - IVAMN [M+H]+ (Step 10)
     - SSMN [M+H]+ filtered (Step 10)
  
+The pre-processed data and the clean data from the $NP^{3}$ results may be used as input for the joining jobs command.
 
 # 2. Installation and Setup
 
@@ -1070,7 +1074,7 @@ Where,
  
 If more than one annotation of a same type is present for a given spectra, they are concatenated using a ';' character.
  
-##### 4.7.3. *annotate_protonated* Ionization Variant Annotation Molecular Network (IVAMN) and Protonated Assignment Algorithm Details
+##### 4.7.4. *annotate_protonated* Ionization Variant Annotation Molecular Network (IVAMN) and Protonated Assignment Algorithm Details
  
 After the annotation algorithm the ionization variant annotation molecular network (IVAMN) is created based on the detected chemical annotations. The nodes of this network are the clean consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+). 
  
@@ -1292,31 +1296,32 @@ It works as follow:
 
 ## 4.11. Command *join_jobs* 
 
-  Command to join $NP^{3}$ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. It uses the clean results from the provided $NP^{3}$ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations, except for Step 8 which is skipped. 
+  Command to join $NP^{3}$ jobs (results from the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. It uses the clean results from the provided $NP^{3}$ jobs and execute the main pipeline from Steps 3 to 10 with some modifications and adaptations, except for Step 8 which is skipped. 
+  
+  The following subsections define how to create the metadata_join table, its expected format, the data organization to execute the *join_jobs* command and details on its methods.
   
   The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
   
-  This command performs the clustering of all the clean data from the provided jobs together, then proceed the workflow to the clean step, compare the final joined consensus spectra pairwise, next update the original ionization annotations with the final joined clean consensus spectra and merge the original IVAMNS, recompute the [M+H]+ and keep some of the original protonated, compute the biocorrelation using the original samples metadata with all original jobs together and finally compute the molecular networking with the joined result.
+  This command performs the clustering of all the clean data from the provided jobs together, then proceed the workflow to the clean step, compare the final joined consensus spectra pairwise, next update the original ionization annotations with the final joined clean consensus spectra and merge the original IVAMNS, recompute the [M+H]+ and keep some of the original protonated representatives, compute the biocorrelation and groupings using the original samples metadata with all original jobs together and finally compute the molecular networking with the joined result.
   
   The *join_jobs* can be used to join the results from multiple original jobs and 
 also from previous joined jobs with a new original or joined job. There is no limit for
 joining $NP^{3}$ results, coming from the *run* or the *join_job* commands. The user must only ensure that all sample's code are unique across the different original jobs being joined (SAMPLE_CODE column from the original samples' metadata).
 
-The following subsections define how to create the metadata_join, its expected format, the data organization to execute the *join_jobs* command and details on its methods.
 
 Options for the command *join_jobs*:
  
-- *-n, --output_name* <name> : the job name. It will be used to name the output directory and 
+- *-n, --output_name* \<name\> : the job name. It will be used to name the output directory and 
   					the results from joining the jobs. It must have less than 80 characters.
   
-- *-m, --metadata_join* <file> : path to the metadata table CSV file defining the jobs to be joined. Different format, see manual.
-- *-d, --jobs_data_path* <path> : path to the folder containing the input jobs result to be joined, 
+- *-m, --metadata_join* \<file\> : path to the metadata table CSV file defining the jobs to be joined. Different format, see manual.
+- *-d, --jobs_data_path* \<path\> : path to the folder containing the input jobs result to be joined, 
   this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. 
   Their clean mgf and quantification tables will be used.
-- *-y, --pre_processed_dir_path* <path> : path to the folder containing the input jobs pre processing result, 
+- *-y, --pre_processed_dir_path* \<path\> : path to the folder containing the input jobs pre processing result, 
   this should contain all the original jobs previous NP3 pre processing result in separated folders named 
   accordingly to what is specified in the metadata_join.
-- *-o, --output_path* <path> : path to where the output directory will be created
+- *-o, --output_path* \<path\> : path to where the output directory will be created
 - *-f, --fragment_tolerance* [x] : the tolerance in Daltons for fragment peaks. Peaks in the
   					original spectra that are closer than this get merged by
   					the NP3_MSCluster algorithm. Also used in the pre process (Step 2)
@@ -1439,7 +1444,9 @@ Options for the command *join_jobs*:
 A directory inside the *output_path* named with the *output_name* containing:
 
 - A copy of the *metadata_join* file and the command line parameters values used in a file named 'logRunParms', for reproducibility.
-- Two automatically created metadata tables containing: one the original samples concatenated in a single file 'original_samples_METADATA.csv'; and other with the original np3 jobs that were joined in this process in a file named 'original_jobs_METADATA_JOIN.csv'. For reproducibility and future joins with this result.
+- Two automatically created metadata tables containing: 
+    - One the original samples concatenated in a single file named 'original_samples_METADATA.csv'; 
+    - And another with the original $NP^{3}$ jobs that were joined in this process in a file named 'original_jobs_METADATA_JOIN.csv'. For reproducibility and future joins with this result.
 - A folder named 'outs' with the clustering result of the joined jobs in a single sub folder named with the *output_name* containing:
   - A sub folder named 'count_tables' with the Step 4 quantification in CSV tables named as '<step_name>_(spectra|peak_area).csv'. And inside it the clean tables in a folder named 'clean'.
   - Another sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).
@@ -1448,21 +1455,29 @@ A directory inside the *output_path* named with the *output_name* containing:
   - A fifth sub folder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.
   - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output.
 
-##### 4.11.1. *join_jobs* Examples
+##### 4.11.2. *join_jobs* Examples
 
 Join original jobs A and B.
 ```{r, eval=F}
-$ node np3_workflow.js join_jobs --output_name "test_join_a_b" --output_path "/path/where/the/output/will/be/stored" --metadata_join "/path/to/the/metadata_join/file/test_np3_join_a_b_metadata.csv" --pre_processed_dir_path "/path/to/the/dir/with/joining/jobs/pre/process/results"--jobs_data_path "/path/where/the/joining/jobs/output/is/stored"
+$ node np3_workflow.js join_jobs --output_name "test_join_a_b" --output_path 
+"/path/where/the/output/will/be/stored" --metadata_join 
+"/path/to/the/metadata_join/file/test_np3_join_a_b_metadata.csv" 
+--pre_processed_dir_path "/path/to/the/dir/with/joining/jobs/pre/process/results"
+--jobs_data_path "/path/where/the/joining/jobs/output/is/stored"
 ```
 
 Join the joined job from A and B with original job C.
 ```{r, eval=F} 
-  $ node np3_workflow.js join_jobs -n "test_join_ab_c" -o "/path/where/the/output/will/be/stored" -m "/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y "/path/to/the/dir/with/joining/jobs/pre/process/results" -d "/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10
+  $ node np3_workflow.js join_jobs -n "test_join_ab_c" -o 
+"/path/where/the/output/will/be/stored" -m 
+"/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y
+"/path/to/the/dir/with/joining/jobs/pre/process/results" -d 
+"/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10
 ```
 
-##### 4.11.1. *join_jobs* Metadata_join creation
+##### 4.11.3. *join_jobs* Metadata_join creation
 
-  The *metadata_join* table defines the $NP^{3}$ jobs to be united, it defines the joining jobs reference names, original samples' metadata name and original pre processing result. It also defines if the joining jobs came from a *run* (called here original jobs) or a *join_jobs* command result. 
+  The *metadata_join* table defines the list of $NP^{3}$ jobs to be united, it defines the joining jobs reference names, original samples' metadata name and original pre processing result. It also defines if the joining jobs came from a *run* (called here original job) or a *join_jobs* (called here joined job) command result. 
   This table has the same format as the original samples' metadata, it must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata_join file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata_join file was finished it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
  
 A metadata_join template file is available in the $NP^{3}$ MS workflow repository, named 'METADATA_JOIN_TEMPLATE.csv'. It uses the Bra346 and the MA9 datasets as examples, provided in the $NP^{3}$ paper.
@@ -1471,15 +1486,15 @@ The metadata_join table must contain the following mandatory columns (in upperca
  
 - JOBNAME \- the name of the job to be joined. This name must be equal to the *output_name* used to obtain this job result, it must match the job final results naming. This name will be used to retrieve the job data to perform the joining.
 - JOB_CODE \- unique and syntactically valid (see below) name for each job. The use of the same JOB_CODE in more than one entry will generate an error. A syntactically valid name must start with a letter and consist of letters, numbers, and underscore characters. R reserved words (https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Reserved-words) are not syntactically valid names. The JOB_CODE name will be used to reference the original $NP^{3}$ jobs and to keep the joined msclusterIDs track.
-- METADATA_NAME \- the name of the original samples' metadata table used to execute the job, if this job is a result of the *run* command (JOINED_JOB column equals 0). This must be the complete file name with extension of the samples metadata, it will be used to automatically retrieve this data from the job result. If this job is a result of the *join_jobs* command (JOINED_JOB column equals 1), this metadata name will not be used, instead the automatically created metadata with the original samples united will be used by default. 
-- PRE_PROCESSED_DATA_NAME \- the name of the folder with the pre processing result of the job. It will be used to retrieve the pre processed data of the job.
-- JOINED_JOB \- A 0 or 1 column value to define if this job is the result of a original job coming from a *run* command execution (0) or if it is the result of a joined job coming from another join_jobs command execution (1).
+- METADATA_NAME \- the name of the original samples' metadata table used to execute the job, if this job is a result of the *run* command (JOINED_JOB column equals 0). This must be the complete file name with extension of the samples metadata, it will be used to automatically retrieve this data from the original job result. If this job is a result of the *join_jobs* command (JOINED_JOB column equals 1), this metadata name will not be used, instead the automatically created metadata with the original samples united will be used by default. 
+- PRE_PROCESSED_DATA_NAME \- the name of the folder with the pre processing result of the original job. It will be used to retrieve the pre processed data of the job. If this is a joined job (JOINED_JOB column equals 1), this column is skipped.
+- JOINED_JOB \- A 0 or 1 column value to define if this job is the result of a original job coming from the *run* command execution (0) or if it is the result of a joined job coming from another join_jobs command execution (1).
 
-The user is free to add any additional column to the metadata_join file, for example to add relevant descriptions for each job. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the job being joined. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata_join file.
+The user is free to add any additional column to the metadata_join file, for example to add relevant descriptions for each job. These additional columns will be ignored by the workflow commands, but can be useful to add information related to the jobs being joined. It is important that additional column names are not equal or a prefix of any of the mandatory or optional columns of the metadata_join file.
 
 The samples' groupings, correlations and bioactivities will be retrieved from the samples' metadata of the original jobs. These information is not defined here.
 
-##### 4.11.1. *join_jobs* Data Organization
+##### 4.11.4. *join_jobs* Data Organization
 
 The data organization to execute the *join_jobs* command must contain three things (defined by mandatory parameters):
 
@@ -1489,21 +1504,21 @@ The data organization to execute the *join_jobs* command must contain three thin
 
 In a project intended to continue grow with new jobs being collected and processed, this structure must be kept to continuous join a new processed dataset.
 
-##### 4.11.1. *join_jobs* Details
+##### 4.11.5. *join_jobs* Details
 
-The join_jobs command uses the main $NP^{3}$ workflow steps (from command *run*) to unite results coming from different $NP^{3}$ results. Some steps needed to be adapted or replaced (step 7) to allow joining original $NP^{3}$ results.
+The join_jobs command uses the main $NP^{3}$ MS Workflow steps (from command *run*) to unite results coming from different $NP^{3}$ results. Some steps needed to be adapted (Steps 4 and 5) or replaced (step 7) to allow joining original $NP^{3}$ results.
 
-The inputs to the join_jobs command are the pre processed data and the clean data from other $NP^{3}$ results, coming from a *run* execution (called original job) or from a *join_jobs* execution (called joined job). The clean data used is the clean MGF file, the clean count tables and the annotations of ionization variants. The ionization variants are not recomputed here because they are directly related to the original samples which were collected together, and instead, the original annotations are maintained, joined and updated here. 
+The inputs to the join_jobs command are the pre processed data and the clean data from other $NP^{3}$ results, coming from a *run* execution (called original job) or from a *join_jobs* execution (called joined job). The clean data used is the clean MGF file, the clean count tables and the annotations of ionization variants. The ionization variants are not recomputed here because they are directly related to the original samples which were collected together, and instead, the original annotations are maintained from the original jobs, joined and updated here. 
 
-The join_jobs command starts with a setup process to retrieve the metadata information of the original $NP^{3}$ jobs being joined and to create two default metadatas: the first is the original samples metadata, named "original_samples_METADATA.csv", which concatenates the original samples of all original jobs being joined. The format of the samples metadata follow the format of the original metadata presented in section 4.1 which is Step 1 of the $NP^{3}$ workflow. It uses the column METADATA_NAME from the metadata_join to retrieve all the samples metadata from the original jobs. And the other is the original joined jobs metadata, named "original_jobs_METADATA_JOIN.csv", which concatenates the list of all original $NP^{3}$ jobs being joined. Its format follows the metadata_join format. If there is a joined job in the current join_jobs execution (JOINED_JOB == 1 in the metadata_join), its original joined jobs metadata is retrieved and concatenated with the list of new original jobs or other joined jobs metadata in the metadata_join. The same happens with the original samples metadata. With this two metadatas, the reference to the original jobs is automatically kept throughout different executions of the join_jobs commands, even when the executions recursively call the join of previous joined jobs. With the original samples metadata created, a check is performed to guarantee that all samples' code are unique among the jobs being joined (column SAMPLE_CODE must be unique here), otherwise the join will fail and the user must correct this to proceed.
+The join_jobs command starts with a setup process to retrieve the metadata information of the original $NP^{3}$ jobs being joined and to create two default metadatas: the first is the original samples metadata, named "original_samples_METADATA.csv", which concatenates the original samples of all original jobs being joined. The format of the samples metadata follow the format of the original metadata presented in section 4.1 which is Step 1 of the $NP^{3}$ workflow. It uses the column METADATA_NAME from the metadata_join to retrieve all the samples metadata from the original jobs. And the other is the original joined jobs metadata, named "original_jobs_METADATA_JOIN.csv", which concatenates the list of all original $NP^{3}$ jobs being joined. Its format follows the metadata_join format. If there is a joined job in the current join_jobs execution (JOINED_JOB == 1 in the provided metadata_join), its original joined jobs metadata is retrieved and concatenated with the list of new original jobs or other joined jobs metadata in the metadata_join. The same happens with the original samples metadata when a joined job is present. With this two metadatas, the reference to the original jobs is automatically kept throughout different executions of the join_jobs commands, even when the executions recursively call the join of previous joined jobs. With the original samples metadata created, a check is performed to guarantee that all samples' code are unique among the jobs being joined (column SAMPLE_CODE must be unique here), otherwise the join will fail and the user must correct this to proceed.
 
-The join_jobs processing workflow starts with the clustering (Step 3) of the clean MGF of all jobs being joined. The clustering step reduces all the clean MGF of the provided jobs to a single clustered MGF and the command flow proceed to the quantification by original samples (Step 4) of the clustered consensus spectra that were joined. The quantification step was adapted here to use the clean tables from the jobs being joined and merge their counts for the clustered spectra. It uses as reference for the original jobs the JOB_CODE, present in the original joined jobs metadata, and concatenates it with the original msclusterID of each clean consensus spectra present in the clean counts and store this information in a new column named "joinedJobsIDs". For an already joined job being joined again, this column is kept for the reference. The quantification performs the count by number of spectra as a simple sum of the clean consensus spectra that were joined in the clustering step and performs the count by peak area using the pre processed data of all original samples being joined, it uses the "scans" column to retrieve the original peaks information and the original samples metadata to retrieve all the original SAMPLES_CODEs, and thus, correctly compute the peak area of the joined clustered consensus spectra. The peak area computation was adapted to allow retrieving the peaks information from multiple pre processed data, the PRE_PROCESSED_DATA_NAME from the metadata_join is used here for reference.
+The join_jobs processing workflow starts with the clustering (Step 3) of the clean MGF of all jobs being joined. The clustering step reduces all the clean MGF of the provided jobs to a single clustered MGF and the command proceed to the quantification by original samples (Step 4) of the clustered consensus spectra that were joined. The quantification step was adapted here to use the clean tables from the jobs being joined and merge their counts for the clustered spectra. It uses as reference for the original jobs the JOB_CODE, present in the original joined jobs metadata, and concatenates it with the original msclusterID of each clean consensus spectra present in the clean counts and store this information in a new column named "joinedJobsIDs". For an already joined job being joined again, this column is kept for the reference. The quantification performs the count by number of spectra as a simple sum of the clean consensus spectra that were joined in the clustering step and performs the count by peak area using the pre processed data of all original samples being joined. It uses the "scans" column to retrieve the reference to the original peaks information and the original samples metadata to retrieve all the original SAMPLES_CODEs present in the pre-processed result, and then, correctly compute the peak area of the joined clustered consensus spectra. The peak area computation was adapted to allow retrieving the peaks information from multiple pre processed data, the PRE_PROCESSED_DATA_NAME from the metadata_join is used here for reference.
 
-Next, the join_jobs workflow proceeds to the cleaning (Step 5), which is executed similar to the principal workflow. The only exception is the peak area computation which was adapted for multiple pre processed data. Then, the clean joined data are compared pairwise and the joined clean MGF is identified against UNPD by tremolo (Step 6), and follow to the annotate_protonated (Step 7).
+Next, the join_jobs workflow proceeds to the cleaning (Step 5), which is executed similar to the main workflow. The only exception is the peak area computation which was adapted for multiple pre processed data. Then, the clean joined data are compared pairwise and the joined clean MGF is identified against UNPD by tremolo (Step 6), and follow to the annotate_protonated (Step 7).
 
-The annotate_protonated step was replaced here by a procedure to merge the ionization annotations of the original jobs being joined and then to recompute the [M+H]+ while keeping some of the original protonated representatives. The join_jobs flow of Step 7 is as follow: first it retrieves the IVAMNs of all the original jobs and map the msclusterIDs to the new joined ids, selfloops are removed and duplicated edges are merged. The edges attributes are recomputed with the new similarity values, the mzError receives the mean value of the merged edges and the rtError is recomputed again for the joined msclusterIDs. The annotations rules are applied again and removes any invalid annotation (similarity cutoff), any resulting empty edge is removed. This result in the final joined IVAMN, selfloops are added again at the end for the missing nodes. Then, the find protonated script is executed for the final joined IVAMN, resulting in a new list of protonated_representatives. This list is further merged with the original protonated_representatives that have an in-degree > 0 in the final joined IVAMN (keep [M+H]+ with valid annotations), this prevent loosing relevant information from the original jobs. Finally, a new script parses the information present in the final joined IVAMN and writes them as annotation columns in the joined clean tables, with a similar format to the main flow. The only missing column here is the 'analogs' one, which is not recomputed in the new procedure. The rest of the ionization annotation columns and the protonated_representative are written to the clean tables and to the joined IVAMN attribute table.
+The annotate_protonated step was replaced here by a procedure to merge the ionization annotations of the original jobs being joined and then to recompute the [M+H]+ while keeping some of the original protonated representatives. The join_jobs flow of Step 7 is as follow: first it retrieves the IVAMNs of all the original jobs and map the msclusterIDs to the new joined ids, selfloops are removed and duplicated edges are merged. The edges attributes are recomputed with the new similarity values, the mzError receives the mean value of the merged edges and the rtError is recomputed again for the joined msclusterIDs. The annotations rules are applied again and removes any invalid annotation (similarity cutoff), any resulting empty edge is removed. This result in the final joined IVAMN, selfloops are added again at the end for the missing nodes. Then, the find protonated script is executed for the final joined IVAMN, resulting in a new list of [M+H]+ ions (column protonated_representatives = 1). This list is further merged with the original protonated_representatives that have an in-degree > 0 in the final joined IVAMN (keep [M+H]+ with valid annotations), this prevent loosing relevant information from the original jobs. Finally, a new script parses the information present in the final joined IVAMN and writes them as annotation columns to the joined clean tables, with a similar format to the main flow. The only missing column here is the 'analogs' one, which is not recomputed in the new procedure. The rest of the ionization annotation columns and the protonated_representative are written to the clean tables and to the joined IVAMN attribute table.
 
-Next, the join_jobs workflow skips Step 8, the merging may result in too much additional data and may be executed separated by the user at the end of this procedure if needed. To execute the merge with the join_jobs result the user must inform the created original samples metadata as the metadata parameter. Then, the join_jobs command proceeds to the biocorrelation (Step 9), using the created original samples metadata to perform the correlations and any grouping present in the original metadatas. At the end of this command, the user may add new correlations, bioactivities or groups to the original samples metadata and execute this step again.
+Next, the join_jobs workflow skips Step 8, the merging may result in too much additional data and may be executed separated by the user at the end of this procedure if needed. To execute the merge with the join_jobs result the user must inform the created original samples metadata as the metadata parameter. Then, the join_jobs command proceeds to the biocorrelation (Step 9), using the automatically created original samples metadata to perform the correlations and any grouping present in the original metadatas. At the end of this command, the user may add new correlations, bioactivities or groups to the original samples metadata and execute this step again.
 
 The join_jobs workflow ends with the molecular networking (Step 10) similar to the main flow. The data organization of the output is similar to the main flow and the additional steps may be executed the same way.
 
