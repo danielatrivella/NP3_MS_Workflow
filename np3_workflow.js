@@ -272,14 +272,6 @@ function callClustering(options, output_path, specs_path) {
         output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
         options.fragment_tolerance, options.scale_factor, logOutputPath);
 
-    // Create Groups coluns listed at metadata
-    callGroupsfunc(options.metadata, 
-        output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv",
-        logOutputPath, options.verbose);
-    callGroupsfunc(options.metadata, 
-        output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
-        logOutputPath, options.verbose);
-
     // call plot basePeakInt distribution!!
     callPlotBasePeakIntDistribution(output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
         options.bflag_cutoff, logOutputPath, options.verbose);
@@ -327,16 +319,6 @@ function callClusteringJoinJobs(options, output_path, specs_path) {
         output_path+"/count_tables/"+options.output_name+"_peak_area.csv",
         output_path+"/count_tables/"+options.output_name+"_spectra.csv",
         options.fragment_tolerance, options.scale_factor, logOutputPath);
-    /*
-    // Create Groups coluns listed at metadata
-    // TODO - this should use the metadata concatenated from the original joined jobs
-    callGroupsfunc(options.metadata,
-        output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv",
-        logOutputPath, options.verbose);
-    callGroupsfunc(options.metadata,
-        output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
-        logOutputPath, options.verbose);
-    */
 
     // call plot basePeakInt distribution!!
     callPlotBasePeakIntDistribution(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
@@ -492,7 +474,7 @@ function callCountSpectraBySubJobID(out_path, name, metadata_jobs, jobs_data_dir
     }
 }
 
-function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputPath, verbose)
+function callComputeCorrelationGrouping(metadata, counts, method, bio_cutoff, logOutputPath, verbose)
 {
     //# params:
     //   #$1 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks;
@@ -523,6 +505,9 @@ function callComputeCorrelation(metadata, counts, method, bio_cutoff, logOutputP
         console.log(done_msg);
         shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
     }
+
+    // call groups separately, after the biocorrelation
+    callGroupsfunc(metadata, counts, logOutputPath, verbose);
 }
 
 function callAnalyseCount(counts, out_path, logOutputPath)
@@ -588,7 +573,7 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
         shell.ShellString('\n' + step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(logOutputPath);
         // call correlation
-        callComputeCorrelation(metadata_path, output_path,
+        callComputeCorrelationGrouping(metadata_path, output_path,
             method, 0, logOutputPath, verbose);
     }
 }
@@ -621,17 +606,12 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
         // run corr if the metadata was provided and at least one symbolic cluster was created
         if (typeof metadata_path != "undefined" && shell.test('-e',merge_output_path +
             output_name + '_peak_area_merged_ann.csv')) {
-            // call groups
-            callGroupsfunc(metadata_path,
-                merge_output_path + output_name + '_peak_area_merged_ann.csv',
-                merge_output_path+'logMergeOutput', verbose);
-
             // call correlation
-            callComputeCorrelation(metadata_path, merge_output_path +
+            callComputeCorrelationGrouping(metadata_path, merge_output_path +
                 output_name + '_peak_area_merged_ann.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
             // call correlation
-            callComputeCorrelation(metadata_path, merge_output_path +
+            callComputeCorrelationGrouping(metadata_path, merge_output_path +
                 output_name + '_spectra_merged_ann.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
         }
@@ -692,10 +672,6 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
         if (parms.metadata === "-1") {
             parms.metadata = output_path + "/../../" + "original_samples_METADATA.csv"
         }
-        callGroupsfunc(parms.metadata,
-            clean_output_path+output_name+"_peak_area_clean.csv",
-            clean_output_path+"logCleanOutput", parms.verbose);
-        // TODO Future alignment function will probably be here
 
         var out_done_log = '\n======\nFinish Step 5 '+printTimeElapsed_bigint(start_clean, process.hrtime.bigint())+' (without the clustered spectra comparison time) \n======\n';
         console.log(out_done_log);
@@ -1919,17 +1895,17 @@ program
             if (resExec) {
                 // annotation step failed, use the clean tables instead
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(options.metadata, counts_path+"_peak_area_clean.csv",
+                callComputeCorrelationGrouping(options.metadata, counts_path+"_peak_area_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
-                callComputeCorrelation(options.metadata, counts_path+"_spectra_clean.csv",
+                callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(options.metadata, counts_path + "_peak_area_clean_ann.csv",
+                callComputeCorrelationGrouping(options.metadata, counts_path + "_peak_area_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
-                callComputeCorrelation(options.metadata, counts_path + "_spectra_clean_ann.csv",
+                callComputeCorrelationGrouping(options.metadata, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
             }
@@ -1952,11 +1928,11 @@ program
             }
 
             // call correlation for the mscluster peak area count
-            callComputeCorrelation(options.metadata, counts_path+"_peak_area.csv",
+            callComputeCorrelationGrouping(options.metadata, counts_path+"_peak_area.csv",
                 options.method, 0, clustering_log_output, options.verbose);
 
             // call correlation for the mscluster spectra count
-            callComputeCorrelation(options.metadata, counts_path+"_spectra.csv",
+            callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
@@ -2419,21 +2395,14 @@ program
         }
 
         // call correlation for the mscluster peak area count
-        callComputeCorrelation(options.metadata, output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv",
+        callComputeCorrelationGrouping(options.metadata, output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv",
             options.method, 0, output_path+"/outs/"+options.output_name+"/logClusteringOutput",
             options.verbose);
 
         // call correlation for the mscluster spectra count
-        callComputeCorrelation(options.metadata, output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
+        callComputeCorrelationGrouping(options.metadata, output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
             options.method, 0,  output_path+"/outs/"+options.output_name+"/logClusteringOutput",
             options.verbose);
-
-        // if (options.metfrag_identification === "TRUE")
-        // {
-        //     callMetfragPubChem(options.output_name, output_path, options.method,
-        //         options.ion_mode, 3, 0.003,
-        //         options.scale_factor, options.verbose);
-        // }
 
         // print the pre-processing warning at the end of the process
         if (preprocessing_warning !== undefined) {
@@ -2687,18 +2656,18 @@ program
             if (resExec) {
                 // annotation failed, call correlation in the clean counts
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_peak_area_clean.csv",
+                callComputeCorrelationGrouping(options.metadata, output_clean_path + output_name + "_peak_area_clean.csv",
                     options.method,0, output_clean_path+"logCleanOutput", options.verbose);
 
-                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_spectra_clean.csv",
+                callComputeCorrelationGrouping(options.metadata, output_clean_path + output_name + "_spectra_clean.csv",
                     options.method,0, output_clean_path+"logCleanOutput", options.verbose);
             } else {
                 // annotations worked, call correlation in the clean and annotated counts
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_peak_area_clean_ann.csv",
+                callComputeCorrelationGrouping(options.metadata, output_clean_path + output_name + "_peak_area_clean_ann.csv",
                     options.method,0, output_clean_path+"logAnnotateOutput", options.verbose);
 
-                callComputeCorrelation(options.metadata, output_clean_path + output_name + "_spectra_clean_ann.csv",
+                callComputeCorrelationGrouping(options.metadata, output_clean_path + output_name + "_spectra_clean_ann.csv",
                     options.method,0, output_clean_path+"logAnnotateOutput", options.verbose);
             }
 
@@ -3039,8 +3008,10 @@ program
 program
     .command('corr')
     .description('Step 9: This command runs the bioactivity correlation to rank the consensus spectra based on the ' +
-        'scores computed for the selection of samples and bioactivity values present in the metadata table.\n\n')
-    .option('-m, --metadata <file>', 'path to the metadata table CSV file. Used to retrieve the biocorrelation groups')
+        'scores computed for the selection of samples and bioactivity values present in the metadata table. It also ' +
+        'computes the quantification groupings defined in the metadata table (after the biocorrelations, if any).\n\n')
+    .option('-m, --metadata <file>', 'path to the metadata table CSV file. Used to retrieve the biocorrelation groups and quantification grouping. ' +
+        'For a joined job, this must be the original samples metadata table.')
     .option('-c, --count_file_path <file>', 'path to the count table CSV file')
     .option('-e, --method [name]', 'a character string indicating which correlation coefficient is to be computed. One ' +
         'of "pearson", "kendall", or "spearman"', convertMethodCorr,"spearman")
@@ -3067,7 +3038,7 @@ program
         console.log('*** NP3 Spectra Count and Bioactivity Correlation - Step 9 ***\n');
         var corr_log_output = output_path+'logCorrOutput';
         // call correlation for the mscluster count
-        callComputeCorrelation(options.metadata, options.count_file_path, options.method,
+        callComputeCorrelationGrouping(options.metadata, options.count_file_path, options.method,
             options.bio_cutoff, corr_log_output, options.verbose);
 
         console.log("Corr "+ printTimeElapsed_bigint(start_corr, process.hrtime.bigint()));
@@ -3469,17 +3440,17 @@ program
             if (resExec) {
                 // joining annotation step failed, use the clean tables instead
                 // call correlation for the cleaned peak area count and spectra count
-                callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area_clean.csv",
+                callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_peak_area_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
-                callComputeCorrelation(metadata_original_samples, counts_path+"_spectra_clean.csv",
+                callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelation(metadata_original_samples, counts_path + "_peak_area_clean_ann.csv",
+                callComputeCorrelationGrouping(metadata_original_samples, counts_path + "_peak_area_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
-                callComputeCorrelation(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
+                callComputeCorrelationGrouping(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
             }
@@ -3499,10 +3470,10 @@ program
             }
 
             // call correlation for the mscluster peak area count
-            callComputeCorrelation(metadata_original_samples, counts_path+"_peak_area.csv",
+            callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_peak_area.csv",
                 options.method, 0, clustering_log_output, options.verbose);
             // call correlation for the mscluster spectra count
-            callComputeCorrelation(metadata_original_samples, counts_path+"_spectra.csv",
+            callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
