@@ -5,25 +5,61 @@ import numpy as np
 import pandas as pd
 from matchms.importing import load_from_mgf
 from matchms.filtering import normalize_intensities
-from matchms.filtering import remove_peaks_around_precursor_mz
 from matchms.filtering import add_precursor_mz
 from matchms.filtering import select_by_relative_intensity
 from matchms.similarity.spectrum_similarity_functions import find_matches
 from spec2vec import Spec2Vec
 from spec2vec import SpectrumDocument
 
+from matchms.Fragments import Fragments
+from matchms.typing import SpectrumType
+
+
 # some code from https://github.com/iomega/spec2vec_gnps_data_analysis/blob/master/notebooks/
 # Adapted notebooks 3 and 6
 # Compute spec2vec similarities on mass spectra dataset
 
+# code from matchms, added mz_tolerance to keep prec mz within tolerance - prevent empty spectrum
+def remove_peaks_around_precursor_mz_keep_prec(spectrum_in: SpectrumType, trim_mz: float = 17, mz_tolerance: float = 0.025) -> SpectrumType:
+    """Remove peaks that are within trim_mz (in Da) of
+       the precursor mz, excluding the precursor peak +- mz_tolerance.
+
+    Parameters
+    ----------
+    spectrum_in:
+        Input spectrum.
+    mz_tolerance:
+        Tolerance of mz values that are not allowed to lie
+        within the precursor mz. Default is 17 Da.
+    """
+    if spectrum_in is None:
+        return None
+
+    spectrum = spectrum_in.clone()
+
+    precursor_mz = spectrum.get("precursor_mz", None)
+    assert precursor_mz is not None, "Precursor mz absent."
+    assert isinstance(precursor_mz, (float, int)), ("Expected 'precursor_mz' to be a scalar number.",
+                                                    "Consider applying 'add_precursor_mz' filter first.")
+    assert trim_mz >= 0, "trim_mz must be a positive scalar."
+    assert mz_tolerance >= 0, "mz_tolerance must be a positive scalar."
+
+    mzs, intensities = spectrum.peaks.mz, spectrum.peaks.intensities
+    peaks_to_remove = ((np.abs(precursor_mz-mzs) <= trim_mz) & ~(np.abs(precursor_mz-mzs) <= mz_tolerance))
+    assert (~peaks_to_remove).sum() > 0, "the filtered spectrum must have at least one fragment peak."
+    new_mzs, new_intensities = mzs[~peaks_to_remove], intensities[~peaks_to_remove]
+    spectrum.peaks = Fragments(mz=new_mzs, intensities=new_intensities)
+
+    return spectrum
+
 # Pre-processing of spectrum before pairwise comparison - similar to how it is done in MSCluster and NP3
 # normalize spectrum, remove peaks around precursor if trim_mz is T, remove very low intensity peaks
-def pre_process_spectrum(s, trim_mz=False):
+def pre_process_spectrum(s, trim_mz=False, mz_tolerance=0.25):
     s = normalize_intensities(s)
     s = add_precursor_mz(s)
     #
     if trim_mz is True:
-        s = remove_peaks_around_precursor_mz(s, mz_tolerance=20)
+        s = remove_peaks_around_precursor_mz_keep_prec(s, trim_mz=20, mz_tolerance=mz_tolerance)
     # remove very low intensity peaks
     if len(s.peaks) >= 10:
         s = select_by_relative_intensity(s, intensity_from=np.quantile(s.peaks.intensities, 0.75)*0.001)
@@ -65,7 +101,7 @@ def compute_pairwise_similarity_spec2vec(data_name, path_mgf, output_path, bin_s
     print("number of spectra:", len(spectra))
     # pre process spectra
     # apply pre processing steps to the data
-    spectra_preprocessed = [pre_process_spectrum(s, trim_mz) for s in spectra]
+    spectra_preprocessed = [pre_process_spectrum(s, trim_mz, bin_size) for s in spectra]
 
     # convert spectra to documents in spec2vec format
     tstart = time.time()
