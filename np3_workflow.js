@@ -2121,7 +2121,7 @@ program
         'the density method used in the alignment process.', parseFloat, 100)
     .option('-q, --processed_data_overwrite [x]', 'A logical "TRUE" or "FALSE" indicating if the pre processed\n\t\t\t\t\t' +
         'data present in the processed_data_name folder should be\n\t\t\t\t\t' +
-        'overwritten and pre processed again if it already exists\n\t\t\t\t\t', toupper, "TRUE")
+        'overwritten and pre processed again if it already exists\n\t\t\t\t\t', toupper, "FALSE")
     .option('-v, --verbose [x]', 'for values x>0 show the script output information\n\t\t\t\t\t', parseDecimal,0)
     .action(function(options) {
         // console.log(options)
