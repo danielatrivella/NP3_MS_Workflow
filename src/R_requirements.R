@@ -3,6 +3,7 @@ depend_pcks <- c('purrr', 'dplyr', 'stats', 'inline', 'readr',  # 'rJava',
 depend_pcks_version <- c("0.3.2", "0.8.3", "3.6.3", "0.3.16", "1.3.1", # "0.9-13",
                          "0.9.700.2.0", "3.8.2", "1.30.10", "1.4.0")
 bio_pcks <- c('Rcpp','mzR', 'MSnbase', 'xcms')
+bio_pcks_version <- c('1.0.6','2.18.0', '2.10.1', '3.6.1')
 
 # install devtools first to then install the packages in the desired versions
 if (!require(devtools)) {
