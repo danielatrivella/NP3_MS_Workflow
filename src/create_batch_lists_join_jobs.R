@@ -160,7 +160,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
   }
   
   # read all the original samples metadata tables
-  orig_samples_metadata <- bind_rows(sapply(seq_along(orig_samples_metadata_path), function(i) {
+  orig_samples_metadata <- bind_rows(lapply(seq_along(orig_samples_metadata_path), function(i) {
     m <- readMetadataTable(orig_samples_metadata_path[i])
     m$JOB_CODE <- metadata$JOB_CODE[i]
     m$JOINED_JOB_CODE <- metadata$JOINED_JOB_CODE[i]
