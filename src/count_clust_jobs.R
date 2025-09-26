@@ -72,7 +72,6 @@ metadata <- readMetadataTableJoinJobs(path_jobs_metadata, path_jobs_data)
 
 # get the count of spectra of the subjobs
 # and select only necessary columns that will be kept in the process
-# TODO see if these columns are necessary - or maxarea, numjoins, meanInt, blankdist and protonated cols
 count_subjobs <- lapply(metadata$JOBNAME, function(x)
 {
   jobcode <- metadata[metadata$JOBNAME == x,"JOB_CODE"]

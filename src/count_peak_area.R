@@ -140,7 +140,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
                                           joinedJobsIDs)
 {
   # split the concatenated scans, peakIds and joinedJobsIDs - and also
-  # replace all _ by $, add a $ at the end of each value for matching
+  # replace the first _ by $, add a $ at the end of each value for matching
   scans <- lapply(scans, function(x) strsplit(x, ";")[[1]])
   scans_fomart <- lapply(scans, function(x) paste0(sub(pattern = "_", 
                                                        replacement = "$", 
