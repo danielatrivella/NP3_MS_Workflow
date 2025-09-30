@@ -210,7 +210,10 @@ clusterList <- clusterList[, c("msclusterID","numSpectra",
                                names(clusterList)[endsWith(names(clusterList),
                                                            "_spectra")])]
 
+# create the counts tables output folder
+dir.create(file.path(output_path, "count_tables"), showWarnings = FALSE)
 # save count by number of spectra - partial result - it will be overwritten at the end
+# help in debugging
 write.csv(clusterList, 
           file = file.path(output_path, "count_tables", paste0(output_name, "_spectra.csv")), 
           row.names = FALSE)
@@ -355,7 +358,6 @@ clusterArea <- clusterArea[, c("msclusterID","numSpectra",
                                      names(clusterArea)])]
 
 # save the quantification table
-dir.create(file.path(output_path, "count_tables"), showWarnings = FALSE)
 # save count by number of spectra
 write.csv(clusterList, 
           file = file.path(output_path, "count_tables", paste0(output_name, "_spectra.csv")), 
