@@ -210,6 +210,11 @@ clusterList <- clusterList[, c("msclusterID","numSpectra",
                                names(clusterList)[endsWith(names(clusterList),
                                                            "_spectra")])]
 
+# save count by number of spectra - partial result - it will be overwritten at the end
+write.csv(clusterList, 
+          file = file.path(output_path, "count_tables", paste0(output_name, "_spectra.csv")), 
+          row.names = FALSE)
+
 ## check count sum
 if (sum(clusterList$numSpectra) != 
     sum(clusterList[,names(clusterList)[endsWith(names(clusterList), "_spectra")]])) {
