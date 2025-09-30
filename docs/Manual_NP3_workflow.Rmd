@@ -912,26 +912,28 @@ Two files are created inside the 'output_path' folder (this folder is created if
     
 When the count_files are provided the following columns are added to them:
  
-- tremolo_UNPD_IDs : the UNPD IDs of the top_k identified spectra concatenated with a ';'
-- tremolo_SMILES    : the SMILES of the top_k identified spectra concatenated with a ','. A comma is used here to allow including this information in cytoscape to visualize the nodes annotated identified structure
-- tremolo_chemicalNames    : the chemical names of the top_k identified spectra concatenated with a ';'
-- tremolo_InChIKey          : the InChIKey of the top_k identified spectra concatenated with a ';'
-- tremolo_molecularFormula    : the molecular formula of the top_k identified spectra concatenated with a ';'
-- tremolo_molecularWeight    : the molecular weight of the top_k identified spectra concatenated with a ';'
-- tremolo_CAS    : the CAS number of the top_k identified spectra concatenated with a ';'
-- tremolo_MQScore    : the MQ score computed by tremolo of the top_k identified spectra concatenated with a ';'. Similarity score, evaluates the quality of the match
-- tremolo_mzErrorPPM    : the m/z error in PPM for the top_k identified spectra concatenated with a ';'. Mass error, evaluates the quality of the match and signalizes analogs
-- tremolo_numSharedPeaks    : the number of shared peaks with the top_k identified spectra concatenated with a ';'. Shared peaks in the match, evaluates the quality of the match
-- tremolo_NPClassifier_superclass  : the chemical superclass from NPClassifier of the top_k identified spectra concatenated with a ';'
-- tremolo_NPClassifier_class	   : the chemical class from NPClassifier of the top_k identified spectra concatenated with a ';'
-- tremolo_ClassyFire_subclass	   : the chemical subclass from ClassyFire of the top_k identified spectra concatenated with a ';'
-- tremolo_NPClassifier_pathway	   : the chemical pathway from NPClassifier of the top_k identified spectra concatenated with a ';'
-- tremolo_NPClassifier_isglycoside	 : the chemical is glycoside tag from NPClassifier of the top_k identified spectra concatenated with a ';'
-- tremolo_NPAtlas_id	             : the NPAtlas ID of the top_k identified spectra concatenated with a ';'
-- tremolo_NPAtlas_compound_names	 : the compound names from NPAtlas of the top_k identified spectra concatenated with a ';'
-- tremolo_NPAtlas_origin_type	     : the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';'
-- tremolo_NPAtlas_genus	            : the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';'
-- tremolo_NPAtlas_origin_species     : the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';'
+| Identification Columns | Description |
+| :--------------- | :------------------------------------: | 
+| tremolo_UNPD_IDs | the UNPD IDs of the top_k identified spectra concatenated with a ';'|
+| tremolo_SMILES    | the SMILES of the top_k identified spectra concatenated with a ','. A comma is used here to allow including this information in cytoscape to visualize the nodes annotated identified structure. This column must be quoted "" |
+| tremolo_chemicalNames    | the chemical names of the top_k identified spectra concatenated with a ';' |
+| tremolo_InChIKey          | the InChIKey of the top_k identified spectra concatenated with a ';'
+| tremolo_molecularFormula    | the molecular formula of the top_k identified spectra concatenated with a ';' |
+| tremolo_molecularWeight    | the molecular weight of the top_k identified spectra concatenated with a ';' |
+| tremolo_CAS    | the CAS number of the top_k identified spectra concatenated with a ';' |
+| tremolo_MQScore    | the MQ score computed by tremolo of the top_k identified spectra concatenated with a ';'. Similarity score, evaluates the quality of the match |
+| tremolo_mzErrorPPM    | the m/z error in PPM for the top_k identified spectra concatenated with a ';'. Mass error, evaluates the quality of the match and signalizes analogs |
+| tremolo_numSharedPeaks    | the number of shared peaks with the top_k identified spectra concatenated with a ';'. Shared peaks in the match, evaluates the quality of the match |
+| tremolo_NPClassifier_superclass  | the chemical superclass from NPClassifier and ClassyFire separated by a pipe '|' for the top_k identified spectra concatenated with a ';'. In some cases it was assigned more than one superclass from NPClassifier or ClassyFire, and they are separated by a ':' |
+| tremolo_NPClassifier_class	   | the chemical class from NPClassifier and ClassyFire separated by a pipe '|' for the top_k identified spectra concatenated with a ';'. In some cases it was assigned more than one class from NPClassifier or ClassyFire, and they are separated by a ':' |
+| tremolo_ClassyFire_subclass	   | the chemical subclass from ClassyFire of the top_k identified spectra concatenated with a ';' |
+| tremolo_NPClassifier_pathway	   | the chemical pathway from NPClassifier of the top_k identified spectra concatenated with a ';'. In some cases it was assigned more than one pathway from NPClassifier and they are separated by a ':' |
+| tremolo_NPClassifier_isglycoside	 | the chemical is glycoside tag from NPClassifier of the top_k identified spectra concatenated with a ';' |
+| tremolo_NPAtlas_id	             | the NPAtlas ID of the top_k identified spectra concatenated with a ';' |
+| tremolo_NPAtlas_compound_names	 | the compound names from NPAtlas of the top_k identified spectra concatenated with a ';' |
+| tremolo_NPAtlas_origin_type	     | the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';' |
+| tremolo_NPAtlas_genus	            | the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';' |
+| tremolo_NPAtlas_origin_species     | the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';' |
 
 For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md file and its documentation at src/ISDB_tremolo_NP3/Data/doc/Workflow_062016.pdf.
  
