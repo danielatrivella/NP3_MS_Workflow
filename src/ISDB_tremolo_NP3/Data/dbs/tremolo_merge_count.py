@@ -71,8 +71,8 @@ with open(result_file, 'rt') as f:
             ppmError_id_pos = row.index('mzErrorPPM')
             sharPeaks_id_pos = row.index('LibSearchSharedPeaks')
             # NPC columns index
-            npc_superclass_pos = row.index('NPClassifier_class')
-            npc_class_pos = row.index('NPClassifier_superclass')
+            npc_superclass_pos = row.index('NPClassifier_superclass')
+            npc_class_pos = row.index('NPClassifier_class')
             npc_pathway_pos = row.index('NPClassifier_pathway')
             npc_isglycoside_pos = row.index('NPClassifier_isglycoside')
             cf_subclass_pos = row.index('ClassyFire_subclass')
@@ -99,9 +99,9 @@ with open(result_file, 'rt') as f:
                 result_score[row[scan_id_pos]] += ";" + row[score_id_pos]
                 result_ppmError[row[scan_id_pos]] += ";" + row[ppmError_id_pos]
                 result_sharedPeaks[row[scan_id_pos]] += ";" + row[sharPeaks_id_pos]
-                result_npc_superclass[row[scan_id_pos]] += ";" + row[npc_superclass_pos]
-                result_npc_class[row[scan_id_pos]] += ";" + row[npc_class_pos]
-                result_npc_pathway[row[scan_id_pos]] += ";" + row[npc_pathway_pos]
+                result_npc_superclass[row[scan_id_pos]] += ";" + row[npc_superclass_pos].replace(";", ":")
+                result_npc_class[row[scan_id_pos]] += ";" + row[npc_class_pos].replace(";", ":")
+                result_npc_pathway[row[scan_id_pos]] += ";" + row[npc_pathway_pos].replace(";", ":")
                 result_npc_isglycoside[row[scan_id_pos]] += ";" + row[npc_isglycoside_pos]
                 result_cf_subclass[row[scan_id_pos]] += ";" + row[cf_subclass_pos]
                 result_npa_id[row[scan_id_pos]] += ";" + row[npa_id_pos]
@@ -121,9 +121,9 @@ with open(result_file, 'rt') as f:
                 result_score[row[scan_id_pos]] = row[score_id_pos]
                 result_ppmError[row[scan_id_pos]] = row[ppmError_id_pos]
                 result_sharedPeaks[row[scan_id_pos]] = row[sharPeaks_id_pos]
-                result_npc_superclass[row[scan_id_pos]] = row[npc_superclass_pos]
-                result_npc_class[row[scan_id_pos]] = row[npc_class_pos]
-                result_npc_pathway[row[scan_id_pos]] = row[npc_pathway_pos]
+                result_npc_superclass[row[scan_id_pos]] = row[npc_superclass_pos].replace(";", ":")
+                result_npc_class[row[scan_id_pos]] = row[npc_class_pos].replace(";", ":")
+                result_npc_pathway[row[scan_id_pos]] = row[npc_pathway_pos].replace(";", ":")
                 result_npc_isglycoside[row[scan_id_pos]] = row[npc_isglycoside_pos]
                 result_cf_subclass[row[scan_id_pos]] = row[cf_subclass_pos]
                 result_npa_id[row[scan_id_pos]] = row[npa_id_pos]
@@ -143,7 +143,8 @@ for count_file in sys.argv[3:]:
 
     if "tremolo_UNPD_IDs" in count_table:
         print("    - Overwriting previous tremolo identification result")
-        count_table = count_table.drop(["tremolo_UNPD_IDs","tremolo_SMILES","tremolo_chemicalNames","tremolo_molecularFormula",
+        count_table = count_table.drop(["tremolo_UNPD_IDs","tremolo_SMILES","tremolo_chemicalNames", "tremolo_InChIKey",
+                                        "tremolo_molecularFormula",
                           "tremolo_molecularWeight","tremolo_CAS","tremolo_MQScore","tremolo_mzErrorPPM",
                           "tremolo_numSharedPeaks","tremolo_NPClassifier_superclass","tremolo_NPClassifier_class",
                           "tremolo_ClassyFire_subclass","tremolo_NPClassifier_pathway",

@@ -52,8 +52,8 @@ with open(db_file, 'rt') as f:
             pm_pos = row.index('PARENTMASS')
             inchikey_pos = row.index('inchik')
             # NPC columns index
-            npc_superclass_pos = row.index('NPClassifier_class')
-            npc_class_pos = row.index('NPClassifier_superclass')
+            npc_superclass_pos = row.index('NPClassifier_superclass')
+            npc_class_pos = row.index('NPClassifier_class')
             npc_pathway_pos = row.index('NPClassifier_pathway')
             npc_isglycoside_pos = row.index('NPClassifier_isglycoside')
             cf_subclass_pos = row.index('ClassyFire_subclass')
