@@ -107,13 +107,18 @@ compute_peak_area <- function(processed_data_path, msclusterIDs, scans_count,
   # when joining jobs, ignore the scans that do not appear in this job - they will have 0 base peak int
   if (is.null(job_code_match)) {
     if (any(base_peak_int == 0)) {
-      stop("Wrong base peak intensities retrieved for msclusterId's ", 
-           paste(msclusterIDs[(base_peak_int == 0)],collapse = ","))
+      stop("Wrong base peak intensities retrieved for current msclusterId's ", 
+           paste(msclusterIDs[(base_peak_int == 0)],collapse = ","), 
+           ".\n The original scans affected are the following:",
+           paste(scans[(base_peak_int == 0)],collapse = ","))
     }
   } else {
     if (any(base_peak_int[job_code_match] == 0)) {
-      stop("Wrong base peak intensities retrieved for msclusterId's ", 
+      stop("Wrong base peak intensities retrieved from JOB_CODE ",
+           unique(metadata$JOB_CODE)," for current msclusterId's ", 
            paste(msclusterIDs[(base_peak_int == 0) & job_code_match],
+                 collapse = ","), ".\n The original scans affected are the following:",
+           paste(scans_count[(base_peak_int == 0) & job_code_match],
                  collapse = ","))
     }
   }
@@ -142,7 +147,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
   # split the concatenated scans, peakIds and joinedJobsIDs - and also
   # replace the first _ by $, add a $ at the end of each value for matching
   scans <- lapply(scans, function(x) strsplit(x, ";")[[1]])
-  scans_fomart <- lapply(scans, function(x) paste0(sub(pattern = "_", 
+  scans_format <- lapply(scans, function(x) paste0(sub(pattern = "_", 
                                                        replacement = "$", 
                                                        x), "$"))
   peakIds <- lapply(peakIds, function(x) strsplit(x, ";")[[1]])
@@ -163,6 +168,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
   
   joined_jobs_peak_areas <- Reduce(bind_cols, lapply(metadata_joined_jobs$JOB_CODE, function(job_code) 
   {
+    #print(job_code)
     metadata_samples_job <- metadata_samples[metadata_samples$JOB_CODE == job_code,]
     pre_processed_data_path_job <- metadata_joined_jobs[metadata_joined_jobs$JOB_CODE == job_code,
                                                         "PRE_PROCESSED_DATA_PATH"]
@@ -174,7 +180,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
                       scans,
                       peakIds,
                       metadata_samples_job,
-                      scans_fomart,
+                      scans_format,
                       peakIds_format,
                       job_code_match)
   }))
