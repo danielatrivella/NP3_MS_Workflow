@@ -194,6 +194,45 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
   write.csv(orig_samples_metadata, 
             file = file.path(output_path, "original_samples_METADATA.csv"),
             row.names = FALSE)
+  
+  # check if the columns with the samples quantifications from the original jobs clean count tables match the
+  # list of samples present in the orig_samples_metadata - samples consistency test
+  count_samples_list <- unlist(lapply(metadata$JOBNAME, function(x)
+  {
+    jobcode <- metadata[metadata$JOBNAME == x,"JOB_CODE"]
+    # check if the clean spectra table exists
+    spectraCountFilePath <- file.path(path_jobs_data, x, "outs", x, "count_tables", 
+                                      "clean", paste0(x, "_spectra_clean_ann.csv"))
+    if (!file.exists(spectraCountFilePath)) 
+    {
+      stop("Could not find the original clean count table from JOB_CODE = ", 
+           jobcode,
+           ". Check if this job output is consistent and no original file is missing or was modified. ",
+           "Path to the missing count table file: ", spectraCountFilePath)
+    }
+    # retrieve the spectra quantification columns
+    countFileHeader <- read.csv(spectraCountFilePath, 
+                          stringsAsFactors = F, comment.char = "", nrows = 1)
+    # get the sample codes present in the quantification columns
+    jobSamples <- sub("_spectra$", "",  names(countFileHeader)[endsWith(names(countFileHeader), "_spectra")])
+    # check if all samples are present in the original samples metadata
+    if (!all(jobSamples %in% orig_samples_metadata$SAMPLE_CODE)) {
+      stop("There are original samples present in the original clean counts of JOB_CODE = ", jobcode,
+           " that are missing from the provided original samples metadata. ",
+           " The following SAMPLE_CODEs are missing: ", 
+           paste(jobSamples[!(jobSamples %in% orig_samples_metadata$SAMPLE_CODE)], collapse= ","), 
+           " Please make sure all original data is not modified and fully present in the provided paths ",
+           "to prevent inconsistency errors during the join_jobs integrative clustering")
+    }
+    return(jobSamples)
+  }))
+  if (!all(orig_samples_metadata$SAMPLE_CODE %in% count_samples_list)) {
+    stop("There are original samples present in the original samples metadata that are missing from ", 
+         " the original samples clean counts. The following SAMPLE_CODEs are missing: ", 
+         paste(orig_samples_metadata$SAMPLE_CODE[!(orig_samples_metadata$SAMPLE_CODE %in% count_samples_list)], collapse= ","), 
+         " Please make sure all original data is not modified and fully present in the provided paths ",
+         "to prevent inconsistency errors during the join_jobs integrative clustering")
+  }
 }
 
 
