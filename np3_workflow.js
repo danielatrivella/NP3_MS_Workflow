@@ -451,8 +451,6 @@ function callCountSpectraBySubClusterID(out_path, name, isFinal, metadata, proce
 
 function callCountSpectraBySubJobID(out_path, name, metadata_jobs, jobs_data_dir, mz_tol, logOutputPath, verbose)
 {
-    // TODO rm isFinal = TRUE always
-    // TODO creating script
     var step_name = '*** Step 4 - Counting peak area and spectra by subjobs '+name+' *** \n';
     console.log(step_name);
     var resExec = shell.exec('Rscript '+__dirname+'/src/count_clust_jobs.R '+out_path+' '+name+' '+jobs_data_dir+' '+
@@ -1057,9 +1055,58 @@ function callPreProcessData(job, metadata, raw_dir, parms, verbose)
     return(output_stats);
 }
 
-function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, top_k, verbose, verbose_search) {
+function mergeTremoloResults(path_tremolo_result, max_results, path_count_files, logTremoloFile, verbose)
+{
+    const start_mergetremolo = process.hrtime.bigint();
+    tremolo_merging_res = '\n*** Merging the tremolo result with the counts tables ***\n'
+    console.log(tremolo_merging_res);
+    shell.ShellString(tremolo_merging_res).toEnd(logTremoloFile);
+    try {
+        shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/tremolo_merge_count.py ' + path_tremolo_result +
+            ' ' + max_results + ' ' + path_count_files.join(' '), {async: false, silent: (verbose <= 0)});
+    } catch (e) {
+        if (verbose <= 0) {
+            console.log(e);
+        }
+        console.log("\nERROR");
+        shell.ShellString(e+"\nERROR!\n").toEnd(logTremoloFile);
+        return;
+    }
+
+    console.log('\nDONE! '+printTimeElapsed_bigint(start_mergetremolo, process.hrtime.bigint())+"\n");
+    shell.ShellString("\nDONE!\n").toEnd(logTremoloFile);
+}
+
+function curateTremoloResults(path_count_files_list, logTremoloFile, verbose)
+{
+    const start_curatetremolo = process.hrtime.bigint();
+    tremolo_unpd_curating = '\n*** Curating the tremolo-UNPD identification result - selecting best results ***\n'
+    console.log(tremolo_unpd_curating);
+    shell.ShellString(tremolo_unpd_curating).toEnd(logTremoloFile);
+    try {
+        path_count_files_list.forEach(function(path_count_file){
+            shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' + path_count_file,
+                {async: false, silent: (verbose <= 0)});
+        });
+    } catch (e) {
+        if (verbose <= 0) {
+            console.log(e);
+        }
+        console.log("\nERROR");
+        shell.ShellString(e+"\nERROR!\n").toEnd(logTremoloFile);
+        return;
+    }
+
+    console.log('\nDONE! '+printTimeElapsed_bigint(start_curatetremolo, process.hrtime.bigint())+"\n");
+    shell.ShellString("\nDONE!\n").toEnd(logTremoloFile);
+}
+
+function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, top_k, path_count_files,
+                               verbose, verbose_search) {
     const start_tremolo = process.hrtime.bigint();
-    console.log('*** Step 6 - Calling tremolo to perform an in-silico spectral library identification against UNPD *** \n');
+    tremolo_start = '*** Step 6 - Calling tremolo to perform an in-silico spectral library identification against UNPD *** \n'
+    console.log(tremolo_start);
+    shell.ShellString(tremolo_start).to(output_path+"/logTremolo");
 
     // check if output_path exists
     if (!shell.test('-e', output_path))
@@ -1122,10 +1169,11 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
             console.log(resExec.stderr);
         }
         console.log('\nERROR. Couldn\'t run the spectral library search.\n');
+        shell.ShellString(resExec.stdout+"\n"+resExec.stderr+"ERROR.\n").toEnd(output_path+"/logTremolo");
         return(resExec.code);
     } else {
         console.log("DONE!\n");
-        shell.ShellString(resExec.stdout).to(output_path+"/logTremolo")
+        shell.ShellString(resExec.stdout+"DONE!\n").toEnd(output_path+"/logTremolo");
     }
 
     resExec = shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/treat.py ' +
@@ -1138,16 +1186,30 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
             console.log(resExec.stderr);
         }
         console.log("\nERROR. Couldn't treat the tremolo result file.\n");
+        shell.ShellString(resExec.stdout+"\n"+resExec.stderr+"ERROR. Couldn't treat the tremolo result file.\n").toEnd(output_path+"/logTremolo");
     } else {
         console.log("DONE!\n");
+        shell.ShellString("\n\n"+resExec.stdout+"DONE!\n").toEnd(output_path+"/logTremolo");
+        // if identification was successful and path_count_files was informed, proceed for merging and curating the result
+        // merging the tremolo result to the path_count_files, when present
+        if (!(path_count_files === undefined) && path_count_files.length > 0) {
+            mergeTremoloResults(output_path + "/tremolo_results.csv", top_k, path_count_files,
+                output_path+"/logTremolo", verbose)
+
+            // call the curate tremolo result
+            curateTremoloResults(path_count_files, output_path+"/logTremolo",
+                verbose)
+        }
     }
 
     // removing tremolo output temporary directory
     shell.rm("-rf", tmpDir);
 
-    var tremolo_end = "Tremolo search ended!\n======\nFinish Step 6 "+printTimeElapsed_bigint(start_tremolo, process.hrtime.bigint())+"\n======\n";
+    var tremolo_end = "\n\nTremolo search ended!\n\n======\nFinish Step 6 "+
+        printTimeElapsed_bigint(start_tremolo, process.hrtime.bigint())+"\n======\n";
     console.log(tremolo_end);
     shell.ShellString(tremolo_end).toEnd(output_path+"/logTremolo");
+
     return(resExec.code);
 }
 
@@ -1218,23 +1280,6 @@ function renameTremoloJoinedIds(path_clean_count, path_tremolo_result, verbose)
     }
 
     console.log('DONE! '+printTimeElapsed_bigint(start_renametremolo, process.hrtime.bigint())+"\n");
-}
-
-function mergeTremoloResults(path_tremolo_result, max_results, path_count_files, verbose)
-{
-    const start_mergetremolo = process.hrtime.bigint();
-    console.log('*** Merging the tremolo result with the counts tables ***\n');
-    try {
-        shell.exec(python3()+' '+__dirname+'/src/ISDB_tremolo_NP3/Data/dbs/tremolo_merge_count.py ' + path_tremolo_result +
-            ' ' + max_results + ' ' + path_count_files.join(' '), {async: false, silent: (verbose <= 0)});
-    } catch (e) {
-        if (verbose <= 0) {
-            console.log(e);
-        }
-        console.log("\nERROR");
-    }
-
-    console.log('\nDONE! '+printTimeElapsed_bigint(start_mergetremolo, process.hrtime.bigint())+"\n");
 }
 
 // function callMetfragPubChem(output_name, output_path, method, ion_mode, ppm_tolerance, fragment_tolerance,scale_factor,
@@ -1880,12 +1925,8 @@ program
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 tremoloIdentification(options.output_name, output_path + "/identifications",
                     output_path+"/mgf/"+options.output_name+"_clean.mgf",
-                    options.mz_tolerance,0.2, 10, options.verbose, 0);
-                // renameTremoloJoinedIds(counts_path+"_spectra_clean.csv",
-                //     output_path+ "/identifications/tremolo_results.csv", options.verbose);
-                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
-                    10, [counts_path+"_spectra_clean.csv",
-                        counts_path+"_peak_area_clean.csv"]);
+                    options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
+                        counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
             // use the mz_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
@@ -1922,10 +1963,8 @@ program
                 // tremolo search for not windows OS
                 tremoloIdentification(options.output_name, output_path + "/identifications",
                     output_path+"/mgf/"+options.output_name+"_all.mgf",
-                    options.mz_tolerance,0.2, 10, options.verbose, 0);
-                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
-                    10, [counts_path+"_spectra.csv",
-                        counts_path+"_peak_area.csv"]);
+                    options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv",
+                        counts_path+"_peak_area.csv"], options.verbose, 0);
             }
 
             // call correlation for the mscluster peak area count
@@ -2389,10 +2428,9 @@ program
         {
             tremoloIdentification(options.output_name, output_path + "/outs/" + options.output_name + "/identifications",
                 output_path+"/outs/"+options.output_name+"/mgf/"+options.output_name+"_all.mgf",
-                options.mz_tolerance,0.2, 10, options.verbose, 0)
-            mergeTremoloResults(output_path + "/outs/" + options.output_name + "/identifications/tremolo_results.csv",
-                10, [output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
-                    output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv"])
+                options.mz_tolerance,0.2, 10, [output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
+                    output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv"],
+                options.verbose, 0)
         }
 
         // call correlation for the mscluster peak area count
@@ -2641,12 +2679,8 @@ program
             {
                 tremoloIdentification(output_name, options.output_path + "/identifications",
                     options.output_path+"/mgf/"+output_name+"_clean.mgf",
-                    options.mz_tolerance,0.2, 10, options.verbose, 0);
-                // renameTremoloJoinedIds(output_clean_path+ output_name + "_spectra_clean.csv",
-                //     options.output_path+ "/identifications/tremolo_results.csv", options.verbose);
-                mergeTremoloResults(options.output_path + "/identifications/tremolo_results.csv",
-                    10, [output_clean_path + output_name+"_spectra_clean.csv",
-                        output_clean_path + output_name+"_peak_area_clean.csv"]);
+                    options.mz_tolerance,0.2, 10,  [output_clean_path + output_name+"_spectra_clean.csv",
+                        output_clean_path + output_name+"_peak_area_clean.csv"], options.verbose, 0);
             }
 
             // call annotate spectra to identify variant and create the molecular network of annotations
@@ -2767,12 +2801,8 @@ program
 
         //call tremoloIdentification(output_name, output_path, count_files, mgf, mz_tol, sim_tol, top_k, verbose, verbose search)
         tremoloIdentification("tremolo_identification", options.output_path, options.mgf,
-            options.mz_tolerance, options.similarity, options.top_k, options.verbose,
+            options.mz_tolerance, options.similarity, options.top_k, options.count_file_path, options.verbose,
             options.verbose);
-        if (!(options.count_file_path === undefined) && options.count_file_path.length > 0) {
-            mergeTremoloResults(options.output_path + "/tremolo_results.csv", options.top_k,
-                options.count_file_path);
-        }
     })
     .on('--help', function() {
         console.log('');
@@ -3427,10 +3457,8 @@ program
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 tremoloIdentification(options.output_name, output_path + "/identifications",
                     output_path+"/mgf/"+options.output_name+"_clean.mgf",
-                    options.mz_tolerance,0.2, 10, options.verbose, 0);
-                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
-                    10, [counts_path+"_spectra_clean.csv",
-                        counts_path+"_peak_area_clean.csv"]);
+                    options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
+                        counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
             // refactored annotation step for joining jobs -> join original ivamns and map old ids to the new ids ->
@@ -3464,10 +3492,8 @@ program
                 // tremolo search for not windows OS
                 tremoloIdentification(options.output_name, output_path + "/identifications",
                     output_path+"/mgf/"+options.output_name+"_all.mgf",
-                    options.mz_tolerance,0.2, 10, options.verbose, 0);
-                mergeTremoloResults(output_path + "/identifications/tremolo_results.csv",
-                    10, [counts_path+"_spectra.csv",
-                        counts_path+"_peak_area.csv"]);
+                    options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv", counts_path+"_peak_area.csv"],
+                    options.verbose, 0);
             }
 
             // call correlation for the mscluster peak area count
@@ -3721,7 +3747,7 @@ program
         console.log('  $ spectra_viewer -p 8080');
     });
 
-// TODO: add trycatch in each test case
+
 program
     .command('test')
     .description('This command runs some use cases to test the $NP^{3}$ MS workflow consistency in all steps. ' +
