@@ -1221,6 +1221,11 @@ ms_spectra_count$rtMean <- ms_area_count$rtMean <- round(ms_area_count$rtMean, m
 ms_spectra_count$rtMin <- ms_area_count$rtMin <- round(ms_area_count$rtMin, mz_rt_digits)
 ms_spectra_count$rtMax <- ms_area_count$rtMax <- round(ms_area_count$rtMax, mz_rt_digits)
 
+# create the retention time columns in minutes
+ms_spectra_count$rtMean_minutes <- ms_area_count$rtMean_minutes <- round(ms_area_count$rtMean/60, mz_rt_digits)
+ms_spectra_count$rtMin_minutes <- ms_area_count$rtMin_minutes <- round(ms_area_count$rtMin/60, mz_rt_digits)
+ms_spectra_count$rtMax_minutes <- ms_area_count$rtMax_minutes <- round(ms_area_count$rtMax/60, mz_rt_digits)
+
 # write cleanned data without annotation
 write_csv(ms_area_count, path = file.path(output_path, "count_tables", "clean", 
                                           paste0(output_name, "_peak_area_clean.csv")))
