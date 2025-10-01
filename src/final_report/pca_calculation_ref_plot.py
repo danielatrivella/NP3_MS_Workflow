@@ -42,8 +42,26 @@ def plot_arrows_correlation_circle(output_path,scaled_loading, feature_names, pv
 	plt.colorbar(sm, label="cos2", shrink=0.3, aspect=7, ticks=np.arange(0.5, 1.05, 0.1),
 	             boundaries=np.linspace(0.5, 1, 256))
 	plt.savefig(output_path / "pca_quality_representation_cos2_NP3_reference.png")
-	plt.show()
+	#plt.show()
 	plt.close()
+
+# n equals the number of components, components equals the x, y values of each n arrow
+# and feature_labels the names of the components
+def plot_components_arrows(components, feature_labels):
+	n = components.shape[0]
+	width = -0.0025 * np.min([np.subtract(*plt.xlim()), np.subtract(*plt.ylim())])
+	texts = []  # stores the components labels - to avoid overlapping
+	for i in range(n):
+		plt.arrow(0, 0, components[i, 0], components[i, 1], width=width, color='k', alpha=0.6, ec='none',
+		          length_includes_head=True)
+		if feature_labels is None:
+			texts.append(plt.text(components[i, 0], components[i, 1], "Var" + str(i + 1), color='0.1', ha='center',
+			                      va='center', size='x-large', fontweight='bold'))
+		else:
+			texts.append(plt.text(components[i, 0], components[i, 1], feature_labels[i], color='0.1', ha='center',
+			                      va='center', size='x-large',
+			                      fontweight='bold'))  # adjust_text(texts, arrowprops=dict(arrowstyle="-", color='k', lw=0.5))
+	adjust_text(texts, expand=(2.5, 1.2), arrowprops=dict(arrowstyle="-", color='0.1', lw=0.5))
 
 # function to plot a PCA result with 2-cols stored in scores, one point by row, with the point labels listed in
 # the point_labels list (must contain the UNPD label, which goes in the background) and formatted using the data_types_style dictionary containing the unique labels as keys and a 2 sized list
@@ -53,28 +71,15 @@ def plot_arrows_correlation_circle(output_path,scaled_loading, feature_names, pv
 # axis in percentage (%) to be used in the axis labeling
 def biplot_scatter_arrows(scores,point_labels, data_types_style,components=None,feature_labels=None,pvars=None):
 	point_labels = np.asarray(point_labels)
-	if components is not None:
-		n = components.shape[0]
-	else:
-		n = 0
 	types_label = ['UNPD'] + list(np.unique(point_labels)[np.unique(point_labels) != 'UNPD']) # get unique point labels, put UNPD first to be in the background
 	for name in types_label:
-		plt.scatter(*zip(*scores[point_labels == name]), label=data_types_style[name][0],
-					alpha = 0.8, c=data_types_style[name][1])
+		# if no point of this label, skip it
+		if np.any(point_labels == name):
+			plt.scatter(*zip(*scores[point_labels == name]), label=data_types_style[name][0],
+						alpha = 0.8, c=data_types_style[name][1])
 	plt.legend(title='Data Type', loc = 'upper right', fontsize='x-large')
-	if n > 0:
-		width = -0.0025 * np.min([np.subtract(*plt.xlim()), np.subtract(*plt.ylim())])
-		texts = [] # stores the components labels - to avoid overlapping
-		for i in range(n):
-			plt.arrow(0, 0, components[i,0], components[i,1], width=width, color = 'k',alpha = 0.6, ec='none',
-					  length_includes_head=True)
-			if feature_labels is None:
-				texts.append(plt.text(components[i,0], components[i,1], "Var"+str(i+1), color = '0.1', ha = 'center',
-									  va = 'center', size='x-large', fontweight='bold'))
-			else:
-				texts.append(plt.text(components[i,0], components[i,1], feature_labels[i], color = '0.1', ha = 'center',
-									  va = 'center', size='x-large', fontweight='bold')) #adjust_text(texts, arrowprops=dict(arrowstyle="-", color='k', lw=0.5))
-		adjust_text(texts, expand=(2.5, 1.2), arrowprops=dict(arrowstyle="-", color='0.1', lw=0.5))
+	if components is not None:
+		plot_components_arrows(components, feature_labels)
 	if pvars is None:
 		plt.xlabel("PC{}".format(1))
 		plt.ylabel("PC{}".format(2))
@@ -84,8 +89,9 @@ def biplot_scatter_arrows(scores,point_labels, data_types_style,components=None,
 	plt.grid(which='major', color='#CCCCCC', alpha=0.7, linewidth=0.8, linestyle=':')
 	plt.axhline(0, color='black', linestyle='--', alpha=0.9)
 	plt.axvline(0, color='black', linestyle='--', alpha=0.9)
-	plt.xlim(-30, 10) # with scale plt.xlim(-0.8, 0.25)
-	plt.ylim(-7, 33) # with scale plt.ylim(-0.2, 0.9)
+	if np.any(point_labels == 'UNPD') or np.any(point_labels == 'GNPS'):
+		plt.xlim(-30, 10) # with scale plt.xlim(-0.8, 0.25)
+		plt.ylim(-7, 33) # with scale plt.ylim(-0.2, 0.9)
 	plt.tight_layout()
 	#plt.savefig(output_img_path)
 	#plt.show()
@@ -94,9 +100,10 @@ def biplot_scatter_arrows(scores,point_labels, data_types_style,components=None,
 # colors from https://matplotlib.org/stable/gallery/color/color_cycle_default.html#sphx-glr-gallery-color-color-cycle-default-py
 data_types_style_NP3_reference = {'UNPD': ['UNPD', 'tab:grey'],
 						'DrugBank': ['DrugBank', 'tab:blue'],
-						'allosteric_review': ['Allosteric natural - PubMed', 'tab:green']}
+						'allosteric_review': ['Allosteric natural - PubMed', 'tab:green'],
+                        'mzs' : ['m/zs', 'tab:blue']}
 
-def biplot_scatter_reference_PCA_wComponents(scores, point_labels, components=None, feature_labels=None, pvars=None):
+def biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=None, components=None, feature_labels=None):
 	plt.subplots(1)
 	# uses the refence data types style
 	data_types_style = data_types_style_NP3_reference
@@ -104,14 +111,15 @@ def biplot_scatter_reference_PCA_wComponents(scores, point_labels, components=No
 	biplot_scatter_arrows(scores, point_labels, data_types_style, components, feature_labels, pvars)
 
 # function to plot and save the reference PCA of NP3
-def biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, components=None, feature_labels=None, pvars=None):
+def biplot_save_reference_PCA_wComponents(output_path, output_name, scores, point_labels, pvars=None, components=None,
+                                          feature_labels=None):
 	# plot PCA points
-	biplot_scatter_reference_PCA_wComponents(scores, point_labels, components, feature_labels, pvars)
+	biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars, components, feature_labels)
 	# save the plot, show and close connection
 	if components is not None:
-		plt.savefig(output_path / "chemical_space_NP3_reference_biplot_components.png")
+		plt.savefig(output_path / (output_name+"chemical_space_NP3_reference_biplot_components.png"))
 	else:
-		plt.savefig(output_path / "chemical_space_NP3_reference_biplot.png")
+		plt.savefig(output_path / (output_name+"chemical_space_NP3_reference_biplot.png"))
 	#plt.show()
 	plt.close()
 
@@ -119,11 +127,13 @@ data_types_style_new = {'UNPD': ['NP3-UNPD', 'tab:pink'],
 						'GNPS': ['NP3-GNPS', 'tab:orange']}
 
 # save PCA biplot of a new data - personalize name using data_type and output_name
-def biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores, point_labels, components=False, pvars=None):
+def biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores, point_labels, pvars=None,
+                                    components=None, feature_labels=None):
 	data_types_style = data_types_style_new
 	# plot PCA
 	biplot_scatter_arrows(scores, point_labels, data_types_style, components=None, feature_labels=None, pvars=pvars)
-	if components:
+	if components is not None:
+		plot_components_arrows(components, feature_labels)
 		plt.savefig(output_path / (output_name+"_chemical_space_NP3_"+data_type+"_PCA_biplot_components.png"))
 	else:
 		plt.savefig(output_path / (output_name+"_chemical_space_NP3_"+data_type+"_PCA_scores.png"))
@@ -142,6 +152,8 @@ set_reference_descriptors_bestCos_top24 = ['WPOL','ATSp1','ATSp2','SP.3','Zagreb
 # ensuring consistency in the dimensionality reduction.
 # the reference data is expected to have unique mostly smiles (duplicates are not removed) and the top 24 descriptors columns,
 # also the Type, EntryID and SubType columns
+# data_reference_path must contain the list of top 24 descriptors; new_data_path is the clean data for UNPD and the descriptors list for GNPS
+# output_path is the folder to store the plots, inside the final_reports/chemical_report/chemical_space_identifications
 def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, output_path, output_name, data_type="UNPD"):
 	# check if files exists
 	data_reference_path = Path(data_reference_path)
@@ -159,7 +171,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	# X_original is read here
 	data_reference_descriptors = pd.read_csv(data_reference_path,
 											 low_memory=False)
-	print("* Creating the NP3 reference PCA for plotting *")
+	print("* Creating the NP3 reference PCA from SMILES for plotting *")
 	# not removing duplicates here - the reference contain the minimum of duplicates
 	#data_reference_descriptors = data_reference_descriptors.loc[~data_reference_descriptors.SMILES.duplicated(),:]
 	# filter the top 24 descriptors selected
@@ -241,8 +253,8 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	pylab.rcParams.update(params) # set styling
 	
 	# use the following code to plot the default PCA with components and without components
-	# biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, arrows, features, pvars)
-	# biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, None, None, pvars)
+	# biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, pvars arrows, features)
+	# biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, pvars, None, None)
 	
 	print("  - Transforming the new", data_type,"identified data to the reference PCA chemical space")
 	# And then scale, fit and transform the new data from NP3 to the
@@ -283,19 +295,20 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			# Transform the new data using the previously fitted PCA object
 			X_transformed = pca.transform(X_new_scaled)
 			
-			# now plot the default PCA as background for a new plot
-			biplot_scatter_reference_PCA_wComponents(scores, point_labels, arrows, features, pvars)
-			# and plot the result new data in the PCA reference and save the result
-			biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-			                                point_labels=[data_type]*new_data_desc.shape[0],
-											components=True, pvars=pvars)
 			
-			# now plot PCA without components with the new data
-			biplot_scatter_reference_PCA_wComponents(scores, point_labels, components=None, feature_labels=None,
-			                                         pvars=pvars)
+			# now plot reference PCA without components as background for the new data
+			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+			                                         feature_labels=None)
+			# plot the result new data in the PCA reference and save the result without components
 			biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-			                                point_labels=[data_type]*new_data_desc.shape[0],
-											components=False, pvars=pvars)
+			                                point_labels=[data_type] * new_data_desc.shape[0],
+			                                pvars=pvars)
+			# then save it with components
+			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+			                                         feature_labels=None)
+			biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+			                                point_labels=[data_type] * new_data_desc.shape[0],
+			                                pvars=pvars, components=arrows, feature_labels=features)
 		else:
 			sys.exit("No valid tremolo-UNPD curated identification after merging with reference SMILES. Aborting PCA.")
 	elif data_type == "GNPS":
@@ -311,6 +324,88 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	gradient_color_cos2 = [(0.0, "#00AFBB"), (0.5, "#00AFBB"), (0.75, "#E7B800"), (1.0, "#FC4E07")]
 	color_cos2_cmap = mcolors.LinearSegmentedColormap.from_list("OrRd_r", gradient_color_cos2)
 	plot_arrows_correlation_circle(output_path, loadings_scaled, features, pvars, color_cos2_cmap)
+
+
+def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
+	# check if files exists
+	clean_data_path = Path(clean_data_path)
+	output_path = Path(output_path)
+
+	if not clean_data_path.exists() or not clean_data_path.is_file():
+		sys.exit("The provided path to the clean data file, to be used to calculate its reference mz PCA, does not exists." +
+		         " PCA plotting aborted.")
+	if not output_path.exists() or not output_path.is_dir():
+		sys.exit("The provided output path does not exists. PCA plotting aborted.")
+	
+	# Original data
+	# X_original is read here
+	# TODO read the complete table and them filter the descriptor cols and the type cols
+	clean_data_mz = pd.read_csv(clean_data_path,
+	                                         low_memory=False,
+	                                         usecols=["mzConsensus","rtMean","basePeakInt","sumInts","maxArea"])
+	print("* Creating the NP3 reference PCA from m/zs for plotting *")
+	# not removing duplicates here - the clean data contains the minimum number of fragmented clusters
+	X_original = clean_data_mz
+	
+	# Get valid Calculations cols
+	valid_descriptors_cols = []
+	for col in X_original.columns:
+		try:
+			if (X_original[col].var() > 0):
+				valid_descriptors_cols.append(col)
+		except:  # rm NAs descriptors
+			pass
+	
+	# remove zero variance cols
+	X_filtered = X_original.loc[:, valid_descriptors_cols]
+	# remove rows with NaNs
+	valid_mzs_rows = (np.isnan(X_filtered).sum(1) == 0)
+	X_filtered = X_filtered.loc[valid_mzs_rows, :]
+	
+	# filter label in Type
+	# TODO define Type to use here, blanks or beds or none
+	#point_labels = data_reference_descriptors.loc[valid_smiles_rows, "Type"]
+	point_labels = ["mzs"]*X_filtered.shape[0]
+	
+	# extract final features
+	features = X_filtered.columns.values
+	
+	# standardization
+	scaler = StandardScaler()
+	X_scaled = scaler.fit_transform(X_filtered)
+	
+	# PCA
+	pca = PCA(n_components=2).fit(X_scaled)
+	X_reduced = pca.transform(X_scaled)
+	
+	# Now pca.components_ holds the calculated eigenvectors
+	# and pca.explained_variance_ holds the eigenvalues
+	# proportions of variance explained by axes
+	pvars = pca.explained_variance_ratio_ * 100
+	print(f"  - Explained variance: PC1 {pvars[0]:.2f}% and PC2 {pvars[1]:.2f}%")
+	print(f"  - Cumulative: {np.cumsum(pvars)[1]:.2f}%")
+	
+	# coordinates of samples (i.e., scores; let's take the first two axes)
+	scores = X_reduced
+	
+	# coordinates of features - descriptors/components (i.e., loadings; note the transpose)
+	loadings = pca.components_.T
+	
+	# Scale the features (arrows) properly to match the samples (points).
+	# The following code scales by the maximum absolute value of samples on each axis.
+	arrows = loadings * np.abs(scores).max(axis=0)
+	
+	# create default parameters for plotting
+	params = {'legend.fontsize': 'x-large',
+	          'legend.title_fontsize': 'x-large',
+	          'figure.figsize': (9, 9),
+	          'axes.labelsize': 'x-large', 'axes.labelweight': 'bold', 'axes.titlesize': 'x-large',
+	          'xtick.labelsize': 'x-large', 'ytick.labelsize': 'x-large',
+	          'font.weight': 'bold'}
+	pylab.rcParams.update(params)  # set styling
+
+	# use the following code to plot the default PCA with components and without components
+	biplot_save_reference_PCA_wComponents(output_path, output_name+"_mz", scores, point_labels, pvars, arrows, features)
 
 
 ####
