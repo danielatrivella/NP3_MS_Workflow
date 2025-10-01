@@ -14,8 +14,9 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 	if not clean_table_file.exists() or not clean_table_file.is_file():
 		sys.exit("The provided path to the clean data file does not exists. Chemical report statistics aborted.")
 	if not output_path.exists() or not output_path.is_dir():
-		sys.exit("The provided output path does not exists. Chemical report statistics aborted.")
+		sys.exit("The provided chemical report output path does not exists. Chemical report statistics aborted.")
 		
+	print("  - Computing the chemical statistics\n")
 	clean_data = pd.read_csv(clean_table_file)
 	n = clean_data.shape[0]
 	# if any blank sample, remove blank mzs from this analysis
