@@ -21,6 +21,7 @@ Rcpp::sourceCpp(file.path(script_path(), 'norm_dot_product.cpp'))
 source(file.path(script_path(), "count_peak_area.R"))
 source(file.path(script_path(), "read_metadata_table.R"))
 source(file.path(script_path(), "writeMgfData_NP3.R"))
+source(file.path(script_path(), "final_report",  "compute_fragmented_cluster.R"))
 
 options(digits=10) # increase precision
 options(readr.show_progress = FALSE)
@@ -1225,6 +1226,9 @@ ms_spectra_count$rtMax <- ms_area_count$rtMax <- round(ms_area_count$rtMax, mz_r
 ms_spectra_count$rtMean_minutes <- ms_area_count$rtMean_minutes <- round(ms_area_count$rtMean/60, mz_rt_digits)
 ms_spectra_count$rtMin_minutes <- ms_area_count$rtMin_minutes <- round(ms_area_count$rtMin/60, mz_rt_digits)
 ms_spectra_count$rtMax_minutes <- ms_area_count$rtMax_minutes <- round(ms_area_count$rtMax/60, mz_rt_digits)
+
+# compute number of fragmented clusters
+ms_spectra_count$fragmented_clusters <- ms_area_count$fragmented_clusters <- compute_fragmented_clusters(ms_area_count, rt_tol, mz_tol)
 
 # write cleanned data without annotation
 write_csv(ms_area_count, path = file.path(output_path, "count_tables", "clean", 
