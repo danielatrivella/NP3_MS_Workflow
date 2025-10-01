@@ -23,7 +23,7 @@ cat("\nTotal number of processed spectra from the raw MS/MS data:\n")
 cat(sum(count$numSpectra))
 
 # number of unique masses
-cat("\nNumber of unique masses rounded in digit 2:\n")
+cat("\nNumber of unique m/z rounded in digit 2:\n")
 cat(length(unique(round(count$mzConsensus, 2))))
 
 # number of clusters by masses
