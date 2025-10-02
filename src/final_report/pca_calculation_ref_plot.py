@@ -275,11 +275,13 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 		# the list of UNPD IDs will be matched against the reference table EntryID and its information will be filtered out
 		# test this merge, merge to retrieve the descriptors instead and set to the x_filtered
 		if "tremolo_SMILES_best" not in new_data.columns:
-			sys.exit("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
-			         "curated identification result, column 'tremolo_SMILES_best' is missing.")
+			print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
+			         "curated identification result, column 'tremolo_SMILES_best' is missing. Skipping PCA for identifications.")
+			return None
 		if not (~new_data.tremolo_SMILES_best.isna()).any():
-			sys.exit("No valid tremolo-UNPD curated identification is present in the provided clean table. "+
-			         "Could not create the chemical space.  Aborting PCA.")
+			print("No valid tremolo-UNPD curated identification is present in the provided clean table. "+
+			         "Could not create the chemical space. Skipping PCA for identifications.")
+			return None
 		# merge the new data with the reference descriptors using the best identified SMILES
 		new_data_desc = pd.merge(new_data.loc[~new_data.tremolo_SMILES_best.isna(), "tremolo_SMILES_best"],
 		         data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
@@ -310,12 +312,14 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			                                point_labels=[data_type] * new_data_desc.shape[0],
 			                                pvars=pvars, components=arrows, feature_labels=features)
 		else:
-			sys.exit("No valid tremolo-UNPD curated identification after merging with reference SMILES. Aborting PCA.")
+			print("No valid tremolo-UNPD curated identification after merging with reference SMILES. Skipping PCA for identifications.")
+			return None
 	elif data_type == "GNPS":
 		# TODO make pca with GNPS best separated and together with the unpd best. Also make for the best of the two separated.
 		pass
 	else:
-		sys.exit("Invalid data_type '"+data_type+"' informed!")
+		print("Invalid data_type '"+data_type+"' informed! Skipping PCA for identifications.")
+		return None
 	#
 	print("  - Creating the PCA quality of representation circle plot with the reference components")
 	# plot the PCA quality of representation (cos2) - circle plot with components
@@ -404,8 +408,16 @@ def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
 	          'font.weight': 'bold'}
 	pylab.rcParams.update(params)  # set styling
 
-	# use the following code to plot the default PCA with components and without components
-	biplot_save_reference_PCA_wComponents(output_path, output_name+"_mz", scores, point_labels, pvars, arrows, features)
+	# use the following code to plot the default PCA with components
+	biplot_save_reference_PCA_wComponents(output_path, output_name+"_mz_quantification_", scores, point_labels, pvars, arrows, features)
+	#
+	print("  - Creating the PCA quality of representation circle plot with the reference components")
+	# plot the PCA quality of representation (cos2) - circle plot with components
+	# scale components loadings
+	loadings_scaled = loadings * np.sqrt(pca.explained_variance_)
+	gradient_color_cos2 = [(0.0, "#00AFBB"), (0.5, "#00AFBB"), (0.75, "#E7B800"), (1.0, "#FC4E07")]
+	color_cos2_cmap = mcolors.LinearSegmentedColormap.from_list("OrRd_r", gradient_color_cos2)
+	plot_arrows_correlation_circle(output_path, loadings_scaled, features, pvars, color_cos2_cmap)
 
 
 ####
