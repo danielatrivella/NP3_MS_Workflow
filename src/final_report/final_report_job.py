@@ -1,7 +1,7 @@
-import pandas as pd
 from chemical_report_statistics import compute_chemical_report_statistics
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot,pca_calculation_mz_ref_plot
 from quantification_report_statistics import compute_quantification_report_statistics
+from molecular_networking_report_statistics import compute_mn_report_statistics
 from pathlib import Path
 import sys
 
@@ -28,51 +28,55 @@ def run_final_report(clean_table_path, output_path, output_name, mz_tolerance):
 	chemical_report_path = final_report_path / "chemical_report"
 	chemical_report_path.mkdir(exist_ok=True)
 	if not chemical_report_path.exists() or not chemical_report_path.is_dir():
-		sys.exit("The final chemical report path could not be created. Final report aborted.")
+		print("The final chemical report path could not be created. Chemical report statistics aborted.")
+	else:
+		# call function to create the chemical report statistics
+		compute_chemical_report_statistics(clean_table_path, chemical_report_path)
+	
+		# create the chemical space identification subfolder inside the chemical_report folder
+		chemical_space_identification_path = chemical_report_path / "chemical_space_identification"
+		chemical_space_identification_path.mkdir(exist_ok=True)
+		if not chemical_space_identification_path.exists() or not chemical_space_identification_path.is_dir():
+			print("The final chemical space identification path could not be created. PCA for identifications aborted.")
+		else:
+			# call function to create the pca of chemical space identification using the UNPD result
+			# get the directory of the current script and point to the np3 pca reference table
+			np3_chemical_space_reference_path = Path(__file__).resolve().parent / "Chemical_space_data" / "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv"
+			pca_calculation_smiles_rcdk_ref_plot(np3_chemical_space_reference_path, clean_table_path,
+												 chemical_space_identification_path, output_name, data_type="UNPD")
 		
-	# call function to create the chemical report statistics
-	compute_chemical_report_statistics(clean_table_path, chemical_report_path)
-	
-	# create the chemical space identification subfolder inside the chemical_report folder
-	chemical_space_identification_path = chemical_report_path / "chemical_space_identification"
-	chemical_space_identification_path.mkdir(exist_ok=True)
-	if not chemical_space_identification_path.exists() or not chemical_space_identification_path.is_dir():
-		sys.exit("The final chemical space identification path could not be created. Final report aborted.")
-	
-	# call function to create the pca of chemical space identification using the UNPD result
-	# get the directory of the current script and point to the np3 pca reference table
-	np3_chemical_space_reference_path = Path(__file__).resolve().parent / "Chemical_space_data" / "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv"
-	pca_calculation_smiles_rcdk_ref_plot(np3_chemical_space_reference_path, clean_table_path,
-										 chemical_space_identification_path, output_name, data_type="UNPD")
-	
-	# create the chemical space identification subfolder inside the chemical_report folder
-	chemical_space_mzs_path = chemical_report_path / "chemical_space_mzs"
-	chemical_space_mzs_path.mkdir(exist_ok=True)
-	if not chemical_space_mzs_path.exists() or not chemical_space_mzs_path.is_dir():
-		sys.exit("The final chemical space mzs path could not be created. Final report aborted.")
-	# call creation of the chemical space for the mzs
-	pca_calculation_mz_ref_plot(clean_table_path, chemical_space_mzs_path, output_name)
+		# create the chemical space identification subfolder inside the chemical_report folder
+		chemical_space_mzs_path = chemical_report_path / "chemical_space_mzs"
+		chemical_space_mzs_path.mkdir(exist_ok=True)
+		if not chemical_space_mzs_path.exists() or not chemical_space_mzs_path.is_dir():
+			print("The final chemical space mzs path could not be created. PCA for m/z quantifications aborted.")
+		else:
+			# call creation of the chemical space for the mzs quantification
+			pca_calculation_mz_ref_plot(clean_table_path, chemical_space_mzs_path, output_name)
 	
 	print("\n** Creating the NP3 final quantification report **\n")
 	# create the quantification report subfolder inside the final_report
 	quantification_report_path = final_report_path / "quantification_report"
 	quantification_report_path.mkdir(exist_ok=True)
 	if not quantification_report_path.exists() or not quantification_report_path.is_dir():
-		sys.exit("The final quantification report path could not be created. Final report aborted.")
-
-	# call function to create the quantification reports
-	compute_quantification_report_statistics(clean_table_path, quantification_report_path, mz_tolerance)
+		print("The final quantification report path could not be created. Quantificaiton report aborted.")
+	else:
+		# call function to create the quantification reports
+		compute_quantification_report_statistics(clean_table_path, quantification_report_path, mz_tolerance)
 	
 	print("** Creating the NP3 final molecular networking report **\n")
 	# create the molecular networking report subfolder inside the final_report
 	mn_report_path = final_report_path / "molecular_networking_report"
 	mn_report_path.mkdir(exist_ok=True)
 	if not mn_report_path.exists() or not mn_report_path.is_dir():
-		sys.exit("The final molecular networking report path could not be created. Final report aborted.")
+		print("The final molecular networking report path could not be created. Molecular networking report aborted.")
+	else:
+		# call function to create the molecular networking reports for each
+		# network present in the output_mn_path
+		output_mn_path = (output_path / "molecular_networking")
+		compute_mn_report_statistics(output_mn_path, mn_report_path)
 
-	# TODO call functions to create the molecular networking reports
-	output_mn_path = output_path / "molecular_networking"
-	
+
 if __name__ == "__main__":
 	if len(sys.argv) > 4:
 		clean_table_path = sys.argv[1]
