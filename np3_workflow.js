@@ -1419,6 +1419,28 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path)
     return resExec;
 }
 
+// create the final report folder and files inside the output_path, it should be the final result folder inside the outs
+// dir named with the output_name
+function callFinalReportsCreation(metadata_path, count_area_table, output_path, output_name, mz_tol, verbose)
+{
+    var step_name = '*** Creating the final reports for the result of job '+output_name+' *** \n';
+    console.log(step_name);
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/final_report_job.py '+metadata_path+' '+count_area_table+
+        ' '+ output_path +' '+output_name+' '+mz_tol, {async:false, silent: (verbose <= 0)});
+    if (resExec.code) {
+        if (verbose <= 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        console.log('\nERROR');
+    } else {
+        console.log('\nDONE!\n');
+    }
+
+    return resExec.code
+}
+
+
 function isWindows()
 {
     return process.platform === "win32" || process.platform === "win64";
@@ -1486,6 +1508,43 @@ program
         }
         shell.cd(call_cwd);
 
+        if (isWindows())
+        {
+            if (!shell.which('python')) {
+                console.log('ERROR. Python not found, please ensure python 3 is available and try again.');
+                process.exit(1);
+            } else {
+                if (parseDecimal(shell.exec("python --version", {async:false, silent: true}).stdout.toString().split(' ')[1]) < 3)
+                {
+                    console.log('ERROR. Python 3 not found, please ensure python 3 is available and try again.');
+                    process.exit(1);
+                }
+            }
+        } else {
+            if (!shell.which('python3')) {
+                console.log('ERROR. Python 3 not found, please ensure python 3 is available and try again.');
+                process.exit(1);
+            }
+        }
+
+
+        if (!shell.which('pip')) {
+            console.log('Pip not found, please ensure pip - the python 3 package management - is available and try again.\n');
+            countError = countError + 1;
+        } else {
+            // install python packages
+            console.log('* Checking python 3 packages requirements *\n');
+            resExec = shell.exec('pip install -r '+__dirname+'/src/python_requirements --user', {async:false});
+            if (resExec.code) {
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                console.log('\nERROR. Could not install all python packages, retry with user privileges or do it manually.');
+                countError = countError + 1;
+            } else {
+                console.log("DONE!\n");
+            }
+        }
+
         // Download the large spec2vec model files - vectors and trainables
         var file_spec2vec = __dirname+'/src/spec2vec_models/spec2vec_UniqueInchikeys_ratio05_filtered_iter_50.model.wv.vectors.npy'
         var url_file_spec2vec = "https://zenodo.org/records/3978054/files/spec2vec_UniqueInchikeys_ratio05_filtered_iter_50.model.wv.vectors.npy?download=1"
@@ -1519,7 +1578,25 @@ program
                 console.log("DONE!\n");
             }
         }
-        
+
+        // unzip chemical_space reference table
+        file_pca_descriptors_ref_zip = __dirname+'/src/final_report/Chemical_space_data/descriptors_reference_table.zip';
+        dir_pca_ref = __dirname+'/src/final_report/Chemical_space_data/';
+        if (!(shell.test('-e', file_pca_descriptors_ref_zip) && shell.test('-f', file_pca_descriptors_ref_zip)))
+        {
+            console.log('* Unzipping the PCA descriptors table with the NP3 reference data *\n');
+            resExec = shell.exec('python '+__dirname+'/src/unzip_file.py '+
+                file_pca_descriptors_ref_zip+' '+dir_pca_ref, {async:false, silent: false});
+            if (resExec.code) {
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                console.log('\nERROR. Could not unzip the descriptors reference table.');
+                countError = countError + 1;
+            } else {
+                console.log("DONE!\n");
+            }
+        }
+
         // check if R is installed
         if (!shell.which('R')) {
             console.log('ERROR. R not found, please ensure R is available and try again.');
@@ -1534,43 +1611,6 @@ program
                 console.log(resExec.stderr);
                 console.log('\nERROR. Could not install all R packages, retry with user privileges or do it manually.');
 
-                countError = countError + 1;
-            } else {
-                console.log("DONE!\n");
-            }
-        }
-
-        if (isWindows())
-        {
-            if (!shell.which('python')) {
-                console.log('ERROR. Python not found, please ensure python 3 is available and try again.');
-                process.exit(1);
-            } else {
-                if (parseDecimal(shell.exec("python --version", {async:false, silent: true}).stdout.toString().split(' ')[1]) < 3)
-                {
-                    console.log('ERROR. Python 3 not found, please ensure python 3 is available and try again.');
-                    process.exit(1);
-                }
-            }
-        } else {
-            if (!shell.which('python3')) {
-                console.log('ERROR. Python 3 not found, please ensure python 3 is available and try again.');
-                process.exit(1);
-            }
-        }
-
-
-        if (!shell.which('pip')) {
-            console.log('Pip not found, please ensure pip - the python 3 package management - is available and try again.\n');
-            countError = countError + 1;
-        } else {
-            // install python packages
-            console.log('* Checking python 3 packages requirements *\n');
-            resExec = shell.exec('pip install -r '+__dirname+'/src/python_requirements --user', {async:false});
-            if (resExec.code) {
-                console.log(resExec.stdout);
-                console.log(resExec.stderr);
-                console.log('\nERROR. Could not install all python packages, retry with user privileges or do it manually.');
                 countError = countError + 1;
             } else {
                 console.log("DONE!\n");
@@ -1941,6 +1981,7 @@ program
                     options.method, 0, clean_log_output, options.verbose);
                 callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
+                area_counts_path = counts_path+"_peak_area_clean.csv"
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
@@ -1950,6 +1991,7 @@ program
                 callComputeCorrelationGrouping(options.metadata, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
+                area_counts_path = counts_path+"_peak_area_clean_ann.csv"
             }
 
             callMergeCounts(output_path, options.output_name,
@@ -1974,25 +2016,11 @@ program
             // call correlation for the mscluster spectra count
             callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
+            area_counts_path = counts_path+"_peak_area.csv"
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
             options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra, options.blank_expansion, options.verbose);
-
-        // if (options.metfrag_identification === "TRUE")
-        // {
-        //     if (options.fragment_tolerance > 0.003) {
-        //        console.log('Warning: fragment tolerance is too big for searching on PubMed. Setting it to 0.005. To search with a bigger tolerance value use the separated command.\n');
-        //        options.fragment_tolerance = 0.003
-        //     }
-        //     if (options.ppm_tolerance > 5) {
-        //       console.log('Warning: ppm tolerance is too big for searching on PubMed. Setting it to 5. To search with a bigger tolerance value use the separated command.\n');
-        //        options.ppm_tolerance = 5
-        //     }
-        //     callMetfragPubChem(options.output_name, output_path, options.method,
-        //         options.ion_mode, options.ppm_tolerance, options.fragment_tolerance,
-        //         options.scale_factor, options.verbose);
-        // }
 
         // print the pre-processing warning at the end of the process
         if (preprocessing_warning !== undefined) {
@@ -2005,6 +2033,10 @@ program
         if (resExec) {
             console.log('ERROR in the clean and annotation step, check if this is not wanted.');
         }
+
+        // call the creation of the final reports
+        callFinalReportsCreation(options.metadata, area_counts_path, output_path, options.output_name,
+            options.mz_tolerance, options.verbose)
 
         var run_end_msg = "\n\nRUN "+printTimeElapsed_bigint(start_run, process.hrtime.bigint());
         console.log(run_end_msg);
@@ -3473,6 +3505,7 @@ program
                     options.method, 0, clean_log_output, options.verbose);
                 callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
+                area_counts_path = counts_path+"_peak_area_clean.csv"
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
@@ -3482,6 +3515,7 @@ program
                 callComputeCorrelationGrouping(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
+                area_counts_path = counts_path+"_peak_area_clean_ann.csv"
             }
             // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
@@ -3502,10 +3536,15 @@ program
             // call correlation for the mscluster spectra count
             callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
+            area_counts_path = counts_path+"_peak_area.csv"
         }
         callCreatMN(output_path, options.similarity_mn, options.net_top_k,
             options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra, options.blank_expansion, options.verbose);
+
+        // call creation of the final reports
+        callFinalReportsCreation(metadata_original_samples, area_counts_path, output_path, options.output_name,
+            options.mz_tolerance, options.verbose)
 
         var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
         console.log(clust_end_msg);
