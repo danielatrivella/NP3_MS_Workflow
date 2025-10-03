@@ -39,7 +39,7 @@ merge_counts <- function(col_name, x)
          precursorMz=,scans=,joinedJobsIDs= paste(x[[col_name]], collapse = ";"),
          sumInts =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,numSpectra=,numJoins=
            sum(x[[col_name]]),
-         basePeakInt=max(as.numeric(x[[col_name]])),
+         basePeakInt=,fragmented_clusters=max(as.numeric(x[[col_name]])),
          joinedIDs=
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ;
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
@@ -61,7 +61,7 @@ merge_counts <- function(col_name, x)
                 sum(x[[col_name]], na.rm = TRUE), # sum all the counts cols (_area and _spectra)
                 ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ;
                        paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
-                       NA))) # cocatenate string fields (e.g. from tremolo or gnps)
+                       NA))) # concatenate string fields (e.g. from tremolo or gnps)
 }
 
 # read input
