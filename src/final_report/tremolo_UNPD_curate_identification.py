@@ -42,6 +42,11 @@ def get_position_str(x,pos,col):
 	else:
 		return x
 
+superclass_groupings_names = ['Aminoacids_and_Peptides_and_OtherNComp', 'Alkaloids_and_Lactams',
+	                               'Terpenes_and_Carotenoids', 'Fatty_Acids_and_Lipids', 'Polyketides',
+	                               'Benzenoids', 'Flavonoids_and_Phenolic_derivatives', 'Organohalogen_and_Organometallic',
+	                               'Lignans_and_Other_Ocompounds', 'Organic_Acids_and_OthersGenerals', 'Not_Annotated']
+
 # add curate superclass groupings
 # groupings of the curated superclass in 10 major groups plus the not annotated ones
 # count number of occurrences in each group - a single identification may have 2 superclasses separated by :
@@ -52,10 +57,7 @@ def group_curated_superclass_toCols(curated_superclass_col):
 	n = curated_superclass_col.shape[1]
 	# for each superclass split, check their groupings and compute their counts by major group
 	# create the 10 major superclasses plus not annotated cols and initialize them with 0
-	superclass_groupings_names = ['Aminoacids_and_Peptides_and_OtherNComp', 'Alkaloids_and_Lactams',
-	                               'Terpenes_and_Carotenoids', 'Fatty_Acids_and_Lipids', 'Polyketides',
-	                               'Benzenoids', 'Flavonoids_and_Phenolic_derivatives', 'Organohalogen_and_Organometallic',
-	                               'Lignans_and_Other_Ocompounds', 'Organic_Acids_and_OthersGenerals', 'Not_Annotated']
+	
 	curated_superclass_col.loc[:, superclass_groupings_names] = 0
 	# simplified classification of the superclass in 10 defined groups
 	# Groupingss definition:
@@ -113,8 +115,10 @@ def group_curated_superclass_toCols(curated_superclass_col):
 	                           'Not_Annotated'] = 1
 	# filter only the superclasses grouping columns
 	curated_superclass_col = curated_superclass_col.iloc[:, n:]
-	# renamed the columns using the prefix curated_superclass_GR_
-	curated_superclass_col.columns = "curated_superclass_GR_" + curated_superclass_col.columns
+	# choose the most representative superclass grouping of each m/z depending on its counts
+	curated_superclass_col['curated_superclass_grouping'] = curated_superclass_col.idxmax(axis=1)
+	# renamed the superclass columns using the prefix curated_superclass_GR_
+	curated_superclass_col.columns = list("curated_superclass_GR_" + curated_superclass_col.columns[:-1]) + [curated_superclass_col.columns[-1]]
 	# return the superclasses groupings counts
 	return curated_superclass_col
 
