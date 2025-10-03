@@ -1,4 +1,4 @@
-from chemical_report_statistics import compute_chemical_report_statistics
+from chemical_report_statistics import compute_chemical_report_statistics, plot_superclass_samples_distribution
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot,pca_calculation_mz_ref_plot
 from quantification_report_statistics import compute_quantification_report_statistics
 from molecular_networking_report_statistics import compute_mn_report_statistics
@@ -8,17 +8,20 @@ import sys
 # creates the final report by calling the chemical, quantification and pca scripts
 # the output_path should be the final result folder inside the outs folder, named with the output_name
 # inside it will be created the final_report folder
-def run_final_report(clean_table_path, output_path, output_name, mz_tolerance):
+def run_final_report(metadata_file, clean_table_path, output_path, output_name, mz_tolerance):
 	output_path = Path(output_path)
 	if not output_path.exists() or not output_path.is_dir():
 		sys.exit("The provided output path does not exists. Final report aborted.")
 	clean_table_path = Path(clean_table_path)
 	if not clean_table_path.exists() or not clean_table_path.is_file():
 		sys.exit("The provided path to the clean data file does not exists. Final report aborted.")
+	metadata_file = Path(metadata_file)
+	if not metadata_file.exists() or not metadata_file.is_file():
+		sys.exit("The provided path to the metadata table file does not exists. Final report aborted.")
 	
 	print("\n*** Creating the NP3 final report ***\n\n")
 	# create the final report folder
-	final_report_path = (output_path / "final_report")
+	final_report_path = (output_path / "final_reports")
 	final_report_path.mkdir(exist_ok=True)
 	if not final_report_path.exists() or not final_report_path.is_dir():
 		sys.exit("The final report path could not be created. Final report aborted.")
@@ -32,7 +35,8 @@ def run_final_report(clean_table_path, output_path, output_name, mz_tolerance):
 	else:
 		# call function to create the chemical report statistics
 		compute_chemical_report_statistics(clean_table_path, chemical_report_path)
-	
+		# call function to create the superclasses grouping distribution by sample
+		plot_superclass_samples_distribution(metadata_file, clean_table_path, chemical_report_path)
 		# create the chemical space identification subfolder inside the chemical_report folder
 		chemical_space_identification_path = chemical_report_path / "chemical_space_identification"
 		chemical_space_identification_path.mkdir(exist_ok=True)
@@ -78,18 +82,20 @@ def run_final_report(clean_table_path, output_path, output_name, mz_tolerance):
 
 
 if __name__ == "__main__":
-	if len(sys.argv) > 4:
-		clean_table_path = sys.argv[1]
-		output_path = sys.argv[2]
-		output_name = sys.argv[3]
-		mz_tolerance = float(sys.argv[4])
+	if len(sys.argv) > 5:
+		metadata_path = sys.argv[1]
+		clean_table_path = sys.argv[2]
+		output_path = sys.argv[3]
+		output_name = sys.argv[4]
+		mz_tolerance = float(sys.argv[5])
 	else:
 		print("Error: Four arguments must be supplied to created the final report of the NP3 result:\n"
-			"  1 - clean_table: Path to the clean table with the final list of consensus spectra and UNPD identification if any (.csv);\n"
-			"  2 - output_path: Path to the final result folder, inside the outs folder, named with the output_name;\n"
-			"  3 - output_name: The name of the job;\n"
-		    "  4 - mz_tolerance: m/z tolerance in daltons for the precursor m/z.\n")
+			"  1 - metadata_path: Path to the job samples metadata table with the original samples codes and types (.csv);\n"
+			"  2 - clean_table_path: Path to the clean table with the final list of consensus spectra and UNPD identification if any (.csv);\n"
+			"  3 - output_path: Path to the final result folder, inside the outs folder, named with the output_name;\n"
+			"  4 - output_name: The name of the job;\n"
+		    "  5 - mz_tolerance: m/z tolerance in daltons for the precursor m/z.\n")
 		sys.exit(1)
 	# call final report creation
-	run_final_report(clean_table_path, output_path, output_name, mz_tolerance)
+	run_final_report(metadata_path, clean_table_path, output_path, output_name, mz_tolerance)
 	
