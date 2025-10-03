@@ -52,73 +52,81 @@ superclass_groupings_names = ['Aminoacids_and_Peptides_and_OtherNComp', 'Alkaloi
 # count number of occurrences in each group - a single identification may have 2 superclasses separated by :
 # return a dataframe with the columns equal to the 10 major groups with their occurrences counts 0,1,2,...
 def group_curated_superclass_toCols(curated_superclass_col):
-	# create dataframe with curated superclass split in columns
-	curated_superclass_col = curated_superclass_col.str.split(":", expand=True)
-	n = curated_superclass_col.shape[1]
-	# for each superclass split, check their groupings and compute their counts by major group
-	# create the 10 major superclasses plus not annotated cols and initialize them with 0
-	
-	curated_superclass_col.loc[:, superclass_groupings_names] = 0
-	# simplified classification of the superclass in 10 defined groups
-	# Groupingss definition:
-	superclass_groupings = {
-		'Aminoacids_and_Peptides_and_OtherNComp':
-			["Amino acid glycosides", "Mycosporine derivatives", "Oligopeptides",
-			"Small peptides", "Aminosugars and aminoglycosides", "Diazotetronic acids and derivatives",
-			"Mitomycin derivatives",
-			"Organic nitrogen compounds", "Nucleosides, nucleotides, and analogues", "Nucleosides"],
-	    'Alkaloids_and_Lactams':
-		    ["Alkaloids and derivatives", "Anthranilic acid alkaloids", "Lysine alkaloids", "Guanidine alkaloids",
-			"Histidine alkaloids", "Ornithine alkaloids",
-			"Peptide alkaloids", "Proline alkaloids", "Pseudoalkaloids", "Tetramate alkaloids",
-			"Miscellaneous alkaloids", "Nicotinic acid alkaloids",
-			"Serine alkaloids", "Tryptophan alkaloids", "Tyrosine alkaloids", "β-lactams", "γ-lactam-β-lactones"],
-		'Terpenes_and_Carotenoids':
-			["Diterpenoids", "Meroterpenoids", "Monoterpenoids",
-			"Sesterterpenoids", "Triterpenoids", "Steroids", "Sesquiterpenoids",
-			"Apocarotenoids", "Carotenoids (C40)", "Carotenoids (C45)", "Carotenoids (C50)"],
-		'Fatty_Acids_and_Lipids':
-			["Fatty Acids and Conjugates", "Fatty acyl glycosides", "Fatty acyls",
-			"Fatty amides", "Fatty esters", "Lipids and lipid-like molecules", "Docosanoids",
-			"Eicosanoids", "Glycerophospholipids", "Glycerolipids", "Octadecanoids",
-			"Sphingolipids", "Hydrocarbons", "Hydrocarbon derivatives"],
-		'Polyketides':
-			["Aromatic polyketides", "Cyclic polyketides", "Macrolides", "Linear polyketides",
-			"Miscellaneous polyketides", "Polycyclic aromatic polyketides", "Polyethers"],
-		'Benzenoids':
-			["Benzenoids", "Diarylheptanoids", "Naphthalenes", "Phenanthrenoids",
-			"Stilbenoids", "Terphenyls"],
-		'Flavonoids_and_Phenolic_derivatives':
-			["Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)",
-			"Phenylethanoids (C6-C2)", "Phenylethanoids (C6-C3)", "Phenylpropanoids (C6-C3)",
-			"Phloroglucinols", "Phenylpropanoids and polyketides"],
-		'Organohalogen_and_Organometallic':
-			["Organohalogen compounds", "Organometallic compounds", "Acetylides"],
-		'Lignans_and_Other_Ocompounds':
-			["Chromanes", "Coumarins", "Organic oxygen compounds",
-			"Polyols", "Polyprenols", "Saccharides", "Styrylpyrones", "Xanthones",
-			"Lignans", "Lignans, neolignans and related compounds"],
-		'Organic_Acids_and_OthersGenerals':
-			["Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives",
-			"Organoheterocyclic compounds"],
-		'Not_Annotated': ["not_annotated"]}
-	
-	# iterate over the names of the superclasses groupings and count the curated superclasses (n first cols)
-	#  that appear in each one of the groupings
-	for superclass_group in superclass_groupings_names:
-		for i in range(0, n):
-			check_superclass_grouping = curated_superclass_col.loc[:, i].isin(superclass_groupings[superclass_group])
-			if check_superclass_grouping.any():
-				curated_superclass_col.loc[check_superclass_grouping, superclass_group] += 1
-	# check the not annotated entries, the ones without any counts in the superclasses groupings
-	curated_superclass_col.loc[(curated_superclass_col.loc[:, superclass_groupings_names].sum(1) == 0),
-	                           'Not_Annotated'] = 1
-	# filter only the superclasses grouping columns
-	curated_superclass_col = curated_superclass_col.iloc[:, n:]
-	# choose the most representative superclass grouping of each m/z depending on its counts
-	curated_superclass_col['curated_superclass_grouping'] = curated_superclass_col.idxmax(axis=1)
-	# renamed the superclass columns using the prefix curated_superclass_GR_
-	curated_superclass_col.columns = list("curated_superclass_GR_" + curated_superclass_col.columns[:-1]) + [curated_superclass_col.columns[-1]]
+	# check if there is at least one not NaN value, otherwise skip the curation
+	if not curated_superclass_col.isna().all():
+		# create dataframe with curated superclass split in columns
+		curated_superclass_col = curated_superclass_col.str.split(":", expand=True)
+		n = curated_superclass_col.shape[1]
+		# for each superclass split, check their groupings and compute their counts by major group
+		# create the 10 major superclasses plus not annotated cols and initialize them with 0
+		
+		curated_superclass_col.loc[:, superclass_groupings_names] = 0
+		# simplified classification of the superclass in 10 defined groups
+		# Groupingss definition:
+		superclass_groupings = {
+			'Aminoacids_and_Peptides_and_OtherNComp':
+				["Amino acid glycosides", "Mycosporine derivatives", "Oligopeptides",
+				"Small peptides", "Aminosugars and aminoglycosides", "Diazotetronic acids and derivatives",
+				"Mitomycin derivatives",
+				"Organic nitrogen compounds", "Nucleosides, nucleotides, and analogues", "Nucleosides"],
+		    'Alkaloids_and_Lactams':
+			    ["Alkaloids and derivatives", "Anthranilic acid alkaloids", "Lysine alkaloids", "Guanidine alkaloids",
+				"Histidine alkaloids", "Ornithine alkaloids",
+				"Peptide alkaloids", "Proline alkaloids", "Pseudoalkaloids", "Tetramate alkaloids",
+				"Miscellaneous alkaloids", "Nicotinic acid alkaloids",
+				"Serine alkaloids", "Tryptophan alkaloids", "Tyrosine alkaloids", "β-lactams", "γ-lactam-β-lactones"],
+			'Terpenes_and_Carotenoids':
+				["Diterpenoids", "Meroterpenoids", "Monoterpenoids",
+				"Sesterterpenoids", "Triterpenoids", "Steroids", "Sesquiterpenoids",
+				"Apocarotenoids", "Carotenoids (C40)", "Carotenoids (C45)", "Carotenoids (C50)"],
+			'Fatty_Acids_and_Lipids':
+				["Fatty Acids and Conjugates", "Fatty acyl glycosides", "Fatty acyls",
+				"Fatty amides", "Fatty esters", "Lipids and lipid-like molecules", "Docosanoids",
+				"Eicosanoids", "Glycerophospholipids", "Glycerolipids", "Octadecanoids",
+				"Sphingolipids", "Hydrocarbons", "Hydrocarbon derivatives"],
+			'Polyketides':
+				["Aromatic polyketides", "Cyclic polyketides", "Macrolides", "Linear polyketides",
+				"Miscellaneous polyketides", "Polycyclic aromatic polyketides", "Polyethers"],
+			'Benzenoids':
+				["Benzenoids", "Diarylheptanoids", "Naphthalenes", "Phenanthrenoids",
+				"Stilbenoids", "Terphenyls"],
+			'Flavonoids_and_Phenolic_derivatives':
+				["Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)",
+				"Phenylethanoids (C6-C2)", "Phenylethanoids (C6-C3)", "Phenylpropanoids (C6-C3)",
+				"Phloroglucinols", "Phenylpropanoids and polyketides"],
+			'Organohalogen_and_Organometallic':
+				["Organohalogen compounds", "Organometallic compounds", "Acetylides"],
+			'Lignans_and_Other_Ocompounds':
+				["Chromanes", "Coumarins", "Organic oxygen compounds",
+				"Polyols", "Polyprenols", "Saccharides", "Styrylpyrones", "Xanthones",
+				"Lignans", "Lignans, neolignans and related compounds"],
+			'Organic_Acids_and_OthersGenerals':
+				["Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives",
+				"Organoheterocyclic compounds"],
+			'Not_Annotated': ["not_annotated"]}
+		
+		# iterate over the names of the superclasses groupings and count the curated superclasses (n first cols)
+		#  that appear in each one of the groupings
+		for superclass_group in superclass_groupings_names:
+			for i in range(0, n):
+				check_superclass_grouping = curated_superclass_col.loc[:, i].isin(superclass_groupings[superclass_group])
+				if check_superclass_grouping.any():
+					curated_superclass_col.loc[check_superclass_grouping, superclass_group] += 1
+		# check the not annotated entries, the ones without any counts in the superclasses groupings
+		curated_superclass_col.loc[(curated_superclass_col.loc[:, superclass_groupings_names].sum(1) == 0),
+		                           'Not_Annotated'] = 1
+		# filter only the superclasses grouping columns
+		curated_superclass_col = curated_superclass_col.iloc[:, n:]
+		# choose the most representative superclass grouping of each m/z depending on its counts
+		curated_superclass_col['curated_superclass_grouping'] = curated_superclass_col.idxmax(axis=1)
+		# renamed the superclass columns using the prefix curated_superclass_GR_
+		curated_superclass_col.columns = list("curated_superclass_GR_" + curated_superclass_col.columns[:-1]) + [curated_superclass_col.columns[-1]]
+	else:
+		# not valid superclass, set all as not annotated
+		curated_superclass_col = pd.DataFrame(curated_superclass_col)
+		curated_superclass_col.loc[:, "curated_superclass_GR_Not_Annotated"] = 1
+		curated_superclass_col.loc[:, "curated_superclass_grouping"] = "Not_Annotated"
+		curated_superclass_col = curated_superclass_col.iloc[:, 1:]
 	# return the superclasses groupings counts
 	return curated_superclass_col
 
