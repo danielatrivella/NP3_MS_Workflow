@@ -5,6 +5,69 @@ import numpy as np
 from pathlib import Path
 import sys
 from itertools import chain
+import matplotlib.pyplot as plt
+from tremolo_UNPD_curate_identification import superclass_groupings_names # list of superclass groupings names
+
+# clean_table_file must contain the clean count table with peak area quantification
+def plot_superclass_samples_distribution(metadata_file, clean_table_file, output_path):
+	clean_table_file = Path(clean_table_file)
+	output_path = Path(output_path)
+	metadata_file = Path(metadata_file)
+	
+	if not clean_table_file.exists() or not clean_table_file.is_file():
+		sys.exit("The provided path to the clean data file does not exists. Superclasses distribution plot aborted.")
+	if not output_path.exists() or not output_path.is_dir():
+		sys.exit("The provided chemical report output path does not exists. Superclasses distribution plot aborted.")
+	if not metadata_file.exists() or not metadata_file.is_file():
+		sys.exit("The provided path to the metadata table file does not exists. Superclasses distribution plot aborted.")
+	
+	print("  - Creating the superclass grouping distribution by not blank sample \n")
+	# read the data
+	clean_data = pd.read_csv(clean_table_file)
+	metadata = pd.read_csv(metadata_file)
+	
+	# get the columns names containing the count of spectra by peak area without blanks
+	samples_area_name = metadata.SAMPLE_CODE[metadata.SAMPLE_TYPE.str.lower() != "blank"].values
+	samples_area_col = samples_area_name + "_area"
+	samples_area_name_col_map = dict(zip(samples_area_name, samples_area_col))
+	
+	# group the quantification columns by the superclass grouping and sum the respective rows
+	samples_area_by_superclass_grouping = clean_data.groupby("curated_superclass_grouping")[samples_area_col].sum()
+	# normalize the quantification by superclass
+	samples_area_by_superclass_grouping = samples_area_by_superclass_grouping.div(samples_area_by_superclass_grouping.sum(axis=0), axis=1)
+	# rename columns with the original samples codes
+	samples_area_by_superclass_grouping.columns = samples_area_name
+	
+	# define the superclasses colors for the plot
+	grouping_colors = ['#e8ff00', '#ff8b00', '#ff008b', '#00cc00', '#e800ff', '#5dff00', '#6fffff', '#5d00ff', '#00b9ff', '#002eff', '#cccccc']
+	superclass_groupings_colors = dict(zip(superclass_groupings_names, grouping_colors))
+	
+	fig, ax = plt.subplots(figsize=(20, 10))  # plot size - bigger plot
+	
+	bottom = pd.Series([0] * len(samples_area_name), index=samples_area_name)
+	
+	for superclass_group in samples_area_by_superclass_grouping.index:
+		distribution_superclass = samples_area_by_superclass_grouping.loc[superclass_group, samples_area_name]
+		superclass_color = superclass_groupings_colors.get(superclass_group, 'gray')
+		ax.bar(samples_area_name, distribution_superclass, bottom=bottom.values, label=superclass_group, color=superclass_color)
+		bottom += distribution_superclass
+	
+	# Axes e style
+	ax.set_ylabel('Normalize distribution by superclass grouping', fontsize=18)
+	ax.set_title('Samples Composition by Superclass Grouping (normalized by sample)', fontsize=20)
+	ax.set_xticks(range(len(samples_area_name)))
+	ax.set_xticklabels(samples_area_name, rotation=45, ha='right', fontsize=16)
+	plt.yticks(fontsize=16)
+	
+	# add Legend
+	ax.legend(title='Superclass Grouping', loc='lower center', bbox_to_anchor=(0.5, -0.3),
+	          ncol=4, fontsize='14', title_fontsize='14')
+	
+	plt.tight_layout()
+	
+	barplot_filepath = output_path / "samples_composition_superclass_grouping_distribution.png"
+	plt.savefig(barplot_filepath, dpi=300, bbox_inches='tight')
+	#plt.show()
 
 
 def compute_chemical_report_statistics(clean_table_file, output_path):
