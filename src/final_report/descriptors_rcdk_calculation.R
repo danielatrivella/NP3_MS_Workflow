@@ -69,7 +69,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
          "'. Provide a valid name for the column containing the SMILES list.")
   }
   
-  cat("\nParsing SMILES\n")
+  cat("\n  - Parsing SMILES\n")
   # select the valid smiles and parse them using rcdk to generate molecules info
   valid_smiles <- !is.na(data[[smiles_col]])
   data_SMILES <- data[valid_smiles, smiles_col]
@@ -83,12 +83,12 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
   } 
   data_SMILES[,set_reference_descriptors_cols_list] <- NA_real_
   
-  
+  cat("  - Calculating descriptors \n")
   # calculate the descriptors from the parsed valid smiles
   # make this one smiles per round, with try catch errors
   for (i in seq_len(nrow(data_SMILES))) {
-    cat("\n * Descriptors calculation for SMILES:",i," * \n")
-    cat("    - Calculating topological descriptors \n")
+    #cat("\n * Descriptors calculation for SMILES:",i," * \n")
+    #cat("    - Calculating topological descriptors \n")
     # Topological descriptors
     topological_desc_names <- get.desc.names("topological")
     if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
@@ -109,7 +109,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
         (nrow(topological_descriptors) == 0 || ncol(topological_descriptors) == 0)) {
       topological_descriptors <- NULL
     }
-    cat("    - Calculating geometrical descriptors\n")
+    #cat("    - Calculating geometrical descriptors\n")
     # Geometrical descriptors
     geometrical_desc_names <- get.desc.names("geometrical")
     if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
@@ -130,7 +130,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
         (nrow(geometrical_descriptors) == 0 || ncol(geometrical_descriptors) == 0)) {
       geometrical_descriptors <- NULL
     }
-    cat("    - Calculating constitutional descriptors\n")
+    #cat("    - Calculating constitutional descriptors\n")
     # Constitutional descriptors
     constitutional_desc_names <- get.desc.names("constitutional")
     problematic_desc <- "LongestAliphaticChainDescriptor"
@@ -155,8 +155,6 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     }
     # concatenate the descriptors result for current smiles
     # if any valid result, otherwise leave its data as NA
-    #data_SMILES <- bind_cols(data_SMILES, topological_descriptors, 
-    #                         geometrical_descriptors, constitutional_descriptors)
     descriptors_data <- bind_cols(topological_descriptors, geometrical_descriptors, constitutional_descriptors)
     if (!is.null(descriptors_data) && nrow(descriptors_data) != 0 && 
         ncol(descriptors_data) != 0) {
@@ -168,10 +166,11 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     }
   }
   data_SMILES$parsed_smiles <- NULL
+  data_SMILES <- data_SMILES[,-c(1,2)]
+  cat("  - Done computing", ncol(data_SMILES),"RCDK descriptors for", nrow(data_SMILES),"valid SMILES!\n\n")
   
-  cat("\n\nDONE!\n")
   # add the descriptors result to the original data table
-  data[valid_smiles, names(data_SMILES)[-c(1,2)]] <- data_SMILES[,-c(1,2)]
+  data[valid_smiles, names(data_SMILES)] <- data_SMILES
   # save the original data table with the descriptors columns
   write_csv(data, sub(".csv", "_descriptorsCDK.csv", smiles_file))
 }
