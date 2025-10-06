@@ -1077,17 +1077,15 @@ function mergeTremoloResults(path_tremolo_result, max_results, path_count_files,
     shell.ShellString("\nDONE!\n").toEnd(logTremoloFile);
 }
 
-function curateTremoloResults(path_count_files_list, logTremoloFile, verbose)
+function curateTremoloResults(path_count_file, logTremoloFile, verbose)
 {
     const start_curatetremolo = process.hrtime.bigint();
     tremolo_unpd_curating = '\n*** Curating the tremolo-UNPD identification result - selecting best results ***\n'
     console.log(tremolo_unpd_curating);
     shell.ShellString(tremolo_unpd_curating).toEnd(logTremoloFile);
     try {
-        path_count_files_list.forEach(function(path_count_file){
-            shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' + path_count_file,
-                {async: false, silent: (verbose <= 0)});
-        });
+        var resExec = shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' + path_count_file,
+            {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
             console.log(e);
@@ -1197,7 +1195,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
                 output_path+"/logTremolo", verbose)
 
             // call the curate tremolo result
-            curateTremoloResults(path_count_files, output_path+"/logTremolo",
+            curateTremoloResults(path_count_files[0], output_path+"/logTremolo",
                 verbose)
         }
     }
@@ -1404,18 +1402,40 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
     return res_all;
 }
 
-function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path) {
+function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path) {
     // check molecular networking consistency
     console.log('\n*** Joining the GNPS identification to the NP3 counts tables ***\n');
     resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
-        result_specnets_DB_path+' '+ms_count_path, {async: false, silent: false});
-
+        result_specnets_DB_path+' '+ms_count_path+' '+output_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
+        return resExec;
     } else {
         console.log('DONE!\n');
     }
 
+    // TODO call curate GNPS identification and GNPSxUNPD
+    console.log('\n*** Curating the GNPS identification result and selecting best identification origin ***\n');
+    resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
+        ms_count_path, {async: false, silent: false});
+    if (resExec.code) {
+        console.log('\nERROR');
+    } else {
+        console.log('DONE!\n');
+    }
+
+    // call compute rcdk descriptors
+    console.log('\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n');
+    resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
+        output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
+    if (resExec.code) {
+        console.log('ERROR\n');
+        return resExec;
+    } else {
+        console.log('DONE!\n');
+    }
+
+    //  TODO call create additional final reports - PCA gnps and PCA best origin
     return resExec;
 }
 
@@ -3616,6 +3636,8 @@ program
     .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files')
+    .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
+        'It should contain the identifications folder, if not it will be created. The job name may be extracted from here.')
     .action(function(options) {
         if (typeof options.cluster_info_path === 'undefined') {
             console.error('\nMissing the mandatory \'cluster_info_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
@@ -3629,13 +3651,17 @@ program
             console.error('\nMissing the mandatory \'count_file_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
             process.exit(1);
         }
+        if (typeof options.output_path === 'undefined' || options.output_path === "undefined") {
+            console.error('\nMissing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
 
         const start_gnpsjoin = process.hrtime.bigint();
         // run workflow
         console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
 
         callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
-            options.count_file_path);
+            options.count_file_path, options.output_path);
 
         console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
     })
@@ -3658,7 +3684,7 @@ program
         console.log('');
         console.log('  $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" ' +
             '--result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" ' +
-            '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv"');
+            '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv" --output_path "/path/to/the/output/NP3/outs/output_name/"');
     });
 
 
