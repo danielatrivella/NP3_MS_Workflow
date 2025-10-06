@@ -20,6 +20,7 @@ Args:
 
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 # return the position of the first float with value < value_lt from a list of string with floats
 # - which will be the one with the greater mqscore, following the tremolo result ordering -,
@@ -131,6 +132,12 @@ def group_curated_superclass_toCols(curated_superclass_col):
 	return curated_superclass_col
 
 def curate_tremolo_unpd_identification(clean_table_file):
+	clean_table_file = Path(clean_table_file)
+	if not clean_table_file.exists() or not clean_table_file.is_file():
+		sys.exit(
+			"The provided path to the clean table file for UNPD curation does not exists." +
+			" Tremolo-UNPD identification curation aborted.")
+	
 	clean_table = pd.read_csv(clean_table_file, converters={'msclusterID':str}, low_memory=False)
 	
 	# check if the tremolo result is present, if not exit without further processing
@@ -244,18 +251,43 @@ def curate_tremolo_unpd_identification(clean_table_file):
 	clean_table['curated_identification_best_origin'] = ''
 	clean_table.loc[clean_table.tremolo_UNPD_score_best > 0,'curated_identification_best_origin'] = 'UNPD'
 	
-	# make the curated superclass from UNPD identification
+	# make the curated superclass for UNPD identification
 	# get the first superclass from NPClassifier, the one before the pipe "|", if not NA else leave as NA
-	clean_table['curated_superclass'] = clean_table.tremolo_NPClassifier_superclass_best.apply(lambda x: x.split("|")[0] if x == x else np.NaN)
+	clean_table['tremolo_curated_superclass'] = clean_table.tremolo_NPClassifier_superclass_best.apply(lambda x: x.split("|")[0] if x == x else np.NaN)
 	# now call function to create the superclass grouping - counting the number of superclass match by group in the case
 	# of doubled superclasses separated by ':'
-	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['curated_superclass'])
+	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['tremolo_curated_superclass'])
+	curated_superclass_groupings.columns = "tremolo_"+curated_superclass_groupings.columns
+	if curated_superclass_groupings.columns.isin(clean_table.columns.values).all():
+		clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True)
 	clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
 	
 	print("  - Saving the clean table with the UNPD curated identification result and superclasses groupings: ", clean_table_file)
 	# save the data with the new columns - overwrite original table
 	clean_table.to_csv(clean_table_file, index=False, float_format="%.4f")
-	
+	# save the curated columns to the other count table if it exists
+	if clean_table_file.name.find("peak_area") > 0:
+		clean_table_other_file = clean_table_file.parent / clean_table_file.name.replace("peak_area", "spectra")
+	elif clean_table_file.name.find("spectra") > 0:
+		clean_table_other_file = clean_table_file.parent / clean_table_file.name.replace("spectra", "peak_area")
+	else:
+		# no other clean table to save the curation result
+		sys.exit(0)
+	if clean_table_other_file.exists() and clean_table_other_file.is_file():
+		print("  - Saving the clean table with the UNPD curated identification result and superclasses groupings: ",
+		      clean_table_other_file)
+		new_curated_columns = np.concatenate([["tremolo_best_position"], clean_table.columns.values[
+			(clean_table.columns.str.startswith("tremolo_") & clean_table.columns.str.endswith("_best")) |
+			(clean_table.columns.str.startswith("tremolo_curated_superclass"))],
+		                                      ["curated_identification_best_origin"]])
+		clean_table_other = pd.read_csv(clean_table_other_file, converters={'msclusterID':str}, low_memory=False)
+		clean_table_other.drop(new_curated_columns, axis=1, inplace=True, errors="ignore") # remove existing new columns
+		clean_table_other = clean_table_other.merge(
+			clean_table.loc[:, np.concatenate([["msclusterID"], new_curated_columns])], how="left",
+			on="msclusterID")
+		clean_table_other.to_csv(clean_table_other_file, index=False, float_format="%.4f")
+
+
 if __name__ == "__main__":
 	import sys, os
 	if len(sys.argv) > 1:
