@@ -1,12 +1,16 @@
 # read input
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args) < 3) {
+if (length(args) < 4) {
   stop("Three arguments must be supplied to join the GNPS library identification results to the NP3 count files (clustering and clean counts):\n", 
-       " 1 - Path to the file of the GNPS library identification output located inside the folder named 'clusterinfo';\n", 
-       " 2 - Path to the file of the GNPS library identification output located inside the folder named 'result_specnets_DB';\n", 
+       " 1 - Path to the file of the GNPS library identification output located inside the folder named 'clusterinfo' (molecular networking workflow) or empty (library search workflow);\n", 
+       " 2 - Path to the file of the GNPS library identification output located inside the folder named 'result_specnets_DB' (molecular networking workflow) or the identification table result (library search workflow);\n", 
        " 3 - Path to any of the count tables (peak_area or spectra) resulting ",
        "from the NP3 clustering or clean steps. If the peak_area is informed and ",
-       "the spectra file exists in the same path (or the opposite), it will merge the GNPS results to both files.\n",
+       "the spectra file exists in the same path (or the opposite), it will merge the GNPS results to both files;\n",
+       " 4 - Path to the output directory of the corresponding NP3 result, this should 
+       be the final result folder inside the outs directory. It will be used to store the 
+       gnps smiles table in the identifications folder and to create additional final reports 
+       with the data identified agains GNPS2\n",
        call.=FALSE)
 } else {
   cluster_info_path <- file.path(args[[1]])
@@ -28,6 +32,13 @@ if (length(args) < 3) {
   {
     stop("The count file '", ms_count_path, 
          "' from the NP3 results does not exists. Provide a valid path to where it is located.")
+  }
+  
+  output_path <- file.path(args[[4]])
+  if (!dir.exists(output_path))
+  {
+    stop("The output path directory '", output_path, 
+         "' from the corresponding NP3 result does not exists. Provide a valid path to where it is located.")
   }
 }
 
@@ -177,6 +188,35 @@ if (grepl("peak_area", ms_count_path) && file.exists(sub("peak_area", "spectra",
 {
   ms_count_path <- sub("spectra", "peak_area",  ms_count_path)
   join_gnps_result_count_tables(ms_count_path, gnps_columns_keep, lib_idres_scans)
+}
+
+# save a table with the gnps identified smiles, spectrumID, compound name and type equals GNPS
+# this table will be used to calculate the rcdk descriptors
+# save to output_path/identifications - check if this folder exists, if not create it
+ms_count <- read.csv(ms_count_path, stringsAsFactors = FALSE,
+                     comment.char = "",
+                     strip.white = TRUE)
+if ("gnps_Smiles" %in% names(ms_count))
+{
+  # filter the present smiles
+  ms_count <- ms_count[!is.na(ms_count$gnps_Smiles),c("gnps_Smiles","gnps_SpectrumID", "gnps_Compound_Name")]
+  ms_count[,"Type"] <- "GNPS"
+  # extract first result from gnps result
+  ms_count$gnps_Smiles <- sapply(ms_count$gnps_Smiles, function(x) strsplit(x, ",")[[1]][1])
+  ms_count$gnps_SpectrumID <- sapply(ms_count$gnps_SpectrumID, function(x) strsplit(x, ";")[[1]][1])
+  ms_count$gnps_Compound_Name <- sapply(ms_count$gnps_Compound_Name, function(x) strsplit(x, ";")[[1]][1])
+  # also remove empty SMILES string or N/A
+  ms_count <- ms_count[!(ms_count$gnps_Smiles %in% c(" ", "", "N/A")),]
+  # order columns
+  ms_count <- ms_count[,c("gnps_SpectrumID","Type","gnps_Compound_Name","gnps_Smiles")]
+  # check if the identifications folder exists (output of UNPD-tremolo)
+  identifications_output_path <- file.path(output_path, "identifications")
+  if (!dir.exists(identifications_output_path)){
+    dir.create(identifications_output_path, warnings(FALSE))
+  }
+  write.csv(ms_count, 
+            file.path(identifications_output_path , "gnps_results_smiles.csv"),
+            row.names = FALSE, quote = TRUE)
 }
 
 tf <- Sys.time()
