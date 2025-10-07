@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import sys
-from itertools import chain
 
 
 def compute_quantification_report_statistics(clean_table_file, output_path, mz_tolerance=0.025):
@@ -65,7 +64,7 @@ def compute_quantification_report_statistics(clean_table_file, output_path, mz_t
 	# UNPD identification statistics for spectra identification rate
 	if 'tremolo_UNPD_category_best' in clean_data.columns:
 		number_identified_unpd = (clean_data.tremolo_UNPD_category_best != "out").sum()
-		quantification_statistics['Statistics'].append("Number of m/zs identified in UNPD")
+		quantification_statistics['Statistics'].append("Number of m/zs identified in UNPD and spectral identification rate")
 		quantification_statistics['Value'].append(
 			f"{number_identified_unpd} ({number_identified_unpd / n * 100:.1f}%)")
 		quantification_statistics['Description'].append(
