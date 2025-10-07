@@ -24,6 +24,9 @@ from rdkit import Chem, DataStructs
 from rdkit.Chem import rdFingerprintGenerator
 from tremolo_UNPD_curate_identification import group_curated_superclass_toCols
 from pathlib import Path
+from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot
+from chemical_report_statistics import compute_chemical_identification_report_GNPS_result
+import os
 
 # return the position of the first float with value < value_lt from a list of string with floats
 # - which will be the one with the greater mqscore, following the tremolo result ordering -,
@@ -79,7 +82,7 @@ def calculate_tanimoto(smiles1, smiles2):
 		return None
 	
 
-def curate_gnps_identification(clean_table_file):
+def curate_gnps_identification(clean_table_file, output_path):
 	clean_table_file = Path(clean_table_file)
 	if not clean_table_file.exists() or not clean_table_file.is_file():
 		sys.exit(
@@ -129,8 +132,8 @@ def curate_gnps_identification(clean_table_file):
 		},
 		{
 			"condition": (clean_table['gnps_MZErrorPPM'] <= 20) & (clean_table['gnps_SharedPeaks'] >= 6) & (
-					clean_table['gnps_MQScore'] >= 0.7),
-			"category": "Top5|mqs>0.7"
+					clean_table['gnps_MQScore'] >= 0.7) & (clean_table['gnps_MQScore'] < 0.8),
+			"category": "Top5|mqs>=0.7"
 		},
 		{
 			"condition": (clean_table['gnps_MZErrorPPM'] > 20) & (clean_table['gnps_SharedPeaks'] >= 6) &
@@ -154,7 +157,7 @@ def curate_gnps_identification(clean_table_file):
 		},
 		{
 			"condition": (clean_table['gnps_MZErrorPPM'] > 20) & (clean_table['gnps_SharedPeaks'] >= 6) & (
-					clean_table['gnps_MQScore'] >= 0.7),
+					clean_table['gnps_MQScore'] >= 0.7) & (clean_table['gnps_MQScore'] < 0.8),
 			"category": "Analog5|mqs>=0.7"
 		}
 	]
@@ -198,6 +201,8 @@ def curate_gnps_identification(clean_table_file):
 	# of doubled superclasses separated by ':'
 	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['gnps_curated_superclass'])
 	curated_superclass_groupings.columns = "gnps_" + curated_superclass_groupings.columns
+	if curated_superclass_groupings.columns.isin(clean_table.columns.values).all():
+		clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True)
 	clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
 	
 	# and now curate the superclass of the best origin, if tremolo result is present
@@ -233,8 +238,8 @@ def curate_gnps_identification(clean_table_file):
 	elif clean_table_file.name.find("spectra") > 0:
 		clean_table_other_file = clean_table_file.parent / clean_table_file.name.replace("spectra", "peak_area")
 	else:
-		# no other clean table to save the curation result
-		sys.exit(0)
+		# no other clean table to save the curation result, set as empty
+		clean_table_other_file = Path('')
 	if clean_table_other_file.exists() and clean_table_other_file.is_file():
 		print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin: ",
 			clean_table_other_file)
@@ -250,18 +255,27 @@ def curate_gnps_identification(clean_table_file):
 			on="msclusterID")
 		clean_table_other.to_csv(clean_table_other_file, index=False, float_format="%.4f")
 		
-	# TODO call PCA for gnps here?
-	# call PCA for gnpsxunpd too
+	# call PCA for GNPS and UNPDxGNPS
+	output_path = Path(output_path)
+	data_reference_path = Path(os.path.dirname(__file__) , "Chemical_space_data",
+	                           "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv")
+	pca_calculation_smiles_rcdk_ref_plot(data_reference_path, clean_table_file, output_path , output_path.name,
+	                                     data_type="GNPS")
+	
+	# call create report table
+	compute_chemical_identification_report_GNPS_result(clean_table_file, (output_path / "final_reports" / "chemical_report"))
 	
 if __name__ == "__main__":
 	import sys, os
-	if len(sys.argv) > 1:
+	if len(sys.argv) > 2:
 		# print(sys.argv)
 		clean_table_file = sys.argv[1]
+		output_path = sys.argv[2]
 	else:
-		print("Error: One argument must be supplied to curate the GNPS identification result:\n",
-			  " 1 - clean_table_file: Path to the clean table containing identification results from GNPS joined.\n")
+		print("Error: Two argument must be supplied to curate the GNPS identification result:\n",
+			  " 1 - clean_table_file: Path to the clean table containing identification results from GNPS joined.;\n",
+		      " 2 - output_path: the final clustering result, inside the outs dir, named with the output_name.\n")
 		sys.exit(1)
 	# call the curate function
-	curate_gnps_identification(clean_table_file)
+	curate_gnps_identification(clean_table_file, output_path)
 	
