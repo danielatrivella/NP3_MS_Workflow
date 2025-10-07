@@ -38,7 +38,7 @@ def run_final_report(metadata_file, clean_table_path, output_path, output_name, 
 		# call function to create the superclasses grouping distribution by sample
 		plot_superclass_samples_distribution(metadata_file, clean_table_path, chemical_report_path)
 		# create the chemical space identification subfolder inside the chemical_report folder
-		chemical_space_identification_path = chemical_report_path / "chemical_space_identification"
+		chemical_space_identification_path = chemical_report_path / "chemical_space_identifications"
 		chemical_space_identification_path.mkdir(exist_ok=True)
 		if not chemical_space_identification_path.exists() or not chemical_space_identification_path.is_dir():
 			print("The final chemical space identification path could not be created. PCA for identifications aborted.")
