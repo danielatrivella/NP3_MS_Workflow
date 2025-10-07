@@ -42,7 +42,6 @@ def plot_arrows_correlation_circle(output_path,scaled_loading, feature_names, pv
 	plt.colorbar(sm, label="cos2", shrink=0.3, aspect=7, ticks=np.arange(0.5, 1.05, 0.1),
 	             boundaries=np.linspace(0.5, 1, 256))
 	plt.savefig(output_path / "pca_quality_representation_cos2_NP3_reference.png")
-	#plt.show()
 	plt.close()
 
 # n equals the number of components, components equals the x, y values of each n arrow
@@ -73,8 +72,7 @@ def biplot_scatter_arrows(scores,point_labels, data_types_style,components=None,
 	point_labels = np.asarray(point_labels)
 	types_label = ['UNPD'] + list(np.unique(point_labels)[np.unique(point_labels) != 'UNPD']) # get unique point labels, put UNPD first to be in the background
 	for name in types_label:
-		# if no point of this label, skip it
-		if np.any(point_labels == name):
+		if np.any(point_labels == name): # if no point of this label, skip it
 			plt.scatter(*zip(*scores[point_labels == name]), label=data_types_style[name][0],
 						alpha = 0.8, c=data_types_style[name][1])
 	plt.legend(title='Data Type', loc = 'upper right', fontsize='x-large')
@@ -144,28 +142,29 @@ def biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores,
 #set_descriptors_rcdk = ['nSmallRings','nAromRings','nRingBlocks','nAromBlocks','nRings3','nRings4','nRings5','nRings6','nRings7','nRings8','nRings9','tpsaEfficiency','Zagreb','WPATH','WPOL','WTPT.1','WTPT.2','WTPT.3','WTPT.4','WTPT.5','VAdjMat','VABC','TopoPSA','topoShape','geomShape','PetitjeanNumber','MDEC.11','MDEC.12','MDEC.13','MDEC.14','MDEC.22','MDEC.23','MDEC.24','MDEC.33','MDEC.34','MDEC.44','MDEO.11','MDEO.12','MDEO.22','MDEN.11','MDEN.12','MDEN.13','MDEN.22','MDEN.23','MDEN.33','khs.sLi','khs.ssBe','khs.ssssBe','khs.ssBH','khs.sssB','khs.ssssB','khs.sCH3','khs.dCH2','khs.ssCH2','khs.tCH','khs.dsCH','khs.aaCH','khs.sssCH','khs.ddC','khs.tsC','khs.dssC','khs.aasC','khs.aaaC','khs.ssssC','khs.sNH3','khs.sNH2','khs.ssNH2','khs.dNH','khs.ssNH','khs.aaNH','khs.tN','khs.sssNH','khs.dsN','khs.aaN','khs.sssN','khs.ddsN','khs.aasN','khs.ssssN','khs.sOH','khs.dO','khs.ssO','khs.aaO','khs.sF','khs.sSiH3','khs.ssSiH2','khs.sssSiH','khs.ssssSi','khs.sPH2','khs.ssPH','khs.sssP','khs.dsssP','khs.sssssP','khs.sSH','khs.dS','khs.ssS','khs.aaS','khs.dssS','khs.ddssS','khs.sCl','khs.sGeH3','khs.ssGeH2','khs.sssGeH','khs.ssssGe','khs.sAsH2','khs.ssAsH','khs.sssAs','khs.sssdAs','khs.sssssAs','khs.sSeH','khs.dSe','khs.ssSe','khs.aaSe','khs.dssSe','khs.ddssSe','khs.sBr','khs.sSnH3','khs.ssSnH2','khs.sssSnH','khs.ssssSn','khs.sI','khs.sPbH3','khs.ssPbH2','khs.sssPbH','khs.ssssPb','Kier1','Kier2','Kier3','HybRatio','fragC','FMF','ECCEN','SP.0','SP.1','SP.2','SP.3','SP.4','SP.5','SP.6','SP.7','VP.0','VP.1','VP.2','VP.3','VP.4','VP.5','VP.6','VP.7','SPC.4','SPC.5','SPC.6','VPC.4','VPC.5','VPC.6','SC.3','SC.4','SC.5','SC.6','VC.3','VC.4','VC.5','VC.6','SCH.3','SCH.4','SCH.5','SCH.6','SCH.7','VCH.3','VCH.4','VCH.5','VCH.6','VCH.7','C1SP1','C2SP1','C1SP2','C2SP2','C3SP2','C1SP3','C2SP3','C3SP3','C4SP3','ATSp1','ATSp2','ATSp3','ATSp4','ATSp5','ATSm1','ATSm2','ATSm3','ATSm4','ATSm5','ATSc1','ATSc2','ATSc3','ATSc4','ATSc5','topoShape1','geomShape1','MOMI.X','MOMI.Y','MOMI.Z','MOMI.XY','MOMI.XZ','MOMI.YZ','MOMI.R','LOBMAX','LOBMIN','GRAV.1','GRAV.2','GRAV.3','GRAVH.1','GRAVH.2','GRAVH.3','GRAV.4','GRAV.5','GRAV.6','PPSA.1','PPSA.2','PPSA.3','PNSA.1','PNSA.2','PNSA.3','DPSA.1','DPSA.2','DPSA.3','FPSA.1','FPSA.2','FPSA.3','FNSA.1','FNSA.2','FNSA.3','WPSA.1','WPSA.2','WPSA.3','WNSA.1','WNSA.2','WNSA.3','RPCG','RNCG','RPCS','RNCS','THSA','TPSA','RHSA','RPSA','Fsp3','XLogP','MW','LipinskiFailures','nRotB','MLogP','nAtomP','nAtomLC','nB','nBase','nAtom','nAromBond','naAromAtom','ALogP','ALogp2','AMR','nAcid']
 set_reference_descriptors_bestCos_top24 = ['WPOL','ATSp1','ATSp2','SP.3','Zagreb','VP.3','naAromAtom','SP.2','ATSp3','VP.2','ATSm3','nB','ATSm2','nAromRings','nAromBlocks','C2SP2','khs.aasC','nAtomP','khs.aaCH','LipinskiFailures','MW','nAtom','VP.1','WTPT.1']
 
-#data_reference_path = "/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/final_report/Chemical_space_data/descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv"
-#output_path = "/home/crisfbazz/Documents/CNPEM/NP3_MS_data/Data_Collections/Bra346/bra_020625/outs/bra_020625/final_reports/chemical_report/chemical_space_identifications"
-#new_data_path = "/home/crisfbazz/Documents/CNPEM/NP3_MS_data/Data_Collections/Bra346/bra_020625/outs/bra_020625/count_tables/clean/bra_020625_peak_area_clean_ann.csv"
+
 # Compute PCA from reference data and apply to transform new data
 # This process effectively reuses the eigenvectors learned from the original data to transform subsequent data,
 # ensuring consistency in the dimensionality reduction.
 # the reference data is expected to have unique mostly smiles (duplicates are not removed) and the top 24 descriptors columns,
 # also the Type, EntryID and SubType columns
 # data_reference_path must contain the list of top 24 descriptors; new_data_path is the clean data for UNPD and the descriptors list for GNPS
-# output_path is the folder to store the plots, inside the final_reports/chemical_report/chemical_space_identifications
+# If data_type is UNPD: output_path is the folder to store the plots, inside the final_reports/chemical_report/chemical_space_identifications
+# else if data_type is GNPS (also creates for UNPDxGNPS): output_path is the final clustering result, inside the outs dir
 def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, output_path, output_name, data_type="UNPD"):
 	# check if files exists
 	data_reference_path = Path(data_reference_path)
 	new_data_path = Path(new_data_path)
 	output_path = Path(output_path)
 	if not data_reference_path.exists() or not data_reference_path.is_file():
-		sys.exit("The provided path to the PCA data reference file does not exists. PCA plotting aborted.")
+		sys.exit("The provided path to the PCA data reference file does not exists: "+ data_reference_path.as_posix()+
+		         ". PCA plotting aborted.")
 	if not new_data_path.exists() or not new_data_path.is_file():
-		sys.exit("The provided path to the new data file, to be used to calculate its reference PCA, does not exists."+
-		         " PCA plotting aborted.")
+		sys.exit("The provided path to the new data file, to be used to calculate its reference PCA, does not exists: "+
+		         new_data_path.as_posix()+
+		         ". PCA plotting aborted.")
 	if not output_path.exists() or not output_path.is_dir():
-		sys.exit("The provided output path does not exists. PCA plotting aborted.")
+		sys.exit("The provided output path does not exists: "+output_path.as_posix() +". PCA plotting aborted.")
 	
 	# Original data
 	# X_original is read here
@@ -256,7 +255,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	# biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, pvars arrows, features)
 	# biplot_save_reference_PCA_wComponents(output_path, scores, point_labels, pvars, None, None)
 	
-	print("  - Transforming the new", data_type,"identified data to the reference PCA chemical space")
+	print("  - Transforming the new", data_type,"identified data to the reference PCA chemical space and plotting")
 	# And then scale, fit and transform the new data from NP3 to the
 	# reference PCA and plot the result on top of it
 	###
@@ -297,7 +296,6 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			# Transform the new data using the previously fitted PCA object
 			X_transformed = pca.transform(X_new_scaled)
 			
-			
 			# now plot reference PCA without components as background for the new data
 			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
 			                                         feature_labels=None)
@@ -315,8 +313,93 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			print("No valid tremolo-UNPD curated identification after merging with reference SMILES. Skipping PCA for identifications.")
 			return None
 	elif data_type == "GNPS":
-		# TODO make pca with GNPS best separated and together with the unpd best. Also make for the best of the two separated.
-		pass
+		# make pca with GNPS best separated and together with the unpd best - UNPDxGNPS.
+		# make pca with GNPS best result, read the calculated descriptors from output_path/identifications/gnps_results_smiles_descriptorsCDK.csv
+		# here output_path is the final clustering result, inside the outs dir
+		# the output path to store the results is output_path/final_reports/chemical_report/chemical_space_identifications
+		# filter only the descriptors
+		gnps_descriptors_file = output_path / "identifications" / "gnps_results_smiles_descriptorsCDK.csv"
+		if not gnps_descriptors_file.exists() or not gnps_descriptors_file.is_file():
+			sys.exit("The GNPS descriptors file is not present in: "+ gnps_descriptors_file.as_posix()+
+			         ". Provide the correct output_path or check for errors in the RCDK descriptors calculation. "+
+			         "PCA plotting for GNPS and UNPDxGNPS aborted.")
+		output_path = output_path / "final_reports" / "chemical_report" / "chemical_space_identifications"
+		output_path.mkdir(exist_ok=True)
+		if not output_path.exists() or not output_path.is_dir():
+			sys.exit("The final output directory of the chemical report to store the chemical space PCA result could not"+
+			      " be created. PCA plotting for GNPS and UNPDxGNPS aborted.")
+		
+		# filter the valid gnps smiles with gnps_score > 0 and get their descriptors
+		new_data_desc = new_data.loc[new_data.gnps_score > 0 ,"gnps_Smiles"]
+		if new_data_desc.shape[0] == 0:
+			print("  - No valid GNPS identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+			return None
+		# read the descriptors calculation result and filter the valid ones
+		gnps_descriptors_result = pd.read_csv(gnps_descriptors_file, low_memory=False)
+		new_data_desc = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(new_data_desc),:]
+		# filter only the descriptors columns
+		X_new = new_data_desc.iloc[:, 4:]
+		# remove rows with NaNs
+		valid_smiles_rows = (np.isnan(X_new).sum(1) == 0)
+		X_new_filtered = X_new.loc[valid_smiles_rows, :]
+		X_new_scaled = scaler.fit_transform(X_new_filtered)
+		X_transformed = pca.transform(X_new_scaled)
+		# now plot reference PCA without components as background for the new data
+		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+		                                         feature_labels=None)
+		# plot the result new data in the PCA reference and save the result without components
+		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+		                                point_labels=[data_type] * X_new_filtered.shape[0],
+		                                pvars=pvars)
+		# then save it with components
+		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+		                                         feature_labels=None)
+		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+		                                point_labels=[data_type] * X_new_filtered.shape[0],
+		                                pvars=pvars, components=arrows, feature_labels=features)
+		
+		## Now get best origin identification data_type == "UNPDxGNPS", if both results are present
+		# and plot PCA of UNPD and GNPS together for the curated_identification_best_origin
+		data_type = "UNPDxGNPS"
+		print("  - Transforming the new", data_type, "identified data to the reference PCA chemical space and plotting")
+		if new_data.columns.isin(["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best"]).sum() < 3:
+			print("  - The tremolo-UNPD best result is not present, skipping UNPDxGNPS PCA plotting.")
+			pass # go to plot the components circle plot
+		
+		new_data_desc = new_data.loc[~new_data.curated_identification_best_origin.isna(),
+		                             ["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best"]]
+		if new_data_desc.curated_identification_best_origin.unique().size < 2:
+			print("  - The curated_identification_best_origin only contains results from one source ('",
+			      new_data_desc.curated_identification_best_origin.unique()[0],"'), skipping UNPDxGNPS PCA plotting.")
+			
+		new_data_unpd_desc = pd.merge(new_data_desc.loc[new_data_desc.curated_identification_best_origin == 'UNPD'],
+		         data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
+		         left_on="tremolo_SMILES_best", right_on="SMILES", how="left")
+		new_data_gnps_desc = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(
+			new_data_desc.gnps_Smiles[new_data_desc.curated_identification_best_origin == 'GNPS']),:]
+		
+		X_new = pd.concat([new_data_unpd_desc.iloc[:, 4:], new_data_gnps_desc.iloc[:, 4:]], axis=0)
+		X_new.loc[:,"point_labels"] = ['UNPD'] * new_data_unpd_desc.shape[0] + ['GNPS'] * new_data_gnps_desc.shape[0]
+		# remove rows with NaNs
+		valid_smiles_rows = (np.isnan(X_new.iloc[:,:-1]).sum(1) == 0)
+		X_new_filtered = X_new.loc[valid_smiles_rows, :].copy()
+		point_labels_unpd_gnps = X_new_filtered.loc[:, "point_labels"]
+		X_new_filtered.drop(["point_labels"], axis=1, inplace=True)
+		X_new_scaled = scaler.fit_transform(X_new_filtered)
+		X_transformed = pca.transform(X_new_scaled)
+		# now plot reference PCA without components as background for the new data
+		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+		                                         feature_labels=None)
+		# plot the result new data in the PCA reference and save the result without components
+		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+		                                point_labels=point_labels_unpd_gnps,
+		                                pvars=pvars)
+		# then save it with components
+		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+		                                         feature_labels=None)
+		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+		                                point_labels=point_labels_unpd_gnps,
+		                                pvars=pvars, components=arrows, feature_labels=features)
 	else:
 		print("Invalid data_type '"+data_type+"' informed! Skipping PCA for identifications.")
 		return None
