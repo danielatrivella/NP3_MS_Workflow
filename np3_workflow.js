@@ -1414,16 +1414,6 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
         console.log('DONE!\n');
     }
 
-    // TODO call curate GNPS identification and GNPSxUNPD
-    console.log('\n*** Curating the GNPS identification result and selecting best identification origin ***\n');
-    resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
-        ms_count_path, {async: false, silent: false});
-    if (resExec.code) {
-        console.log('\nERROR');
-    } else {
-        console.log('DONE!\n');
-    }
-
     // call compute rcdk descriptors
     console.log('\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n');
     resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
@@ -1435,7 +1425,17 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
         console.log('DONE!\n');
     }
 
-    //  TODO call create additional final reports - PCA gnps and PCA best origin
+    // call curate GNPS identification and GNPSxUNPD
+    // and create additional final reports - PCA gnps and PCA best origin - using the calculated rcdk 
+    console.log('\n*** Curating the GNPS identification result and selecting best identification origin ***\n');
+    resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
+        ms_count_path+' '+output_path, {async: false, silent: false});
+    if (resExec.code) {
+        console.log('\nERROR');
+    } else {
+        console.log('DONE!\n');
+    }
+    
     return resExec;
 }
 
@@ -2748,6 +2748,7 @@ program
 
                 callComputeCorrelationGrouping(options.metadata, output_clean_path + output_name + "_spectra_clean.csv",
                     options.method,0, output_clean_path+"logCleanOutput", options.verbose);
+                var count_area_path = output_clean_path + output_name + "_peak_area_clean.csv";
             } else {
                 // annotations worked, call correlation in the clean and annotated counts
                 // call correlation for the cleaned peak area count and spectra area count
@@ -2756,6 +2757,7 @@ program
 
                 callComputeCorrelationGrouping(options.metadata, output_clean_path + output_name + "_spectra_clean_ann.csv",
                     options.method,0, output_clean_path+"logAnnotateOutput", options.verbose);
+                var count_area_path = output_clean_path + output_name + "_peak_area_clean_ann.csv";
             }
 
             // create MNs
@@ -2763,12 +2765,9 @@ program
                 options.max_component_size, options.min_matched_peaks,
                 options.max_chunk_spectra, options.blank_expansion, options.verbose);
 
-            // if (options.metfrag_identification === "TRUE")
-            // {
-            //     callMetfragPubChem(output_name, options.output_path, options.method,
-            //         options.ion_mode, 3, options.fragment_tolerance,
-            //         options.scale_factor, options.verbose);
-            // }
+            // call final report here too
+            callFinalReportsCreation(options.metadata, count_area_path, options.output_path, output_name,
+                options.mz_tolerance, options.verbose)
 
             console.log('*** Done for '+output_name+' ***');
         } else {
@@ -3637,7 +3636,7 @@ program
         'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files')
     .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
-        'It should contain the identifications folder, if not it will be created. The job name may be extracted from here.')
+        'It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .action(function(options) {
         if (typeof options.cluster_info_path === 'undefined') {
             console.error('\nMissing the mandatory \'cluster_info_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
@@ -3877,7 +3876,8 @@ program
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/clusterinfo/0e83d32ce4414494ad9cc12ad3db4824.clusterinfo ' +
                 '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/result_specnets_DB/31ba0709274e450295c6da492030f356.tsv ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv',
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
                 {async:false, silent:true});
             var gnps_result_mn = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3897,7 +3897,8 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications-main.tsv ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv',
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
                 {async:false, silent:true});
             var gnps_result_ls = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
