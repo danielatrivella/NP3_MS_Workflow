@@ -195,7 +195,8 @@ def curate_tremolo_unpd_identification(clean_table_file):
 		},
 		{
 			"condition": (clean_table['tremolo_mzErrorPPM_best'] <= 20) & (
-						clean_table['tremolo_numSharedPeaks_best'] >= 6) & (clean_table['tremolo_MQScore_best'] >= 0.2),
+						clean_table['tremolo_numSharedPeaks_best'] >= 6) & (clean_table['tremolo_MQScore_best'] >= 0.2) & (
+						clean_table['tremolo_MQScore_best'] < 0.4),
 			"category": "Top5|mqs>=0.2"
 		},
 		{
@@ -220,7 +221,7 @@ def curate_tremolo_unpd_identification(clean_table_file):
 		},
 		{
 			"condition": (clean_table['tremolo_mzErrorPPM_best'] > 20) & (clean_table['tremolo_numSharedPeaks_best'] >= 6) & (
-						clean_table['tremolo_MQScore_best'] >= 0.2),
+						clean_table['tremolo_MQScore_best'] >= 0.2) & (clean_table['tremolo_MQScore_best'] < 0.4),
 			"category": "Analog5|mqs>=0.2"
 		}
 	]
