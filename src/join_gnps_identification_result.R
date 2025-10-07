@@ -224,5 +224,5 @@ cat("  * Done joining a total of", n, "GNPS identifications from",
         n_unique, "unique identifications to", nrow(lib_idres_scans),
         "consensus spectra in", 
         round(tf-t0, 2), units(tf-t0), "*\n\n")
-cat("  * Spectra identification rate =", 
+cat("  * Spectra identification rate (with blanks) =", 
         round(nrow(lib_idres_scans)/num_msclusterid*100, 2), "%\n\n")
