@@ -25,7 +25,7 @@ from rdkit.Chem import rdFingerprintGenerator
 from tremolo_UNPD_curate_identification import group_curated_superclass_toCols
 from pathlib import Path
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot
-from chemical_report_statistics import compute_chemical_identification_report_GNPS_result
+from chemical_report_statistics import compute_chemical_identification_report_GNPS_result, plot_superclass_samples_distribution
 import os
 
 # return the position of the first float with value < value_lt from a list of string with floats
@@ -82,7 +82,7 @@ def calculate_tanimoto(smiles1, smiles2):
 		return None
 	
 
-def curate_gnps_identification(clean_table_file, output_path):
+def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 	clean_table_file = Path(clean_table_file)
 	if not clean_table_file.exists() or not clean_table_file.is_file():
 		sys.exit(
@@ -255,27 +255,40 @@ def curate_gnps_identification(clean_table_file, output_path):
 			on="msclusterID")
 		clean_table_other.to_csv(clean_table_other_file, index=False, float_format="%.4f")
 		
-	# call PCA for GNPS and UNPDxGNPS
+	# call superclass grouping plot for GNPS and UNDPxGNPS, when metadata file is provided
 	output_path = Path(output_path)
+	chemical_report_path = (output_path / "final_reports" / "chemical_report")
+	if metadata_file != "":
+		plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
+		                                     superclass_grouping_name="gnps_curated_superclass_grouping")
+		if 'best_origin_curated_superclass_grouping' in clean_table.columns:
+			plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
+			                                     superclass_grouping_name="best_origin_curated_superclass_grouping")
+	# call PCA for GNPS and UNPDxGNPS
 	data_reference_path = Path(os.path.dirname(__file__) , "Chemical_space_data",
 	                           "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv")
 	pca_calculation_smiles_rcdk_ref_plot(data_reference_path, clean_table_file, output_path , output_path.name,
 	                                     data_type="GNPS")
-	
 	# call create report table
-	compute_chemical_identification_report_GNPS_result(clean_table_file, (output_path / "final_reports" / "chemical_report"))
+	compute_chemical_identification_report_GNPS_result(clean_table_file, chemical_report_path)
 	
 if __name__ == "__main__":
 	import sys, os
+	metadata_file = ""
 	if len(sys.argv) > 2:
 		# print(sys.argv)
 		clean_table_file = sys.argv[1]
 		output_path = sys.argv[2]
+		if len(sys.argv) > 3:
+			metadata_file = sys.argv[3]
 	else:
 		print("Error: Two argument must be supplied to curate the GNPS identification result:\n",
 			  " 1 - clean_table_file: Path to the clean table containing identification results from GNPS joined.;\n",
-		      " 2 - output_path: the final clustering result, inside the outs dir, named with the output_name.\n")
+		      " 2 - output_path: the final clustering result, inside the outs dir, named with the output_name.\n",
+		      " 3 - metadata_file: path to the metadata table CSV file of the NP3 job. This is necessary to plot the",
+		      "distribution of the superclasses grouping by sample, it may be missing if this plot is not desired ("
+		      "leave as empty string).\n")
 		sys.exit(1)
 	# call the curate function
-	curate_gnps_identification(clean_table_file, output_path)
+	curate_gnps_identification(clean_table_file, output_path, metadata_file)
 	
