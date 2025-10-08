@@ -1402,7 +1402,7 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
     return res_all;
 }
 
-function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path) {
+function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path) {
     // check molecular networking consistency
     console.log('\n*** Joining the GNPS identification to the NP3 counts tables ***\n');
     resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
@@ -1429,7 +1429,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     // and create additional final reports - PCA gnps and PCA best origin - using the calculated rcdk 
     console.log('\n*** Curating the GNPS identification result and selecting best identification origin ***\n');
     resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
-        ms_count_path+' '+output_path, {async: false, silent: false});
+        ms_count_path+' '+output_path+' '+metadata_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
     } else {
@@ -3637,6 +3637,8 @@ program
         'exists in the same path (or the opposite), it will merge the GNPS results to both files')
     .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.')
+    .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
+        'distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).\n', "")
     .action(function(options) {
         if (typeof options.cluster_info_path === 'undefined') {
             console.error('\nMissing the mandatory \'cluster_info_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
@@ -3660,7 +3662,7 @@ program
         console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
 
         callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
-            options.count_file_path, options.output_path);
+            options.count_file_path, options.output_path, options.metadata);
 
         console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
     })
