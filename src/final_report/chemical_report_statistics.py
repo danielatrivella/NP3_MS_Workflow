@@ -118,7 +118,7 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 			# UNPD identification statistics for putative molecules
 			# # number of not blank [M+H]+ m/zs identified / UNPD size; potential for chemical novelty of the set (percentage of [M+H]+ not identified
 			if 'tremolo_UNPD_category_best' in clean_data.columns:
-				total_unpd_fixo = 170602  # total unique UNPD
+				total_unpd_fixo = 183962  # total unique Smiles in UNPD
 				number_protonated_identified_unpd = (clean_data.tremolo_UNPD_category_best != "out").sum()
 				chemical_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in UNPD and spectral identification rate")
 				chemical_statistics['Value'].append(
@@ -146,8 +146,8 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 					f"{number_unique_superclass} ({number_unique_superclass / total_superclass_unpd*100:.1f}%)")
 				chemical_statistics['Description'].append(
 					"The unique number of superclasses that got identified by the not blank [M+H]+ m/zs in UNPD. And its percentage over the total number of unique superclasses considered ("+str(total_superclass_unpd)+" for UNPD using NPClassifier). ")
-				total_superclass_npclassifier_grouping = 11
-				number_unique_superclass_grouping = np.unique(clean_data.tremolo_curated_superclass_grouping.values).size
+				total_superclass_npclassifier_grouping = 10
+				number_unique_superclass_grouping = np.unique(clean_data.tremolo_curated_superclass_grouping[(clean_data.tremolo_curated_superclass_grouping != "Not_Annotated")].values).size
 				chemical_statistics['Statistics'].append("Chemical diversity of [M+H]+ in UNPD Superclasses grouping")
 				chemical_statistics['Value'].append(
 					f"{number_unique_superclass_grouping} ({number_unique_superclass_grouping / total_superclass_npclassifier_grouping * 100:.1f}%)")
