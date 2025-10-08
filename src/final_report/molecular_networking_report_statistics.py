@@ -1,9 +1,8 @@
 #!/usr/bin/python
 
 import pandas as pd
-import numpy as np
 from pathlib import Path
-import sys
+import numpy as np
 import networkx as nx
 import os, sys
 
@@ -11,8 +10,7 @@ import os, sys
 current_dir = os.path.dirname(__file__)
 parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(parent_dir)
-
-# Now you can import from parent_script.py
+# Now you can import from parent scripts
 from molecular_network_filtering_library import loading_network
 from mn_annotations_assign_protonated_representative import loading_direct_network
 
@@ -21,6 +19,8 @@ from mn_annotations_assign_protonated_representative import loading_direct_netwo
 # output_mn_path points to the molecular_networking folder inside the final result folder
 # of job named output_name
 def compute_mn_report_statistics(output_mn_path, mn_report_path):
+	output_mn_path = Path(output_mn_path)
+	mn_report_path = Path(mn_report_path)
 	if not output_mn_path.exists() or not output_mn_path.is_dir():
 		print(output_mn_path)
 		sys.exit("The provided molecular networking output result folder do not exists. Molecular Networking report aborted.")
@@ -78,16 +78,18 @@ def compute_mn_report_statistics(output_mn_path, mn_report_path):
 			# compute number of components
 			if G.is_directed():
 				n_components = nx.number_weakly_connected_components(G)
-				mn_statistics['Statistics'].append("Number of connected components")
+				mn_statistics['Statistics'].append("Number of weakly connected components")
 				mn_statistics['Value'].append(f"{n_components} ({n_components-n_isolated})")
 				mn_statistics['Description'].append(
 					"The number of components present in the network, and the number of not isolated components between parenthesis (components with size >= 2 nodes). Isolated nodes count as one isolated component. For direct network this is the weakly connected components.")
+				components_size = np.asarray([len(component) for component in nx.weakly_connected_components(G)])
 			else:  # undirected
 				n_components = nx.number_connected_components(G)
 				mn_statistics['Statistics'].append("Number of connected components")
 				mn_statistics['Value'].append(f"{n_components} ({n_components-n_isolated})")
 				mn_statistics['Description'].append(
 					"The number of components present in the network, and the number of not isolated components between parenthesis (components with size >= 2 nodes). Isolated nodes count as one isolated component. ")
+				components_size = np.asarray([len(component) for component in nx.connected_components(G)])
 			# Calculate global clustering coefficient
 			global_clustering = nx.transitivity(G)
 			mn_statistics['Statistics'].append("Global clustering coefficient ")
@@ -107,6 +109,14 @@ def compute_mn_report_statistics(output_mn_path, mn_report_path):
 				"with no triangles. For a single node, the local clustering coefficient measures the density of connections " +
 				"among its neighbors. It is calculated as the ratio of the actual number of edges between the node's neighbors " +
 				"to the total number of possible edges between them.")
+			# count number of components by size
+			for i in np.unique(components_size):
+				n_components_size = (components_size == i).sum()
+				mn_statistics['Statistics'].append("Number of components of size " + str(i))
+				mn_statistics['Value'].append(f"{n_components_size} ({n_components_size / n_components * 100:.1f}%)")
+				mn_statistics['Description'].append(
+					"The number of components of size equal " + str(
+						i) + " nodes present in the network, and their percentage over the total number of components in the network. ")
 		
 		# save statistics of each network
 		mn_statistics_table = pd.DataFrame(mn_statistics)
