@@ -44,9 +44,9 @@ def get_position_str(x,pos,col):
 		return x
 
 superclass_groupings_names = ['Aminoacids_and_Peptides_and_OtherNComp', 'Alkaloids_and_Lactams',
-	                               'Terpenes_and_Carotenoids', 'Fatty_Acids_and_Lipids', 'Polyketides',
-	                               'Benzenoids', 'Flavonoids_and_Phenolic_derivatives', 'Organohalogen_and_Organometallic',
-	                               'Lignans_and_Other_Ocompounds', 'Organic_Acids_and_OthersGenerals', 'Not_Annotated']
+                               'Terpenes_and_Carotenoids', 'Fatty_Acids_and_Lipids', 'Polyketides',
+                               'Benzenoids', 'Flavonoids_and_Phenolic_derivatives', 'Organohalogen_and_Organometallic',
+                               'Lignans_and_Other_Ocompounds', 'Organic_Acids_and_OthersGenerals', 'Not_Annotated']
 
 # add curate superclass groupings
 # groupings of the curated superclass in 10 major groups plus the not annotated ones
