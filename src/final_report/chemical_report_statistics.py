@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 from tremolo_UNPD_curate_identification import superclass_groupings_names # list of superclass groupings names
 
 # clean_table_file must contain the clean count table with peak area quantification
-def plot_superclass_samples_distribution(metadata_file, clean_table_file, output_path):
+def plot_superclass_samples_distribution(metadata_file, clean_table_file, output_path,
+                                         superclass_grouping_name="tremolo_curated_superclass_grouping"):
 	clean_table_file = Path(clean_table_file)
 	output_path = Path(output_path)
 	metadata_file = Path(metadata_file)
@@ -26,14 +27,14 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 	clean_data = pd.read_csv(clean_table_file)
 	metadata = pd.read_csv(metadata_file)
 	# if there is a curated identification, proceed for plotting
-	if "tremolo_curated_superclass_grouping" in clean_data.columns:
+	if superclass_grouping_name in clean_data.columns:
 		print("  - Creating the superclass grouping distribution by not blank sample \n")
 		# get the columns names containing the count of spectra by peak area without blanks
 		samples_area_name = metadata.SAMPLE_CODE[metadata.SAMPLE_TYPE.str.lower() != "blank"].values
 		samples_area_col = samples_area_name + "_area"
 		
 		# group the quantification columns by the superclass grouping and sum the respective rows
-		samples_area_by_superclass_grouping = clean_data.groupby("tremolo_curated_superclass_grouping")[samples_area_col].sum()
+		samples_area_by_superclass_grouping = clean_data.groupby(superclass_grouping_name)[samples_area_col].sum()
 		# normalize the quantification by superclass
 		samples_area_by_superclass_grouping = samples_area_by_superclass_grouping.div(samples_area_by_superclass_grouping.sum(axis=0), axis=1)
 		# rename columns with the original samples codes
@@ -66,7 +67,7 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 		
 		plt.tight_layout()
 		
-		barplot_filepath = output_path / "samples_composition_superclass_grouping_distribution.png"
+		barplot_filepath = output_path / ("samples_composition_"+superclass_grouping_name+"_distribution.png")
 		plt.savefig(barplot_filepath, dpi=300, bbox_inches='tight')
 		#plt.show()
 
