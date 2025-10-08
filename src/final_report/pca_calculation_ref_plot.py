@@ -41,7 +41,7 @@ def plot_arrows_correlation_circle(output_path,scaled_loading, feature_names, pv
 	plt.grid(which='major', color='#CCCCCC', alpha=0.7, linewidth=0.8, linestyle=':')
 	plt.colorbar(sm, label="cos2", shrink=0.3, aspect=7, ticks=np.arange(0.5, 1.05, 0.1),
 	             boundaries=np.linspace(0.5, 1, 256))
-	plt.savefig(output_path / "pca_quality_representation_cos2_NP3_reference.png")
+	plt.savefig(output_path / "pca_quality_representation_cos2_NP3_reference.png", dpi=300, bbox_inches='tight')
 	plt.close()
 
 # n equals the number of components, components equals the x, y values of each n arrow
@@ -115,9 +115,9 @@ def biplot_save_reference_PCA_wComponents(output_path, output_name, scores, poin
 	biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars, components, feature_labels)
 	# save the plot, show and close connection
 	if components is not None:
-		plt.savefig(output_path / (output_name+"chemical_space_NP3_reference_biplot_components.png"))
+		plt.savefig(output_path / (output_name+"chemical_space_NP3_reference_biplot_components.png"), dpi=300, bbox_inches='tight')
 	else:
-		plt.savefig(output_path / (output_name+"chemical_space_NP3_reference_biplot.png"))
+		plt.savefig(output_path / (output_name+"chemical_space_NP3_reference_biplot.png"), dpi=300, bbox_inches='tight')
 	#plt.show()
 	plt.close()
 
@@ -132,9 +132,9 @@ def biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores,
 	biplot_scatter_arrows(scores, point_labels, data_types_style, components=None, feature_labels=None, pvars=pvars)
 	if components is not None:
 		plot_components_arrows(components, feature_labels)
-		plt.savefig(output_path / (output_name+"_chemical_space_NP3_"+data_type+"_PCA_biplot_components.png"))
+		plt.savefig(output_path / (output_name+"_chemical_space_NP3_"+data_type+"_PCA_biplot_components.png"), dpi=300, bbox_inches='tight')
 	else:
-		plt.savefig(output_path / (output_name+"_chemical_space_NP3_"+data_type+"_PCA_scores.png"))
+		plt.savefig(output_path / (output_name+"_chemical_space_NP3_"+data_type+"_PCA_scores.png"), dpi=300, bbox_inches='tight')
 	#plt.show()
 	plt.close()
 
