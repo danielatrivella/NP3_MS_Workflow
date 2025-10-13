@@ -252,13 +252,14 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 		if 'best_origin_curated_superclass_grouping' in clean_table.columns:
 			plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
 			                                     superclass_grouping_name="best_origin_curated_superclass_grouping")
+	# call create report table
+	compute_chemical_identification_report_GNPS_result(clean_table_file, chemical_report_path)
 	# call PCA for GNPS and UNPDxGNPS
 	data_reference_path = Path(os.path.dirname(__file__) , "Chemical_space_data",
 	                           "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv")
 	pca_calculation_smiles_rcdk_ref_plot(data_reference_path, clean_table_file, output_path , output_path.name,
 	                                     data_type="GNPS")
-	# call create report table
-	compute_chemical_identification_report_GNPS_result(clean_table_file, chemical_report_path)
+	
 	
 if __name__ == "__main__":
 	import sys
