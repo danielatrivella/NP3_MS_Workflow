@@ -1420,7 +1420,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
         output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
-        return resExec;
+        console.log('ERROR computing the GNPS descriptores, its PCA will not be created.\n');
     } else {
         console.log('DONE!\n');
     }
