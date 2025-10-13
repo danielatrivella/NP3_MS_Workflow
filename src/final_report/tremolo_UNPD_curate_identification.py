@@ -251,6 +251,9 @@ def curate_tremolo_unpd_identification(clean_table_file):
 	# defines the current best source/origin of the identificaiton - only UNPD
 	clean_table['curated_identification_best_origin'] = ''
 	clean_table.loc[clean_table.tremolo_UNPD_score_best > 0,'curated_identification_best_origin'] = 'UNPD'
+	clean_table['best_origin_SMILES'] = ''
+	clean_table.loc[clean_table.tremolo_UNPD_score_best > 0, 'best_origin_SMILES'] = clean_table.loc[
+			clean_table.tremolo_UNPD_score_best > 0, 'tremolo_SMILES_best']
 	
 	# make the clean and the curated superclass for UNPD identification
 	# get the first superclass from NPClassifier, the one before the pipe "|", if not NA else leave as NA
@@ -288,7 +291,7 @@ def curate_tremolo_unpd_identification(clean_table_file):
 	if clean_table_other_file.exists() and clean_table_other_file.is_file():
 		print("  - Saving the clean table with the UNPD curated identification result and superclasses groupings: ",
 		      clean_table_other_file)
-		new_curated_columns = np.concatenate([["tremolo_best_position"], clean_table.columns.values[
+		new_curated_columns = np.concatenate([["tremolo_best_position", "best_origin_SMILES"], clean_table.columns.values[
 			(clean_table.columns.str.startswith("tremolo_") & clean_table.columns.str.endswith("_best")) |
 			(clean_table.columns.str.startswith("tremolo_curated_superclass"))],
 		                                      ["curated_identification_best_origin"]])
