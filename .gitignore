@@ -23,6 +23,8 @@ src/__pycache__/*
 package-lock.json
 package.json
 src/ISDB_tremolo_NP3/Data/dbs/UNPD_DB.csv
+src/final_report/Chemical_space_data/descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv
+src/final_report/__pycache__/*
 
 # Dev Templates Bootstrap#
 ##########################
