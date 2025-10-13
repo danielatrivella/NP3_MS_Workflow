@@ -177,6 +177,12 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
                                                        colnames(orig_samples_metadata)[!(colnames(orig_samples_metadata) %in% c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE"))])]
   }
   
+  # TODO check for duplicated sample_codes among jobs, and resolve duplication setting
+  # new sample codes in a column called SAMPLE_CODE_JOIN or 
+  # save original sample codes in a columns called SAMPLE_CODE_ORIGINAL for reference when computing the peak area
+  # the original sample code will be changes to new SAMPLE_CODE without duplicates, duplicated are concatenate with _<i>
+  # TODO test this
+  
   # check if the sample_codes are unique names among jobs - 
   # these will be necessary in the following workflow steps, for referencing the quantification columns
   if (any(duplicated(orig_samples_metadata$SAMPLE_CODE)))
