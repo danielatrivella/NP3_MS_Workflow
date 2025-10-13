@@ -29,8 +29,8 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 	# read the data
 	clean_data = pd.read_csv(clean_table_file)
 	metadata = pd.read_csv(metadata_file)
-	# if there is a curated identification, proceed for plotting
-	if superclass_grouping_name in clean_data.columns:
+	# if there is a curated identification and any not blank sample, proceed for plotting
+	if superclass_grouping_name in clean_data.columns and (metadata.SAMPLE_TYPE.str.lower() != "blank").any():
 		print("  - Creating the superclass grouping distribution by not blank sample \n")
 		# get the columns names containing the count of spectra by peak area without blanks
 		samples_area_name = metadata.SAMPLE_CODE[metadata.SAMPLE_TYPE.str.lower() != "blank"].values
