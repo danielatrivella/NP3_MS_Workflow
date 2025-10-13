@@ -263,6 +263,8 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	# New data identified that you want to transform using the same eigenvectors
 	# read the new data here and filter the correct IDs
 	new_data = pd.read_csv(new_data_path, low_memory=False)
+	# add the curated tag to the output name
+	output_name = output_name + "_curated"
 	# for UNPD extraxt the X_new by matching the best identified SMILES against the data_reference_descriptors SMILES,
 	# # and return the corresponding not NA descriptors
 	# for GNPS a table with the descriptors must be informed
@@ -273,13 +275,20 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 		# and must contain a valid value in it (not NA)
 		# the list of UNPD IDs will be matched against the reference table EntryID and its information will be filtered out
 		# test this merge, merge to retrieve the descriptors instead and set to the x_filtered
+		# check if curated result is present, if not skipt PCA
+		if "tremolo_UNPD_score_best" not in new_data.columns:
+			print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
+			         "curated identification result, column 'tremolo_UNPD_score_best' is missing. Skipping PCA for identifications.")
+			return None
 		if "tremolo_SMILES_best" not in new_data.columns:
 			print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
-			         "curated identification result, column 'tremolo_SMILES_best' is missing. Skipping PCA for identifications.")
+			         "best identification result, column 'tremolo_SMILES_best' is missing. Skipping PCA for identifications.")
 			return None
-		if not (~new_data.tremolo_SMILES_best.isna()).any():
+		# filter only the curated result with tremolo_UNPD_score_best > 0
+		new_data = new_data.loc[new_data.tremolo_UNPD_score_best > 0,:]
+		if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
 			print("No valid tremolo-UNPD curated identification is present in the provided clean table. "+
-			         "Could not create the chemical space. Skipping PCA for identifications.")
+			      "Could not create the chemical space. Skipping PCA for identifications.")
 			return None
 		# merge the new data with the reference descriptors using the best identified SMILES
 		new_data_desc = pd.merge(new_data.loc[~new_data.tremolo_SMILES_best.isna(), "tremolo_SMILES_best"],
@@ -332,7 +341,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 		# filter the valid gnps smiles with gnps_score > 0 and get their descriptors
 		new_data_desc = new_data.loc[new_data.gnps_score > 0 ,"gnps_Smiles"]
 		if new_data_desc.shape[0] == 0:
-			print("  - No valid GNPS identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+			print("  - No valid GNPS curated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
 			return None
 		# read the descriptors calculation result and filter the valid ones
 		gnps_descriptors_result = pd.read_csv(gnps_descriptors_file, low_memory=False)
@@ -426,7 +435,7 @@ def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
 	
 	# Original data
 	# X_original is read here
-	# TODO read the complete table and them filter the descriptor cols and the type cols
+	# TODO read the complete table and them filter the descriptor cols and the type cols - no filter for now
 	clean_data_mz = pd.read_csv(clean_data_path,
 	                                         low_memory=False,
 	                                         usecols=["mzConsensus","rtMean","basePeakInt","sumInts","maxArea"])
@@ -450,7 +459,7 @@ def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
 	X_filtered = X_filtered.loc[valid_mzs_rows, :]
 	
 	# filter label in Type
-	# TODO define Type to use here, blanks or beds or none
+	# TODO define Type to use here, blanks or beds or none - no filter for now
 	#point_labels = data_reference_descriptors.loc[valid_smiles_rows, "Type"]
 	point_labels = ["mzs"]*X_filtered.shape[0]
 	
