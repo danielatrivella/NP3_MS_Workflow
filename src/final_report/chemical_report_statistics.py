@@ -34,7 +34,10 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 		print("  - Creating the superclass grouping distribution by not blank sample \n")
 		# get the columns names containing the count of spectra by peak area without blanks
 		samples_area_name = metadata.SAMPLE_CODE[metadata.SAMPLE_TYPE.str.lower() != "blank"].values
-		samples_area_col = samples_area_name + "_area"
+		if clean_table_file.name.find("peak_area") > 0:
+			samples_area_col = samples_area_name + "_area"
+		else:
+			samples_area_col = samples_area_name + "_spectra"
 		
 		# group the quantification columns by the superclass grouping and sum the respective rows
 		samples_area_by_superclass_grouping = clean_data.groupby(superclass_grouping_name)[samples_area_col].sum()
@@ -241,7 +244,10 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 			chemical_statistics['Value'].append("")
 			chemical_statistics['Description'].append("")
 			# samples redundancy (number of [M+H]+ that appear in more than one sample, mediana+-sd of number of samples that they appear
-			clean_data["number_samples"] = (clean_data.loc[:, clean_data.columns.str.endswith("_area")] > 0).sum(1)
+			if clean_table_file.name.find("peak_area") > 0:
+				clean_data["number_samples"] = (clean_data.loc[:, clean_data.columns.str.endswith("_area")] > 0).sum(1)
+			else:
+				clean_data["number_samples"] = (clean_data.loc[:, clean_data.columns.str.endswith("_spectra")] > 0).sum(1)
 			number_protonated_in_redundant_samples = (clean_data.number_samples > 1).sum()
 			number_samples_describe = clean_data["number_samples"].describe()
 			
