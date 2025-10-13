@@ -110,7 +110,7 @@ def compute_mn_report_statistics(output_mn_path, mn_report_path):
 				"among its neighbors. It is calculated as the ratio of the actual number of edges between the node's neighbors " +
 				"to the total number of possible edges between them.")
 			# count number of components by size
-			for i in np.unique(components_size):
+			for i in np.sort(np.unique(components_size)):
 				n_components_size = (components_size == i).sum()
 				mn_statistics['Statistics'].append("Number of components of size " + str(i))
 				mn_statistics['Value'].append(f"{n_components_size} ({n_components_size / n_components * 100:.1f}%)")
