@@ -799,6 +799,8 @@ batches_data <- lapply(unique(metadata$DATA_COLLECTION_BATCH), function(batch)
     rm(sample_chromatogram)
 
     # write MS2 data with peak info and a unique groupID equals the scan number
+    # using intb -  Integrated baseline-corrected intensity - which is the $into - original integrated peak intensity -
+    # minus local noise background - corrected peak area
     tryCatch(writeMgfDataFile_NP3(raw_data, 
                                   file_MGF = file.path(path_raw_data, processed_data_dir, 
                                                   paste0(metadata$SAMPLE_CODE[[sample_idx]], 
@@ -808,7 +810,7 @@ batches_data <- lapply(unique(metadata$DATA_COLLECTION_BATCH), function(batch)
                                   INTO = raw_int,
                                   TITLE = metadata$SAMPLE_CODE[[sample_idx]],
                                   PEAK_ID = tandem_peak_info$id,
-                                  PEAK_AREA = trunc(tandem_peak_info$intb), # TODO compare intb and $into
+                                  PEAK_AREA = trunc(tandem_peak_info$intb),
                                   CHARGE = ion_mode,
                                   tags = c("BEGIN IONS", "SCANS", "RTINSECONDS",
                                            "RTMIN", "RTMAX", "PEAK_AREA", "PEAK_ID",
