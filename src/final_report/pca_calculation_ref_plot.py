@@ -329,14 +329,16 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 		# filter only the descriptors
 		gnps_descriptors_file = output_path / "identifications" / "gnps_results_smiles_descriptorsCDK.csv"
 		if not gnps_descriptors_file.exists() or not gnps_descriptors_file.is_file():
-			sys.exit("The GNPS descriptors file is not present in: "+ gnps_descriptors_file.as_posix()+
+			print("The GNPS descriptors file is not present in: "+ gnps_descriptors_file.as_posix()+
 			         ". Provide the correct output_path or check for errors in the RCDK descriptors calculation. "+
 			         "PCA plotting for GNPS and UNPDxGNPS aborted.")
+			return None
 		output_path = output_path / "final_reports" / "chemical_report" / "chemical_space_identifications"
 		output_path.mkdir(exist_ok=True)
 		if not output_path.exists() or not output_path.is_dir():
-			sys.exit("The final output directory of the chemical report to store the chemical space PCA result could not"+
+			print("The final output directory of the chemical report to store the chemical space PCA result could not"+
 			      " be created. PCA plotting for GNPS and UNPDxGNPS aborted.")
+			return None
 		
 		# filter the valid gnps smiles with gnps_score > 0 and get their descriptors
 		new_data_desc = new_data.loc[new_data.gnps_score > 0 ,"gnps_Smiles"]
