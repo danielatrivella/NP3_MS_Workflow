@@ -10,7 +10,7 @@ Selects the best tremolo result with the greater mqscore and mzerror < 20, if an
   creates the coluns tremolo_<>_best with the best selected identification result
   creates the coluns tremolo_UNPD_score_best and tremolo_UNPD_category_best with the final scores of the best identification and its classification
   creates the column curated_identification_best_origin to store the current best origin of valid identifications - checked as 'UNPD' for all valid classifications
-  cretes the curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group fro the best origin, here UNPD only
+  creates the tremolo_curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group fro the best origin, here UNPD only
 Stores the results in the clean table - overwritting it
 
 Args:
@@ -93,7 +93,7 @@ def group_curated_superclass_toCols(curated_superclass_col):
 				"Stilbenoids", "Terphenyls"],
 			'Flavonoids_and_Phenolic_derivatives':
 				["Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)",
-				"Phenylethanoids (C6-C2)", "Phenylethanoids (C6-C3)", "Phenylpropanoids (C6-C3)",
+				"Phenylethanoids (C6-C2)", "Phenylpropanoids (C6-C3)",
 				"Phloroglucinols", "Phenylpropanoids and polyketides"],
 			'Organohalogen_and_Organometallic':
 				["Organohalogen compounds", "Organometallic compounds", "Acetylides"],
@@ -252,13 +252,24 @@ def curate_tremolo_unpd_identification(clean_table_file):
 	clean_table['curated_identification_best_origin'] = ''
 	clean_table.loc[clean_table.tremolo_UNPD_score_best > 0,'curated_identification_best_origin'] = 'UNPD'
 	
-	# make the curated superclass for UNPD identification
+	# make the clean and the curated superclass for UNPD identification
 	# get the first superclass from NPClassifier, the one before the pipe "|", if not NA else leave as NA
-	clean_table['tremolo_curated_superclass'] = clean_table.tremolo_NPClassifier_superclass_best.apply(lambda x: x.split("|")[0] if x == x else np.NaN)
-	# now call function to create the superclass grouping - counting the number of superclass match by group in the case
-	# of doubled superclasses separated by ':'
-	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['tremolo_curated_superclass'])
+	clean_table['tremolo_NPClassifier_superclass_clean_best'] = clean_table.tremolo_NPClassifier_superclass_best.apply(
+		lambda x: x.split("|")[0] if x == x else np.NaN)
+	clean_table['tremolo_curated_superclass'] = clean_table['tremolo_NPClassifier_superclass_clean_best']
+	clean_table.loc[(clean_table.tremolo_UNPD_category_best == "out"), "tremolo_curated_superclass"] = np.NaN
+	# now call function to create the superclass grouping for all best and clean superclass -
+	# counting the number of superclass match by superclass group, considering the case of doubled superclasses separated by ':'
+	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['tremolo_NPClassifier_superclass_clean_best'])
 	curated_superclass_groupings.columns = "tremolo_"+curated_superclass_groupings.columns
+	# set the clean grouping and then set the curated result to retain only the tremolo_UNPD_category_best != "out"
+	clean_table['tremolo_NPClassifier_superclass_grouping_best'] = curated_superclass_groupings['tremolo_curated_superclass_grouping']
+	# set the superclasses grouping count columns to 0 when tremolo category is out and the grouping to NA
+	curated_superclass_groupings.loc[(clean_table.tremolo_UNPD_category_best == "out"),:] = 0
+	curated_superclass_groupings.loc[(clean_table.tremolo_UNPD_category_best == "out"),
+	                                 'tremolo_curated_superclass_grouping'] = "Not_Annotated"
+	curated_superclass_groupings.loc[(clean_table.tremolo_UNPD_category_best == "out"),
+	                                 'tremolo_curated_superclass_GR_Not_Annotated'] = 0
 	if curated_superclass_groupings.columns.isin(clean_table.columns.values).all():
 		clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True)
 	clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
