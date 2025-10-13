@@ -1512,6 +1512,7 @@ program
         console.log('\n*** NP3 workflow setup ***\n\n');
         var resExec;
         var countError = 0;
+        var countMinorError = 0;
         var call_cwd = process.cwd();
 
         console.log('* Merging the UNPD csv file *\n');
@@ -1522,7 +1523,7 @@ program
             console.log(resExec.stdout);
             console.log(resExec.stderr);
             console.log('\nERROR. Could not merge the UNPD csv file. Tremolo identification is disabled.');
-            countError = countError + 1;
+            countMinorError = countMinorError + 1;
         } else {
             console.log("DONE!\n");
         }
@@ -1576,8 +1577,9 @@ program
             if (resExec.code) {
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
-                console.log('\nERROR. Could not download the spec2vec model vectors table.');
-                countError = countError + 1;
+                console.log('\nERROR. Could not download the spec2vec model vectors table.'+
+                    'Running the clean step using the spec2vec as the similarity function will be disabled.');
+                countMinorError = countMinorError + 1;
             } else {
                 console.log("DONE!\n");
             }
@@ -1592,8 +1594,9 @@ program
             if (resExec.code) {
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
-                console.log('\nERROR. Could not download the spec2vec model trainables table.');
-                countError = countError + 1;
+                console.log('\nERROR. Could not download the spec2vec model trainables table. ' +
+                    'Running the clean step using the spec2vec as the similarity function will be disabled.');
+                countMinorError = countMinorError + 1;
             } else {
                 console.log("DONE!\n");
             }
@@ -1610,14 +1613,16 @@ program
             if (resExec.code) {
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
-                console.log('\nERROR. Could not unzip the descriptors reference table.');
-                countError = countError + 1;
+                console.log('\nERROR. Could not unzip the descriptors reference table. ' +
+                    'Standard PCA will be disabled in the final report');
+                countMinorError = countMinorError + 1;
             } else {
                 console.log("DONE!\n");
             }
         } else {
-            console.log('\nERROR. Could not find and unzip the zipped descriptors reference table. Invalid path: '+file_pca_descriptors_ref_zip);
-            countError = countError + 1;
+            console.log('\nERROR. Could not find and unzip the zipped descriptors reference table. ' +
+                'Standard PCA plotting will be disabled in the final report. Invalid path: '+file_pca_descriptors_ref_zip);
+            countMinorError = countMinorError + 1;
         }
 
         // check if R is installed
@@ -1640,6 +1645,25 @@ program
             }
         }
 
+        // checking the java installation, force reinstall if necessary
+        console.log('* Checking the Java openjdk installation *\n');
+
+        resExec = shell.exec('java -version', {async:false, silent: true});
+        if (resExec.code) {
+            console.log("\nFailed. Java interpreter doesn't work properly. Trying to reinstall openjdk from conda-forge.");
+            resExec = shell.exec('conda install -c conda-forge openjdk=11.0.8 --force-reinstall -y', {async:false, silent: true});
+            if (resExec.code) {
+                console.log("\nERROR. Could not reinstall the Java insterpreter with openjdk library. " +
+                    "The descriptors calculation using RCDK will be missing. " +
+                    "This will affect the PCA plotting for gnps_result command.");
+                countMinorError = countMinorError + 1;
+            } else {
+                console.log("DONE!\n");
+            }
+        } else {
+            console.log("DONE!\n");
+        }
+
         if (!shell.which('make')) {
             shell.echo('Make not found, please ensure make is available and try again.');
             shell.exit(1);
@@ -1658,8 +1682,9 @@ program
                 if (resExec.code) {
                     console.log(resExec.stdout);
                     console.log(resExec.stderr);
-                    console.log('\nERROR. Could not compile dot product function for spectra viewer web app,\nretry with user privileges or do it manually.\n');
-                    countError = countError + 1;
+                    console.log('\nERROR. Could not compile dot product function for spectra viewer web app,' +
+                        '\nretry or do it manually. This will only affect the spectra_viewer command.\n');
+                    countMinorError = countMinorError + 1;
                 } else {
                     console.log("DONE!\n");
                 }
@@ -1699,7 +1724,14 @@ program
             console.log('NP3 workflow installation complete! ' + printTimeElapsed_bigint(start_setup, process.hrtime.bigint()))
         } else {
             console.log('NP3 workflow installation ended with ' + countError +
-                " error(s). Check the error messages, fix the conflicts and retry the setup. " + printTimeElapsed_bigint(start_setup, process.hrtime.bigint()))
+                " major error(s). This errors may compromise the application functionality. Check the error messages, fix the conflicts and retry the setup. " +
+                printTimeElapsed_bigint(start_setup, process.hrtime.bigint()))
+        }
+        if (countMinorError > 0)
+        {
+            console.log("There were " + countMinorError + " minor errors during the installation setup. The main " +
+                "pipeline functionality won't be compromised, but some extra results may be missing from the final NP3 result. " +
+                "Check the error messages, if necessary try to fix the conflicts and retry the setup.")
         }
     })
     .on('--help', function() {
