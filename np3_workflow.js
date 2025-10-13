@@ -1602,7 +1602,7 @@ program
         // unzip chemical_space reference table
         file_pca_descriptors_ref_zip = __dirname+'/src/final_report/Chemical_space_data/descriptors_reference_table.zip';
         dir_pca_ref = __dirname+'/src/final_report/Chemical_space_data/';
-        if (!(shell.test('-e', file_pca_descriptors_ref_zip) && shell.test('-f', file_pca_descriptors_ref_zip)))
+        if ((shell.test('-e', file_pca_descriptors_ref_zip) && shell.test('-f', file_pca_descriptors_ref_zip)))
         {
             console.log('* Unzipping the PCA descriptors table with the NP3 reference data *\n');
             resExec = shell.exec('python '+__dirname+'/src/unzip_file.py '+
@@ -1615,6 +1615,9 @@ program
             } else {
                 console.log("DONE!\n");
             }
+        } else {
+            console.log('\nERROR. Could not find and unzip the zipped descriptors reference table. Invalid path: '+file_pca_descriptors_ref_zip);
+            countError = countError + 1;
         }
 
         // check if R is installed
