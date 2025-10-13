@@ -96,9 +96,9 @@ def biplot_scatter_arrows(scores,point_labels, data_types_style,components=None,
 	#plt.close()
 
 # colors from https://matplotlib.org/stable/gallery/color/color_cycle_default.html#sphx-glr-gallery-color-color-cycle-default-py
-data_types_style_NP3_reference = {'UNPD': ['UNPD', 'tab:grey'],
-						'DrugBank': ['DrugBank', 'tab:blue'],
-						'allosteric_review': ['Allosteric natural - PubMed', 'tab:green'],
+data_types_style_NP3_reference = {'UNPD': ['UNPD 2018', 'tab:grey'],
+						'DrugBank': ['DrugBank 2019', 'tab:blue'],
+						'allosteric_review': ['Allosteric natural - PubMed 2019', 'tab:green'],
                         'mzs' : ['m/zs', 'tab:blue']}
 
 def biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=None, components=None, feature_labels=None):
