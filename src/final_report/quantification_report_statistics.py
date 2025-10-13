@@ -41,25 +41,25 @@ def compute_quantification_report_statistics(clean_table_file, output_path, mz_t
 		quantification_statistics['Description'].append("Total number of blank m/zs in the final table, BLANKS_TOTAL > 0.")
 		
 	# if any bed sample, compute their statistics
-	if "BED_TOTAL" in clean_data.columns:
-		number_not_bed_mzs = sum((clean_data.BED_TOTAL == 0))
+	if "BEDS_TOTAL" in clean_data.columns:
+		number_not_bed_mzs = sum((clean_data.BEDS_TOTAL == 0))
 		quantification_statistics['Statistics'].append("Total number of not bed m/zs")
 		quantification_statistics['Value'].append(f"{number_not_bed_mzs} ({number_not_bed_mzs / n * 100:.1f}%)")
 		quantification_statistics['Description'].append(
-			"Total number of not bed (culture media) m/zs in the final table, BED_TOTAL == 0.")
-		number_bed_mzs = sum((clean_data.BED_TOTAL > 0))
+			"Total number of not bed (not culture media) m/zs in the final table, BEDS_TOTAL == 0.")
+		number_bed_mzs = sum((clean_data.BEDS_TOTAL > 0))
 		quantification_statistics['Statistics'].append("Total number of bed m/zs")
 		quantification_statistics['Value'].append(f"{number_bed_mzs} ({number_bed_mzs / n * 100:.1f}%)")
 		quantification_statistics['Description'].append(
-			"Total number of bed (culture media) m/zs in the final table, BED_TOTAL > 0.")
+			"Total number of bed (culture media) m/zs in the final table, BEDS_TOTAL > 0.")
 	
 	# Compute number of isotope ions
 	number_isotope_ions = clean_data.isotope_ion.sum()
-	quantification_statistics['Statistics'].append("Number of isotope m/zs")
+	quantification_statistics['Statistics'].append("Number of isotope ion m/zs")
 	quantification_statistics['Value'].append(
 		f"{number_isotope_ions} ({number_isotope_ions / n * 100:.1f}%)")
 	quantification_statistics['Description'].append(
-		"Total number of isotope m/zs that were assigned as [M+1]+ (isotope_ion == 1). And its percentage over the total number of m/zs.")
+		"Total number of isotope ion m/zs that were assigned as [M+1]+ (isotope_ion == 1) using the MS1 data. And its percentage over the total number of m/zs.")
 	
 	# UNPD identification statistics for spectra identification rate
 	if 'tremolo_UNPD_category_best' in clean_data.columns:
