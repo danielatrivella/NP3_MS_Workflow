@@ -70,6 +70,11 @@ if (length(args) < 3) {
 # read the join jobs metadata
 metadata <- readMetadataTableJoinJobs(path_jobs_metadata, path_jobs_data)
 
+# TODO to accept original sample codes with the same value, here when reading the original
+# TODO clean data, the column names must be updated to the new naming present in the
+# original samples metadata, column SAMPLES_CODE_JOIN which resolver duplicates between different jobs
+# then SAMPLES_CODE_JOIN must be unique among the different jobs in the metadata creation script,
+
 # get the count of spectra of the subjobs
 # and select only necessary columns that will be kept in the process
 count_subjobs <- lapply(metadata$JOBNAME, function(x)
@@ -201,6 +206,12 @@ if (any(duplicated(scans_list))) {
        paste(scans_list[duplicated(scans_list)], collapse = ","))
 } 
 rm(scans_list)
+
+# TODO make the msclusterID maintain the first job ids - in an integrative clustering manner
+# the rest of the clusters that do not appear in the first job should receive an incremental ID
+# starting from the last ID of the first job that is present - first extract the IDs
+# from the first job, them set the remaining IDs - use column joinedJobsIDs to retrieve original IDs
+# TODO make current msclusterIDs be a new column for reference of the current clustering result, such as joinedClustIds
 
 # order columns
 clusterList <- clusterList[, c("msclusterID","numSpectra", 
