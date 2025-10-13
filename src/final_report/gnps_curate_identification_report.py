@@ -4,18 +4,21 @@
 Created on 08 Octu 2025
 @author: Cris
 
-Script to select the best result from the UNPD identification using tremolo
-Selects the best tremolo result with the greater mqscore and mzerror < 20, if any, or >= 20 within conditions of number of matched peaks and mqscore range
-   Uses a defined scoring and classification system to select the best results
-  creates the coluns tremolo_<>_best with the best selected identification result
-  creates the coluns tremolo_UNPD_score_best and tremolo_UNPD_category_best with the final scores of the best identification and its classification
+Script to select the best result from the GNPS identification Library Search or Molecular Networking workflows
+Compare the gnps smiles with the best tremolo smiles when present, then categorize the gnps result using mqscore,
+mzerror and number of shared peaks. Uses a defined scoring and classification system to curate the results and select
+best results.
+  creates the coluns gnps_score and gnps_category with the final scores of the best identification and its classification
   creates the column curated_identification_best_origin to store the current best origin of valid identifications - checked as 'UNPD' for all valid classifications
-  cretes the curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group fro the best origin, here UNPD only
-Stores the results in the clean table - overwritting it
+  creates the gnps_curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group for GNPS and the best origin (UNPDxGNPS)
+Stores the results in the clean table as new coloumns - overwritting it
 
 Args:
 
 	clean table csv
+	output_path to the final result folder of the np3 job, inside the outs dir, named with the output_name,
+		it will be used to store somes analysis in the final_reports folder
+	metadata path to the metadata table in csv
 """
 
 import pandas as pd
@@ -27,35 +30,6 @@ from pathlib import Path
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot
 from chemical_report_statistics import compute_chemical_identification_report_GNPS_result, plot_superclass_samples_distribution
 import os
-
-# return the position of the first float with value < value_lt from a list of string with floats
-# - which will be the one with the greater mqscore, following the tremolo result ordering -,
-# else return the position of the first smaller float rounded in decimal places that is greater than the cutoff value
-def position_first_float_list_lt_or_smaller(str_list, value_lt):
-	x_values = np.float64(str_list.split(";"))
-	x = (x_values < value_lt)
-	if any(x):
-		return int(np.argmax(x))
-	else:
-		return np.argmin(np.round(x_values/10)*10)
-
-# return the position of the first float with value < value_lt from a list of string with floats, else None
-def position_first_float_list_lt(str_list, value_lt):
-	x = (np.float64(str_list.split(";")) < value_lt)
-	if any(x):
-		return int(np.argmax(x))
-	else:
-		return None
-	
-def get_position_str(x,pos,col):
-	if type(x) is str:
-		if col == 'gnps_Smiles':
-			x = x.split(",")
-		else:
-			x = x.split(";")
-		return x[int(pos)]
-	else:
-		return x
 
 # funcao para calcular o coeficiente de Tanimoto
 def calculate_tanimoto(smiles1, smiles2):
@@ -193,14 +167,24 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 		clean_table['curated_identification_best_origin'] = ''
 		clean_table.loc[(clean_table.gnps_score > 0), 'curated_identification_best_origin'] = 'GNPS'
 		
-	# make the curated superclass for GNPS identification
+	# make the clean and the curated superclass for GNPS identification
 	# get the first superclass from NPClassifier, the one before the pipe "|", if not NA else leave as NA
-	clean_table['gnps_curated_superclass'] = clean_table.gnps_npclassifier_superclass.apply(
+	clean_table['gnps_npclassifier_superclass_clean'] = clean_table.gnps_npclassifier_superclass.apply(
 		lambda x: x.split("|")[0] if x == x else np.NaN)
+	clean_table['gnps_curated_superclass'] = clean_table['gnps_npclassifier_superclass_clean']
+	clean_table.loc[clean_table.gnps_category == "out", "gnps_curated_superclass"] = np.NaN
 	# now call function to create the superclass grouping - counting the number of superclass match by group in the case
 	# of doubled superclasses separated by ':'
-	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['gnps_curated_superclass'])
+	curated_superclass_groupings = group_curated_superclass_toCols(clean_table['gnps_npclassifier_superclass_clean'])
 	curated_superclass_groupings.columns = "gnps_" + curated_superclass_groupings.columns
+	# set the clean grouping and then set the curated result to retain only the gnps_category != "out" results
+	clean_table['gnps_npclassifier_superclass_grouping'] = curated_superclass_groupings['gnps_curated_superclass_grouping']
+	# set the superclasses grouping count columns to 0 where gnps category is out and the grouping to NA
+	curated_superclass_groupings.loc[(clean_table.gnps_category == "out"), :] = 0
+	curated_superclass_groupings.loc[(clean_table.gnps_category == "out"),
+	                                 'gnps_curated_superclass_grouping'] = "Not_Annotated"
+	curated_superclass_groupings.loc[(clean_table.gnps_category == "out"),
+	                                 'gnps_curated_superclass_GR_Not_Annotated'] = 0
 	if curated_superclass_groupings.columns.isin(clean_table.columns.values).all():
 		clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True)
 	clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
@@ -273,7 +257,7 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 	compute_chemical_identification_report_GNPS_result(clean_table_file, chemical_report_path)
 	
 if __name__ == "__main__":
-	import sys, os
+	import sys
 	metadata_file = ""
 	if len(sys.argv) > 2:
 		# print(sys.argv)
