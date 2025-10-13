@@ -291,10 +291,10 @@ def curate_tremolo_unpd_identification(clean_table_file):
 	if clean_table_other_file.exists() and clean_table_other_file.is_file():
 		print("  - Saving the clean table with the UNPD curated identification result and superclasses groupings: ",
 		      clean_table_other_file)
-		new_curated_columns = np.concatenate([["tremolo_best_position", "best_origin_SMILES"], clean_table.columns.values[
+		new_curated_columns = np.concatenate([["tremolo_best_position"], clean_table.columns.values[
 			(clean_table.columns.str.startswith("tremolo_") & clean_table.columns.str.endswith("_best")) |
 			(clean_table.columns.str.startswith("tremolo_curated_superclass"))],
-		                                      ["curated_identification_best_origin"]])
+		                                      ["curated_identification_best_origin", "best_origin_SMILES"]])
 		clean_table_other = pd.read_csv(clean_table_other_file, converters={'msclusterID':str}, low_memory=False)
 		clean_table_other.drop(new_curated_columns, axis=1, inplace=True, errors="ignore") # remove existing new columns
 		clean_table_other = clean_table_other.merge(
