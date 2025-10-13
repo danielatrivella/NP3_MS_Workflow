@@ -209,6 +209,8 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 		# create grouping for best_origin_curated_superclass
 		curated_superclass_groupings = group_curated_superclass_toCols(clean_table['best_origin_curated_superclass'])
 		curated_superclass_groupings.columns = "best_origin_" + curated_superclass_groupings.columns
+		# drop previous result if exists
+		clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True, errors="ignore")  # remove existing new columns
 		clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
 	
 	print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin: ",
@@ -228,10 +230,12 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 		print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin: ",
 			clean_table_other_file)
 		new_curated_columns = np.concatenate([['tanimoto_unpd_gnps', 'gnps_GoldCategory', 'gnps_category',
-		                                       'gnps_score', 'curated_identification_best_origin'],
+		                                       'gnps_score', 'gnps_npclassifier_superclass_clean',
+		                                       'gnps_npclassifier_superclass_grouping',
+		                                       'curated_identification_best_origin'],
 		                                      clean_table.columns.values[
 			                                      clean_table.columns.str.startswith("best_origin_") |
-			                                      clean_table.columns.str.startswith("gnps_curated_superclass_")]])
+			                                      clean_table.columns.str.startswith("gnps_curated_superclass")]])
 		clean_table_other = pd.read_csv(clean_table_other_file, converters={'msclusterID': str}, low_memory=False)
 		clean_table_other.drop(new_curated_columns, axis=1, inplace=True, errors="ignore") # remove existing new columns
 		clean_table_other = clean_table_other.merge(
