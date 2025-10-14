@@ -90,7 +90,7 @@ def group_curated_superclass_toCols(curated_superclass_col):
 				"Miscellaneous polyketides", "Polycyclic aromatic polyketides", "Polyethers"],
 			'Benzenoids':
 				["Benzenoids", "Diarylheptanoids", "Naphthalenes", "Phenanthrenoids",
-				"Stilbenoids", "Terphenyls"],
+				"Stilbenoids", "Terphenyls", "Diphenyl ethers (DPEs)", "Fluorenes"],
 			'Flavonoids_and_Phenolic_derivatives':
 				["Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)",
 				"Phenylethanoids (C6-C2)", "Phenylpropanoids (C6-C3)",
@@ -100,10 +100,10 @@ def group_curated_superclass_toCols(curated_superclass_col):
 			'Lignans_and_Other_Ocompounds':
 				["Chromanes", "Coumarins", "Organic oxygen compounds",
 				"Polyols", "Polyprenols", "Saccharides", "Styrylpyrones", "Xanthones",
-				"Lignans", "Lignans, neolignans and related compounds"],
+				"Lignans", "Lignans, neolignans and related compounds", "Tropolones"],
 			'Organic_Acids_and_OthersGenerals':
 				["Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives",
-				"Organoheterocyclic compounds"],
+				"Organoheterocyclic compounds", "Organosulfur compounds"],
 			'Not_Annotated': ["not_annotated"]}
 		
 		# iterate over the names of the superclasses groupings and count the curated superclasses (n first cols)
