@@ -79,7 +79,7 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 
 
 def compute_chemical_report_statistics(clean_table_file, output_path):
-	total_superclass_unpd = 91  # from the superclass_groupings dictionary in tremolo_UNPD_curate_identification
+	total_superclass_unpd = 94  # from the superclass_groupings dictionary in tremolo_UNPD_curate_identification
 	total_superclass_npclassifier_grouping = 10
 	clean_table_file = Path(clean_table_file)
 	output_path = Path(output_path)
@@ -281,7 +281,7 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 	chemical_statistics_table.to_csv(output_path/"chemical_statistics_UNPD.csv", index=False)
 	
 def compute_chemical_identification_report_GNPS_result(clean_table_file, output_path):
-	total_superclass_npclassifier = 91  # from the superclass_groupings dictionary in tremolo_UNPD_curate_identification
+	total_superclass_npclassifier = 94  # from the superclass_groupings dictionary in tremolo_UNPD_curate_identification
 	total_superclass_npclassifier_grouping = 10
 	total_gnps_fixo = total_gnps_unique_SMILES  # total unique SMILES in GNPS from October 2025
 	total_unpd_fixo = total_unpd_unique_SMILES  # total unique Smiles in UNPD
