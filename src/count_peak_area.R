@@ -43,10 +43,20 @@ compute_peak_area <- function(processed_data_path, msclusterIDs, scans_count,
                                                                          replacement = "$", 
                                                                          x), "$"))
   }
+  
+  # if this is a join_jobs, retrieve the original sample code for accessing the 
+  # original pre processing result, otherwise set it as the current sample code list
+  if (is.null(job_code_match)) {
+    original_samples_codes <- metadata$SAMPLE_CODE
+  } else {
+    original_samples_codes <- metadata$SAMPLE_CODE_ORIGINAL
+  }
   # compute the peak area for each sample code
-  peak_areas <- Reduce(bind_cols, lapply(metadata$SAMPLE_CODE, function(x)
+  peak_areas <- Reduce(bind_cols, lapply(seq_along(metadata$SAMPLE_CODE), function(j)
   {
-    preprocessed_mgf_path <- file.path(processed_data_path, paste0(x, '_peak_info.mgf'))
+    x <- metadata$SAMPLE_CODE[j]
+    y <- original_samples_codes[j]
+    preprocessed_mgf_path <- file.path(processed_data_path, paste0(y, '_peak_info.mgf'))
     if (!file.exists(preprocessed_mgf_path)) {
       stop("Error computing the peak area of sample code ",x,
            ". Its pre processed MGF file does not exists: ", preprocessed_mgf_path, 
@@ -74,7 +84,13 @@ compute_peak_area <- function(processed_data_path, msclusterIDs, scans_count,
         scans_header <- mgf_data[match(scans[scans_x], mgf_data$scans), ]
         peakIds <- peakIds_count[[i]][grepl(pattern = paste0("$", x, "$"), fixed = T, 
                                               x = peakIds_count_format[[i]])]
-        
+        # if this is a joining job with a new sample code, 
+        # only match the peakIds using the numerical index
+        # the sample code here may have changed - due to duplicates
+        if (!is.null(job_code_match) && (x!=y)) {
+          scans_header$peak_id <- sapply(scans_header$peak_id, function(pId) strsplit(pId,"_")[[1]][[1]])
+          peakIds <- sapply(peakIds, function(pId) strsplit(pId,"_")[[1]][[1]])
+        }
         # test if all peakIds are correct for this sample
         if (!all(peakIds %in% scans_header$peak_id) & 
             !all(scans_header$peak_id  %in% peakIds)) {
