@@ -390,7 +390,7 @@ merge_counts <- function(col_name, x)
          numSpectra =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,sumInts = sum(x[[col_name]]),
          basePeakInt=max(as.numeric(x[[col_name]])),
          BEDFLAG=,BFLAG =,CFLAG = any(as.logical(x[[col_name]])),
-         HFLAG=,DESREPLICATION=,scans=,joinedJobsIDs=
+         HFLAG=,DESREPLICATION=,scans=,joinedJobsIDs=,msclusterID_integrative=
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                   NA),
@@ -1056,24 +1056,9 @@ if (!all(check_ints_sum)) {
   stop("Bad scaling of the peak lists' intensities. Some spectra do not have the inverse scales intensities summing 1000 (the normalized value).")
 }
 
-# TODO if join_jobs, create the cleanClustIDs column here to store the current cleaned msclusterIDs
-# and apply the integrative clustering heuristic to maintain the msclusterIDs from the
-# first job selected as reference, using the msclusterID_integrative columns created in step 4
-# to extract the minimum original msclusterID; here the msclusterID_integrative
-# will contain the original msclusterIDs that got joined in the clustering steps separated by ;
-
-cat("\n  ** Saving the clean MGF file **\n\n")
-# sort by msclsuterID, this order will be applied to the scans in the MGF file
+# sort by msclsuterID
 ms_area_count <- arrange(ms_area_count, msclusterID)
 ms_spectra_count <- arrange(ms_spectra_count, msclusterID)
-# write the peaks list and ints to the mgf file - the intensities will be 
-# inversed scaled to be saved with no scaling
-writeMgfDataFile_NP3_table(ms_count_table = ms_area_count,
-                           file_MGF = file.path(output_path, "mgf",
-                                                paste0(output_name, "_clean.mgf")),
-                           output_name = output_name,
-                           charge = ion_mode,
-                           scale_factor = scale_factor)
 
 # compute Blanks total and controls total and beds total
 blanks_code <- batch_metadata[batch_metadata$SAMPLE_TYPE == "blank", "SAMPLE_CODE"]
@@ -1219,9 +1204,31 @@ if (length(blanks_code) > 0)
   any_blank <- FALSE
 }
 
-# sort by msclsuterID
+# if join_jobs, create the cleanClustID column here to store the current cleaned msclusterIDs
+# and apply the integrative clustering heuristic to maintain the msclusterIDs from the
+# first job selected as reference, using the msclusterID_integrative column created in step 4
+# to extract the minimum original msclusterID; here the msclusterID_integrative
+# will contain the original msclusterIDs that got joined in the clustering steps concatenated by ;
+if ("msclusterID_integrative" %in% names(ms_spectra_count)) {
+  ms_spectra_count$cleanClustID <- ms_area_count$cleanClustID <- ms_spectra_count$msclusterID
+  new_msclusterIDs <- sapply(ms_spectra_count$msclusterID_integrative, function(x) {
+    min(as.integer(strsplit(x, ";")[[1]]))
+  })
+  ms_spectra_count$msclusterID <- ms_area_count$msclusterID <- new_msclusterIDs
+}
+
+cat("\n  ** Saving the clean MGF file **\n\n")
+# sort by msclusterID, this order will be applied to the scans in the MGF file
 ms_area_count <- arrange(ms_area_count, msclusterID)
 ms_spectra_count <- arrange(ms_spectra_count, msclusterID)
+# write the peaks list and ints to the mgf file - the intensities will be 
+# inversed scaled to be saved with no scaling
+writeMgfDataFile_NP3_table(ms_count_table = ms_area_count,
+                           file_MGF = file.path(output_path, "mgf",
+                                                paste0(output_name, "_clean.mgf")),
+                           output_name = output_name,
+                           charge = ion_mode,
+                           scale_factor = scale_factor)
 
 # round mzConsensus and rts
 ms_spectra_count$mzConsensus <- ms_area_count$mzConsensus <- round(ms_area_count$mzConsensus, mz_rt_digits)
