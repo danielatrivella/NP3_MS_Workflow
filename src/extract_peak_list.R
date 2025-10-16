@@ -79,6 +79,7 @@ if (!dir.exists(path_mgf_dir) || !any(grepl(".mgf$", list.files(path_mgf_dir))))
        "' do not exists or do not contains MGF files. ", 
        "Provide a valid path to where the MGF files are located.")
 }
+ti <- Sys.time()
 # get the path to each mgf file inside the mgf dir
 path_mgf <- file.path(path_mgf_dir, list.files(path_mgf_dir)[grepl("_[0-9]+.mgf$", list.files(path_mgf_dir))])
 # order paths by mass
@@ -95,10 +96,10 @@ ms_count$peaksInt <- ms_count$peaksList <- NA
 
 cat("\n  * Extracting, normalizing and scaling fragment peaks list of", data_name, 
         "clustered spectra to concatenate in the counts files *\n")
+
 # add progress
 progress_comp <- seq(from = 1, to = n_mgf, by = 1)
 cat("        |", rep("", length(progress_comp)-1), "|\n        |")
-ti <- Sys.time()
 for (i in seq_along(path_mgf)) {
   cat("=")
   # read the ms2 data and get the scan indexes
@@ -134,7 +135,7 @@ if (!all(check_ints_sum)) {
 
 write.csv(ms_count, file = counts_path, row.names = FALSE)
 
-# concate result to the other count table
+# concatenate result to the other count table
 if (length(args) == 6)
 {
   counts_path2 <- file.path(args[[6]]) 
