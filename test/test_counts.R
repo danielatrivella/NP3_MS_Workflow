@@ -159,10 +159,14 @@ real_headers_total <- tibble(msclusterId = 0,
                              total_int = 0, .rows = nrow(ms_spectra_count))
 # read each mgf from the samples and check if peakId, peak areas and 
 # scan header is consistent for each msclusterId - i = which(ms_spectra_count$msclusterID == 193)
-wrong_scans <- lapply(metadata$SAMPLE_CODE, function(x)
+wrong_scans <- lapply(seq_along(metadata$SAMPLE_CODE), function(j)
 {
+  x <- y <-  metadata$SAMPLE_CODE[[j]]
+  if ("SAMPLE_CODE_ORIGINAL" %in% names(metadata)) {
+    y <- metadata$SAMPLE_CODE_ORIGINAL[[j]]
+  }
   preprocessed_mgf_path <- file.path(retrieve_processed_data_path(metadata$JOB_CODE[metadata$SAMPLE_CODE == x]), 
-                                     paste0(x, '_peak_info.mgf'))
+                                     paste0(y, '_peak_info.mgf'))
   if (!file.exists(preprocessed_mgf_path)) {
     stop("Error checking peakId, peak areas and scan header consistency of sample code ",x,
          ". Its pre processed MGF file does not exists: ", preprocessed_mgf_path, 
@@ -186,6 +190,11 @@ wrong_scans <- lapply(metadata$SAMPLE_CODE, function(x)
                                             x = paste0(sub(pattern = "_", 
                                                            replacement = "$", 
                                                            scans_peakIds[[i,2]]), "$"))]
+      
+      if (x!=y) {
+        scans_header$peak_id <- sapply(scans_header$peak_id, function(pId) strsplit(pId,"_")[[1]][[1]])
+        peakIds <- sapply(peakIds, function(pId) strsplit(pId,"_")[[1]][[1]])
+      }
       
       # test if all peakIds are correct for this sample
       if (!all(peakIds %in% scans_header$peak_id) & 
