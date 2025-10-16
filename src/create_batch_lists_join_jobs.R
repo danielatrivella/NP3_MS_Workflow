@@ -1,9 +1,9 @@
 ##
 # Script to create the specification lists to be passed to the MSCluster when running 
-# the joining jobs command to cluster the final clean mgfs
+# the joining jobs command to cluster the final clean mgfs from different jobs
 # Also join the metadata of joined jobs recursively and 
 # concatenate the original jobs metadata containing the original samples - 
-# check if they are all present
+# check if they are all present - and fix duplicates among jobs
 ##
 
 # read input
@@ -13,7 +13,7 @@ if (length(args) < 5) {
        " 1 - path_batch_metadata: Path to the CSV batch metadata file containing jobnames and job codes;\n",
        " 2 - path_jobs_data: Path to the jobs data folder;\n", 
        " 3 - path_pre_processed_dir: Path to the directory containing the original np3 jobs pre processed folder",
-       " 4 - output_path: Path to the desired output folder location;\n", 
+       " 4 - output_path: Path to the desired join jobs output folder location;\n", 
        " 5 - output_name: Output name of the joined jobs.",call.=FALSE)
 } else {
   path_batch_metadata <- file.path(args[[1]])
@@ -137,6 +137,7 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
       orig_joined_jobs_metadata <- bind_rows(orig_joined_jobs_metadata,
                                              metadata[metadata$JOINED_JOB==0,])
     }
+    metadata_join <- metadata
     metadata <- orig_joined_jobs_metadata
   } 
   
@@ -167,33 +168,87 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
     m
   }))
   
-  # reorder the columns and save the original samples metadata for the joining jobs list
-  if (!is.null(metadata$JOINED_JOB_CODE)) {
-    orig_samples_metadata <- orig_samples_metadata[, c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE","JOINED_JOB_CODE",
-                                                       colnames(orig_samples_metadata)[!(colnames(orig_samples_metadata) %in% c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE","JOINED_JOB_CODE"))])]
-  } else {
-    # do not include the joined_job_code columns
-    orig_samples_metadata <- orig_samples_metadata[, c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE",
-                                                       colnames(orig_samples_metadata)[!(colnames(orig_samples_metadata) %in% c("FILENAME","SAMPLE_CODE","DATA_COLLECTION_BATCH","SAMPLE_TYPE","JOB_CODE"))])]
-  }
-  
-  # TODO check for duplicated sample_codes among jobs, and resolve duplication setting
-  # new sample codes in a column called SAMPLE_CODE_JOIN or 
-  # save original sample codes in a columns called SAMPLE_CODE_ORIGINAL for reference when computing the peak area
-  # the original sample code will be changes to new SAMPLE_CODE without duplicates, duplicated are concatenate with _<i>
-  # TODO test this
-  
-  # check if the sample_codes are unique names among jobs - 
+  # check for duplicated sample_codes among jobs, and resolve them by
+  # saving original sample codes in a columns called SAMPLE_CODE_ORIGINAL for reference when computing the peak area
+  # and the last used sample codes in a column called SAMPLE_CODE_JOINED_JOBS for reference when updated the clean counts column names
+  # the original sample codes will be changed to the new SAMPLE_CODEs without duplicates, 
+  # duplicated codes are concatenate with _<i> where i is the number of duplicates
+  # duplicates are resolved within samples of the sample joined job, if any, then all together
+  orig_samples_metadata$SAMPLE_CODE_ORIGINAL <- orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS <- orig_samples_metadata$SAMPLE_CODE
+  # check if the sample_codes are unique names among jobs - and resolve duplicates
   # these will be necessary in the following workflow steps, for referencing the quantification columns
   if (any(duplicated(orig_samples_metadata$SAMPLE_CODE)))
   {
-    stop("Wrong original samples metadata file format from the joining jobs. The following samples among jobs have duplicated sample codes:\n", 
-         paste(orig_samples_metadata$SAMPLE_CODE[duplicated(orig_samples_metadata$SAMPLE_CODE)], 
-               collapse = ", "),
-         "\nThe sample code must be a *unique* syntactically valid name consisting of ", 
-         "letters, numbers, and underscore characters, starting with a letter. ",
-         "R reserved words are not syntactically valid names. When joining jobs, ",
-         "the sample codes must also be *unique* among the different jobs.")
+    duplicated_orig_sample_codes <- orig_samples_metadata$SAMPLE_CODE[duplicated(orig_samples_metadata$SAMPLE_CODE)]
+    cat("\n  - WARNING: There are original samples with duplicated SAMPLE_CODE among different jobs:",
+        paste(unique(duplicated_orig_sample_codes), collapse = ", "), 
+        ". The duplicated values will receive a numerical suffix to differentiate",
+        "them in the following steps.\n")
+    
+    # first reset the original SAMPLE_CODE from joined jobs to the not duplicated codes
+    # among these joined jobs, then proceed to removing duplicates among different jobs
+    # update the SAMPLE_CODE_JOINED_JOBS with the used sample_codes in the last joined job
+    if (!is.null(metadata$JOINED_JOB_CODE)) {
+      # updated orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS and SAMPLE_CODE
+      # using the original samples metadata of the joined job, if there is a duplicated
+      # sample code among this joined jobs
+      orig_samples_jobs <- apply(orig_samples_metadata[,c("SAMPLE_CODE_ORIGINAL", "JOB_CODE")], 1, paste0, collapse="_")
+      for (joined_job_code in unique(metadata_join$JOB_CODE[metadata_join$JOINED_JOB == 1])) { 
+        if (any(duplicated(orig_samples_metadata$SAMPLE_CODE[orig_samples_metadata$JOINED_JOB_CODE %in% joined_job_code]))) 
+        {
+          cat("\n  - Restoring duplicated SAMPLE_CODE from the joined job:", joined_job_code, "\n")
+          # read original samples metadata m <- readMetadataTable(orig_samples_metadata_path[i])
+          m <- readMetadataTable(file.path(metadata_join$JOB_PATH[metadata_join$JOB_CODE == joined_job_code], 
+                                           "../..", "original_samples_METADATA.csv"))
+          samples_joined_job <- apply(m[,c("SAMPLE_CODE_ORIGINAL", "JOB_CODE")], 1, paste0, collapse="_")
+          samples_joined_job_idx <- match(samples_joined_job, orig_samples_jobs)
+          orig_samples_metadata$SAMPLE_CODE[samples_joined_job_idx] <- orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS[samples_joined_job_idx] <- m$SAMPLE_CODE
+        }
+      }
+    }
+    
+    # repeat while there is a duplicated SAMPLE_CODE
+    while(any(duplicated(orig_samples_metadata$SAMPLE_CODE))) {
+      duplicated_orig_sample_codes <- orig_samples_metadata$SAMPLE_CODE[duplicated(orig_samples_metadata$SAMPLE_CODE)]
+      # remove remaining duplicated sample code
+      for (duplicated_sample_code in unique(duplicated_orig_sample_codes)) {
+        # create the new sample codes
+        new_sample_codes <- sapply(seq_len(sum(duplicated_orig_sample_codes == duplicated_sample_code)), 
+               function(i, x=duplicated_sample_code) { paste0(x,"_",i)})
+        # if any of them also exists, increment the last digits of all until there is no repetition
+        # these way the new codes keep an ascending suffix value
+        while(any(new_sample_codes %in% orig_samples_metadata$SAMPLE_CODE)) {
+          new_sample_codes <- sapply(new_sample_codes, function(x) {
+              y <- strsplit(x,"_")[[1]]
+              n <- length(y)
+              y[n] <- as.integer(y[n])+1
+              return(paste0(y, collapse="_"))
+            }, USE.NAMES = FALSE)
+        }
+        # reset current sample code
+        orig_samples_metadata$SAMPLE_CODE[
+          which(orig_samples_metadata$SAMPLE_CODE == duplicated_sample_code)[-1]] <- new_sample_codes
+      }
+    } 
+  }
+  
+  # reorder the columns and save the original samples metadata for the joining jobs list
+  metadata_cols_order <- c("FILENAME","SAMPLE_CODE", "SAMPLE_CODE_JOINED_JOBS", 
+                           "SAMPLE_CODE_ORIGINAL", "DATA_COLLECTION_BATCH",
+                           "SAMPLE_TYPE","JOB_CODE")
+  if (!is.null(metadata$JOINED_JOB_CODE)) {
+    metadata_cols_order <- c(metadata_cols_order, "JOINED_JOB_CODE")
+    orig_samples_metadata <- orig_samples_metadata[, c(metadata_cols_order,
+                                                       colnames(orig_samples_metadata)[
+                                                         !(colnames(orig_samples_metadata) %in% metadata_cols_order)])]
+    # if there was a joined job, set the metadata as the metadata_join for the last check
+    # based on the joining jobs clean result
+    metadata <- metadata_join
+  } else {
+    # do not include the joined_job_code columns
+    orig_samples_metadata <- orig_samples_metadata[, c(metadata_cols_order,
+                                                       colnames(orig_samples_metadata)[
+                                                         !(colnames(orig_samples_metadata) %in% metadata_cols_order)])]
   }
   
   # save the original jobs samples metadata
@@ -222,20 +277,20 @@ create_batch_lists_join_jobs_metadata <- function(path_batch_metadata,
     # get the sample codes present in the quantification columns
     jobSamples <- sub("_spectra$", "",  names(countFileHeader)[endsWith(names(countFileHeader), "_spectra")])
     # check if all samples are present in the original samples metadata
-    if (!all(jobSamples %in% orig_samples_metadata$SAMPLE_CODE)) {
+    if (!all(jobSamples %in% orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS)) {
       stop("There are original samples present in the original clean counts of JOB_CODE = ", jobcode,
            " that are missing from the provided original samples metadata. ",
            " The following SAMPLE_CODEs are missing: ", 
-           paste(jobSamples[!(jobSamples %in% orig_samples_metadata$SAMPLE_CODE)], collapse= ","), 
+           paste(jobSamples[!(jobSamples %in% orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS)], collapse= ","), 
            " Please make sure all original data is not modified and fully present in the provided paths ",
            "to prevent inconsistency errors during the join_jobs integrative clustering")
     }
     return(jobSamples)
   }))
-  if (!all(orig_samples_metadata$SAMPLE_CODE %in% count_samples_list)) {
+  if (!all(orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS %in% count_samples_list)) {
     stop("There are original samples present in the original samples metadata that are missing from ", 
          " the original samples clean counts. The following SAMPLE_CODEs are missing: ", 
-         paste(orig_samples_metadata$SAMPLE_CODE[!(orig_samples_metadata$SAMPLE_CODE %in% count_samples_list)], collapse= ","), 
+         paste(orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS[!(orig_samples_metadata$SAMPLE_CODE_JOINED_JOBS %in% count_samples_list)], collapse= ","), 
          " Please make sure all original data is not modified and fully present in the provided paths ",
          "to prevent inconsistency errors during the join_jobs integrative clustering")
   }
