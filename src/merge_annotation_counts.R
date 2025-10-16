@@ -36,7 +36,7 @@ merge_counts <- function(col_name, x)
                   paste(unique(unlist(strsplit(x[[col_name]][
                     !is.na(x[[col_name]])], ";"))), collapse = ";"), 
                   NA),
-         precursorMz=,scans=,joinedJobsIDs= paste(x[[col_name]], collapse = ";"),
+         precursorMz=,scans=,joinedJobsIDs=,msclusterID_integrative=,cleanClustID= paste(x[[col_name]], collapse = ";"),
          sumInts =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,numSpectra=,numJoins=
            sum(x[[col_name]]),
          basePeakInt=,fragmented_clusters=max(as.numeric(x[[col_name]])),
