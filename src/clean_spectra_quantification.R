@@ -1055,6 +1055,13 @@ check_ints_sum <- sapply(ms_area_count$peaksInt[joined_idx], function(x) {
 if (!all(check_ints_sum)) {
   stop("Bad scaling of the peak lists' intensities. Some spectra do not have the inverse scales intensities summing 1000 (the normalized value).")
 }
+
+# TODO if join_jobs, create the cleanClustIDs column here to store the current cleaned msclusterIDs
+# and apply the integrative clustering heuristic to maintain the msclusterIDs from the
+# first job selected as reference, using the msclusterID_integrative columns created in step 4
+# to extract the minimum original msclusterID; here the msclusterID_integrative
+# will contain the original msclusterIDs that got joined in the clustering steps separated by ;
+
 cat("\n  ** Saving the clean MGF file **\n\n")
 # sort by msclsuterID, this order will be applied to the scans in the MGF file
 ms_area_count <- arrange(ms_area_count, msclusterID)

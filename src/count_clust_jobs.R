@@ -248,46 +248,44 @@ if (any(duplicated(scans_list))) {
 } 
 rm(scans_list)
 
-# TODO create the msclusterID_integrative here, these will be used in the clean for 
+# TODO create the msclusterID_integrative columns here, it will be used in the clean step for 
 # replacing the final msclusterIDs and here will serve as reference for original IDs from
-# reference job
-# # create new column joinedClustIds equal to the resulting msclusterIDs from the current
-# # clustering result - reference for the MSCluster_NP3 result
-# clusterList$joinedClustIds <- clusterList$msclusterID
+# reference job; the msclusterID continues to be the result of MSCluster_NP3, this will
+# be used for the pairwise similarity correct computation and in the cleaning
 # 
 # # integrative clustering heuristic
-# # make the msclusterID maintain the first job ids - in an integrative clustering manner
-# # the rest of the clusters that do not appear in the first job should receive an incremental ID
-# # starting from the last ID of the first job that is present - first extract the IDs
-# # from the first job, them set the remaining IDs - use column joinedJobsIDs to retrieve original jobs IDs
-# # use the first job in the metadata as the reference 
+# # maintain the first job ids as reference in a new column named msclusterID_integrative
+# # - in an integrative clustering manner - the rest of the clusters that do not 
+# # appear in the first job should receive an incremental ID starting from the 
+# # last ID of the first job that is present - first extract the IDs
+# # from the first job, them set the remaining IDs - use column joinedJobsIDs 
+# # to retrieve the cluster IDs in the original jobs using the first job in the metadata as the reference 
 # reference_job_code <- metadata$JOB_CODE[[1]]
 # pattern_job_code_ref <- paste0("(?<=;|^)([0-9]*)(_",reference_job_code,")(?=;|$)")
-# 
-# clusterList$msclusterID <- sapply(clusterList$joinedJobsIDs, function(x) {
+# max_original_ID <-  1
+# clusterList$msclusterID_integrative <- sapply(clusterList$joinedJobsIDs, function(x) {
 #   matched_job_code <- gregexpr(pattern_job_code_ref, x, perl = TRUE)
 #   # set the match length to the first captured group length [,1]
 #   attr(matched_job_code[[1]], 'match.length') <- as.vector(attr(matched_job_code[[1]], 'capture.length')[,1])
 #   # extract first group matches - without the reference_job_code
 #   ref_ids <- as.integer(regmatches(x, matched_job_code)[[1]])
 #   if (length(ref_ids) > 0) {
-#     min(ref_ids)
+#     max_original_ID <- max(c(max_original_ID, ref_ids))
+#     min(ref_ids) # TODO this should return all original reference ids, concatenated them using ; for reference - the minimum ID will be extracted in the clean step
 #   } else {
 #     NA
 #   }
 # })
-# new_msclusterIDs <- ((max(clusterList$msclusterID, na.rm=T)+1):(max(clusterList$msclusterID, na.rm=T)+sum(is.na(clusterList$msclusterID))))
-# clusterList$msclusterID[is.na(clusterList$msclusterID)] <- new_msclusterIDs
+# new_msclusterIDs <- ((max_original_ID+1):(max_original_ID+sum(is.na(clusterList$msclusterID_integrative))))
+# clusterList$msclusterID_integrative[is.na(clusterList$msclusterID_integrative)] <- new_msclusterIDs
 # 
-# if (any(duplicated(clusterList$msclusterID))) {
+# if (any(duplicated(clusterList$msclusterID_integrative))) {
 #   stop("ERROR. An inconsistency was found in the msclusterIDs after applying the ",
 #        "integrative heuristic to maintain the original IDs of the first job ",
 #        reference_job_code," selected as reference, ",
 #        "and renumbering the m/zs that do not appear in this first reference job. ",
 #        "Something went wrong when renumbering the msclusterIDs. Please contact the dev team.")
 # }
-# # order rows
-# clusterList <- clusterList %>% arrange(as.numeric(msclusterID))
 
 # order columns
 clusterList <- clusterList[, c("msclusterID","numSpectra", 
