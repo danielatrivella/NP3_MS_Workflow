@@ -70,10 +70,19 @@ if (length(args) < 3) {
 # read the join jobs metadata
 metadata <- readMetadataTableJoinJobs(path_jobs_metadata, path_jobs_data)
 
-# TODO to accept original sample codes with the same value, here when reading the original
-# TODO clean data, the column names must be updated to the new naming present in the
-# original samples metadata, column SAMPLES_CODE_JOIN which resolver duplicates between different jobs
-# then SAMPLES_CODE_JOIN must be unique among the different jobs in the metadata creation script,
+# To accept original sample codes from different original jobs with the same value, 
+# here when reading the original clean data, the column names must be updated 
+#to the new naming present in the original samples metadata, 
+# column SAMPLES_CODE_ORIGINAL will store the original sample codes from the original jobs
+# and the column SAMPLE_CODE_JOINED_JOBS will store the sample codes used in the last run, 
+# this last code will be used to match the quantification columns names and updated them
+# with new sample codes present in the SAMPLE_CODE column without duplicates
+
+# read original samples metadata
+metadata_samples <- readMetadataTable(file.path(output_path, "../..", 
+                                                "original_samples_METADATA.csv"))
+# get the samples that changed the code
+diff_sample_code <- which(metadata_samples$SAMPLE_CODE != metadata_samples$SAMPLE_CODE_JOINED_JOBS)
 
 # get the count of spectra of the subjobs
 # and select only necessary columns that will be kept in the process
@@ -94,6 +103,38 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", 
                              "joinedJobsIDs",  
                              names(countFile)[endsWith(names(countFile), "_spectra")])]
+  
+  # rename quantification columns using previous used name defined in 
+  # the original samples metadata when there was a changed sample code
+  # also replace new sample code naming in the original scans and peakIds references
+  # only rename the changed samples codes (difference between SAMPLE_CODE and SAMPLE_CODE_JOINED_JOB)
+  diff_sample_code_job <- diff_sample_code[diff_sample_code %in% which(metadata_samples$JOB_CODE == jobcode)]
+  if (length(diff_sample_code_job) > 0)
+  {
+    # rename quantification columns of the new sample codes
+    old_sample_code <- metadata_samples$SAMPLE_CODE_JOINED_JOBS[diff_sample_code_job]
+    new_sample_code <- metadata_samples$SAMPLE_CODE[diff_sample_code_job]
+    new_cols_names_idx <- match(paste0(old_sample_code, "_spectra"), names(countFile)) 
+    names(countFile)[new_cols_names_idx] <- paste0(new_sample_code, "_spectra")
+    # get rows where these samples appears and update its code in the 
+    # respective peakIds and scans usgin regex
+    for (i in seq_len(length(new_sample_code))) {
+      rows_new_sample_code_i <- which(countFile[,new_cols_names_idx[i]]>0)
+      pattern_peakIds_old_code <- paste0("(?<=;|^)([0-9]*|fake)(_",old_sample_code[i],")(?=;|$)")
+      pattern_scans_old_code <- paste0("(?<=;|^)([0-9]*)(_",old_sample_code[i],")(?=;|$)")
+      replace_new_code <- paste0("\\1_",new_sample_code[i])
+      
+      countFile$peakIds[rows_new_sample_code_i] <- sapply(countFile$peakIds[rows_new_sample_code_i],
+        function(x) {
+          gsub(pattern_peakIds_old_code, replace_new_code, x, perl = TRUE)
+        }, USE.NAMES = FALSE)
+      countFile$scans[rows_new_sample_code_i] <- sapply(countFile$scans[rows_new_sample_code_i],
+        function(x) {
+          gsub(pattern_scans_old_code, replace_new_code, x, perl = TRUE)
+        }, USE.NAMES = FALSE)
+    }
+  }
+  
   # not retrieving the peak area count, it will be correctly computed at the end
   # return the count of spectra
   countFile
@@ -207,11 +248,46 @@ if (any(duplicated(scans_list))) {
 } 
 rm(scans_list)
 
-# TODO make the msclusterID maintain the first job ids - in an integrative clustering manner
-# the rest of the clusters that do not appear in the first job should receive an incremental ID
-# starting from the last ID of the first job that is present - first extract the IDs
-# from the first job, them set the remaining IDs - use column joinedJobsIDs to retrieve original IDs
-# TODO make current msclusterIDs be a new column for reference of the current clustering result, such as joinedClustIds
+# TODO create the msclusterID_integrative here, these will be used in the clean for 
+# replacing the final msclusterIDs and here will serve as reference for original IDs from
+# reference job
+# # create new column joinedClustIds equal to the resulting msclusterIDs from the current
+# # clustering result - reference for the MSCluster_NP3 result
+# clusterList$joinedClustIds <- clusterList$msclusterID
+# 
+# # integrative clustering heuristic
+# # make the msclusterID maintain the first job ids - in an integrative clustering manner
+# # the rest of the clusters that do not appear in the first job should receive an incremental ID
+# # starting from the last ID of the first job that is present - first extract the IDs
+# # from the first job, them set the remaining IDs - use column joinedJobsIDs to retrieve original jobs IDs
+# # use the first job in the metadata as the reference 
+# reference_job_code <- metadata$JOB_CODE[[1]]
+# pattern_job_code_ref <- paste0("(?<=;|^)([0-9]*)(_",reference_job_code,")(?=;|$)")
+# 
+# clusterList$msclusterID <- sapply(clusterList$joinedJobsIDs, function(x) {
+#   matched_job_code <- gregexpr(pattern_job_code_ref, x, perl = TRUE)
+#   # set the match length to the first captured group length [,1]
+#   attr(matched_job_code[[1]], 'match.length') <- as.vector(attr(matched_job_code[[1]], 'capture.length')[,1])
+#   # extract first group matches - without the reference_job_code
+#   ref_ids <- as.integer(regmatches(x, matched_job_code)[[1]])
+#   if (length(ref_ids) > 0) {
+#     min(ref_ids)
+#   } else {
+#     NA
+#   }
+# })
+# new_msclusterIDs <- ((max(clusterList$msclusterID, na.rm=T)+1):(max(clusterList$msclusterID, na.rm=T)+sum(is.na(clusterList$msclusterID))))
+# clusterList$msclusterID[is.na(clusterList$msclusterID)] <- new_msclusterIDs
+# 
+# if (any(duplicated(clusterList$msclusterID))) {
+#   stop("ERROR. An inconsistency was found in the msclusterIDs after applying the ",
+#        "integrative heuristic to maintain the original IDs of the first job ",
+#        reference_job_code," selected as reference, ",
+#        "and renumbering the m/zs that do not appear in this first reference job. ",
+#        "Something went wrong when renumbering the msclusterIDs. Please contact the dev team.")
+# }
+# # order rows
+# clusterList <- clusterList %>% arrange(as.numeric(msclusterID))
 
 # order columns
 clusterList <- clusterList[, c("msclusterID","numSpectra", 
@@ -251,10 +327,8 @@ clusterArea <- bind_cols(clusterList[, c("msclusterID","numSpectra",
                          clusterArea)
 clusterList$basePeakInt <- clusterArea$basePeakInt
 
-# retrieve the original jobs samples metadata to recompute the sample types indicators, 
+# use the original jobs samples metadata to recompute the sample types indicators, 
 # for both spectra and area count
-metadata_samples <- readMetadataTable(file.path(output_path, "../..", 
-                                                "original_samples_METADATA.csv"))
 
 # compute indicators
 blanksCode <- metadata_samples[metadata_samples$SAMPLE_TYPE == "blank", "SAMPLE_CODE"]
@@ -349,7 +423,8 @@ if (length(bedControlsCode) > 0 || length(controlsCode) > 0 || length(blanksCode
 # order columns using the metadata SAMPLE_CODE order
 clusterList <- clusterList[, c("msclusterID","numSpectra", 
                                "mzConsensus", "rtMean", 
-                               "rtMin", "rtMax", "peakIds", "scans", "joinedJobsIDs",
+                               "rtMin", "rtMax", "peakIds", "scans", 
+                               "joinedJobsIDs",
                                "sumInts", "basePeakInt",
                                paste0(metadata_samples$SAMPLE_CODE,"_spectra"), 
                                c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
@@ -359,7 +434,8 @@ clusterList <- clusterList[, c("msclusterID","numSpectra",
                                      names(clusterList)])]
 clusterArea <- clusterArea[, c("msclusterID","numSpectra",
                                "mzConsensus", "rtMean",
-                               "rtMin", "rtMax", "peakIds", "scans", "joinedJobsIDs",
+                               "rtMin", "rtMax", "peakIds", "scans", 
+                               "joinedJobsIDs",
                                "sumInts", "basePeakInt",
                                paste0(metadata_samples$SAMPLE_CODE,"_area"),
                                c("BLANKS_TOTAL", "CONTROLS_TOTAL", "BEDS_TOTAL",
