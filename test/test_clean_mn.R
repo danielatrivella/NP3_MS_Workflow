@@ -239,14 +239,25 @@ if ('BLANKS_TOTAL' %in% names(ms_area_count)) {
 } else {
   blanks_flag <- FALSE
 }
-# check clean and annoations - count
+
+# if this is a join_jobs result, order the table using the cleanClustID
+# and get the msclusterID from clean using the cleanClustID column
+if ("cleanClustID" %in% names(ms_area_count))
+{
+  ms_area_count <- ms_area_count %>% arrange(cleanClustID)
+  ms_area_count$msclusterID_clean <- ms_area_count$cleanClustID
+} else {
+  ms_area_count$msclusterID_clean <- ms_area_count$msclusterID
+}
+
+# check clean and annotations - count
 for (i in seq_len(nrow(ms_area_count))) {
   # print(i)
   cluster <- ms_area_count[i,]
   
   # check the similarity network
   # get the clusters ids that have a similarity with the current cluster including itself
-  adj_clusters <- scans_order[which_ge(unlist(scans_pairsim[i,-1]), sim_tol, 1)] # add one to scape first column
+  adj_clusters <- scans_order[which_ge(unlist(scans_pairsim[i,-1]), sim_tol, 1)] # rm one to escape first column
   
   cluster_peak <- ms_area_count[abs(ms_area_count$mzConsensus - cluster$mzConsensus) <= mz_tol &
                                   ((ms_area_count$rtMean >= cluster$rtMin - rt_tol & 
@@ -264,7 +275,7 @@ for (i in seq_len(nrow(ms_area_count))) {
   # if there is a not similar cluster in the current cluster peak check if they share any MS1 peak id 
   # and add them to the adj list to be joined
   # do not check clusters that have too much spectra
-  non_adj_peak <- !(cluster_peak$msclusterID[cluster_peak$numSpectra < 5000] %in% adj_clusters)
+  non_adj_peak <- !(cluster_peak$msclusterID_clean[cluster_peak$numSpectra < 5000] %in% adj_clusters)
   if (any(non_adj_peak) && cluster$numSpectra < 5000) {
     # do not consider fake peaks ids
     peakIds <- strsplit(cluster$peakIds,";")[[1]]
@@ -272,7 +283,7 @@ for (i in seq_len(nrow(ms_area_count))) {
     peakIds <- peakIds[!startsWith(peakIds, "fake_")]
     if (length(peakIds) > 0 && length(peakIds) <= 500) {
       peaksIds <- paste0(peakIds, collapse = "|")
-      non_adj_peak <- cluster_peak$msclusterID[cluster_peak$numSpectra < 5000][non_adj_peak][
+      non_adj_peak <- cluster_peak$msclusterID_clean[cluster_peak$numSpectra < 5000][non_adj_peak][
         grepl(pattern = peaksIds, 
               cluster_peak$peakIds[cluster_peak$numSpectra < 5000][non_adj_peak])&
         (sapply(cluster_peak$peakIds[cluster_peak$numSpectra < 5000][non_adj_peak], 
@@ -282,7 +293,7 @@ for (i in seq_len(nrow(ms_area_count))) {
     }
   }
   # filter only adj peaks
-  cluster_peak <- cluster_peak[cluster_peak$msclusterID %in% adj_clusters,]
+  cluster_peak <- cluster_peak[cluster_peak$msclusterID_clean %in% adj_clusters,]
   if (nrow(cluster_peak) > 1) # there is an adj cluster that was not merged
   {
     n_inconsistency <- n_inconsistency + 1
@@ -308,7 +319,7 @@ for (i in seq_len(nrow(ms_area_count))) {
     cat("msclusterID", cluster[[1]], "wrong sim edges number. Number of edges ", 
             sum(sim_selfloops$msclusterID_source == cluster[[1]] | sim_selfloops$msclusterID_target == cluster[[1]]),
             # " Expected number of edges: ", min(adj_clusters, top_k),"\n" )
-            " Expected number of edges: ", top_k,"\n" )
+            " Expected top k number of edges: ", top_k,"\n" )
   }
   
   # CHECK if the count ann size matches the number of ann 
