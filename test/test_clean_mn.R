@@ -20,6 +20,7 @@ Rcpp::sourceCpp(file.path(script_path(),
 
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
 
 sim_tol <- 0.55
 mn_tol <- 0.6
