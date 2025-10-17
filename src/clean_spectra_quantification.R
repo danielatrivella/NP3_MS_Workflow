@@ -1211,6 +1211,8 @@ if (length(blanks_code) > 0)
 # will contain the original msclusterIDs that got joined in the clustering steps concatenated by ;
 if ("msclusterID_integrative" %in% names(ms_spectra_count)) {
   ms_spectra_count$cleanClustID <- ms_area_count$cleanClustID <- ms_spectra_count$msclusterID
+  # convert to char
+  ms_spectra_count$msclusterID_integrative <- ms_area_count$msclusterID_integrative <- as.character(ms_spectra_count$msclusterID_integrative)
   new_msclusterIDs <- sapply(ms_spectra_count$msclusterID_integrative, function(x) {
     min(as.integer(strsplit(x, ";")[[1]]))
   })
