@@ -300,7 +300,7 @@ for (i in seq_len(nrow(ms_area_count))) {
     n_inconsistency <- n_inconsistency + 1
     cat("msclusterID ", cluster[[1]], " was not joined correctly in the clean step.\n")
   }
-  if (scans_pairsim[i,1] != cluster[[1]]) # there is an adj cluster that was not merged
+  if (scans_pairsim[i,1] != cluster[["msclusterID_clean"]]) # there is an adj cluster that was not merged
   {
     n_inconsistency <- n_inconsistency + 1
     cat("msclusterID ", cluster[[1]], " wrong order with the sim table\n")
