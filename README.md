@@ -4,21 +4,20 @@
 
 - - - - 
 
-# Current Version 1.2.1
+# Current Version 1.2.2
 
 - NEW features:
-  - The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
+  - (1.2.2) The command **join_jobs** was updated with integrative clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions. Also, the SAMPLE_CODE from the samples metadata among different original jobs are now allowed to contain duplicated values, which are automatically resolved and the original codes and last used codes are stored in new separated columns (see documentation).
+  - (1.2.1) The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
   - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. It uses the clean results from the provided NP³ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations. The *join_jobs* can be used to join the results from multiple original jobs and also from previous joined jobs with a new original or joined job.
       - The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
-  
-  - (1.1.6) The [spec2vec](https://github.com/iomega/spec2vec_gnps_data_analysis?tab=readme-ov-file) function was included as a possibility for the spectra similarity comparison in step 5, using model trained on UniqueInchikey subset (12,797 spectra). The user may select to use spec2vec or NP3 shifted cosine function using the similarity_function parameter.
-  - (1.1.5) Creating the [M+H]⁺ networks directly in the pipeline (automated in step 10). Now the final output also contains the protonated IVAMN and SSMN in the molecular_networking output folder.
+
  
 - - - -
 
 # Tutorial Videos
 
-- [Tutorial 1](https://youtu.be/gtPhn5hPuuQ): Brief introduction, 'Getting Started' section and a [M+H]⁺ analysis (which is now included in the current pipeline output)
+- [Tutorial 1](https://youtu.be/gtPhn5hPuuQ): Brief introduction, 'Getting Started' section and a [M+H]⁺ analysis (which is now automated in the current pipeline output since version 1.1.5)
 
 [![](https://markdown-videos.deta/youtube/gtPhn5hPuuQ)](https://youtu.be/gtPhn5hPuuQ)
 
