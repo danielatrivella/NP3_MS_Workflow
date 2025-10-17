@@ -84,6 +84,14 @@ metadata_samples <- readMetadataTable(file.path(output_path, "../..",
 # get the samples that changed the code
 diff_sample_code <- which(metadata_samples$SAMPLE_CODE != metadata_samples$SAMPLE_CODE_JOINED_JOBS)
 
+# get the job code of the reference job, to be used to keep the original msclusterIDs or already integrated IDs
+# from the reference job
+reference_job_code <- metadata$JOB_CODE[[1]]
+# create the msclusterID_integrative columns here, it will be used in the clean step for 
+# replacing the final msclusterIDs and here will serve as reference for original IDs from
+# reference job; the msclusterID continues to be the result of MSCluster_NP3, this will
+# be used for the pairwise similarity correct computation and in the cleaning
+
 # get the count of spectra of the subjobs
 # and select only necessary columns that will be kept in the process
 count_subjobs <- lapply(metadata$JOBNAME, function(x)
@@ -98,10 +106,27 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   {
     countFile$joinedJobsIDs <- paste0(countFile$msclusterID, "_", jobcode)
   }
+  # create the msclusterID_integrative column equals to the msclusterID if this the reference job
+  # otherwise leave it as NA
+  if (is.null(countFile$msclusterID_integrative)) 
+  {
+    if (jobcode == reference_job_code) {
+      # this is the reference job, set to the current msclusterID
+      countFile$msclusterID_integrative <- countFile$msclusterID
+    } else {
+      # otherwise set to NA
+      countFile$msclusterID_integrative <- NA
+    }
+  } else {
+    if (jobcode != reference_job_code) {
+      # not the reference job, reset to NA, otherwise keep it
+      countFile$msclusterID_integrative <- NA
+    }
+  }
   # filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, 
   # this excludes any other column that the user may create
   countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", 
-                             "joinedJobsIDs",  
+                             "joinedJobsIDs", "msclusterID_integrative",  
                              names(countFile)[endsWith(names(countFile), "_spectra")])]
   
   # rename quantification columns using previous used name defined in 
@@ -179,10 +204,12 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
         scans = paste0(count_subjobs[[subJob+1]][
           count_subjobs[[subJob+1]]$msclusterID %in% ids, 4], collapse = ";"), # collapse scans
         joinedJobsIDs = paste0(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";")), # collapse joinedJobsIDs
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse joinedJobsIDs
+        msclusterID_integrative = paste0(count_subjobs[[subJob+1]][
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6], collapse = ";")), # collapse msclusterID_integrative
         # sum the remaining columns - spectra counts
         colSums(count_subjobs[[subJob+1]][   
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5)], na.rm = TRUE)))  
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5,-6)], na.rm = TRUE)))  
     }))
     
     # if peakId is not missing, aggregate them
@@ -197,9 +224,19 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
     # aggregate the unique joinedJobsIDs
     joinedJobsIDs <- paste0(unique(unlist(strsplit(countJobs$joinedJobsIDs[!is.na(countJobs$joinedJobsIDs)], 
                                              split = ";"))), collapse = ";")
+    # aggregate the unique msclusterID_integrative when present
+    if (any(!is.na(countJobs$msclusterID_integrative))) {
+      msclusterID_integrative <- unique(suppressWarnings(as.integer(unlist(strsplit(countJobs$msclusterID_integrative, split = ";")))))
+      if (length(msclusterID_integrative) > 1) {
+        msclusterID_integrative <- paste0(msclusterID_integrative[!is.na(msclusterID_integrative)], collapse = ";")
+      }
+    } else {
+      msclusterID_integrative <- NA
+    }
     
     countJobs <- countJobs[, !(names(countJobs) %in% 
-                               c("msclusterID", "peakIds", "scans", "joinedJobsIDs"))]
+                               c("msclusterID", "peakIds", "scans", 
+                                 "joinedJobsIDs", "msclusterID_integrative"))]
     # sum counts from all file indexes
     if (NROW(countJobs) > 1)
     {
@@ -218,7 +255,6 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
     }
     countJobs <- countJobs[!(names(countJobs) %in% c("numSpectra"))]
     countJobs[is.na(countJobs)] <- 0
-    
     return(c(list(msclusterID = clust_members$clustId[[1]],
                   numSpectra = numSpectra,
                   mzConsensus = clust_members$mzConsensus[[1]],
@@ -228,6 +264,7 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
                   peakIds = peakIds,
                   scans = scans,
                   joinedJobsIDs = joinedJobsIDs,
+                  msclusterID_integrative = as.character(msclusterID_integrative),
                   sumInts = clust_members$precursorInt[[1]]),
              countJobs))
   }))
@@ -248,46 +285,31 @@ if (any(duplicated(scans_list))) {
 } 
 rm(scans_list)
 
-# create the msclusterID_integrative columns here, it will be used in the clean step for 
-# replacing the final msclusterIDs and here will serve as reference for original IDs from
-# reference job; the msclusterID continues to be the result of MSCluster_NP3, this will
-# be used for the pairwise similarity correct computation and in the cleaning
 
 # integrative clustering heuristic
-# maintain the first job ids as reference in a new column named msclusterID_integrative
+# maintain the first job ids as reference in the new column named msclusterID_integrative
 # - in an integrative clustering manner - the rest of the clusters that do not
 # appear in the first job should receive an incremental ID starting from the
-# last ID of the first job that is present - first extract the IDs
-# from the first job, them set the remaining IDs - 
-# use the column joinedJobsIDs to retrieve the cluster IDs in the original 
-# jobs using the first job in the metadata as the reference
-reference_job_code <- metadata$JOB_CODE[[1]]
-pattern_job_code_ref <- paste0("(?<=;|^)([0-9]*)(_",reference_job_code,")(?=;|$)")
-max_original_ID <-  1
-clusterList$msclusterID_integrative <- sapply(clusterList$joinedJobsIDs, function(x) {
-  matched_job_code <- gregexpr(pattern_job_code_ref, x, perl = TRUE)
-  # set the match length to the first captured group length using [,1]
-  attr(matched_job_code[[1]], 'match.length') <- as.vector(attr(matched_job_code[[1]], 'capture.length')[,1])
-  # extract first group matches (the original numerical IDs) - without the reference_job_code
-  ref_ids <- as.integer(regmatches(x, matched_job_code)[[1]])
-  # if any reference original id, return all of them concatenated with ; for reference - the minimum ID will be extracted in the clean step
-  # keep the maximum ID from the reference that appears
-  if (length(ref_ids) > 0) {
-    max_original_ID <<- max(c(max_original_ID, ref_ids))
-    paste(ref_ids, collapse = ";")
-  } else {
-    NA
-  }
-})
-new_msclusterID_integrative <- ((max_original_ID+1):(max_original_ID+sum(is.na(clusterList$msclusterID_integrative))))
-clusterList$msclusterID_integrative[is.na(clusterList$msclusterID_integrative)] <- new_msclusterID_integrative
+# last ID of the first job that is present - which was extracted in the previous aggregation -
+# now, set the remaining IDs if any, by getting the max final msclusterID from the reference job and 
+# increment from it until all spectra are covered with a new msclusterID_integrative
+empty_msclusterID_integrative <- (clusterList$msclusterID_integrative == "0")
+if (any(empty_msclusterID_integrative)) {
+  max_final_msclusterID_integrative <- max(sapply(clusterList$msclusterID_integrative[!empty_msclusterID_integrative], 
+                                          function(x) {
+    min(as.integer(strsplit(x, ";")[[1]]))
+  }))
+  new_msclusterID_integrative <- ((max_final_msclusterID_integrative+1):(max_final_msclusterID_integrative+sum(empty_msclusterID_integrative)))
+  clusterList$msclusterID_integrative[empty_msclusterID_integrative] <- new_msclusterID_integrative
+}
 
-if (any(duplicated(clusterList$msclusterID_integrative))) {
+if (any(duplicated(clusterList$msclusterID_integrative)) || any(clusterList$msclusterID_integrative == "0")) {
+  print(clusterList$msclusterID_integrative[duplicated(clusterList$msclusterID_integrative)])
   stop("ERROR. An inconsistency was found in the msclusterIDs after applying the ",
        "integrative heuristic to maintain the original IDs of the first job ",
        reference_job_code," selected as reference, ",
        "and renumbering the m/zs that do not appear in this first reference job. ",
-       "Something went wrong when renumbering the msclusterIDs. Please contact the dev team.")
+       "There are duplicated values in the new msclusterID_integrative. Please contact the dev team.")
 }
 
 # order columns
