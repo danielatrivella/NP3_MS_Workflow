@@ -138,7 +138,10 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 		chemical_statistics['Value'].append("")
 		chemical_statistics['Description'].append("")
 		# compute number of putative molecules - protonated m/zs [M+H]+
-		number_protonated_mzs = clean_data.protonated_representative.sum()
+		if "protonated_representative" in clean_data.columns:
+			number_protonated_mzs = clean_data.protonated_representative.sum()
+		else:
+			number_protonated_mzs = 0
 		chemical_statistics['Statistics'].append("Number of "+mz_types+" [M+H]+ m/zs")
 		chemical_statistics['Value'].append(f"{number_protonated_mzs} ({number_protonated_mzs / number_valid_mzs*100:.1f}%)")
 		chemical_statistics['Description'].append(
