@@ -7,7 +7,7 @@
 # Current Version 1.2.2
 
 - NEW features:
-  - (1.2.2) The command **join_jobs** was updated with integrative clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions. Also, the SAMPLE_CODE from the samples metadata among different original jobs are now allowed to contain duplicated values, which are automatically resolved and the original codes and last used codes are stored in new separated columns (see documentation).
+  - (1.2.2) The command **join_jobs** was updated with integrative clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions. Also, the SAMPLE_CODE from the samples metadata among different original jobs are now allowed to contain duplicated values, which are automatically resolved and the original codes and last used codes are stored in new separated columns (see documentation). Additionally, now only the results from the joining jobs are needed, the results from all original jobs do not need to be kept for consecutive executions.
   - (1.2.1) The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
   - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. It uses the clean results from the provided NP³ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations. The *join_jobs* can be used to join the results from multiple original jobs and also from previous joined jobs with a new original or joined job.
       - The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
@@ -25,16 +25,18 @@
 
 # Overview 
 
-The NP³ MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics research focused on drug discovery with optimizations towards natural products. 
+The NP³ MS workflow is a software system with a collection of scripts to process and analyse LC-MS/MS data from untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
 
-The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples and constructs molecular networks to improve the analysis and visualization of the results.
+The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), separating isomers, of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions - called protonated representatives) and constructs molecular networks to improve the analysis and visualization of the results.
 
 The NP³ MS workflow consists of ten major steps, where only the first requires user intervention:
 
 ![NP³ MS Workflow Pipeline](docs/img/NP3_MS_workflow_infographic.jpg "NP³ MS Workflow Pipeline") 
 
 
-This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. And a third command to join the GNPS library identification results to the NP³ MS workflow quantification tables. 
+This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS library identification results to the NP³ MS workflow quantification tables. And a fourth command to unite different results from the NP³ MS Workflow.
+
+The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an integrative clustering approach.
 
 For the complete details of each command see the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
@@ -317,7 +319,7 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
-- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, the names of their original metadata and pre processing directory. It uses the clean results from the provided NP³ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations, except for Step 8 which is skipped.
+- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job using an integrative clustering approach. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their unique reference codes, the names of their used metadata and pre processing directory. It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations in an integrative clustering manner, except for Step 8 which is skipped. 
     - List of mandatory options:
     - *\-n, \-\-output_name* \<name\>     :   the job name. It will be used to name the output directory and the results from joining the jobs. It must have less than 80 characters.
     - *\-m, \-\-metadata_join* \<file\>    :  path to the metadata_join table CSV file defining the jobs to be joined. Different format, see manual.
@@ -330,6 +332,7 @@ Commands:
     - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
     - *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder
     - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the NP³ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
+    - *\-o, \-\-output_path* \<path\>           :   path to the final result output data folder, inside the outs directory of the clustering result folder. It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.
  
 - **chr** [options] :        This command runs an interactive prompt to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and to save to PNG image files. Depending on the provided parameters this can be a total ion chromatogram (TIC - default), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file.
 
