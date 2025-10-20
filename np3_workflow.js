@@ -750,8 +750,8 @@ function callJoinJobsAnnotations(parms, output_path)
     if (parms.noise_cutoff === "FALSE") {
         noise_cutoff = 0;
     }
-    var resExec = shell.exec(python3()+' '+__dirname+'/src/join_jobs_ivamns.py '+output_path+' '+
-        parms.max_chunk_spectra+' '+noise_cutoff, {async:false, silent:(parms.verbose === 0)});
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/join_jobs_ivamns.py '+output_path+' '+parms.metadata_join+' '+
+        parms.jobs_data_path+' '+parms.max_chunk_spectra+' '+noise_cutoff, {async:false, silent:(parms.verbose === 0)});
 
     if (resExec.code) {
         if (parms.verbose === 0) {
@@ -3275,12 +3275,13 @@ program
 
 program
     .command('join_jobs')
-    .description('Command to join NP3 jobs (results of the *run* or the *join_jobs* commands) into a single united job. ' +
-        'Concatenate different jobs without the need of running them all together again. ' +
-        'Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes, ' +
-        'the names of their original metadata and pre processing directory. ' +
+    .description('Command to join NP3 jobs (results of the *run* or the *join_jobs* commands) into a single united job ' +
+        'using an integrative clustering approach. Concatenate different jobs without the need of running them all ' +
+        'together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and ' +
+        'their unique reference codes, the names of their used metadata and pre processing directory. ' +
         'It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 ' +
-        'with some modifications and adaptations, except for Step 8 which is skipped. \n\n')
+        'with some modifications and adaptations in an integrative clustering manner, ' +
+        'except for Step 8 which is skipped. \n\n')
     .option('-n, --output_name <name>', 'the job name. It will be used to name the output directory and \n\t\t\t\t\t' +
         'the results from joining the jobs. It must have less than 80 characters.\n',
         checkJobNameMaxLength)
