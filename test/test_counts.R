@@ -87,7 +87,7 @@ convert_sample_processed_data_path <- function(is_join_jobs, processed_data_path
   return(convert_processed_data_path)
 }
 
-retrieve_processed_data_path <- convert_sample_processed_data_path(is_join_jobs=("joinedJobsIDs" %in% names(ms_spectra_count)),
+retrieve_processed_data_path <- convert_sample_processed_data_path(is_join_jobs=("joinedJobsID" %in% names(ms_spectra_count)),
                                                                    processed_data_path = processed_data_path)
 
 # check if the count tables are consistent

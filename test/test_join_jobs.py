@@ -62,7 +62,7 @@ def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
         job_clean_counts["msclusterID_job"] = job_clean_counts.msclusterID.astype(str) + "_" + job_code
         # check if all msclusterIDs were kept
         # search for partial matches with the original IDs
-        kept_msclsuterIDs = np.asarray([clean_counts.joinedJobsIDs.str.contains(
+        kept_msclsuterIDs = np.asarray([clean_counts.joinedOriginJobsID.str.contains(
                                                     "^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True).any()
                                             for id in job_clean_counts.msclusterID_job.values])
         if not kept_msclsuterIDs.all():
@@ -75,7 +75,7 @@ def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
         # check if all kept msclusterIDs maintained their multicharge and isotope ion column values >= than the original
         # 0 -> 1 or 0
         # 1 -> 1
-        where_msclsuterIDs = np.concatenate([np.where(clean_counts.joinedJobsIDs.str.contains(
+        where_msclsuterIDs = np.concatenate([np.where(clean_counts.joinedOriginJobsID.str.contains(
             "^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True))[0]
                                              for id in job_clean_counts.msclusterID_job.values[kept_msclsuterIDs]])
         kept_multicharge_ion = (job_clean_counts.multicharge_ion[kept_msclsuterIDs].values <=
