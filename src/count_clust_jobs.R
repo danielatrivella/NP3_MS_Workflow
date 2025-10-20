@@ -101,11 +101,14 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   countFile <- read.csv(file.path(path_jobs_data, x, "outs", x, "count_tables", 
                                   "clean", paste0(x, "_spectra_clean_ann.csv")), 
                         stringsAsFactors = F, comment.char = "")
-  # create the joinedJobsIDs column equals the msclusterID_JobCode if it does not exists
-  if (is.null(countFile$joinedJobsIDs)) 
+  # create the joinedOriginJobsIDs column equals the msclusterID_OriginalJobCode if it does not exists, otherwise keep the original jobs ref
+  if (is.null(countFile$joinedOriginJobsID))
   {
-    countFile$joinedJobsIDs <- paste0(countFile$msclusterID, "_", jobcode)
+    countFile$joinedOriginJobsID <- paste0(countFile$msclusterID, "_", jobcode)
   }
+   # create the joinedJobsID column equals the msclusterID_lastJobCode for reference of current clustered joins
+   countFile$joinedJobsID <- paste0(countFile$msclusterID, "_", jobcode)
+
   # create the msclusterID_integrative column equals to the msclusterID if this the reference job
   # otherwise leave it as NA
   if (is.null(countFile$msclusterID_integrative)) 
@@ -126,7 +129,7 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   # filter only the columns that will be used, ignore the rest - safer than removing the not wanted ones, 
   # this excludes any other column that the user may create
   countFile <- countFile[, c("msclusterID", "numSpectra", "peakIds", "scans", 
-                             "joinedJobsIDs", "msclusterID_integrative",  
+                             "joinedOriginJobsID", "joinedJobsID", "msclusterID_integrative",
                              names(countFile)[endsWith(names(countFile), "_spectra")])]
   
   # rename quantification columns using previous used name defined in 
@@ -199,17 +202,18 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
       #cat("\n- Start counting subJob: ", subJob)
       ids <- clust_members[clust_members$fileIndex == subJob, "scanNumber"]
       return(c(list(peakIds = paste0(count_subjobs[[subJob+1]][
-        count_subjobs[[subJob+1]]$msclusterID %in% ids, 3], 
-        collapse = ";"), # collapse peaksIds
+        count_subjobs[[subJob+1]]$msclusterID %in% ids, 3], collapse = ";"), # collapse peaksIds
         scans = paste0(count_subjobs[[subJob+1]][
           count_subjobs[[subJob+1]]$msclusterID %in% ids, 4], collapse = ";"), # collapse scans
-        joinedJobsIDs = paste0(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse joinedJobsIDs
+        joinedOriginJobsID = paste0(count_subjobs[[subJob+1]][
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 5], collapse = ";"), # collapse joinedOriginJobsID
+        joinedJobsID = paste0(count_subjobs[[subJob+1]][
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6], collapse = ";"), # collapse joinedJobsID
         msclusterID_integrative = paste0(count_subjobs[[subJob+1]][
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, 6], collapse = ";")), # collapse msclusterID_integrative
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, 7], collapse = ";")), # collapse msclusterID_integrative
         # sum the remaining columns - spectra counts
         colSums(count_subjobs[[subJob+1]][   
-          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5,-6)], na.rm = TRUE)))  
+          count_subjobs[[subJob+1]]$msclusterID %in% ids, c(-3,-4,-5,-6,-7)], na.rm = TRUE)))
     }))
     
     # if peakId is not missing, aggregate them
@@ -221,8 +225,11 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
     }
     # get scans and aggregate them
     scans <- paste0(countJobs$scans[!is.na(countJobs$scans)], collapse = ";")
-    # aggregate the unique joinedJobsIDs
-    joinedJobsIDs <- paste0(unique(unlist(strsplit(countJobs$joinedJobsIDs[!is.na(countJobs$joinedJobsIDs)], 
+    # aggregate the unique joinedOriginJobsID
+    joinedOriginJobsID <- paste0(unique(unlist(strsplit(countJobs$joinedOriginJobsID[!is.na(countJobs$joinedOriginJobsID)],
+                                             split = ";"))), collapse = ";")
+    # aggregate the unique joinedJobsID
+    joinedJobsID <- paste0(unique(unlist(strsplit(countJobs$joinedJobsID[!is.na(countJobs$joinedJobsID)],
                                              split = ";"))), collapse = ";")
     # aggregate the unique msclusterID_integrative when present
     if (any(!is.na(countJobs$msclusterID_integrative))) {
@@ -236,7 +243,7 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
     
     countJobs <- countJobs[, !(names(countJobs) %in% 
                                c("msclusterID", "peakIds", "scans", 
-                                 "joinedJobsIDs", "msclusterID_integrative"))]
+                                 "joinedOriginJobsID", "joinedJobsID", "msclusterID_integrative"))]
     # sum counts from all file indexes
     if (NROW(countJobs) > 1)
     {
@@ -250,8 +257,12 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
       numSpectra <- length(numSpectra)+1 # number of scans = number of ; + 1
     }
     if (numSpectra != countJobs[["numSpectra"]]) {
+      cat("\nList of scans", scans,"\n")
+      a <<- scans
       stop("Something went wrong in the counting. Wrong number of spectra for ",
-           "msclusterId ", clust_members$clustId[[1]])
+           "msclusterId ", clust_members$clustId[[1]], ". Expected number of spectra is ", 
+           countJobs[["numSpectra"]], " and the computed number of spectra is ", 
+           numSpectra, ". ")
     }
     countJobs <- countJobs[!(names(countJobs) %in% c("numSpectra"))]
     countJobs[is.na(countJobs)] <- 0
@@ -263,7 +274,8 @@ clusterList <- bind_rows(lapply(clustFiles, function(clustFileName)
                   rtMax = clust_members$rtMax[[1]],
                   peakIds = peakIds,
                   scans = scans,
-                  joinedJobsIDs = joinedJobsIDs,
+                  joinedOriginJobsID = joinedOriginJobsID,
+                  joinedJobsID = joinedJobsID,
                   msclusterID_integrative = as.character(msclusterID_integrative),
                   sumInts = clust_members$precursorInt[[1]]),
              countJobs))
@@ -316,7 +328,7 @@ if (any(duplicated(clusterList$msclusterID_integrative)) || any(clusterList$mscl
 cluster_columns_order <- c("msclusterID", "numSpectra", 
                            "mzConsensus", "rtMean", "rtMin",
                            "rtMax", "peakIds", "scans", 
-                           "joinedJobsIDs", "msclusterID_integrative", "sumInts")
+                           "joinedOriginJobsID", "joinedJobsID", "msclusterID_integrative", "sumInts")
 clusterList <- clusterList[, c(cluster_columns_order,
                                names(clusterList)[endsWith(names(clusterList),
                                                            "_spectra")])]
@@ -343,7 +355,7 @@ clusterArea <- compute_peak_areas_joined_jobs(output_path,
                                               clusterList$msclusterID,
                                               clusterList$scans,
                                               clusterList$peakIds, 
-                                              clusterList$joinedJobsIDs)
+                                              clusterList$joinedOriginJobsID)
 clusterArea <- bind_cols(clusterList[, cluster_columns_order], clusterArea)
 clusterList$basePeakInt <- clusterArea$basePeakInt
 

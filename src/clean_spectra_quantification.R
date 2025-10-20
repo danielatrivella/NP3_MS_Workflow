@@ -390,7 +390,7 @@ merge_counts <- function(col_name, x)
          numSpectra =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,sumInts = sum(x[[col_name]]),
          basePeakInt=max(as.numeric(x[[col_name]])),
          BEDFLAG=,BFLAG =,CFLAG = any(as.logical(x[[col_name]])),
-         HFLAG=,DESREPLICATION=,scans=,joinedJobsIDs=,msclusterID_integrative=
+         HFLAG=,DESREPLICATION=,scans=,joinedOriginJobsID=,joinedJobsID=,msclusterID_integrative=
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                   NA),
@@ -936,7 +936,7 @@ if (!joining_jobs)
                                                              ms_area_count$msclusterID,
                                                              ms_area_count$scans,
                                                              ms_area_count$peakIds, 
-                                                             ms_area_count$joinedJobsIDs)
+                                                             ms_area_count$joinedOriginJobsID)
 }
 # assign the peak areas following the count columns order 
 # and also add the base peak intensity (last column)
