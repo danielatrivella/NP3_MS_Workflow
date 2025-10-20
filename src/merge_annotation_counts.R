@@ -36,7 +36,7 @@ merge_counts <- function(col_name, x)
                   paste(unique(unlist(strsplit(x[[col_name]][
                     !is.na(x[[col_name]])], ";"))), collapse = ";"), 
                   NA),
-         precursorMz=,scans=,joinedJobsIDs=,msclusterID_integrative=,cleanClustID= paste(x[[col_name]], collapse = ";"),
+         precursorMz=,scans=,joinedOriginJobsID=,joinedJobsID=,msclusterID_integrative=,cleanClustID= paste(x[[col_name]], collapse = ";"),
          sumInts =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,numSpectra=,numJoins=
            sum(x[[col_name]]),
          basePeakInt=,fragmented_clusters=max(as.numeric(x[[col_name]])),
@@ -315,7 +315,7 @@ names(ms_area_count)[count_columns] <- sub(pattern = "_spectra",
                                            replacement = "_area", fixed = TRUE,
                                            x = names(ms_area_count)[count_columns])
 # check if this is a joined jobs, if yes call compute peak area from joined jobs
-if (!("joinedJobsIDs" %in% names(ms_spectra_count))) {
+if (!("joinedOriginJobsID" %in% names(ms_spectra_count))) {
   # this is the default flow of np3, compute the peak areas using the provided
   # pre processed data path
   batch_metadata <- readMetadataTable(path_batch_metadata)
@@ -333,7 +333,7 @@ if (!("joinedJobsIDs" %in% names(ms_spectra_count))) {
                                                              ms_area_count$msclusterID,
                                                              ms_area_count$scans,
                                                              ms_area_count$peakIds, 
-                                                             ms_area_count$joinedJobsIDs)
+                                                             ms_area_count$joinedOriginJobsID)
 }
 # order the peak area columns from the metadata with the order present in the count table
 ms_area_count[,count_columns] <- peak_areas_base_peak_int[,

@@ -154,13 +154,13 @@ compute_peak_area <- function(processed_data_path, msclusterIDs, scans_count,
 # and the original samples to filter the samples from this job codes
 # use the output_path to retrieve the default metadatas path created in the setup step (create_batch_lists_join_jobs)
 # output_path: path to the final output folder, inside the outs dir, named with the output_name
-# msclusterIDs, scans, peakIds, joinedJobsIDs: the columns of the count tables - where
+# msclusterIDs, scans, peakIds, joinedOriginJobsID: the columns of the count tables - where
 # the last three columns contain values separated by ;
 compute_peak_areas_joined_jobs <- function(output_path, 
                                           msclusterIDs, scans, peakIds, 
-                                          joinedJobsIDs)
+                                          joinedOriginJobsID)
 {
-  # split the concatenated scans, peakIds and joinedJobsIDs - and also
+  # split the concatenated scans, peakIds and joinedOriginJobsID - and also
   # replace the first _ by $, add a $ at the end of each value for matching
   scans <- lapply(scans, function(x) strsplit(x, ";")[[1]])
   scans_format <- lapply(scans, function(x) paste0(sub(pattern = "_", 
@@ -170,7 +170,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
   peakIds_format <- lapply(peakIds, function(x) paste0(sub(pattern = "_", 
                                                                  replacement = "$",
                                                                  x), "$"))
-  joinedJobsIDs <- lapply(joinedJobsIDs, function(x) {
+  joinedOriginJobsID <- lapply(joinedOriginJobsID, function(x) {
     x <- strsplit(x, ";")[[1]]
     paste0(sub(pattern = "_", replacement = "$", x), "$")
   })
@@ -190,7 +190,7 @@ compute_peak_areas_joined_jobs <- function(output_path,
                                                         "PRE_PROCESSED_DATA_PATH"]
     
     job_code_match <- grepl(pattern = paste0("$", job_code, "$"), fixed = TRUE, 
-                     x = joinedJobsIDs)
+                     x = joinedOriginJobsID)
     compute_peak_area(pre_processed_data_path_job,
                       msclusterIDs,
                       scans,
