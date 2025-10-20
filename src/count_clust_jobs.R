@@ -81,6 +81,13 @@ metadata <- readMetadataTableJoinJobs(path_jobs_metadata, path_jobs_data)
 # read original samples metadata
 metadata_samples <- readMetadataTable(file.path(output_path, "../..", 
                                                 "original_samples_METADATA.csv"))
+# add JOINED_JOB_CODE if not present for recursive reference
+if (!("JOINED_JOB_CODE" %in% names(metadata_samples))) {
+  metadata_samples$JOINED_JOB_CODE <- metadata_samples$JOB_CODE
+} else if (any(is.na(metadata_samples$JOINED_JOB_CODE))) {
+  # fill NA with original JOB_CODE
+  metadata_samples$JOINED_JOB_CODE[is.na(metadata_samples$JOINED_JOB_CODE)] <- metadata_samples$JOB_CODE[is.na(metadata_samples$JOINED_JOB_CODE)]
+}
 # get the samples that changed the code
 diff_sample_code <- which(metadata_samples$SAMPLE_CODE != metadata_samples$SAMPLE_CODE_JOINED_JOBS)
 
@@ -136,7 +143,7 @@ count_subjobs <- lapply(metadata$JOBNAME, function(x)
   # the original samples metadata when there was a changed sample code
   # also replace new sample code naming in the original scans and peakIds references
   # only rename the changed samples codes (difference between SAMPLE_CODE and SAMPLE_CODE_JOINED_JOB)
-  diff_sample_code_job <- diff_sample_code[diff_sample_code %in% which(metadata_samples$JOB_CODE == jobcode)]
+  diff_sample_code_job <- diff_sample_code[diff_sample_code %in% which(metadata_samples$JOINED_JOB_CODE == jobcode)]
   if (length(diff_sample_code_job) > 0)
   {
     # rename quantification columns of the new sample codes
