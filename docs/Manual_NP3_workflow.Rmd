@@ -37,7 +37,7 @@ The $NP^{3}$ MS Workflow consists of ten major steps:
  
 The Steps 2 to 10 can be automatically executed with the $NP^{3}$ command **run**. And different results from the $NP^{3}$ MS Workflow may be joined using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an integrative clustering approach.
 
-Final reports are created at the end of the $NP^{3}$ MS **run**, **join_jobs** and **clean** commands. These reports are separated in quantification, chemical and network statistics and analysis of the results. Detailed in Step 4.2.2.
+Final reports are created at the end of the $NP^{3}$ MS **run**, **join_jobs** and **clean** commands. These reports are separated in quantification, chemical and network statistics and analysis of the results. Detailed in section 4.2.2.
  
 This workflow also contains two interactive commands for data visualization:
  
@@ -327,6 +327,10 @@ Commands:
     - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
     - *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder
     - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the $NP^{3}$ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
+    - *\-o, \-\-output_path* \<path\>    :          path to the final output data folder, inside the outs
+                                        directory of the clustering result folder. It should contain
+                                        the identifications folder, if not, it will be created. The job
+                                        name (output_name) will be extracted from here.
    
 - **chr** [options] :        This command runs an interactive prompt to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and to save to PNG image files. Depending on the provided parameters this can be a total ion chromatogram (TIC - default), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file.
  
