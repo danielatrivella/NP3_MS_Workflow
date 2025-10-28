@@ -47,6 +47,7 @@ For the complete details of each command see the [NP³ MS workflow user manual](
 
 #### Sytem requeriments: Packages tzdata, zip and which must be installed.
 
+---
 ##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
 ##  Currently the *windows installation is not working* in all PCs, we recommend users to use Linux instead.
 
