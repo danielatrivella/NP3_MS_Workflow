@@ -43,11 +43,15 @@ For the complete details of each command see the [NP³ MS workflow user manual](
 
 - - - -
 
-# Installation with Conda and Mamba
+# Installation with Conda or Mamba
+
+#### Sytem requeriments: Packages tzdata, zip and which must be installed.
+
+---
 ##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
 ##  Currently the *windows installation is not working* in all PCs, we recommend users to use Linux instead.
 
-NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
+NP³ MS workflow includes a mamba/conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
 First, download or clone the workflow repository. 
 
