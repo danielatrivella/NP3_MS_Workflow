@@ -3671,7 +3671,7 @@ program
     .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files')
-    .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
+    .option('-o, --job_output_path <path>', 'path to the job final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
         'distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).\n', "")
@@ -3688,8 +3688,8 @@ program
             console.error('\nMissing the mandatory \'count_file_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
             process.exit(1);
         }
-        if (typeof options.output_path === 'undefined' || options.output_path === "undefined") {
-            console.error('\nMissing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+        if (typeof options.job_output_path === 'undefined' || options.job_output_path === "undefined") {
+            console.error('\nMissing the mandatory \'job_output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
             process.exit(1);
         }
 
@@ -3698,7 +3698,7 @@ program
         console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
 
         callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
-            options.count_file_path, options.output_path, options.metadata);
+            options.count_file_path, options.job_output_path, options.metadata);
 
         console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
     })
@@ -3721,7 +3721,7 @@ program
         console.log('');
         console.log('  $ node np3_workflow.js gnps_result --cluster_info_path "/path/to/the/output/dir/GNPS_result/clusterinfo/file" ' +
             '--result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" ' +
-            '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv" --output_path "/path/to/the/output/NP3/outs/output_name/"');
+            '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv" --job_output_path "/path/to/the/output/NP3/outs/output_name/"');
     });
 
 

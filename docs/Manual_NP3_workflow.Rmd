@@ -1671,9 +1671,9 @@ Options for the command *gnps_result*:
 - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
 - *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder
 - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the $NP^{3}$ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
-- *\-o, \-\-output_path* \<path\>    :          path to the final output data folder, inside the outs
+- *\-o, \-\-job_output_path* \<path\>    :          path to the job final output data folder, inside the outs
                                         directory of the clustering result folder. It should contain
-                                        the identifications folder, if not, it will be created. The job
+                                        the identifications folder, if not it will be created. The job
                                         name (output_name) will be extracted from here.
 - *\-m, \-\-metadata* [file]   : path to the samples metadata table CSV file of the $NP^{3}$ job. This is necessary to plot the distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).  (default: "")
 - *\-h, \-\-help* : output usage information
@@ -1686,7 +1686,9 @@ See the GNPS documentation for the description of these columns (https://ccms-uc
  
 If there is more than one GNPS result for a single msclusterID the results are concatenated with a ';', except for the "gnps_Smiles" column which is concatenated with a ',' (ease visualization in cytoscape).
 
-The Identification Curation results are concatenated to these created column, detailed below.
+The Identification Curation results are concatenated to these created columns, detailed below.
+Additional outputs are created in the job_output_path to the 'identifications' subfolder and to the final reports, also detailed below.
+
  
 ##### 4.12.2. *gnps_result* Examples
  
@@ -1697,8 +1699,8 @@ Fake example to use the GNPS Identification Join command:
     "/path/to/the/output/dir/GNPS_result/clusterinfo/file" 
     --result_specnets_DB_path 
     "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" 
-    --ms_count_path "output_path/outs/output_name/count_files/clean/count_table.csv" 
-    --output_path "/path/to/the/output/NP3/output_name/"
+    --ms_count_path "job_output_path/outs/output_name/count_files/clean/count_table.csv" 
+    --job_output_path "/path/to/the/output/NP3/output_name/"
 ```
  
 ##### 4.12.3. *gnps_result* Details
@@ -1709,7 +1711,7 @@ In the GNPS Molecular Networking (MN) workflow result, the 'clusterinfo' file co
 
 In the GNPS Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
 
-At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
+At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
 
 ##### 4.12.4. *gnps_result* Identification Curation and UNPDxGNPS Best Origin
 
@@ -1744,9 +1746,9 @@ The superclass of the GNPS result is cleaned to only retrieve the NPClassifier o
 Finally, the curation proceeds to the UNPDxGNPS identification result comparison, if the UNPD result is present. The column 'curated_identification_best_origin' is set to 'GNPS' where the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Then, updates the 'best_origin_SMILES' column accordingly, set it to the gnps_Smiles values where curated_identification_best_origin == GNPS. And creates the superclass curated best origin results, the column 'best_origin_curated_superclass' receives the value from the gnps_curated_superclass or the tremolo_curated_superclass depending on the curated_identification_best_origin value, and the same occurs for the columns 'best_origin_curated_superclass_grouping' and 'best_origin_curated_superclass_GR_
 \<superclass group\>'.
 
-At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the output_path is informed, the command further creates a chemical report with the GNPS and UNPDxGNPS identification statistics and stores to the final_reports/chemical_reports folder inside the output_path. In the chemical report, it also plots the chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
+At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates a chemical report with the GNPS and UNPDxGNPS identification statistics and stores to the final_reports/chemical_reports folder inside the job_output_path. In the chemical report, it also plots the chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
 
-For the chemical space plotting using PCA, the CDK descriptors of the GNPS result were previous computed and store in the output_path/identifications folder in file 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is previous created in this folder and used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column.
+For the chemical space plotting using PCA, the CDK descriptors of the GNPS result were previous computed and store in the job_output_path/identifications folder in file 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is previous created in this folder and used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column.
 
 If the metadata path is informed, the plot of the distribution of the superclass grouping is also created for GNPS and UNPDxGNPS using columns gnps_curated_superclass_grouping and best_origin_curated_superclass_grouping, respectively, and stored in the chemical report folder.
 
