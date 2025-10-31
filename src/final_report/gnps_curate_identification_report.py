@@ -229,10 +229,11 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 	if clean_table_other_file.exists() and clean_table_other_file.is_file():
 		print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin: ",
 			clean_table_other_file)
-		new_curated_columns = np.concatenate([['tanimoto_unpd_gnps', 'gnps_GoldCategory', 'gnps_category',
-		                                       'gnps_score', 'gnps_npclassifier_superclass_clean',
-		                                       'gnps_npclassifier_superclass_grouping',
-		                                       'curated_identification_best_origin'],
+        gnps_columns = ['gnps_GoldCategory', 'gnps_category', 'gnps_score', 'gnps_npclassifier_superclass_clean',
+                        'gnps_npclassifier_superclass_grouping', 'curated_identification_best_origin']
+        if 'tanimoto_unpd_gnps' in clean_table.columns:
+            gnps_columns = ['tanimoto_unpd_gnps'] + gnps_columns
+		new_curated_columns = np.concatenate([gnps_columns,
 		                                      clean_table.columns.values[
 			                                      clean_table.columns.str.startswith("best_origin_") |
 			                                      clean_table.columns.str.startswith("gnps_curated_superclass")]])
@@ -246,6 +247,7 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 	# call superclass grouping plot for GNPS and UNDPxGNPS, when metadata file is provided
 	output_path = Path(output_path)
 	chemical_report_path = (output_path / "final_reports" / "chemical_report")
+    chemical_report_path.mkdir(exist_ok=True)
 	if metadata_file != "":
 		plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
 		                                     superclass_grouping_name="gnps_curated_superclass_grouping")
