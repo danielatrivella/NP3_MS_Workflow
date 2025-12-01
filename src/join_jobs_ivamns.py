@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 from mn_annotations_assign_protonated_representative import mn_annotation_find_protonated
 from pathlib import Path
+import re
 
 #  Root Mean Square Error (RMSE) is a metric used to evaluate the difference between predicted and actual values
 # used here to compute the rt error between annotated nodes
@@ -31,10 +32,10 @@ def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=0.0):
 	ann_with_not_valid = (ivamn.annotation.str.contains(not_valid_ann.replace("(","").replace(")",""), regex=True) &
 						  (ivamn.cosine < cosine_cutoff))
 	if ann_with_not_valid.any():
-		# extract the matched string
-		matched_not_valid_ann = ivamn.annotation[ann_with_not_valid].str.extract(not_valid_ann)[0].values
-		ivamn.loc[ann_with_not_valid, "annotation"] = np.asarray([ann.replace(matched_not_valid_ann[i],"").lstrip(";").rstrip(";").replace(";;",";")
-													   for i, ann in enumerate(ivamn.annotation[ann_with_not_valid].values)])
+		# replace the matched string with empty string - remove not valid anns and remove extra ;
+		ivamn.loc[ann_with_not_valid, "annotation"] = np.asarray(
+			[re.sub(not_valid_ann, "", ann).lstrip(";").rstrip(";").replace(";;", ";").replace(";;", ";")
+			 for i, ann in enumerate(ivamn.annotation[ann_with_not_valid].values)])
 	return ivamn
 
 
