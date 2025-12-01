@@ -642,7 +642,11 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
     // print the clustered spectra comparision in the output log after the folder creation (counts_table/clean)
     shell.ShellString(log_clustered_spec_comparison + "\n" + step_name).toEnd(clean_output_path+"logCleanOutput");
 
-    if (resExec.code) {
+    if (resExec.code || resExec.signal == "SIGKILL") {
+        if (resExec.signal == "SIGKILL") {
+            // OOM may arise here and exit without a code
+            console.log('ERROR: Process was killed by SIGKILL (probable OOM or killed by the user).');
+        }
         if (parms.verbose === 0) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
