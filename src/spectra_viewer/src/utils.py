@@ -282,7 +282,7 @@ def sp_2_np(spec):
     """
     Converts spectra (matchms) to numpy 2d array
     """
-    return Spikes(spec.peaks.mz, spec.peaks.intensities).to_numpy
+    return Spikes.Spikes(spec.peaks.mz, spec.peaks.intensities).to_numpy
 
 
 ###################################################
