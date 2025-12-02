@@ -3825,19 +3825,18 @@ program
         'similarity of the spectra and save PNG or SVG plots.\n\n')
     .option('-p, --port [port_number]', 'localhost server port number', "8501")
     .action(function(options) {
-        var call_cwd = process.cwd();
         // run workflow
-        console.log('*** NP3 Spectra Viewer (press control + c to cancel the operation) ***');
-        shell.cd(__dirname+'/src/spectra_viewer');
+        console.log('*** NP3 Spectra Viewer (press Ctrl+c to cancel the operation) ***');
+
         try {
-            var resExec = shell.exec('streamlit run main.py --server.port '+options.port,{async:false, silent:false});
+            var resExec = shell.exec('streamlit run '+__dirname+'/src/spectra_viewer/main.py --server.port '+options.port,{async:false, silent:false});
         } catch (err) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
             console.log('\nERROR');
             process.exit(1);
         }
-        shell.cd(call_cwd);
+
         console.log('\nDONE!\n');
     })
     .on('--help', function() {
