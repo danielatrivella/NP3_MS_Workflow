@@ -12,12 +12,11 @@
       - Now the PCA creation in the final reports procedure removes any blanks or beds before plotting; and also creates a PCA plot with only the putative protonated m/z.
       - Bug fix in the join_jobs command, Step 7 to join IVAMNs (fixed the removal of invalid connections). 
       - In the **test** command, added a new output_path parameter to allow running and storing the NP³ test results in a different folder (not in the repository folder).
-  - (1.2.2) The command **join_jobs** was updated with incremental clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions. Also, the SAMPLE_CODE from the samples metadata among different original jobs are now allowed to contain duplicated values, which are automatically resolved and the original codes and last used codes are stored in new separated columns (see documentation). Additionally, now only the results from the joining jobs are needed, the results from all original jobs do not need to be kept for consecutive executions.
-      - A final report was implemented and the conda environment was updated with new dependencies. The **setup** command must be executed again for this new version after updating the conda environment. The final reports are documented in the manual, they contain quantification, chemical and molecular networking statistics and plots. The chemical space of the identified result using PCA method is also created using reference datasets for comparison and reproducibility.
+  - (1.2.2) The command **join_jobs** was updated with incremental clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions (see documentation).
+      - A final report was implemented and the conda environment was updated with new dependencies. The **setup** command must be executed again for this new version after updating the conda environment. 
       - The **gnps_result** command have one new mandatory parameter called job_output_path and one new optional parameter equal to the metadata table path. 
   - (1.2.1) The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
-  - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. 
-      - The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
+  - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job.
 
 - - - -
 
@@ -42,7 +41,7 @@ The NP³ MS workflow consists of ten major steps, where only the first requires 
 
 This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS library identification results to the NP³ MS workflow quantification tables. A fourth command to unite different results from the NP³ MS Workflow. And a fifth command to create PCA plots int he NP³ reference chemical space.
 
-The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach.
+The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach. At the end of the pipeline processing, final reports are created containing quantification, chemical and molecular networking statistics and plots. The chemical space of the identified result using PCA method is also created using a reference dataset for comparison and reproducibility.
 
 For the complete details of each command see the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
@@ -197,7 +196,7 @@ L754_bacs_test
 │  
 ├── outs                                        <- the results from the clustering steps in separated folders, and inside them the results from the other workflow steps as described below 
 │   │    
-│   ├── L754_bacs_test                          <- the final clustering (Step 3) result folder 
+│   ├── L754_bacs_test                          <- the final clustering (Step 3) result folder - final results!
 │   │   │ 
 |   |   ├── clust                               <- the folder with clusters membership files (which SCANS or msclusterID were joined in the final clustering step) (Step3) 
 │   │   │ 
@@ -206,7 +205,15 @@ L754_bacs_test
 │   │   │   ├── clean                           <- the folder with the quantification tables from Steps 5, 7 and 9 
 │   │   │   |  
 │   │   │   └── merge                           <- the folder with the quantification tables from Steps 8 and 9 
-│   │   │ 
+│   │   │
+|   |   ├── final_reports                       <- the folder with the final reports computed at the end of the processing based on the final clean counts and identifications
+│   │   │   |    
+│   │   │   ├── chemical_report                 <- the folder with the chemical statistics and PCA plots (chemical_space_identifications subfolder)
+│   │   │   |    
+│   │   │   ├── molecular_networking_report     <- the folder with the molecular networks statistics
+│   │   │   |  
+│   │   │   └── quantification_report           <- the folder with the quantification statistics
+│   │   │
 |   |   ├── identifications                     <- the folder with the complete list of identifications from UNPD returned by tremolo              
 │   │   │ 
 |   |   ├── mgf                                 <- the folder with the MGF files from the clustering Step 3 (named L754_bacs_test_all.mgf), containing the complete list of consensus spectra, and from the clean Step 5 (named L754_bacs_test_clean.mgf), containing the final list of clean consensus spectra. 
@@ -329,7 +336,8 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
-- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job using an incremental clustering approach. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their unique reference codes, the names of their used metadata and pre processing directory. It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations in an incremental clustering manner, except for Step 8 which is skipped. 
+- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job using an incremental clustering approach. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their unique reference codes, the names of their used metadata and pre processing directory. It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations in an incremental clustering manner, except for Step 8 which is skipped.
+The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy)
     - List of mandatory options:
     - *\-n, \-\-output_name* \<name\>     :   the job name. It will be used to name the output directory and the results from joining the jobs. It must have less than 80 characters.
     - *\-m, \-\-metadata_join* \<file\>    :  path to the metadata_join table CSV file defining the jobs to be joined. Different format, see manual.
