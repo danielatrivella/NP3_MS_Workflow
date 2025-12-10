@@ -1443,6 +1443,32 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     return resExec;
 }
 
+//  create PCA for external data - compute descriptors and NP3 reference PCA
+function createPersonalizedPCA(table_path, smiles_column, type_column, output_path, output_name) {
+    // call compute rcdk descriptors
+    console.log('* Computing the CDK descriptors for the valid SMILES *');
+    // print the total and percentage of smiles that were correctly processed
+    resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
+        table_path+' '+smiles_column+' '+output_path, {async: false, silent: false});
+    if (resExec.code) {
+        console.log('ERROR\n');
+        console.log('ERROR computing the external data RCDK descriptors. PCA creation aborted.\n');
+    } else {
+        console.log('DONE!\n');
+        // call PCA creation here if descriptors were correctly computed
+        var table_desc_path = output_path+'/'+basename(table_path).replace(".csv", "_descriptorsCDK.csv"); // .toString()
+        resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/pca_calculation_ref_plot.py ' +
+            table_desc_path+' '+type_column+' '+output_path+' '+output_name, {async: false, silent: false});
+        if (resExec.code) {
+            console.log('ERROR\n');
+            console.log('ERROR creating the PCA plot using the NP3 reference dataset. New data transformation aborted.\n');
+        } else {
+            console.log('\nDONE!\n');
+        }
+    }
+}
+
+
 // create the final report folder and files inside the output_path, it should be the final result folder inside the outs
 // dir named with the output_name
 function callFinalReportsCreation(metadata_path, count_area_table, output_path, output_name, mz_tol, verbose)
@@ -1496,7 +1522,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.2.2',  '--version')
+    .version('1.3.0',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -1508,7 +1534,7 @@ program
 
 program
     .command('setup')
-    .description('Check if the NP3 dependencies are installed, try to install missing R and python packages and ' +
+    .description('Check if the NP3 dependencies are installed, try to install missing R and python packages, retrieve and unzip some used datasets and ' +
         'compile the NP3_MSCluster algorithm\n\n')
     .action(function()
     {
@@ -3728,6 +3754,73 @@ program
             '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv" --job_output_path "/path/to/the/output/NP3/outs/output_name/"');
     });
 
+program
+    .command('pca_plot')
+    .description('This command creates a PCA plot of a new data in the NP3 reference chemical space, composed by ' +
+        'UNPD+DrugBank+Allosteric. The procedure to create the PCA plots is to first compute the CDK descriptors of a '+
+        'provided list of SMILES and then to create the NP3 reference PCA and to transform these new data to the created '+
+        'chemical space.\n\n')
+    .option('-t, --table_path <path>', 'The path to a table in CSV format containing SMILES string in a column. '+
+        'Optionally, it may also contain the types/categories of each SMILES entry in another column. '+
+        'It must be comma "," separated.')
+    .option('-s, --smiles_column <name>', 'The name of the column in table_path containing the SMILES string.')
+    .option('-d, --data_type [name]', 'A name defining the type of the data to be used to label the points or the name '+
+        'of a column from table_path containing the types/categories names of each SMILES entry to be used to '+
+        'label the points in the final PCA plot. This data_type must be different from "UNPD" or "GNPS" and, '+
+        'in the case of a column name, it must contain at most 8 different classes, otherwise only the provided '+
+        'data_type name will be used to label the points. These column values will go to the legend of the PCA.', "new_data")
+    .option('-o, --output_path [path]', 'The path to the output directory where the final PCA plots will be stored, '+
+        'together with the descriptors table. If empty string "" (default), the output_path is set to the table_path base directory.',
+        '')
+    .option('-n, --output_name [name]', 'The name to be used to name the final plots, used as a prefix in the PCA plots naming.\n', "new_data")
+    .action(function(options) {
+        if (typeof options.table_path === 'undefined') {
+            console.error('\nMissing the mandatory \'table_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.smiles_column === 'undefined') {
+            console.error('\nMissing the mandatory \'smiles_column\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+
+        const start_pca = process.hrtime.bigint();
+        if (options.output_path === '') {
+            options.output_path = basedir(options.table_path)
+        }
+
+        // run procedure
+        console.log('*** Create a personalized PCA plot using the NP3 reference datasets as chemical space ***\n');
+
+        createPersonalizedPCA(options.table_path, options.smiles_column, options.data_type,
+                              options.output_path, options.output_name)
+        console.log("Done PCA creation in "+printTimeElapsed_bigint(start_pca, process.hrtime.bigint()));
+    })
+    .on('--help', function() {
+        console.log('');
+        console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
+        console.log('');
+        console.log('RESULTS:');
+        console.log('');
+        console.log('In the output_path directory it is created: '+
+            '\n(1) a table with the computed CDK descriptors for each valid SMILES present in the provided table_path, '+
+            'named with the table_path name plus the suffix "_descriptorsCDK.csv";\n'+
+            '(2) two PCA plots containing the reference NP3 dataset used to create the chemical space and the new '+
+            'transformed data. These plots are named as: "<output_name>_chemical_space_NP3_<data_type>_PCA_scores.png" '+
+            'and "<output_name>_chemical_space_NP3_<data_type>_PCA_biplot_components.png", the second is similar to '+
+            'the first plus the principal components;\n'+
+            '(3) The PCA quality of representation circle plot with the reference components named as '+
+            '"pca_quality_representation_cos2_NP3_reference.png".\n' +
+            '\n' +
+            'The third plot result is always the same and depends only on the NP3 reference dataset used to create the '+
+            'PCA chemical space.');
+        console.log('');
+        console.log('EXAMPLES:');
+        console.log('');
+        console.log('  $ node np3_workflow.js pca_plot --table_path "/path/to/the/table/test_pca.csv" ' +
+            '--smiles_column SMILES --data_type Libraries --output_path "/path/to/the/output/directory/" '+
+            '--output_name test_libraries');
+    });
+
 
 program
     .command('chr')
@@ -3781,43 +3874,6 @@ program
         console.log('  $ node np3_workflow.js chr -m "/path/to/the/metadata/file/test_np3_metadata.csv" -d "/path/to/the/raw/data/directory"');
     });
 
-// program
-//     .command('compare_spectra')
-//     .description('An interactive prompt to compare two spectra from a MGF file, to plot them against it other and to ' +
-//         'save the image to a PNG file.\n\n')
-//     .option('-n, --data_name [name]', 'the data collection name. Used for verbosity', "-")
-//     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be compared')
-//     .action(function(options) {
-//         if (typeof options.mgf === 'undefined') {
-//             console.error('Missing the mandatory \'mgf\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-//             process.exit(1);
-//         }
-//
-//         const { execFileSync } = require('child_process');
-//         // run workflow
-//         console.log('*** NP3 Comparing Spectra ***');
-//
-//         try {
-//             var resExec = execFileSync("Rscript", ["src/compare_spectra.R", options.data_name, options.mgf], {stdio: 'inherit'});
-//         } catch (err) {
-//             console.log('\nERROR');
-//             //console.log(err.toString().trim());
-//             process.exit(1);
-//         }
-//
-//         console.log('\nDONE!\n');
-//     })
-//     .on('--help', function() {
-//         console.log('');
-//         console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
-//         console.log('');
-//         console.log('EXAMPLES:');
-//         console.log('');
-//         console.log('  $ node np3_workflow.js chr --metadata "/path/to/the/metadata/file/test_np3_metadata.csv" --data_name "data_np3" --raw_data_path "/path/to/the/raw/data/directory"');
-//         console.log('');
-//         console.log('  $ node np3_workflow.js chr -m "/path/to/the/metadata/file/test_np3_metadata.csv" -d "/path/to/the/raw/data/directory"');
-//     });
-
 program
     .command('spectra_viewer')
     .description('(for Unix OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. ' +
@@ -3860,10 +3916,25 @@ program
     .option('-p, --pre_process [x]', '\'TRUE\' or \'FALSE\' to test the pre process step.', toupper, "FALSE")
     .option('-t, --tremolo [x]', '\'TRUE\' or \'FALSE\' to test the tremolo step. If on Windows OS this should be FALSE.', toupper, "TRUE")
     .option('-s, --skip [x]', 'Skip to test x', 1)
+    .option('-o, --output_path [x]', 'Path to the directory to store the tests outputs. A folder named "test" will be '+
+        'created inside it. The mzxml folder will be copied to the output_path/test directory. '+
+        'Default value to "", which outputs to the NP3 test folder.', "")
     .action(function(options) {
         const start_test = process.hrtime.bigint();
         var np3_js_call = 'node '+ __dirname +'/np3_workflow.js';
 
+        // parse output_path and create test subfolder if necessary
+        var output_path = __dirname
+        if (options.output_path != "") {
+            output_path = options.output_path
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Output Setup @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("  - Copying the test dataset mzxml folder and files to the output_path\n");
+            // create the test subfolder and copy the mzxml directory
+            shell.mkdir("-p", output_path+"/test/L754_bacs/mzxml");
+            shell.cp(__dirname+"/test/L754_bacs/mzxml/*", output_path+"/test/L754_bacs/mzxml/");
+        }
         var unit_test_res = ['@@@@@ UNIT TEST NP3 Shifted cosine @@@@@\n'];
         var test_res = ['@@@@@ TEST 1 @@@@@\n','@@@@@ TEST 2 @@@@@\n','@@@@@ TEST 3 @@@@@\n','@@@@@ TEST 4 @@@@@\n','@@@@@ TEST 5 @@@@@',
             '@@@@@ TEST 6 @@@@@','@@@@@ TEST 7 @@@@@','@@@@@ TEST 8 @@@@@','@@@@@ TEST 9 @@@@@',
@@ -3890,13 +3961,13 @@ program
 
         // # not using parallel in the pairwise
         if (options.skip <= 1) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_all');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_all');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Test 1 - L754_bacs_all - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' run -n L754_bacs_all ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml -o '+__dirname+'/test/L754_bacs ' +
+                '-d '+output_path+'/test/L754_bacs/mzxml -o '+output_path+'/test/L754_bacs ' +
                 '-j '+options.tremolo+' -v 10 -q '+options.pre_process+' -l 1 '+
                 '--noise_cutoff FALSE',
                 {async:false, silent:true});
@@ -3917,8 +3988,8 @@ program
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/clusterinfo/0e83d32ce4414494ad9cc12ad3db4824.clusterinfo ' +
                 '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/result_specnets_DB/31ba0709274e450295c6da492030f356.tsv ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
+                '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
                 {async:false, silent:true});
             var gnps_result_mn = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3930,7 +4001,6 @@ program
                 console.log('ERROR\n');
             } else {
                 gnps_result_mn = resExec.stdout.split('Time Elapsed:')[0];
-                // test_res[0] = test_res[0] + '\n*** TESTING - gnps_result - Molecular Networking ***\n\n' + resExec.stdout;
                 console.log('DONE!\n');
             }
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -3938,12 +4008,13 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications-main.tsv ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
+                '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/ '+
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv',
                 {async:false, silent:true});
             var gnps_result_ls = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
-                // in case of error show all the emmited msgs
+                // in case of error show all the emitted msgs
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
                 test_res[0] = test_res[0] + '\n\ngnps_result - Library Search - EXEC ERROR';
@@ -3958,18 +4029,37 @@ program
                 test_res[0] = test_res[0] +
                     '\n*** Testing - gnps_result - Library Search & Molecular Networking ***\n\nEquality OK!\nDONE! :)\n'
             }
+
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Test 1.3 - L754_bacs_all - pca_plot - PCA with clean @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' pca_plot ' +
+                '-s best_origin_SMILES -d curated_identification_best_origin ' +
+                '--table_path '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/final_reports/ -n L754_bacs_all_clean',
+                {async:false, silent:true});
+            var pca_plot_ls = "";
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emitted msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[0] = test_res[0] + '\n\npca_plot - PCA with clean - EXEC ERROR';
+                console.log('ERROR\n');
+            } else {
+                console.log('DONE!\n');
+            }
         }
 
         // # test metadata with more than 10 samples in more than 10 data collections with all types
-        // use the same pre processed data
+        // use the same pre-processed data
         if (options.skip <= 2) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_multi_collection_11');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_multi_collection_11');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Test 2 - L754_bacs_multi_collection_11 - run @@@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec=shell.exec(np3_js_call+' run -n L754_bacs_multi_collection_11 ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml -o '+__dirname+'/test/L754_bacs/ -j '+options.tremolo+' -v 11 ' +
+                '-d '+output_path+'/test/L754_bacs/mzxml -o '+output_path+'/test/L754_bacs/ -j '+options.tremolo+' -v 11 ' +
                 '--noise_cutoff 2',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -3988,14 +4078,14 @@ program
         // # test metadata with all samples in one data collection batch and without blanks
         // # split the run cmd in the sub cmds calls and using a smaller chunk size
         if (options.skip <= 3) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_one_collection');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_one_collection');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 3 - L754_bacs_one_collection - spec2vec - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' run -n L754_bacs_one_collection ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_collection.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
-                '-o '+__dirname+'/test/L754_bacs/ -y processed_data_one_collection -j '+options.tremolo+' -b 200 ' +
+                '-d '+output_path+'/test/L754_bacs/mzxml ' +
+                '-o '+output_path+'/test/L754_bacs/ -y processed_data_one_collection -j '+options.tremolo+' -b 200 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
                 ' --bflag_cutoff 1.5 --noise_cutoff 1.5 -i spec2vec',
                 {async:false, silent:true});
@@ -4014,14 +4104,14 @@ program
 
         // # test metadata with only blank samples;
         if (options.skip <= 4) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_blanks');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_blanks');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 4 - L754_bacs_blanks - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' run -n L754_bacs_blanks ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
-                '-o '+__dirname+'/test/L754_bacs/ -y processed_data_blanks -j '+options.tremolo+' -v 11 -q '+
+                '-d '+output_path+'/test/L754_bacs/mzxml ' +
+                '-o '+output_path+'/test/L754_bacs/ -y processed_data_blanks -j '+options.tremolo+' -v 11 -q '+
                 options.pre_process + ' --bflag_cutoff 1',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -4044,7 +4134,7 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec=shell.exec(np3_js_call+' pre_process -n L754_bacs_blanks_one_sample ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml -y processed_data_blanks_one_sample -v 11 -q '+options.pre_process,
+                '-d '+output_path+'/test/L754_bacs/mzxml -y processed_data_blanks_one_sample -v 11 -q '+options.pre_process,
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4066,14 +4156,14 @@ program
         }
 
         if (options.skip <= 6) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 6 - L754_bacs_blanks_one_sample - clustering @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' clustering -n L754_bacs_blanks_one_sample ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
-                '-o '+__dirname+'/test/L754_bacs -y processed_data_blanks_one_sample -v 13 -b 500 ' +
+                '-d '+output_path+'/test/L754_bacs/mzxml ' +
+                '-o '+output_path+'/test/L754_bacs -y processed_data_blanks_one_sample -v 13 -b 500 ' +
                 '-q '+options.pre_process+
                 ' -j '+options.tremolo,
                 {async:false, silent:true});
@@ -4095,8 +4185,8 @@ program
             console.log("@@@@@ Test 7 - L754_bacs_blanks_one_sample - tremolo @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' tremolo ' +
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/identifications/ ' +
-                '-g '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_all.mgf ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/identifications/ ' +
+                '-g '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_all.mgf ' +
                 '-k 20 -v 13',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR")) {
@@ -4123,8 +4213,8 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' clean ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
-                '-y '+__dirname+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample -b 500 -v 13 ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-y '+output_path+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample -b 500 -v 13 ' +
                 '-t 2,5 --bflag_cutoff 3 --max_shift 500 --min_matched_peaks 10',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -4140,7 +4230,7 @@ program
 
             resExec = shell.exec(np3_js_call+' annotate_protonated ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
                 '-b 500 -v 13 -t 2 -i 500',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -4160,8 +4250,8 @@ program
             console.log("@@@@@ Test 9 - L754_bacs_blanks_one_sample - merge all @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' merge ' +
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
-                '-y '+__dirname+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-y '+output_path+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv -v 13 -p FALSE',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.toLocaleUpperCase().includes("ERROR")) {
@@ -4181,7 +4271,7 @@ program
             console.log("@@@@@ Test 10 - L754_bacs_blanks_one_sample - mn @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' mn ' +
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample ' +
                 '-w 0.9 -k 5 -b 10 -v 13 --min_matched_peaks 1',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.toLocaleUpperCase().includes("ERROR") || resExec.stderr.toLocaleUpperCase().includes("ERROR")) {
@@ -4200,14 +4290,14 @@ program
         // # test metadata with all samples in one data collection batch and one blank
         // only with samples different from the one_collection set
         if (options.skip <= 11) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_another_collection_diff');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_another_collection_diff');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 11 - L754_bacs_another_collection_diff - run @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' run -n L754_bacs_another_collection_diff ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_another_collection_diff.csv ' +
-                '-d '+__dirname+'/test/L754_bacs/mzxml ' +
-                '-o '+__dirname+'/test/L754_bacs/ -y processed_data_another_collection -j '+options.tremolo+' -b 100 ' +
+                '-d '+output_path+'/test/L754_bacs/mzxml ' +
+                '-o '+output_path+'/test/L754_bacs/ -y processed_data_another_collection -j '+options.tremolo+' -b 100 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
                 ' --bflag_cutoff 1.5 --noise_cutoff 1.5',
                 {async:false, silent:true});
@@ -4226,14 +4316,14 @@ program
 
         // test join_jobs command joining one_collections with another_collection
         if (options.skip <= 12) {
-            shell.rm('-rf', __dirname+'/test/L754_bacs/L754_bacs_join_collections');
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 12 - L754_bacs_join_collections - join_jobs @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' join_jobs -n L754_bacs_join_collections ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
-                '-y '+__dirname+'/test/L754_bacs/mzxml ' + '-d ' + __dirname+'/test/L754_bacs/ '+
-                '-o '+__dirname+'/test/L754_bacs/ -j '+options.tremolo +
+                '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
+                '-o '+output_path+'/test/L754_bacs/ -j '+options.tremolo +
                 ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
