@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.2.2
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.3.0
 author:  
-  - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br]
-  - Luiz F. G. Alves^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - luiz.alves@lnbio.cnpem.br]
-  - Rafael de Felicio^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
-  - Daniela B. B. Trivella^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
-  - Guilherme P. Telles^[Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - gpt@ic.unicamp.br]
-date: October, 2025 
+  - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
+  - Luiz F. G. Alves^\*^
+  - Rafael de Felicio^\*^
+  - Daniela B. B. Trivella^\*^
+  - Guilherme P. Telles^\†^
+date: December, 2025 
 output:
   pdf_document: default
   html_document:
@@ -16,11 +16,8 @@ output:
  
 # 1. Overview
  
-The $NP^{3}$ MS workflow is a software system with a collection of scripts to process and analyse LC-MS/MS data from untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
+The $NP^{3}$ MS workflow^[$NP^{3}$ MS Workflow. C.F. Bazzano, et al. Analytical Chemistry 2024 96 DOI: 10.1021/acs.analchem.3c05829] is a software system with a collection of scripts to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
 
-The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), separating isomers, of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions - called protonated representatives) and constructs molecular networks to improve the analysis and visualization of the results.
-
- 
 The $NP^{3}$ MS Workflow consists of ten major steps:
  
 * Step 1: Metadata table construction describing the input LC-MS/MS samples, bioactivity scores and groups. This is the only step that requires user intervention.
@@ -35,16 +32,18 @@ The $NP^{3}$ MS Workflow consists of ten major steps:
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments. It also computes the quantification grouping.
 * Step 10: Creation of a spectra similarity molecular network (SSMN) based on the clean consensus spectra similarity and creation of the protonated networks IVAMN [M+H]+ and SSMN [M+H]+ filtered.
  
+The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), separating isomers, of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions - called protonated representatives) and constructs molecular networks to improve the analysis and visualization of the results.
+
 The Steps 2 to 10 can be automatically executed with the $NP^{3}$ command **run**. And different results from the $NP^{3}$ MS Workflow may be joined using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach.
 
-Final reports are created at the end of the $NP^{3}$ MS **run**, **join_jobs** and **clean** commands. These reports are separated in quantification, chemical and network statistics and analysis of the results. Detailed in section 4.2.2.
+Final reports are created at the end of the $NP^{3}$ MS **run**, **join_jobs** and **clean** commands. These reports are separated in quantification, chemical and network statistics and analysis of the results. Detailed in section 4.2.2. The PCA plotting can be executed separated using the **pca_plot** command.
  
 This workflow also contains two interactive commands for data visualization:
  
-* The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
-* The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Unix OS.
+* **chr**: The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
+* **spectra_viewer**: The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Unix OS.
  
-Furthermore, the user can manually identify the resulting consensus spectra against the GNPS [8] spectral libraries and use another separated command of this workflow to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables.
+Furthermore, the user can manually identify the resulting consensus spectra against the GNPS [8] spectral libraries and use another separated command of this workflow called **gnps_result** to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables.
  
 ## 1.1 Data
  
@@ -79,7 +78,7 @@ The pre-processed data and the clean data from the $NP^{3}$ results may be used 
 ## Installation with Conda and Mamba
 ##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
 
-NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
+$NP^{3}$ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
 First, download or clone the workflow repository. 
 
@@ -126,7 +125,7 @@ To verify if the Conda and Mamba installation was successful, open a **new** ter
 
 If it outputs the `mamba`'s and `conda`'s versions you are good to go.    
 
-Now, go the NP³ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
+Now, go the $NP^{3}$ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
 
 Then, create the $NP^{3}$ MS workflow conda environment to automatically install almost all the workflow programs and required packages using the following terminal command:
 
@@ -142,7 +141,7 @@ Windows OS:
   $ mamba env create -f environment_np3_win.yml 
 ``` 
 
-The $NP^{3}$ MS workflow conda environment must be created and activated before running the NP³ MS workflow commands. If the $NP^{3}$ MS workflow environment was created successfully, activate it with the following command: 
+The $NP^{3}$ MS workflow conda environment must be created and activated before running the $NP^{3}$ MS workflow commands. If the $NP^{3}$ MS workflow environment was created successfully, activate it with the following command: 
 
 ```{r, eval=F}   
   $ mamba activate np3 
@@ -296,11 +295,6 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
- 
-<!-- - **metfrag** [options] : Step 5: An interactive prompt to run the MetFrag [21] tool for identification search of individual spectra or of an entire experiment from a MGF file against the PubChem database. -->
-<!--     - List of mandatory options: -->
-<!--     - *\-g, \-\-mgf* <file>     :     path to the input MGF file with the MS/MS spectra data to be searched and identified -->
-<!--     - *\-o, \-\-output_path* <path> : path to where the identification results will be saved. Prefereable inside the final clustering results directory in the 'job_name/outs/job_name/identifications' folder -->
     
 - **annotate_protonated** [options] : Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
     - List of mandatory options:
@@ -332,6 +326,14 @@ Commands:
                                         the identifications folder, if not, it will be created. The job
                                         name (output_name) will be extracted from here.
    
+- **pca_plot** [options] : This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES and then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
+    - List of mandatory options:
+    - *\-t, \-\-table_path* \<path\>       :  The path to a table in CSV format containing SMILES string in a
+                              column. Optionally, it may also contain the types/categories of
+                              each SMILES entry in another column. It must be comma ","
+                              separated.
+    - *\-s, \-\-smiles_column* \<path\>       :  The name of the column in table_path containing the SMILES string.
+                              
 - **chr** [options] :        This command runs an interactive prompt to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and to save to PNG image files. Depending on the provided parameters this can be a total ion chromatogram (TIC - default), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file.
  
 <!-- - **compare_spectra** [options] : An interactive prompt to compare two spectra from a MGF file, to plot them against it other and to save the image to a PNG file. -->
@@ -390,7 +392,7 @@ Options for the command *run*:
 - *\-z, \-\-mz_tolerance* [x]              : this is the tolerance in Daltons for the m/z of the precursor that determines if two spectra will be compared and possibly joined. It is used in the clustering steps (Step 3), in the cleaning (Step 5), in the library identifications (Step 6) and in the annotation of ionization variants (Step 7) (default: 0.025)
 - *\-p, \-\-ppm_tolerance* [x]        : the maximum tolerated m/z deviation in parts per million (ppm) to be used in the pre-processing (Step 2). Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
 - *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
-- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine function is used. (default: "np3_shifted_cosine")
+- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the minimum similarity to be considered in the hierarchical clustering of Step 3, starts in 0.70 and decrease to X in 15 rounds. Also used in the Step 5 quantification cleaning (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-w, \-\-similarity_mn* [x] :     the minimum similarity score that must occur between a pair of consensus spectra to connect them with a link in the molecular network of similarity. Lower values will increase the components sizes by inducing the connection of less related spectra; and higher values will limit the components sizes to the opposite (default: 0.6) 
@@ -412,9 +414,9 @@ Options for the command *run*:
 - *\-q, \-\-processed_data_overwrite* [x]  : A logical "TRUE" or "FALSE" indicating if the pre-processed data present in the *processed_data_name* folder (if it already exists) should be overwritten and pre-processed again (default: "FALSE")
 - *\-\-bflag_cutoff* [x]            :      A positive numeric value to scale the interquartile range (IQR) of the blank spectra basePeakInt distribution and allow spectra with a basePeakInt value below this distribution median plus IQR\*bflag_cutoff to be joined with a blank spectrum without relying on the similarity value. Or FALSE to disable it. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile). The spectra with a basePeakInt value <= median + IQR\*bflag_cutoff of the blank spectra basePeakInt distribution and BFLAG TRUE will be joined to a blank spectrum in the clean step. This cutoff will affect the spectra with BFLAG TRUE that would not get joined to a blank spectra when relying only on the similarity cutoff. This is a turn around to the fact that blank spectra have low quality spectra and thus can not fully rely on the similarity values. (default: 1.5)
 - *\-\-noise_cutoff* [x]            :      A positive numeric value to scale the interquartile range (IQR) of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt value below this distribution median plus IQR*noise_cutoff after the clean Step 5. Or FALSE to disable it. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile) of the distribution. When no blank sample is present in the metadata, the full distribution is used. This cutoff will affect the spectra with with a low basePeakInt value that probably are noise features.  If the clustering Step 3 results in more than 25000 spectra, the noise cutoff will be applied before the clean Step 5 to prevent a long processing time (default: "FALSE")
-- *\-u, \-\-rules* [x]              :   path to the CSV file following the NP3 rules table format with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. To be used by the annotation algorithm (Step 7) (default: "rules/np3_modifications.csv")
+- *\-u, \-\-rules* [x]              :   path to the CSV file following the $NP^{3}$ rules table format with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. To be used by the annotation algorithm (Step 7) (default: "rules/np3_modifications.csv")
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
-- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
+- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the $NP^{3}$ shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased. To be used in Steps 6, 7 and 10 (default: 3000)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (Step 9) (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process (Step 5) (default: "FALSE") -->
@@ -484,16 +486,26 @@ The *molecular networking* report is located inside the molecular_networking_rep
 
 All statistics present in the created tables have a column with a detailed description explaining how they are calculated and what they represent. These values synthesize the final $NP^{3}$ results and accelerates further analysis.
 
-The *chemical space* of the identifications created in the chemical report was standardized to use PCA and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom). 
+The *chemical space* of the identifications created in the chemical report was standardized to use *PCA* and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom were fixed). 
 
 The top 24 descriptors selected from CDK contains 18 topological and 6 constitutional descriptors and are named: 'WPOL','ATSp1','ATSp2','SP.3','Zagreb','VP.3','naAromAtom','SP.2','ATSp3','VP.2','ATSm3','nB',
 'ATSm2','nAromRings','nAromBlocks','C2SP2','khs.aasC','nAtomP','khs.aaCH','LipinskiFailures','MW',
 'nAtom','VP.1','WTPT.1. Their descriptions can be found in the CDK site https://cdk.github.io/ [26] or the supplementary information of review [27]. 
+The reference dataset used to create the PCA chemical space is deposited in the repository folder at:
 
-The PCA is computed using the reference dataset, which is deposited in the repository folder at 'NP3_MS_Workflow/src/final_report/Chemical_space_data/descriptors_reference_table.zip'. The reference dataset contains all the SMILES from the three sources with their top 24 CDK descriptors calculated using R. For each final result, in the chemical report creation, the clean consensus spectra identified against UNPD in the current job and curated is used to select the final best curated SMILES and to extract their top CDK descriptors. These new data is then transformed into the reference PCA and plotted. The final chemical space and the circle plot with the top 24 components can be found at NP3_MS_Workflow/docs/chemical_space_reference. The PCA was chosen here to create the chemical space of the $NP^{3}$ results, because it allows keeping a high understanding of the result with the principal components showing the respective variables information. A better understanding is more important here than a better clustering of the identifications.
+- 'NP3_MS_Workflow/src/final_report/Chemical_space_data/descriptors_reference_table.zip'. 
 
-Another PCA is created in the chemical space plot of the m/z, which uses the final clean consensus spectra information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no colorings or grouping is being applied in this PCA, this is a beta analysis to be improved.
+The reference dataset contains all the SMILES from the three sources with their top 24 CDK descriptors calculated using R. 
 
+For each final $NP^{3}$ result, in the chemical report creation, the clean consensus spectra identified against UNPD and curated are used to create the PCA, blanks and beds are removed (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0 are used). The final best curated SMILES are selected (column tremolo_SMILES_best with tremolo_UNPD_score_best > 0) and their top CDK descriptors are extracted. These new data is then transformed into the reference PCA and plotted. The PCA for only protonated m/zs is also created following the same procedure (the name of its final plot will contain the 'protonated' tag).
+
+The format of the final chemical space and the circle plot with the top 24 components can be found at NP3_MS_Workflow/docs/chemical_space_reference. The PCA method was chosen to create the chemical space of the $NP^{3}$ results because it allows keeping a high understanding of the result with the principal components showing the respective variables information. A better understanding is more important here than a better clustering of the identifications.
+
+A PCA plot is also created in the *gnps_result* command using the curated identifications joined from GNPS (see details of this command).
+
+Another PCA is created in the chemical space plot of the final m/zs, which uses the final clean consensus spectra chromatographic information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no coloring or grouping is being applied in this PCA, this is a beta analysis to be improved.
+
+Furthermore, the command *pca_plot* may be used to create other PCA plots, a posteriori or with external data, using the $NP^{3}$ reference chemical space as base (exploratory analysis). See details in this command section.
  
 ##### 4.2.3. *run* Examples
  
@@ -820,7 +832,7 @@ Options for the command *clean*:
 - *\-z, \-\-mz_tolerance* [x]              : the tolerance in Daltons that determines if two spectra will be compared and possibly joined. It is also used in Step 7 to detect possible ion variants (default: 0.025)
 - *\-t, \-\-rt_tolerance* [x,y]        : tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. It is directly applied to the retention time minimum (subtracted) and maximum (added) of the spectra. It enlarges the peak boundaries to deal with disaligned samples or ionization variant spectra. The first tolerance [x] is used in the annotation Step 7; and the tolerance [y] is used in the clean Step 5 (default: 1,2)
 - *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
-- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine function is used. (default: "np3_shifted_cosine")
+- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the similarity to be consider when joining clusters and merging their counts in not blank samples (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the similarity to be consider when joining clusters and merging their counts in blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-w, \-\-similarity_mn* [x] :     the minimum similarity score that must occur between a pair of consensus spectra to connect them with an edge in the molecular networking. Lower values will increase the component size of the clusters by inducing the connection of less related spectra; and higher values will limit the components sizes to the opposite (default: 0.6)
@@ -843,7 +855,7 @@ Options for the command *clean*:
   					(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, 
   					or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN  (default: 0)
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
-- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
+- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the $NP^{3}$ shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
 - *\-l, \-\-parallel_cores* [x]       :   the number of cores to be used for parallel processing (Step 5). x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1 (default: 2)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process. (default: "FALSE") -->
@@ -935,7 +947,7 @@ Table: Clean Count Tables New Columns from the Data Cleaning Step
  
 Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode.
 
-The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. NP³ MS Workflow will retrieve this information together with the identification results.
+The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the identification results.
  
 At the end of the identification step, a curation is performed to select the best result from the 
 top_k identifications of each spectra and to score them with a personalized
@@ -1445,10 +1457,10 @@ Options for the command *join_jobs*:
   
 - *-m, --metadata_join* \<file\> : path to the metadata table CSV file defining the jobs to be joined. Different format, see manual.
 - *-d, --jobs_data_path* \<path\> : path to the folder containing the input jobs result to be joined, 
-  this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. 
+  this should contain their previous $NP^{3}$ result, named accordingly to what is specified in the metadata_join. 
   Their clean mgf and quantification tables will be used.
 - *-y, --pre_processed_dir_path* \<path\> : path to the folder containing the input jobs pre processing result, 
-  this should contain all the original jobs previous NP3 pre processing result in separated folders named 
+  this should contain all the original jobs previous $NP^{3}$ pre processing result in separated folders named 
   accordingly to what is specified in the metadata_join.
 - *-o, --output_path* \<path\> : path to where the output directory will be created
 - *-f, --fragment_tolerance* [x] : the tolerance in Daltons for fragment peaks. Peaks in the
@@ -1474,7 +1486,7 @@ Options for the command *join_jobs*:
   					to create the pairwise similarity table after clustering and clean steps. 
   					If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) 
   					is used by spec2vec in the spectra comparison and the matchms library is used to compute 
-  					the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine 
+  					the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine 
   					function is used. One of "np3_shifted_cosine" or "spec2vec". (default: "np3_shifted_cosine")
 - *-s, --similarity* [x] : the minimum similarity to be consider in the hierarchical
   					clustering, starts in 0.70 and decrease to X in 15 rounds
@@ -1530,7 +1542,7 @@ Options for the command *join_jobs*:
   					before the pairwise comparisons. If "TRUE" this removes the 
   					residual precursor ion, which is frequently observed in MS/MS 
   					spectra acquired on qTOFs. (default: "TRUE")
-- *--max_shift* [x] : Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts
+- *--max_shift* [x] : Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the $NP^{3}$ shifted cosine function. Shifts
                                        greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same
                                        compound. (default: 200)
 - *-l, --parallel_cores* [x] : the number of cores to be used for parallel processing
@@ -1748,13 +1760,60 @@ The superclass of the GNPS result is cleaned to only retrieve the NPClassifier o
 Finally, the curation proceeds to the UNPDxGNPS identification result comparison, if the UNPD result is present. The column 'curated_identification_best_origin' is set to 'GNPS' where the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Then, updates the 'best_origin_SMILES' column accordingly, set it to the gnps_Smiles values where curated_identification_best_origin == GNPS. And creates the superclass curated best origin results, the column 'best_origin_curated_superclass' receives the value from the gnps_curated_superclass or the tremolo_curated_superclass depending on the curated_identification_best_origin value, and the same occurs for the columns 'best_origin_curated_superclass_grouping' and 'best_origin_curated_superclass_GR_
 \<superclass group\>'.
 
-At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates a chemical report with the GNPS and UNPDxGNPS identification statistics and stores to the final_reports/chemical_reports folder inside the job_output_path. In the chemical report, it also plots the chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
+At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
 
-For the chemical space plotting using PCA, the CDK descriptors of the GNPS result were previous computed and store in the job_output_path/identifications folder in file 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is previous created in this folder and used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column.
+For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
 
 If the metadata path is informed, the plot of the distribution of the superclass grouping is also created for GNPS and UNPDxGNPS using columns gnps_curated_superclass_grouping and best_origin_curated_superclass_grouping, respectively, and stored in the chemical report folder.
 
-## 4.13. Command *chr*
+## 4.13. Command *pca_plot*
+ 
+This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric datasets. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES, then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
+
+The provided new data table may contain a column defining the types/categories of each SMILES entry to be used to label the points in the PCA plot.
+ 
+Options for the command *pca_plot*:
+ 
+- *\-t, \-\-table_path* \<path\>       :  The path to a table in CSV format containing SMILES string in a column. Optionally, it may also contain the types/categories of each SMILES entry in another column. It must be comma "," separated.
+- *\-s, \-\-smiles_column* \<name\>       :  The name of the column in table_path containing the SMILES string.
+- *\-d, \-\-data_type* [name]       : A name defining the type of the data to be used to label the
+                              points or the name of a column from table_path containing the
+                              types/categories names of each SMILES entry to be used to label
+                              the points in the final PCA plot. This data_type must be
+                              different from "UNPD" or "GNPS" and, in the case of a column
+                              name, it must contain at most 8 different classes, otherwise
+                              only the provided data_type name will be used to label the
+                              points. These column values will go to the legend of the PCA plot.
+                              (default: "new_data")
+- *\-o, \-\-output_path* [path]    :          The path to the output directory where the final PCA plots will be stored, together with the descriptors table. If empty string
+                              "" (default), the output_path is set to the table_path base
+                              directory. (default: "")
+- *\-n, \-\-output_name* [file]   : The name to be used to name the final plots, used as a prefix in the PCA plots naming. (default: "new_data")
+- *\-h, \-\-help* : output usage information
+ 
+##### 4.13.1. *pca_plot* Results
+ 
+In the output_path directory four files are created: 
+
+1. One table with the computed CDK descriptors for each valid SMILES present in the provided table_path, named with the table_path name plus the suffix "_descriptorsCDK.csv";
+2. Two PCA plots containing the reference $NP^{3}$ dataset used to create the reference chemical space and the new transformed data. These plots are named as: "<output_name>_chemical_space_NP3_<data_type>_PCA_scores.png" and "<output_name>_chemical_space_NP3_<data_type>_PCA_biplot_components.png", this second plot is similar to the first plus the principal components;
+3. The PCA quality of representation circle plot with the reference components named as "pca_quality_representation_cos2_NP3_reference.png".
+
+The third plot result is always the same and depends only on the $NP^{3}$ reference dataset, used to create the PCA chemical space.
+
+ 
+##### 4.13.2. *pca_plot* Examples
+ 
+Example calling the creation of a PCA plot for an external data:
+ 
+```{r, eval=F} 
+  $ node np3_workflow.js pca_plot --table_path "/path/to/the/table/test_pca.csv" 
+--smiles_column SMILES --data_type Libraries 
+--output_path "/path/to/the/output/directory/" --output_name test_libraries
+```
+ 
+
+## 4.14. Command *chr*
  
 Runs the R interactive script to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and saves to PNG image(s) file(s). Depending on the provided parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file. In the interactive prompt is possible to select a mz and/or retention time window to better visualize interesting parts of the sample's chromatograms. The plots can be grouped by data collection batch, by a selection of samples, or all the samples can be plotted together.
  
@@ -1772,11 +1831,11 @@ Options for the command *chr*:
 <!-- - \-t, \-\-rt_range [X,Y]         two numeric separate by comma ',' without spaces and with decimal point equals dot '.' defining the lower and upper boundary for the retention time range/window(s) for the chromatogram(s). If not specified or 'NULL', a chromatogram representing the full retention time range is extracted (default: NULL) -->
 - *\-h, \-\-help*                   output usage information
  
-##### 4.13.1. *chr* Results
+##### 4.14.1. *chr* Results
  
 PNG image(s) file(s) with the extracted chromatogram(s) of the selected sample(s) and grouped as specified in the options.
  
-##### 4.13.2 *chr* Examples
+##### 4.14.2 *chr* Examples
  
 Fake example to execute the MS¹ Viewer command:
 
@@ -1817,7 +1876,7 @@ Fake example to execute the MS¹ Viewer command:
 <!--     --data_name "data_np3" --raw_data_path "/path/to/the/raw/data/directory" -->
 <!-- ``` -->
  
-## 4.14. Command *spectra_viewer*
+## 4.15. Command *spectra_viewer*
 
 This command runs the Streamlit interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. Currently, it is only supported for Unix OS.
   It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
@@ -1827,7 +1886,7 @@ Options for the command *spectra_viewer*:
 - *\-p, \-\-port* [port_number]  localhost server port number (default: "8501")
 - *\-h, \-\-help*              output usage information
 
-##### 4.14.1. *spectra_viewer* Examples:
+##### 4.15.1. *spectra_viewer* Examples:
 
 Example to execute the MS² spectra viewer application:
 
@@ -1835,9 +1894,9 @@ Example to execute the MS² spectra viewer application:
   $ node np3_workflow.js spectra_viewer --port 8080
 ```
 
-## 4.15. Command *test*
+## 4.16. Command *test*
  
-Run the NP³ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
+Run the $NP^{3}$ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
 
 It may take a long time; 30 minutes is expected. This option is intended for debugging purposes, and is not a part of the analysis workflow.
  
@@ -1846,15 +1905,19 @@ Options for the command *test*:
 - *\-p, \-\-pre_process* [x]  : 'TRUE' or 'FALSE' to test the pre-process step. (default: "FALSE")
 - *\-t, \-\-tremolo* [x]   :   'TRUE' or 'FALSE' to test the tremolo step. (default: "FALSE")
 - *\-s, \-\-skip* [x]       :  Skip to test x (default: 1)
+- *\-o, \-\-output_path* [x]       :  Path to the directory to store the tests outputs. A folder named
+                         "test" will be created inside it. The mzxml folder will be copied to
+                         the output_path/test directory. Default value to empty string "", which outputs
+                         to the $NP^{3}$ test folder. (default: "")
 - *\-h, \-\-help*              output usage information
  
-##### 4.15.1. *test* Results:
+##### 4.16.1. *test* Results:
  
-The NP³ jobs for the tested datasets. They are stored inside the test/Bra346 folder in the repository. The metadata table files present in the test/Bra346 folder are used in the testing cases and should not be modified.
+The results of the $NP^{3}$ jobs used in the tests. They are stored inside the test/L754_bacs folder of the repository by default, or in the output_path/test/L754_bacs. The metadata table files present in the test/L754_bacs folder are used in the testing cases and should not be modified.
  
-##### 4.15.2. *test* Examples:
+##### 4.16.2. *test* Examples:
  
-Example to execute the test suit from NP³ MS Workflow:
+Example to execute the test suit from $NP^{3}$ MS Workflow:
 
 ```{r, eval=F} 
   $ node np3_workflow.js test
