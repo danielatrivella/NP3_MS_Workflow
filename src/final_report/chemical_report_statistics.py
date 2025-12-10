@@ -38,44 +38,57 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 			samples_area_col = samples_area_name + "_area"
 		else:
 			samples_area_col = samples_area_name + "_spectra"
+			
+		# create for all not protonated mzs then only for protonated
+		for protonated in [0, 1]:
+			if protonated == 1:
+				output_name_plot = superclass_grouping_name + "_protonated"
+				# filter only the protonated nodes
+				clean_data = clean_data.loc[clean_data.protonated_representative == 1, :]
+				if clean_data.shape[0] == 0:
+					print(
+						"    - No protonated m/z present, skipping the protonated distribution plot.")
+					break
+			else:
+				output_name_plot = superclass_grouping_name
 		
-		# group the quantification columns by the superclass grouping and sum the respective rows
-		samples_area_by_superclass_grouping = clean_data.groupby(superclass_grouping_name)[samples_area_col].sum()
-		# normalize the quantification by superclass
-		samples_area_by_superclass_grouping = samples_area_by_superclass_grouping.div(samples_area_by_superclass_grouping.sum(axis=0), axis=1)
-		# rename columns with the original samples codes
-		samples_area_by_superclass_grouping.columns = samples_area_name
-		
-		# define the superclasses colors for the plot
-		grouping_colors = ['#e8ff00', '#ff8b00', '#ff008b', '#00cc00', '#e800ff', '#5dff00', '#6fffff', '#5d00ff', '#00b9ff', '#002eff', '#cccccc']
-		superclass_groupings_colors = dict(zip(superclass_groupings_names, grouping_colors))
-		
-		fig, ax = plt.subplots(figsize=(20, 10))  # plot size - bigger plot
-		
-		bottom = pd.Series([0] * len(samples_area_name), index=samples_area_name)
-		
-		for superclass_group in samples_area_by_superclass_grouping.index:
-			distribution_superclass = samples_area_by_superclass_grouping.loc[superclass_group, samples_area_name]
-			superclass_color = superclass_groupings_colors.get(superclass_group, 'gray')
-			ax.bar(samples_area_name, distribution_superclass, bottom=bottom.values, label=superclass_group, color=superclass_color)
-			bottom += distribution_superclass
-		
-		# Axes e style
-		ax.set_ylabel('Normalize distribution by superclass grouping', fontsize=18)
-		ax.set_title('Samples Composition by Superclass Grouping (normalized by sample)', fontsize=20)
-		ax.set_xticks(range(len(samples_area_name)))
-		ax.set_xticklabels(samples_area_name, rotation=45, ha='right', fontsize=16)
-		plt.yticks(fontsize=16)
-		
-		# add Legend
-		ax.legend(title='Superclass Grouping', loc='lower center', bbox_to_anchor=(0.5, -0.35),
-		          ncol=4, fontsize='14', title_fontsize='14')
-		
-		plt.tight_layout()
-		
-		barplot_filepath = output_path / ("samples_composition_"+superclass_grouping_name+"_distribution.png")
-		plt.savefig(barplot_filepath, dpi=300, bbox_inches='tight')
-		#plt.show()
+			# group the quantification columns by the superclass grouping and sum the respective rows
+			samples_area_by_superclass_grouping = clean_data.groupby(superclass_grouping_name)[samples_area_col].sum()
+			# normalize the quantification by superclass
+			samples_area_by_superclass_grouping = samples_area_by_superclass_grouping.div(samples_area_by_superclass_grouping.sum(axis=0), axis=1)
+			# rename columns with the original samples codes
+			samples_area_by_superclass_grouping.columns = samples_area_name
+			
+			# define the superclasses colors for the plot
+			grouping_colors = ['#e8ff00', '#ff8b00', '#ff008b', '#00cc00', '#e800ff', '#5dff00', '#6fffff', '#5d00ff', '#00b9ff', '#002eff', '#cccccc']
+			superclass_groupings_colors = dict(zip(superclass_groupings_names, grouping_colors))
+			
+			fig, ax = plt.subplots(figsize=(20, 10))  # plot size - bigger plot
+			
+			bottom = pd.Series([0] * len(samples_area_name), index=samples_area_name)
+			
+			for superclass_group in samples_area_by_superclass_grouping.index:
+				distribution_superclass = samples_area_by_superclass_grouping.loc[superclass_group, samples_area_name]
+				superclass_color = superclass_groupings_colors.get(superclass_group, 'gray')
+				ax.bar(samples_area_name, distribution_superclass, bottom=bottom.values, label=superclass_group, color=superclass_color)
+				bottom += distribution_superclass
+			
+			# Axes e style
+			ax.set_ylabel('Normalize distribution by superclass grouping', fontsize=18)
+			ax.set_title('Samples Composition by Superclass Grouping (normalized by sample)', fontsize=20)
+			ax.set_xticks(range(len(samples_area_name)))
+			ax.set_xticklabels(samples_area_name, rotation=45, ha='right', fontsize=16)
+			plt.yticks(fontsize=16)
+			
+			# add Legend
+			ax.legend(title='Superclass Grouping', loc='lower center', bbox_to_anchor=(0.5, -0.35),
+			          ncol=4, fontsize='14', title_fontsize='14')
+			
+			plt.tight_layout()
+			
+			barplot_filepath = output_path / ("samples_composition_"+output_name_plot+"_distribution.png")
+			plt.savefig(barplot_filepath, dpi=300, bbox_inches='tight')
+			#plt.show()
 
 
 def compute_chemical_report_statistics(clean_table_file, output_path):
