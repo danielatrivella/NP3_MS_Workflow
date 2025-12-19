@@ -130,7 +130,7 @@ data_types_style_new_external = ['tab:pink','tab:orange','tab:purple','tab:brown
 def biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores, point_labels, pvars=None,
                                     components=None, feature_labels=None):
 	#  create data_types_style for different data_types from external table
-	if data_type not in ['UNPD', 'GNPS']:
+	if data_type not in ['UNPD', 'GNPS', 'UNPDxGNPS']:
 		data_types_style = {label: [label,data_types_style_new_external[i]]
 		                    for i,label in enumerate(np.unique(point_labels))}
 	else:
