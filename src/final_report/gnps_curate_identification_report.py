@@ -247,7 +247,7 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
 	# call superclass grouping plot for GNPS and UNDPxGNPS, when metadata file is provided
 	output_path = Path(output_path)
 	chemical_report_path = (output_path / "final_reports" / "chemical_report")
-	chemical_report_path.mkdir(exist_ok=True)
+	chemical_report_path.mkdir(exist_ok=True, parents=True)
 	if metadata_file != "":
 		plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
 											 superclass_grouping_name="gnps_curated_superclass_grouping")
