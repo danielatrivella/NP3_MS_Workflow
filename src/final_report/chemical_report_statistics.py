@@ -139,17 +139,32 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 			#	f"{number_bed_mzs} ({number_bed_mzs / number_not_blank_mzs * 100:.1f}%)")
 			#chemical_statistics['Description'].append(
 			#	"Total number of bed (culture media) m/zs in the not blank m/zs, BEDS_TOTAL > 0.")
+			# skip one empty row
+			chemical_statistics['Statistics'].append("")
+			chemical_statistics['Value'].append("")
+			chemical_statistics['Description'].append("")
+			# compute number of putative molecules - protonated m/zs [M+H]+ without blanks only - SSMN [M+H]+ #nodes
+			if "protonated_representative" in clean_data.columns:
+				number_protonated_mzs = clean_data.protonated_representative.sum()
+			else:
+				number_protonated_mzs = 0
+			chemical_statistics['Statistics'].append("Number of not blank [M+H]+ m/zs")
+			chemical_statistics['Value'].append(
+				f"{number_protonated_mzs} ({number_protonated_mzs / number_valid_mzs * 100:.1f}%)")
+			chemical_statistics['Description'].append(
+				"Total number of not blank m/zs that were selected as [M+H]+ - protonated (protonated_representative == 1) - putative molecules. And its percentage over the total number of blanks m/zs, beds are included.")
+			
 			# filter only the not bed mzs
 			mz_types = "not blank and not bed"
 			clean_data = clean_data.loc[clean_data.BEDS_TOTAL == 0, :]
 			number_valid_mzs = clean_data.shape[0]
 		else:
+			# skip one empty row
+			chemical_statistics['Statistics'].append("")
+			chemical_statistics['Value'].append("")
+			chemical_statistics['Description'].append("")
 			mz_types = "not blank"
 			
-		# skip one empty row
-		chemical_statistics['Statistics'].append("")
-		chemical_statistics['Value'].append("")
-		chemical_statistics['Description'].append("")
 		# compute number of putative molecules - protonated m/zs [M+H]+
 		if "protonated_representative" in clean_data.columns:
 			number_protonated_mzs = clean_data.protonated_representative.sum()
