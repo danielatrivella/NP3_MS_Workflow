@@ -3691,16 +3691,17 @@ program
     .command('gnps_result')
     .description('This command join the GNPS library identification result from the Molecular Networking (download clustered spectra) or ' +
         'the Library Search (download all identifications) workflows to the count tables of the NP3 clustering or clean steps\n\n')
-    .option('-i, --cluster_info_path [path]', 'If joining the result of a Molecular Networking job, ' +
+    .option('-i, --cluster_info_path [path]', 'If joining the result of a Molecular Networking GNPS job, ' +
         'this should be the path to the file inside the folder named ' +
-        '\'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow.', "")
-    .option('-s, --result_specnets_DB_path <path>', 'If joining the result of a Molecular Networking job,' +
+        '\'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search GNPS workflow.', "")
+    .option('-s, --result_specnets_DB_path <path>', 'If joining the result of a Molecular Networking GNPS job,' +
         ' this should be the path to the file inside the folder named ' +
-        '\'result_specnets_DB\'; and if this is the result of a Library Search workflow,' +
-        'this should be the path to the file inside the downloaded folder')
+        '\'result_specnets_DB\'; and if this is the result of a Library Search GNPS workflow,' +
+        'this should be the path to the file inside the downloaded folder. When using GNPS2, this should be the top 1 results.')
     .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
-        'exists in the same path (or the opposite), it will merge the GNPS results to both files')
+        'exists in the same path (or the opposite), it will merge the GNPS results to both files. '+
+        'The clean mgf must be used for the identifications to join the results to the clean table.')
     .option('-o, --job_output_path <path>', 'path to the job final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
@@ -3986,8 +3987,8 @@ program
             console.log("@@@@@@ Test 1.1 - L754_bacs_all - gnps_result - Molecular Networking @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
-                '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/clusterinfo/0e83d32ce4414494ad9cc12ad3db4824.clusterinfo ' +
-                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-MOLECULARNETWORKING-V2-2dfe22ff-download_clustered_spectra/result_specnets_DB/31ba0709274e450295c6da492030f356.tsv ' +
+                '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/clusterinfo/d36047cb3ccf4a0dbab271b1e0bae17d.clusterinfo ' +
+                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/result_specnets_DB/035a08716c904a3d96fcd5e9f111ec23.tsv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
                 {async:false, silent:true});
@@ -4007,7 +4008,7 @@ program
             console.log("@@@@@@ Test 1.2 - L754_bacs_all - gnps_result - Library Search @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
-                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-da67f38d-download_all_identifications-main.tsv ' +
+                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-d6333ae4-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-d6333ae4-download_all_identifications-main.tsv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/ '+
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv',
