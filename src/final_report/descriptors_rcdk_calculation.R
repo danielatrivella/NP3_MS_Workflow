@@ -24,7 +24,9 @@ set_reference_descriptors_names_top24 <- c(set_reference_topological_descriptors
                                      set_reference_constitutional_descriptors_names_top24,
                                      set_reference_geometrical_descriptors_names_top24)
 
-
+# change global java options memory - set maximum heap size to 2Gb - allow processing big SMILES
+options(java.parameters = "-Xmx2g")
+# load libraries
 library(rJava)
 suppressPackageStartupMessages(library(rcdk))
 suppressPackageStartupMessages(library(dplyr))
@@ -112,7 +114,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     topological_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
                                                   topological_desc_names), 
                                         error = function(e) {
-                                          cat(paste(e, "SMILES", i, ":", data_SMILES$smiles_char[i]))
+                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
                                           NULL
                                           })
    if (!is.null(topological_descriptors) && 
@@ -133,7 +135,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     geometrical_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
                                                   geometrical_desc_names), 
                                         error = function(e) {
-                                          cat(paste(e, "SMILES", i, ":", data_SMILES$smiles_char[i]))
+                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
                                           NULL
                                         })
     if (!is.null(geometrical_descriptors) && 
@@ -156,7 +158,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     constitutional_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
                                                      constitutional_desc_names), 
                                         error = function(e) {
-                                          cat(paste(e, "SMILES", i, ":", data_SMILES$smiles_char[i]))
+                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
                                           NULL
                                         })
     if (!is.null(constitutional_descriptors) && 
