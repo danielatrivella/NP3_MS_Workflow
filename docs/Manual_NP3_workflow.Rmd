@@ -1771,6 +1771,8 @@ If the metadata path is informed, the plot of the distribution of the superclass
 This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric datasets. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES, then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
 
 The provided new data table may contain a column defining the types/categories of each SMILES entry to be used to label the points in the PCA plot.
+
+For processing very big SMILES, the user may manually increase the underline java maximum memory limit size to 4Gb or more (default to 2Gb). In the case of an error "Java Exception <no description because toString() failed>", before executing this command the user may run the following code in the command line: `export _JAVA_OPTIONS="-Xmx4g"`.
  
 Options for the command *pca_plot*:
  
