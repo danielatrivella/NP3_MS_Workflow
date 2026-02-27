@@ -4,10 +4,11 @@
 
 - - - - 
 
-# Current Version 1.3.1
+# Current Version 1.3.2
 
 - NEW features:
 
+  - (1.3.2) Bug fix in the **join_jobs** command in Step 7 when integrating the IVAMNs from the original jobs. Some invalid annotations of the joined IVAMN were being kept with an empty string in the annotation type, leading to errors in the following steps or further joins.
   - (1.3.1) The command **gnps_result** had its behaviour modified to only accept identifications from the clean MGF to join to the clean table (which also works for the join_jobs results). The older behavior could lead to wrong joins when using a join\_jobs result. For identifications from GNPS2, only the top 1 result is used. The GNPS identifications result of the test suite were updated.
     - In the chemical report, the PCA plot for the UNPDxGNPS data now uses the default style and labels naming. In the chemical statistics table, added the number of [M+H]⁺ with beds included, which is equal to the number of nodes of the SSMN protonated.
   - (1.3.0) A new command called **pca_plot** was implemented to create a PCA using the NP³ reference chemical space (UNPD+DrugBank+Allosteric datasets). The NP³ and other external tables may be used to create a new PCA in the NP³ chemical space.
