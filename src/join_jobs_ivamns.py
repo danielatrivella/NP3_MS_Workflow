@@ -30,33 +30,36 @@ def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=0.0):
 	# remove the invalid annotation from edges below the cutoff and with more than one annotation
 	# check if any of the groups is present, them extract them and remove them from the annotations of each edge
 	ann_with_not_valid = (ivamn.annotation.str.contains(not_valid_ann.replace("(","").replace(")",""), regex=True) &
-						  (ivamn.cosine < cosine_cutoff))
+	                      (ivamn.cosine < cosine_cutoff))
 	if ann_with_not_valid.any():
 		# replace the matched string with empty string - remove not valid anns and remove extra ;
 		ivamn.loc[ann_with_not_valid, "annotation"] = np.asarray(
 			[re.sub(not_valid_ann, "", ann).lstrip(";").rstrip(";").replace(";;", ";").replace(";;", ";")
 			 for i, ann in enumerate(ivamn.annotation[ann_with_not_valid].values)])
+		# remove empty annotations, if any - all invalid
+		ivamn = ivamn.loc[ivamn.annotation != "",:]
 	return ivamn
 
 
 # read the join original jobs metadata
 # for each original job being joined, read its IVAMN and map its msclusterID to the joined msclusterID
 # then concatenate the IVAMNS and merge duplicated edges
+# output_path: path to the current output dir inside the outs dir named with the output_name
 def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=3000, noise_cutoff=False):
 	output_path = Path(output_path)
 	if not output_path.exists() or not output_path.is_dir():
 		sys.exit("ERROR. The provided output path directory '"+output_path.as_posix()+"' does not exists.")
 	output_name = output_path.name
-
+	
 	print("* Joining the previous IVAMNs of the Joined Jobs * ")
 	# read the clean quantifications of the output_name job
 	clean_counts_path = output_path / "count_tables" / "clean" / (output_name+"_peak_area_clean.csv")
 	if not clean_counts_path.exists() or not clean_counts_path.is_file():
 		sys.exit("ERROR. The clean quantification of the current joining jobs in terms of peak area '" +
-				 clean_counts_path.as_posix() + "' does not exists.")
+		         clean_counts_path.as_posix() + "' does not exists.")
 	clean_counts = pd.read_csv(clean_counts_path, low_memory=False, usecols=['msclusterID', 'joinedJobsID',
-																			 'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
-																			 'basePeakInt'])
+	                                                                         'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
+	                                                                         'basePeakInt'])
 	clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	# compute a noise cutoff as the minimum basePeakInt after union if noise cutoff is enabled
 	# use the min basePeakInt in the final clean table as the basePeakInt cutoff
@@ -65,18 +68,12 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 		print("  - Noise cut-off was enabled and set to ", str(basePeakInt_noise_cutoff))
 	else:  # noise cutoff is disabled
 		basePeakInt_noise_cutoff = 0
-
-	# read the default join original jobs metadata, from it extract the Job name, code and path
-	#original_jobs_metadata_path = output_path / "../.." / "original_jobs_METADATA_JOIN.csv"
-	#if not original_jobs_metadata_path.exists() or not original_jobs_metadata_path.is_file():
-	#    sys.exit("ERROR. The metadata table with the original joined jobs '" + original_jobs_metadata_path.as_posix() +
-	#             "' does not exists.")
-	#jobs_metadata = pd.read_csv(original_jobs_metadata_path)
+	
 	# read the metadata_join from the current join_jobs
 	metadata_join_path = Path(metadata_join_path)
 	if not metadata_join_path.exists() or not metadata_join_path.is_file():
 		sys.exit("ERROR. The metadata join table with the current join jobs '" + metadata_join_path.as_posix() +
-				 "' does not exists.")
+		         "' does not exists.")
 	metadata_join = pd.read_csv(metadata_join_path)
 	# create the path to the joining jobs data
 	jobs_data_path = Path(jobs_data_path)
@@ -88,74 +85,73 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 	sim_table_path = output_path / "molecular_networking" / "similarity_tables" / ("similarity_table_" + output_name + "_clean.csv")
 	if not sim_table_path.exists() or not sim_table_path.is_file():
 		sys.exit("ERROR. The clean similarity table of the current job being joined with name '" + output_name +
-				 "' does not exists." +
-				 " The following path constructed with the provided output_path is not valid: '" + sim_table_path.as_posix() +
-				 "'.")
-
+		         "' does not exists." +
+		         " The following path constructed with the provided output_path is not valid: '" + sim_table_path.as_posix() +
+		         "'.")
+	
 	if max_chunk < 2:
 		print("WARNING: the max_chunk parameter have a very low value smaller than 2. ",
-			  "It will be set to 3000 as the default value.")
+		      "It will be set to 3000 as the default value.")
 		max_chunk = 3000
-
-	# for each job code plus one iteration for integration of current output_name (final one):
+	
+	# for each job code plus one iteration for integration of current job (output_name - final one):
 	# read its ivamn, map the original msclusterID of each job to the joined jobs IDs
-	# use the ivamns attributes tables first? then map to the ivamn net?
-	# from the attributes tables retrieve the multicharge_ion and isotope_ion info and protonated_representative (old)
-	# recompute the protonated again and compare
+	# use the ivamns attributes tables first, then map to the ivamn net
+	# from the attributes tables retrieve the multicharge_ion and isotope_ion info and protonated_representative (old values from the original results)
+	# recompute the protonated again and compare (merge new values with old)
 	# retrieve similarity from clean sim table
 	for i in range(metadata_join.shape[0]+1):
 		if i == metadata_join.shape[0]:
 			# final integration step, retrieve the temporary ivamn att table from the output path
 			# read the ivamn attribute table
 			job_ivamn_att_path = Path(output_path, "molecular_networking",
-											  output_name + "_ivamn_attributes_tmp.csv")
+			                          output_name + "_ivamn_attributes_tmp.csv")
 			job_code = output_name
 			print("    - Integrating and reducing the mapped IVAMNs for current joined job " + job_code)
 		else:
 			job_code = metadata_join.JOB_CODE[i]
 			# read the ivamn attribute table
 			job_ivamn_att_path = Path(metadata_join.JOB_PATH[i], "molecular_networking",
-												 metadata_join.JOBNAME[i]+"_ivamn_attributes.csv")
+			                          metadata_join.JOBNAME[i]+"_ivamn_attributes.csv")
 			print("    - Mapping and reducing the IVAMN of job code " + job_code)
 		if not job_ivamn_att_path.exists() or not job_ivamn_att_path.is_file():
 			sys.exit("ERROR. The IVAMN attribute table of the original job with code '"+job_code +
-					 "' does not exists. The following path extracted from the joined jobs metadata is not valid: '" +
-					 job_ivamn_att_path.as_posix() + "'.")
+			         "' does not exists. The following path extracted from the joined jobs metadata is not valid: '" +
+			         job_ivamn_att_path.as_posix() + "'.")
 		job_ivamn_att = pd.read_csv(job_ivamn_att_path, low_memory=False,
-									usecols=['msclusterID', 'multicharge_ion', 'isotope_ion',
-											 'protonated_representative'])
+		                            usecols=['msclusterID', 'multicharge_ion', 'isotope_ion',
+		                                     'protonated_representative'])
 		# also read basePeakInt from the clean table of the original file and remove spectra by the noise cutoff if enabled
 		# remove nodes and edges between removed nodes using the noise cutoff
 		if i < metadata_join.shape[0]:
 			# if this is not the final integration step
 			# remove msclusterIDs with basePeakInt below the cutoff if enabled
 			# and then map the msclusterID_job to the new joinedJobs msclusterID
-
 			if noise_cutoff:
 				job_clean_path = Path(metadata_join.JOB_PATH[i], "count_tables", "clean",
-												  metadata_join.JOBNAME[i] + "_peak_area_clean_ann.csv")
+				                      metadata_join.JOBNAME[i] + "_peak_area_clean_ann.csv")
 				if not job_clean_path.exists() or not job_clean_path.is_file():
 					sys.exit("ERROR. The clean table of the original job with code '" + job_code +
-							 "' does not exists. The following path extracted from the joined jobs metadata is not valid: '" +
-							 job_clean_path.as_posix() + "'.")
+					         "' does not exists. The following path extracted from the joined jobs metadata is not valid: '" +
+					         job_clean_path.as_posix() + "'.")
 				job_clean = pd.read_csv(job_clean_path, low_memory=False, usecols=['msclusterID', 'basePeakInt'])
 				valid_msclusterIDs = job_clean.msclusterID[job_clean.basePeakInt >= basePeakInt_noise_cutoff]
 				del job_clean
 				# filter job_ivamn_att and then filter ivamn net edges
 				job_ivamn_att = job_ivamn_att.loc[job_ivamn_att.msclusterID.isin(valid_msclusterIDs),]
-
+			
 			job_ivamn_att["msclusterID_job"] = job_ivamn_att.msclusterID.astype(str)+ "_" + job_code
 			try:
 				job_ivamn_att["msclusterID_new"] = [clean_counts.msclusterID.values[
-					 clean_counts.joinedJobsID.str.contains("^"+id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True)][0]
-				 for id in job_ivamn_att.msclusterID_job.values]
+					                                    clean_counts.joinedJobsID.str.contains("^"+id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True)][0]
+				                                    for id in job_ivamn_att.msclusterID_job.values]
 			except IndexError:
 				# error if any id is not found and indexing the first position of values return an error
 				missing_ids = np.asarray([clean_counts.joinedJobsID.str.contains("^" + id + "$|^" + id + ";|;" + id + "$|;" + id + ";", regex=True).any()
-				 for id in job_ivamn_att.msclusterID_job.values])
+				                          for id in job_ivamn_att.msclusterID_job.values])
 				sys.exit("ERROR. Index error when mapping the original job '" + job_code +
-						 "' with the joined jobs IDs. The following original IDs are missing from the joined clean table: " +
-						 ','.join(job_ivamn_att.msclusterID_job[np.where(~missing_ids)[0]].values) + ". Wrong mapping.")
+				         "' with the joined jobs IDs. The following original IDs are missing from the joined clean table: " +
+				         ','.join(job_ivamn_att.msclusterID_job[np.where(~missing_ids)[0]].values) + ". Wrong mapping.")
 			# set the original msclusterID as index of the att table
 			job_ivamn_att = job_ivamn_att.set_index('msclusterID')
 		#
@@ -163,21 +159,27 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 			# final integration step, retrieve the temporary ivamn net from the output path
 			# read the ivamn and fix the msclusterID columns types to int
 			job_ivamn_path = Path(output_path, "molecular_networking",
-										  output_name + "_ivamn_tmp.selfloop")
+			                      output_name + "_ivamn_tmp.selfloop")
 		else:
 			# read the ivamn and fix the msclusterID columns types to int
 			job_ivamn_path = Path(metadata_join.JOB_PATH[i], "molecular_networking",
-										  metadata_join.JOBNAME[i] + "_ivamn.selfloop")
+			                      metadata_join.JOBNAME[i] + "_ivamn.selfloop")
 		if not job_ivamn_path.exists() or not job_ivamn_path.is_file():
 			sys.exit("ERROR. The IVAMN of the original job with code '" + job_code + "' does not exists." +
-					 " The following path extracted from the joined jobs metadata is not valid: '" + job_ivamn_path.as_posix() +
-					 "'.")
+			         " The following path extracted from the joined jobs metadata is not valid: '" + job_ivamn_path.as_posix() +
+			         "'.")
 		job_ivamn = pd.read_csv(job_ivamn_path,
-								dtype={'msclusterID_source': np.int64, 'msclusterID_target': np.int64},
-								low_memory=False, usecols= ['msclusterID_source', 'msclusterID_target', 'annotation',
-															'mzError', 'rtError'])
+		                        dtype={'msclusterID_source': np.int64, 'msclusterID_target': np.int64},
+		                        low_memory=False, usecols= ['msclusterID_source', 'msclusterID_target', 'annotation',
+		                                                    'mzError', 'rtError'])
 		# remove self loops, only map the not isolated nodes - selfloops will be added at the end
 		job_ivamn = job_ivamn.loc[(job_ivamn.msclusterID_source != job_ivamn.msclusterID_target), :]
+		# check for invalid annotations
+		if job_ivamn.annotation.isna().any() or (job_ivamn.annotation == "").any():
+			sys.exit("ERROR integrating the IVAMN of job code "+job_code+
+			         ". Something is wrong with its IVAMN, there is a total of " +
+			         str(job_ivamn.annotation.isna().sum() + (job_ivamn.annotation == "").sum()) +
+			         " invalid or empty annotations in it. Please report to the dev team.")
 		#
 		if i < metadata_join.shape[0]:
 			# if this is not the final integration step
@@ -188,7 +190,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 			if noise_cutoff:
 				# filter ivamn net edges between valid msclusterIDs
 				job_ivamn = job_ivamn.loc[(job_ivamn.msclusterID_source.isin(valid_msclusterIDs) &
-										   job_ivamn.msclusterID_target.isin(valid_msclusterIDs)), :]
+				                           job_ivamn.msclusterID_target.isin(valid_msclusterIDs)), :]
 			if job_ivamn.shape[0] > 0:
 				# if any valid edges left, proceed for the mapping
 				job_ivamn["msclusterID_source_new"] = job_ivamn_att.loc[
@@ -198,7 +200,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 				job_ivamn = job_ivamn.drop(["msclusterID_source", "msclusterID_target"], 1)
 				# rename the new msclusterID columns
 				job_ivamn.rename(columns={'msclusterID_source_new': 'msclusterID_source',
-										  'msclusterID_target_new': 'msclusterID_target'}, inplace=True)
+				                          'msclusterID_target_new': 'msclusterID_target'}, inplace=True)
 		duplicated_joined_edges = np.where(job_ivamn.loc[:,["msclusterID_source","msclusterID_target"]].duplicated(keep=False))[0]
 		first_duplicated_edges = duplicated_joined_edges[
 			np.where(~job_ivamn.loc[duplicated_joined_edges, ["msclusterID_source","msclusterID_target"]].duplicated(keep="first"))[0]]
@@ -206,11 +208,12 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 		# the mzError was computed based on the type of the annotation, so here the mean is used to ease the computations
 		# the rtError will be recomputed at the end
 		for dup_edge in first_duplicated_edges:
+			#print("duplicated edge: ", dup_edge)
 			dup_source_id, dup_target_id = job_ivamn.loc[dup_edge, ["msclusterID_source", "msclusterID_target"]]
 			select_duplicated_rows = ((job_ivamn.loc[duplicated_joined_edges, "msclusterID_source"] == dup_source_id) &
-				(job_ivamn.loc[duplicated_joined_edges, "msclusterID_target"] == dup_target_id))
+			                          (job_ivamn.loc[duplicated_joined_edges, "msclusterID_target"] == dup_target_id))
 			unique_annotations_concat = ';'.join(job_ivamn.loc[duplicated_joined_edges,:].loc[select_duplicated_rows,
-				"annotation"].unique())
+			"annotation"].unique())
 			mzError_mean = job_ivamn.loc[duplicated_joined_edges, :].loc[select_duplicated_rows, "mzError"].mean()
 			job_ivamn.loc[dup_edge, "annotation"] = unique_annotations_concat
 			job_ivamn.loc[dup_edge, "mzError"] = np.round(mzError_mean, 3)
@@ -221,17 +224,17 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 		job_ivamn = job_ivamn[['msclusterID_source','msclusterID_target', 'annotation', 'mzError', 'rtError']]
 		if i == 0:
 			job_ivamn.to_csv(Path(output_path, "molecular_networking", output_name+"_ivamn_tmp.selfloop"),
-							 index=False)
+			                 index=False)
 		else:
 			if i < metadata_join.shape[0]:
 				# append to temporary ivamn
 				job_ivamn.to_csv(Path(output_path, "molecular_networking", output_name + "_ivamn_tmp.selfloop"),
-								 index=False, mode='a', header=False)
+				                 index=False, mode='a', header=False)
 			else:
 				# if this is the final integration step, overwrite the tmp file
 				job_ivamn.sort_values(by=["msclusterID_source", "msclusterID_target"], inplace=True, ignore_index=True)
 				job_ivamn.to_csv(Path(output_path, "molecular_networking", output_name + "_ivamn_tmp.selfloop"),
-								 index=False)
+				                 index=False)
 		# rm current ivamn
 		del job_ivamn
 		#
@@ -258,46 +261,51 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 		# check if all the joined msclusterIDs are in the clean counts table ids, trought error if not
 		if not job_ivamn_att.msclusterID.isin(clean_counts.msclusterID).all():
 			sys.exit("ERROR. The joined IVAMN attribute table of the original job with code '" + job_code +
-					 "' was not correctly created. There is a final msclusterID that do not appear in the joined clean " +
-					 " quantification table (problematic IDs: " +
-					 ','.join(job_ivamn_att.msclusterID[~job_ivamn_att.msclusterID.isin(clean_counts.msclusterID)]) +
-					 "). Something went wrong when joining the IVAMN att table and reducing redundancies.")
+			         "' was not correctly created. There is a final msclusterID that do not appear in the joined clean " +
+			         " quantification table (problematic IDs: " +
+			         ','.join(job_ivamn_att.msclusterID[~job_ivamn_att.msclusterID.isin(clean_counts.msclusterID)]) +
+			         "). Something went wrong when joining the IVAMN att table and reducing redundancies.")
 		if i == 0:
 			job_ivamn_att.to_csv(Path(output_path, "molecular_networking", output_name + "_ivamn_attributes_tmp.csv"),
-							 index=False)
+			                     index=False)
 		else:
 			if i < metadata_join.shape[0]:
 				# append to temporary ivamn
 				job_ivamn_att.to_csv(Path(output_path, "molecular_networking", output_name + "_ivamn_attributes_tmp.csv"),
-								 index=False, mode='a', header=False)
+				                     index=False, mode='a', header=False)
 			else:
 				# if this is the final integration step, check if the number of rows match the nrows of the clean counts
 				# # and overwrite the tmp file
 				if job_ivamn_att.shape[0] != clean_counts.shape[0]:
 					sys.exit("ERROR. The joined IVAMN attribute table of the joined job with name '" + job_code +
-							 "' was not correctly created. The final number of rows of its joined IVAMN attribute table ("+
-							 str(job_ivamn_att.shape[0])+") " +
-							 "does not match with the number of rows in its clean quantification table (" +
-							 str(clean_counts.shape[0]) +
-							 "). Something went wrong when integrating the joined IVAMNs att table and reducing redundancies.")
+					         "' was not correctly created. The final number of rows of its joined IVAMN attribute table ("+
+					         str(job_ivamn_att.shape[0])+") " +
+					         "does not match with the number of rows in its clean quantification table (" +
+					         str(clean_counts.shape[0]) +
+					         "). Something went wrong when integrating the joined IVAMNs att table and reducing redundancies.")
 				# order the att table by the msclusterID column
 				job_ivamn_att.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 				# order columns and store the att table
 				job_ivamn_att = job_ivamn_att[['msclusterID', 'multicharge_ion', 'isotope_ion',
-											   'protonated_representative']]
+				                               'protonated_representative']]
 				job_ivamn_att.rename(columns={'protonated_representative': 'protonated_representative_old'}, inplace=True)
 				job_ivamn_att.to_csv(job_ivamn_att_path, index=False)
 		# rm current ivamn att table
 		del job_ivamn_att
-
+	
 	# At the end, after the joined ivamn integration
 	# recompute rtError and retrieve the new cosine for each available edge
 	# also recompute number of common samples
 	# Finally, call the protonated representative selection, which also retrieves the componentIndex
 	job_ivamn = pd.read_csv(job_ivamn_path,
-							dtype={'msclusterID_source': np.int64, 'msclusterID_target': np.int64},
-							low_memory=False, usecols=['msclusterID_source', 'msclusterID_target', 'annotation',
-													   'mzError', 'rtError'])
+	                        dtype={'msclusterID_source': np.int64, 'msclusterID_target': np.int64},
+	                        low_memory=False, usecols=['msclusterID_source', 'msclusterID_target', 'annotation',
+	                                                   'mzError', 'rtError'])
+	# check for invalid annotations
+	if job_ivamn.annotation.isna().any() or (job_ivamn.annotation == "").any():
+		sys.exit("ERROR integrating the IVAMNs. Something went wrong in the process, there is a total of "+
+		         str(job_ivamn.annotation.isna().sum()+(job_ivamn.annotation == "").sum())+
+		         " invalid or empty annotations. Please report to the dev team.")
 	# sort the job_ivamn by the minimum msclusterID - create column msclusterID_min - then use this to retrieve
 	# the cosine from the pairwise table by chunks,
 	# when the current min > max_chunk, read the next chunk of the pairwise table
@@ -309,8 +317,8 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 	clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
 	# filter columns 'msclusterID', 'joinedJobsID', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax' and the ones that ends with _area
 	clean_counts = clean_counts[np.concatenate((np.asarray(['msclusterID', 'joinedJobsID', 'mzConsensus',
-															'rtMean', 'rtMin', 'rtMax']),
-								clean_counts.columns[clean_counts.columns.str.endswith("_area")].values))]
+	                                                        'rtMean', 'rtMin', 'rtMax']),
+	                                            clean_counts.columns[clean_counts.columns.str.endswith("_area")].values))]
 	clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	# get the count_columns indexes to perform and xand operation for each edge
 	counts_cols_idx = np.where(clean_counts.columns.str.endswith("_area"))[0]
@@ -339,42 +347,47 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 		job_ivamn.loc[i, "rtError"] = rtError_i
 		# recompute the numCommonSamples
 		num_common_samples = (clean_counts.iloc[np.concatenate((source_i,target_i)),
-												counts_cols_idx] > 0).all(0).sum()
+		counts_cols_idx] > 0).all(0).sum()
 		job_ivamn.loc[i, "numCommonSamples"] = np.int64(num_common_samples)
 		# retrieve the new cosine
 		if source_i >= current_chunk+max_chunk:
 			# read next chunk of the sim_table
 			sim_table = pd.read_csv(sim_table_path, low_memory=False, nrows=max_chunk, skiprows=source_i[0]+1,
-									header=None, names=sim_table.columns)
+			                        header=None, names=sim_table.columns)
 			current_chunk = source_i[0]
 		pairwise_sim = sim_table.iloc[source_i-current_chunk, target_i + 1].values[0]
 		job_ivamn.loc[i, "cosine"] = np.round(pairwise_sim, 3)
 		# round mzError again
 		job_ivamn.loc[i, "mzError"] = np.round(job_ivamn.loc[i, "mzError"], 3)
-
+	
 	print("    - Removing fragment's and neutral losses annotations with similarity < 0.2 and isotope annotations with similarity < 0.75")
 	# remove annotations of fragments with similarity values < 0.2
 	# remove annotations of isotopes with similarity values < 0.75, of neutral losses with similarity values < 0.2
 	# defined the regex to select the not valid annotations using groups: ()
 	job_ivamn = remove_not_valid_ann_from_ivamn(job_ivamn, not_valid_ann="(fragment)", cosine_cutoff=0.2)
 	job_ivamn = remove_not_valid_ann_from_ivamn(job_ivamn, not_valid_ann="(\\[M\\+H-NH3]\\+)|(\\[M\\+H-H2O]\\+)|(\\[M\\+H-NH3-H2O]\\+)",
-												cosine_cutoff=0.2)
+	                                            cosine_cutoff=0.2)
 	job_ivamn = remove_not_valid_ann_from_ivamn(job_ivamn,
-												not_valid_ann="(\\[M\\+1\\]\\+)",
-												cosine_cutoff=0.75)
+	                                            not_valid_ann="(\\[M\\+1\\]\\+)",
+	                                            cosine_cutoff=0.75)
+	# check for invalid annotations
+	if job_ivamn.annotation.isna().any() or (job_ivamn.annotation == "").any():
+		sys.exit("ERROR removing invalid annotations from the joined IVAMN. Something went wrong in the process, there is a total of "+
+		         str(job_ivamn.annotation.isna().sum()+(job_ivamn.annotation == "").sum())+
+		         " invalid or empty annotations. Please report to the dev team.")
 	# order columns of the final ivamn
 	job_ivamn = job_ivamn[['msclusterID_source', 'msclusterID_target', 'cosine', 'annotation', 'mzError',
-						   'rtError', 'numCommonSamples']]
+	                       'rtError', 'numCommonSamples']]
 	# sort by msclusterID_source and msclusterID_target and save final IVAMN
 	job_ivamn.sort_values(by=["msclusterID_source", "msclusterID_target"], inplace=True, ignore_index=True)
 	print("    - Adding selfloop edges to the IVAMN")
 	# add to the IVAMN the selfloop edges connecting the isolated nodes
 	isolated_nodes = clean_counts.msclusterID[~(clean_counts.msclusterID.isin(job_ivamn.msclusterID_source) |
-												clean_counts.msclusterID.isin(job_ivamn.msclusterID_target))].values
+	                                            clean_counts.msclusterID.isin(job_ivamn.msclusterID_target))].values
 	job_ivamn = pd.concat([job_ivamn, pd.DataFrame({'msclusterID_source': isolated_nodes,
-												   'msclusterID_target': isolated_nodes, 'cosine': 1.00,
-												   'annotation': '', 'mzError': 0.0, 'rtError': 0.0,
-												   'numCommonSamples': ''})])
+	                                                'msclusterID_target': isolated_nodes, 'cosine': 1.00,
+	                                                'annotation': '', 'mzError': 0.0, 'rtError': 0.0,
+	                                                'numCommonSamples': ''})])
 	# save the final IVAMN
 	job_ivamn_path = Path(output_path, "molecular_networking", output_name + "_ivamn.selfloop")
 	job_ivamn.to_csv(job_ivamn_path, index=False)
@@ -382,23 +395,23 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 	# join the multicharge_ion and isotope_ion cols from tmp ivamn att to the clean table
 	# store in the clean table _ann
 	job_ivamn_att = pd.read_csv(job_ivamn_att_path, low_memory=False,
-								usecols=['msclusterID', 'multicharge_ion', 'isotope_ion', 'protonated_representative_old'])
+	                            usecols=['msclusterID', 'multicharge_ion', 'isotope_ion', 'protonated_representative_old'])
 	job_ivamn_att.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
 	clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	clean_counts[['multicharge_ion', 'isotope_ion']] = job_ivamn_att[['multicharge_ion', 'isotope_ion']]
 	clean_counts.to_csv(Path(output_path, "count_tables", "clean", output_name + "_peak_area_clean_ann.csv"),
-						index=False)
+	                    index=False)
 	# also merge in the spectra count
 	clean_counts_path = Path(output_path, "count_tables", "clean", output_name + "_spectra_clean.csv")
 	if not clean_counts_path.exists() or not clean_counts_path.is_file():
 		sys.exit("ERROR. The clean quantification of the current joining jobs in terms of number of spectra '" +
-				 clean_counts_path.as_posix() + "' does not exists.")
+		         clean_counts_path.as_posix() + "' does not exists.")
 	clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
 	clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	clean_counts[['multicharge_ion', 'isotope_ion']] = job_ivamn_att[['multicharge_ion', 'isotope_ion']]
 	clean_counts.to_csv(Path(output_path, "count_tables", "clean", output_name + "_spectra_clean_ann.csv"),
-						index=False)
+	                    index=False)
 	# set the path to the peak area count again
 	clean_counts_path = Path(output_path, "count_tables", "clean", output_name + "_peak_area_clean_ann.csv")
 	print("\n* Assigning the putative [M+H]+ spectra representatives in the joined IVAMN and merging with original [M+H]+ that have in-degree > 0 *")
@@ -410,14 +423,14 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 	# this removes old protonated that were selfloops in the original jobs and now are in a cluster with at least
 	# # one in_degree, otherwise it is not be added
 	job_ivamn_att_final = pd.read_csv(Path(output_path, "molecular_networking", output_name + "_ivamn_attributes.csv"),
-									  low_memory=False)
+	                                  low_memory=False)
 	job_ivamn_att_final.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	job_ivamn_att_final.loc[((job_ivamn_att.protonated_representative_old == 1) & (job_ivamn_att_final.in_degree > 0)),
-							"protonated_representative"] = 1
+	"protonated_representative"] = 1
 	print("Number of protonated_representative nodes (with isolated nodes) after merge with old protonated",
-		  "that have in-degree > 0:", str(sum(job_ivamn_att_final.protonated_representative == 1)))
+	      "that have in-degree > 0:", str(sum(job_ivamn_att_final.protonated_representative == 1)))
 	job_ivamn_att_final.to_csv(Path(output_path, "molecular_networking", output_name + "_ivamn_attributes.csv"),
-							   index=False)
+	                           index=False)
 	del job_ivamn_att
 	# update the protonated_representative in the clean tables
 	clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
@@ -451,16 +464,17 @@ if __name__ == "__main__":
 				noise_cutoff = bool(float(sys.argv[5]))
 	else:
 		print("Error: One argument must be supplied to join the original IVAMNs of jobs being joined inside the join_jobs command flow:\n",
-		" 1 - output_path: Path to the final output directory of the job currently being joined, ",
-		"named with the output_name inside the 'outs' directory;\n",
-		" 2 - metadata_join_path: Path to the metadata_join table of the current joining job - it must contain the jobs being joined;\n",
-		" 3 - jobs_data_path: Path to the directory containing the results of the jobs being joined - "
-		"it must contain the results of the jobs being joined in a folder named with the jobname as defined in the metadata_join;\n",
-		" 4 - max_chunk: Maximum number of rows of the pairwise similarity table to be loaded and ",
-		"processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000);\n",
-		" 5 - noise_cutoff: A boolean True or False indicating if the noise cutoff was enable in cleaning, if yes ",
-		"remove spectra from original samples with a basePeakInt < minimum basePeakInt in the final joined clean table; ",
-		"otherwise do nothing (default: False).\n")
+		      " 1 - output_path: Path to the final output directory of the job currently being joined, ",
+		      "named with the output_name inside the 'outs' directory;\n",
+		      " 2 - metadata_join_path: Path to the metadata_join table of the current joining job - it must contain the jobs being joined;\n",
+		      " 3 - jobs_data_path: Path to the directory containing the results of the jobs being joined - "
+		      "it must contain the results of the jobs being joined in a folder named with the jobname as defined in the metadata_join;\n",
+		      " 4 - max_chunk: Maximum number of rows of the pairwise similarity table to be loaded and ",
+		      "processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000);\n",
+		      " 5 - noise_cutoff: A boolean True or False indicating if the noise cutoff was enable in cleaning, if yes ",
+		      "remove spectra from original samples with a basePeakInt < minimum basePeakInt in the final joined clean table; ",
+		      "otherwise do nothing (default: False).\n")
 		sys.exit(1)
 	# call join jobs IVAMNs
 	join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk, noise_cutoff)
+	
