@@ -39,3 +39,8 @@ src/spectra_viewer/src/untitled0.py
 # spec2vec model tables #
 #########################
 src/spec2vec_models/*.npy
+
+# GNPS Library Search data #
+############################
+src/GNPS_LibrarySearch/data/libraries/*
+src/GNPS_LibrarySearch/data/library_summary.tsv
