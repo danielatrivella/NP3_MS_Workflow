@@ -45,4 +45,4 @@ src/spec2vec_models/*.npy
 src/GNPS_LibrarySearch/data/libraries/*
 src/GNPS_LibrarySearch/data/library_summary.tsv
 src/GNPS2_LibrarySearch_Workflow/gnps_new/__pycache__/*
-src/GNPS2_LibrarySearch_Workflow/__pycache__/*
+src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/__pycache__/*
