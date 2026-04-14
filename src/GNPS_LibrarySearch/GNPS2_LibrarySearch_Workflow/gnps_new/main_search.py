@@ -1,3 +1,7 @@
+# @Crisfbazz
+# adapted from https://github.com/Wang-Bioinformatics-Lab/NextflowModules/blob/a31f16297ea5d7f996edb70897179b2e190b9778/bin/library_search/gnps_new/main_search.py
+# added result_folder arg, overwriting previous result instead of appending and renamed the output file
+
 import argparse
 import os
 
@@ -13,7 +17,7 @@ BUFFER_SIZE = 2000  # number of matched rows to write at once
 QRY_BATCH_SIZE = 2500  # number of query spectra to process at once
 
 
-def main_batch(gnps_lib_mgf, qry_file,
+def main_batch(gnps_lib_mgf, qry_file, result_folder="search_results",
                algorithm='cos', analog_search=False, analog_max_shift=200.,
                pm_tol=0.02, frag_tol=0.05,
                min_score=0.7, min_matched_peak=3,
@@ -44,15 +48,16 @@ def main_batch(gnps_lib_mgf, qry_file,
 
     # Some preprocessing
     qry_file_name = os.path.basename(qry_file)
-    lib_mgf_basename = os.path.splitext(os.path.basename(gnps_lib_mgf))[0]
-    qry_basename = os.path.basename(qry_file).replace("/", "_").replace(".", "_").replace(" ", "_")
-    out_path = os.path.join('search_results', f"{qry_basename}_{lib_mgf_basename}_matches.tsv")
+    lib_mgf_basename = os.path.basename(gnps_lib_mgf)
+    #qry_basename = os.path.basename(qry_file).replace("/", "_").replace(".", "_").replace(" ", "_")
+    out_path = os.path.join(result_folder, f"{qry_file_name}_{lib_mgf_basename}_gnps_new.tsv")
 
     min_matched_peak = max(min_matched_peak, 1)
 
     # Initialize list for batch writing
     matches_buffer = []
-
+    header_out = True
+    
     bad_ref_indices = set()  # ref spectra that has peaks less than min_matched_peak
     for batch_specs, batch_prec_mzs in batch_process_queries(qry_file, min_matched_peak, qry_batch_size):
 
@@ -147,22 +152,23 @@ def main_batch(gnps_lib_mgf, qry_file,
 
                 # Write buffer to file
                 if len(matches_buffer) >= BUFFER_SIZE:
-                    write_batch_results(matches_buffer, out_path)
+                    write_batch_results(matches_buffer, out_path, header_out)
                     matches_buffer = []
+                    header_out = False
 
     # Write remaining matches
     if matches_buffer:
-        write_batch_results(matches_buffer, out_path)
+        write_batch_results(matches_buffer, out_path, header_out)
 
     return
 
 
-def write_batch_results(match_rows, out_path):
+def write_batch_results(match_rows, out_path, header_first_write):
     """Write batch results to file"""
 
     df = pd.DataFrame(match_rows)
     # If file doesn't exist, write with header
-    if not os.path.exists(out_path):
+    if not os.path.exists(out_path) or header_first_write:
         df.to_csv(out_path, sep='\t', index=False)
     else:
         # Append without header
@@ -173,6 +179,7 @@ if __name__ == "__main__":
     argparse = argparse.ArgumentParser(description='Search GNPS library')
     argparse.add_argument('--gnps_lib_mgf', type=str, help='GNPS library MGF file path')
     argparse.add_argument('--qry_file', type=str, help='Query file path')
+    argparse.add_argument('--result_folder', help='output folder for results', type=str, default='search_results/')
     argparse.add_argument('--algorithm', type=str, default='cos',
                           help='Algorithm: cos, rev_cos, entropy, rev_entropy')
     argparse.add_argument('--analog_search', type=str, default="0", help='Turn on analog search, 0 or 1')
@@ -190,7 +197,7 @@ if __name__ == "__main__":
 
     args = argparse.parse_args()
 
-    main_batch(args.gnps_lib_mgf, args.qry_file,
+    main_batch(args.gnps_lib_mgf, args.qry_file, result_folder= args.result_folder,
                algorithm=args.algorithm, analog_search=True if args.analog_search == "1" else False,
                analog_max_shift=args.analog_max_shift,
                pm_tol=args.pm_tol, frag_tol=args.frag_tol,
@@ -200,8 +207,3 @@ if __name__ == "__main__":
                # max_peak_num=args.max_peak_num,
                unmatched_penalty_factor=args.unmatched_penalty_factor)
 
-    ############################
-    # main_batch('/Users/shipei/Documents/projects/reverse_search/play/test/test_ref.mgf',
-    #            '/Users/shipei/Documents/projects/reverse_search/play/test/test_qry.mgf',
-    #            algorithm='cos',
-    #            min_score=0.4, min_matched_peak=1)
