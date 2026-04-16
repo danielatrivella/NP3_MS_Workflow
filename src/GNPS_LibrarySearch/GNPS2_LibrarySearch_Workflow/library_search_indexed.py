@@ -121,7 +121,7 @@ def cross_library_compute_all_pairs(spectra, library, shared_entries,
 
     return results
 
-def convert_to_legacy_format(matches, spectra, library, topk, min_cosine, min_matched_peaks, qry_file_name):
+def convert_to_legacy_format(matches, spectra, library, topk, min_cosine, min_matched_peaks, qry_file_name, library_file_name):
     """Convert matches to a DataFrame in legacy library search format.
     
     Args:
@@ -135,6 +135,7 @@ def convert_to_legacy_format(matches, spectra, library, topk, min_cosine, min_ma
     Returns:
         pd.DataFrame: DataFrame containing matches in legacy format.
     """
+    lib_mgf_basename = os.path.basename(library_file_name)
     matches_buffer = []
     for query_idx, candidates in matches:
         q_spec = spectra[query_idx]
@@ -150,6 +151,7 @@ def convert_to_legacy_format(matches, spectra, library, topk, min_cosine, min_ma
             matches_buffer.append({
             '#Scan#': q_spec["SCANS"],
             'SpectrumFile': qry_file_name,
+            'LibraryName': lib_mgf_basename,
             'Charge': library[cand[0]].get('CHARGE', 1),
             'MQScore': round(cand[1], 6),
             # 'p-value': qry_spec.rt,  # RT value # this needs to be fixed in the future
@@ -460,7 +462,7 @@ def main():
 
     # print("Cross-library computation took:", time.time() - start_time, "seconds")
     # start_time = time.time()
-    results_df = convert_to_legacy_format(matches, spectrum_mgf, library_mgf, args.topk, args.library_min_cosine, args.library_min_matched_peaks, args.spectrum_file)
+    results_df = convert_to_legacy_format(matches, spectrum_mgf, library_mgf, args.topk, args.library_min_cosine, args.library_min_matched_peaks, args.spectrum_file, args.library_file)
     results_df = results_df.sort_values(by='MQScore', ascending=False)
     
     results_df["SpectrumFile"] = results_df["SpectrumFile"].apply(lambda x: os.path.basename(x))

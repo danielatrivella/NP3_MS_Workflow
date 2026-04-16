@@ -24,8 +24,6 @@ def search_files(spectrum_file, library_file, temp_folder, tempresults_folder, p
     filter_precursor=1,
     filter_window=1):
     
-
-
     parameter_filename = os.path.join(temp_folder, str(uuid.uuid4()) + ".params")
     output_parameter_file = open(parameter_filename, "w")
 
@@ -141,9 +139,11 @@ def main():
         filter_precursor=args.filter_precursor,
         filter_window=args.filter_window
     )
-
+    
+    lib_mgf_basename = os.path.basename(args.library_file)
+    
     # Reformatting the output
-    output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + os.path.basename(args.library_file) + ".tsv")
+    output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + lib_mgf_basename + ".tsv")
     
     if not os.path.exists(os.path.join(tempresults_folder, "tempresults")):
         sys.exit("ERROR: The GNPS library search results file does not exist. Something went wrong. Aborting.")
@@ -151,7 +151,7 @@ def main():
 
     # Fixing Results, by basename
     results_df["SpectrumFile"] = results_df["SpectrumFile"].apply(lambda x: os.path.basename(x))
-
+    results_df["LibraryName"] = lib_mgf_basename
     # We should rewrite if we have the full path
     if args.full_relative_query_path is not None:
         results_df["SpectrumFile"] = args.full_relative_query_path
@@ -163,13 +163,9 @@ def main():
         safe_filename = str(uuid.uuid3(uuid.NAMESPACE_DNS, safe_filename)) + ":" + safe_filename[-20:]
 
         # fixing the output filename
-        output_results_file = os.path.join(args.result_folder, safe_filename + "_" + os.path.basename(args.library_file) + ".tsv")
+        output_results_file = os.path.join(args.result_folder, safe_filename + "_" + lib_mgf_basename + ".tsv")
 
     results_df.to_csv(output_results_file, sep="\t", index=False)
-
-
-
-
 
 
 if __name__ == "__main__":
