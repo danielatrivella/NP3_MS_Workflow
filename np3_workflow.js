@@ -1439,6 +1439,90 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     return resExec;
 }
 
+// run GNPS Library Search using one of 3 different search tools: gnps (original), gnps_indexed and gnps_new
+// Search only in the default LC library, the ALL_GNPS_NO_PROPOGATED (do not need to merge different libraries search result at this point)
+// Also includes the summary of the library matches (available in the NP3 repo) and
+// filter the top 1 result using the GNPS algorithms adapted for the NP3 pipeline - all offline
+// the similarity algorithm used is the cos in all search tools, which is the default. Not using the Filter Only To Compounds with Structures - set to no.
+// original code from https://github.com/Wang-Bioinformatics-Lab/LibrarySearch_Workflow/blob/master/nf_workflow.nf
+function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, output_name, search_tool,
+                               mz_tol, fragment_tol,
+                               search_min_cosine, search_min_matched_peaks, topk, filter_precursor, filter_window,
+                               analog_search, analog_max_shift, threads) {
+    const start_gnps_libsearch = process.hrtime.bigint();
+    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** \n'
+    console.log(gnpslibsearch_start);
+    if (search_tool === "gnps") {
+        // there is no max shift for analog search and no parallelization
+        var resExec = shell.exec(python3()+' '+__dirname+
+            '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/library_search_wrapper.py ' +
+            input_mgf_file+' '+library_mgf_path+' '+result_folder+
+            ' ./'+__dirname+'/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/convert'+
+            ' ./'+__dirname+'/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow//main_execmodule.allcandidates '+
+            '--pm_tolerance '+mz_tol+' --fragment_tolerance '+fragment_tol+' --library_min_cosine '+search_min_cosine+
+            ' --library_min_matched_peaks '+search_min_matched_peaks+' --topk '+topk+
+            ' --filter_precursor '+filter_precursor+' --filter_window '+filter_window+
+            ' --analog_search '+analog_search, {async: false, silent: false});
+    } else if (search_tool === "gnps_indexed") {
+        // there is no max shift for analog search
+        var resExec = shell.exec(python3()+' '+__dirname+
+            '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/library_search_indexed.py ' +
+            input_mgf_file+' '+library_mgf_path+' '+result_folder+
+            '--pm_tolerance '+mz_tol+' --fragment_tolerance '+fragment_tol+' --library_min_cosine '+search_min_cosine+
+            ' --library_min_matched_peaks '+search_min_matched_peaks+' --topk '+topk+' --threads '+threads+
+            ' --filter_precursor '+filter_precursor+' --filter_window '+filter_window+
+            ' --analog_search '+analog_search, {async: false, silent: false});
+    } else if (search_tool === "gnps_new") {
+        // algorithm is the default cos and peak_transformation is the default to sqrt; there is no filter precursor or window
+        var resExec = shell.exec(python3()+' '+__dirname+
+            '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/gnps_new/main_search.py --qry_file ' +
+            input_mgf_file+' --gnps_lib_mgf '+library_mgf_path+' --result_folder '+result_folder+
+            '--pm_tol '+mz_tol+' --frag_tol '+fragment_tol+' --min_score '+search_min_cosine+
+            ' --min_matched_peaks '+search_min_matched_peaks+
+            ' --analog_search '+analog_search+' --analog_max_shift '+analog_max_shift, {async: false, silent: false});
+    } else {
+        console.log('\nERROR. The GNPS search tool informed ('+search_tool+
+            ') is not valid. Please use one of: gnps, gnps_indexed or gnps_new.');
+        return 0;
+    }
+
+    if (resExec.code) {
+        console.log('\nERROR in the search tool. GNPS Library Search aborted.');
+        return resExec.code;
+    } else {
+        console.log('DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n");
+        // continue to include the library annotations
+        // library merge process is disabled for now, only used when multiple library files are informed: python GNPS2_LibrarySearch_Workflow/tsv_merger.py
+        // include library summary info getGNPS_library_annotations using only offline info from enriched summary
+        // the filtertostructures is not used, all identifications are kept independent of having a structure determined
+        var search_result_file = result_folder+"/"+basename(input_mgf_file)+'_'+basename(library_mgf_path)+search_tool.replace("gnps","")+".tsv"
+        var output_file_name = result_folder+"/"+output_name+search_tool.replace("gnps","")+".tsv"
+        resExec = shell.exec(python3()+' '+__dirname+
+            '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/getGNPS_library_annotations.py ' +search_result_file+
+            ' '+output_file_name+' --librarysummary '+__dirname+
+            '/src/GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv --topk '+topk, {async: false, silent: false});
+
+        if (resExec.code) {
+            console.log('\nERROR in the library annotation aggregation. GNPS Library Search aborted.');
+            return resExec.code;
+        } else {
+            console.log('DONE!\n');
+            // finally, select the top 1 result
+            resExec = shell.exec(python3()+' '+__dirname+
+                '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/filter_top1_hits.py ' +output_file_name+
+                ' '+output_file_name.replace(".tsv", "_top1.tsv"), {async: false, silent: false});
+            if (resExec.code) {
+                console.log('\nERROR in the library filter top1 hits. GNPS Library Search aborted.');
+                return resExec.code;
+            } else {
+                console.log('DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n");
+            }
+        }
+    }
+    // TODO next the search result can be joined to the clean table
+    return resExec.code;
+}
+
 // create the final report folder and files inside the output_path, it should be the final result folder inside the outs
 // dir named with the output_name
 function callFinalReportsCreation(metadata_path, count_area_table, output_path, output_name, mz_tol, verbose)
