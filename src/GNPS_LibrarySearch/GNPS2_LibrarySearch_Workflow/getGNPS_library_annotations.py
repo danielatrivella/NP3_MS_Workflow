@@ -268,16 +268,14 @@ def enrich_output(input_filename, output_filename,
             pass
 
     if not os.path.exists(input_filename):
-        open(output_filename, "w").close()
-        print("Input file does not exist")
-        exit(0)
+        #open(output_filename, "w").close()
+        sys.exit("ERROR: Input file does not exist: "+input_filename)
     
     try:
         input_results_df = pd.read_csv(input_filename, sep="\t")
     except:
-        open(output_filename, "w").close()
-        print("Input file is not a valid tsv file")
-        exit(0)
+        #open(output_filename, "w").close()
+        sys.exit("ERROR: Input file is not a valid tsv file")
 
 
     # Here we will try to filter to topk
@@ -369,7 +367,7 @@ def main():
 
     # Trying to load the library summary
     try:
-        library_summary_df = pd.read_csv(args.librarysummary, sep="\t")
+        library_summary_df = pd.read_csv(args.librarysummary, sep="\t", low_memory=False)
     except:
         library_summary_df = None
 
