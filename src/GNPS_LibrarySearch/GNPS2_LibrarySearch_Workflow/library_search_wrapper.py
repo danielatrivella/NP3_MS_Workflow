@@ -143,7 +143,7 @@ def main():
     lib_mgf_basename = os.path.basename(args.library_file)
     
     # Reformatting the output
-    output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + lib_mgf_basename + ".tsv")
+    output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + lib_mgf_basename + "_gnps.tsv")
     
     if not os.path.exists(os.path.join(tempresults_folder, "tempresults")):
         sys.exit("ERROR: The GNPS library search results file does not exist. Something went wrong. Aborting.")
@@ -163,7 +163,7 @@ def main():
         safe_filename = str(uuid.uuid3(uuid.NAMESPACE_DNS, safe_filename)) + ":" + safe_filename[-20:]
 
         # fixing the output filename
-        output_results_file = os.path.join(args.result_folder, safe_filename + "_" + lib_mgf_basename + ".tsv")
+        output_results_file = os.path.join(args.result_folder, safe_filename + "_" + lib_mgf_basename + "_gnps.tsv")
 
     results_df.to_csv(output_results_file, sep="\t", index=False)
 
