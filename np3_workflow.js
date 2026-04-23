@@ -1466,8 +1466,8 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
         var resExec = shell.exec(python3()+' '+__dirname+
             '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/library_search_wrapper.py ' +
             input_mgf_file+' '+library_mgf_path+' '+result_folder+
-            ' ./'+__dirname+'/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/convert'+
-            ' ./'+__dirname+'/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow//main_execmodule.allcandidates '+
+            ' '+__dirname+'/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/convert'+
+            ' '+__dirname+'/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/main_execmodule.allcandidates '+
             '--pm_tolerance '+mz_tol+' --fragment_tolerance '+fragment_tol+' --library_min_cosine '+search_min_cosine+
             ' --library_min_matched_peaks '+search_min_matched_peaks+' --topk '+topk+
             ' --filter_precursor '+filter_precursor+' --filter_window '+filter_window+
@@ -1477,7 +1477,7 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
         var resExec = shell.exec(python3()+' '+__dirname+
             '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/library_search_indexed.py ' +
             input_mgf_file+' '+library_mgf_path+' '+result_folder+
-            '--pm_tolerance '+mz_tol+' --fragment_tolerance '+fragment_tol+' --library_min_cosine '+search_min_cosine+
+            ' --pm_tolerance '+mz_tol+' --fragment_tolerance '+fragment_tol+' --library_min_cosine '+search_min_cosine+
             ' --library_min_matched_peaks '+search_min_matched_peaks+' --topk '+topk+' --threads '+threads+
             ' --filter_precursor '+filter_precursor+' --filter_window '+filter_window+
             ' --analog_search '+analog_search, {async: false, silent: false});
@@ -1486,13 +1486,13 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
         var resExec = shell.exec(python3()+' '+__dirname+
             '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/gnps_new/main_search.py --qry_file ' +
             input_mgf_file+' --gnps_lib_mgf '+library_mgf_path+' --result_folder '+result_folder+
-            '--pm_tol '+mz_tol+' --frag_tol '+fragment_tol+' --min_score '+search_min_cosine+
-            ' --min_matched_peaks '+search_min_matched_peaks+
+            ' --pm_tol '+mz_tol+' --frag_tol '+fragment_tol+' --min_score '+search_min_cosine+
+            ' --min_matched_peak '+search_min_matched_peaks+
             ' --analog_search '+analog_search+' --analog_max_shift '+analog_max_shift, {async: false, silent: false});
     } else {
         console.log('\nERROR. The GNPS search tool informed ('+search_tool+
             ') is not valid. Please use one of: gnps, gnps_indexed or gnps_new.');
-        return 0;
+        return 1;
     }
 
     if (resExec.code) {
@@ -1504,8 +1504,9 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
         // library merge process is disabled for now, only used when multiple library files are informed: python GNPS2_LibrarySearch_Workflow/tsv_merger.py
         // include library summary info getGNPS_library_annotations using only offline info from enriched summary
         // the filtertostructures is not used, all identifications are kept independent of having a structure determined
-        var search_result_file = result_folder+"/"+basename(input_mgf_file)+'_'+basename(library_mgf_path)+search_tool.replace("gnps","")+".tsv"
-        var output_file_name = result_folder+"/"+output_name+search_tool.replace("gnps","")+".tsv"
+        console.log("   * Retrieving the GNPS library annotations of the identified spectra *")
+        var search_result_file = result_folder+"/"+basename(input_mgf_file)+'_'+basename(library_mgf_path)+"_"+search_tool+".tsv"
+        var output_file_name = result_folder+"/"+output_name+"_library_search_"+search_tool+".tsv"
         resExec = shell.exec(python3()+' '+__dirname+
             '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/getGNPS_library_annotations.py ' +search_result_file+
             ' '+output_file_name+' --librarysummary '+__dirname+
@@ -1516,6 +1517,7 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
             return resExec.code;
         } else {
             console.log('DONE!\n');
+            console.log("   * Filtering the top 1 result from the library search *")
             // finally, select the top 1 result
             resExec = shell.exec(python3()+' '+__dirname+
                 '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/filter_top1_hits.py ' +output_file_name+
@@ -3908,8 +3910,8 @@ program
             options.search_min_matched_peaks, options.top_k, filter_precursor, filter_window,
             analog_search, options.analog_max_shift, options.parallel_threads)
 
-        if (!resExec && !(options.count_file_path === "")) {
-            var output_file_name = result_folder + "/" + output_name + options.search_tool.replace("gnps", "") + "_top1.tsv"
+        if (!resExec && (options.count_file_path !== "")) {
+            var output_file_name = result_folder+"/"+output_name+"_library_search_"+options.search_tool+"_top1.tsv"
             callJoinGNPS("", output_file_name,
                 options.count_file_path, options.output_path, options.metadata);
         }
@@ -3928,8 +3930,6 @@ program
         console.log('');
         console.log('  $ node np3_workflow.js gnps_library_search TODO');
     });
-
-
 
 
 program
