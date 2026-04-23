@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+# @Cris
+# Adapted from https://github.com/Wang-Bioinformatics-Lab/NextflowModules/blob/a31f16297ea5d7f996edb70897179b2e190b9778/bin/library_search/getGNPS_library_annotations.py
+# implemented parallel routine to retrieve the identifications info from the GNPS library and adapted to be used to enrich a library summary complete table
+# this is intended to be executed by the adm to add the online info to the local library summary
+
 import sys
 import os
 import pandas as pd
@@ -108,12 +113,14 @@ def _enrich_gnps_annotation(output_result_dict):
     output_result_dict["tags"] = (tag_string)
     return output_result_dict
 
+def isNA(x):
+    return x!=x
 
-# Here we will enrich the smiles
+# Here we will enrich the smiles, the Smiles column should not be na
 # changed columns: "Smiles","INCHI","molecular_formula","InChIKey","InChIKey-Planar","superclass","class","subclass","npclassifier_superclass","npclassifier_class","npclassifier_pathway","library_usi"
 def _enrich_annotations(output_result_dict):
     # Calculating inchi
-    if len(output_result_dict["Smiles"]) > 5 and len(output_result_dict["INCHI"]) < 5:
+    if isNA(output_result_dict["INCHI"]) or (len(output_result_dict["Smiles"]) > 5 and len(output_result_dict["INCHI"]) < 5):
         try:
             inchi_url = "https://structure.gnps2.org/inchi?smiles={}".format(urllib.parse.quote_plus(output_result_dict["Smiles"]), 
                                 urllib.parse.quote_plus(output_result_dict["INCHI"]))
@@ -122,23 +129,28 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["INCHI"] = r.text
         except HTTPError as http_err:
             print(f"Smiles enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
-            output_result_dict["INCHI"] = "N/A"
+            output_result_dict["INCHI"] = pd.NA
         except:
-            output_result_dict["INCHI"] = "N/A"
+            output_result_dict["INCHI"] = pd.NA
     
-    # Calculating smiles
-    if len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) > 5:
+    # Calculating smiles, in case of error keep the smiles and remove the INCHI
+    if ~isNA(output_result_dict["INCHI"]) and (len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) > 5):
         try:
             smiles_url = "https://structure.gnps2.org/smiles?inchi={}".format(urllib.parse.quote_plus(output_result_dict["INCHI"]), 
                                 urllib.parse.quote_plus(output_result_dict["Smiles"]))
             r = requests.get(smiles_url)
             r.raise_for_status()
-            output_result_dict["Smiles"] = r.text
+            if r.text is not None and r.text != "" and r.text == r.text:
+                output_result_dict["Smiles"] = r.text
+            else:
+                output_result_dict["INCHI"] = pd.NA
         except HTTPError as http_err:
             print(f"Inchi enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
-            output_result_dict["Smiles"] = "N/A"
+            #output_result_dict["Smiles"] = pd.NA
+            output_result_dict["INCHI"] = pd.NA
         except:
-            output_result_dict["Smiles"] = "N/A"
+            #output_result_dict["Smiles"] = pd.NA
+            output_result_dict["INCHI"] = pd.NA
 
     # Calculating molecular formula
     if len(output_result_dict["Smiles"]) > 5:
@@ -149,16 +161,16 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["molecular_formula"] = r.text
         except HTTPError as http_err:
             print(f"Molecular formula enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
-            output_result_dict["molecular_formula"] = "N/A"
+            output_result_dict["molecular_formula"] = pd.NA
         except:
-            output_result_dict["molecular_formula"] = "N/A"
+            output_result_dict["molecular_formula"] = pd.NA
     else:
-        output_result_dict["molecular_formula"] = "N/A"
+        output_result_dict["molecular_formula"] = pd.NA
         
     # Calculating inchi key
-    if len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) < 5:
-        output_result_dict["InChIKey"] = "N/A"
-        output_result_dict["InChIKey-Planar"] = "N/A"
+    if isNA(output_result_dict["INCHI"]) or (len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) < 5):
+        output_result_dict["InChIKey"] = pd.NA
+        output_result_dict["InChIKey-Planar"] = pd.NA
     else:
         try:
             inchikey_url = "https://structure.gnps2.org/inchikey?smiles={}&inchi={}".format(urllib.parse.quote_plus(output_result_dict["Smiles"]), 
@@ -169,14 +181,14 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["InChIKey-Planar"] = r.text.split("-")[0]
         except HTTPError as http_err:
             print(f"InChIKey enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
-            output_result_dict["InChIKey"] = "N/A"
-            output_result_dict["InChIKey-Planar"] = "N/A"
+            output_result_dict["InChIKey"] = pd.NA
+            output_result_dict["InChIKey-Planar"] = pd.NA
         except:
-            output_result_dict["InChIKey"] = "N/A"
-            output_result_dict["InChIKey-Planar"] = "N/A"
+            output_result_dict["InChIKey"] = pd.NA
+            output_result_dict["InChIKey-Planar"] = pd.NA
 
     # Getting Classyfire "superclass","class","subclass"
-    if len(output_result_dict["InChIKey"]) > 5:
+    if ~isNA(output_result_dict["InChIKey"]) and len(output_result_dict["InChIKey"]) > 5:
         try:
             classyfire_url = "https://classyfire.gnps2.org/entities/{}.json".format(output_result_dict["InChIKey"])
             r = requests.get(classyfire_url, timeout=0.5)
@@ -187,20 +199,20 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["subclass"] = classification_json["subclass"]["name"]
         except HTTPError as http_err:
             print(f"Classyfire enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
-            output_result_dict["superclass"] = "N/A"
-            output_result_dict["class"] = "N/A"
-            output_result_dict["subclass"] = "N/A"
+            output_result_dict["superclass"] = pd.NA
+            output_result_dict["class"] = pd.NA
+            output_result_dict["subclass"] = pd.NA
         except:
-            output_result_dict["superclass"] = "N/A"
-            output_result_dict["class"] = "N/A"
-            output_result_dict["subclass"] = "N/A"
+            output_result_dict["superclass"] = pd.NA
+            output_result_dict["class"] = pd.NA
+            output_result_dict["subclass"] = pd.NA
     else:
-        output_result_dict["superclass"] = "N/A"
-        output_result_dict["class"] = "N/A"
-        output_result_dict["subclass"] = "N/A"
+        output_result_dict["superclass"] = pd.NA
+        output_result_dict["class"] = pd.NA
+        output_result_dict["subclass"] = pd.NA
 
     # Getting NP Classifier "npclassifier_superclass","npclassifier_class","npclassifier_pathway"
-    if len(output_result_dict["Smiles"]) > 5:
+    if ~isNA(output_result_dict["Smiles"]) and len(output_result_dict["Smiles"]) > 5:
         try:
             npclassifier_url = "https://npclassifier.gnps2.org/classify?smiles={}".format(output_result_dict["Smiles"])
             r = requests.get(npclassifier_url, timeout=10)
@@ -212,17 +224,17 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["npclassifier_pathway"] = "|".join(classification_json["pathway_results"])
         except HTTPError as http_err:
             print(f"NPclassifier enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
-            output_result_dict["npclassifier_superclass"] = "N/A"
-            output_result_dict["npclassifier_class"] = "N/A"
-            output_result_dict["npclassifier_pathway"] = "N/A"
+            output_result_dict["npclassifier_superclass"] = pd.NA
+            output_result_dict["npclassifier_class"] = pd.NA
+            output_result_dict["npclassifier_pathway"] = pd.NA
         except:
-            output_result_dict["npclassifier_superclass"] = "N/A"
-            output_result_dict["npclassifier_class"] = "N/A"
-            output_result_dict["npclassifier_pathway"] = "N/A"
+            output_result_dict["npclassifier_superclass"] = pd.NA
+            output_result_dict["npclassifier_class"] = pd.NA
+            output_result_dict["npclassifier_pathway"] = pd.NA
     else:
-        output_result_dict["npclassifier_superclass"] = "N/A"
-        output_result_dict["npclassifier_class"] = "N/A"
-        output_result_dict["npclassifier_pathway"] = "N/A"
+        output_result_dict["npclassifier_superclass"] = pd.NA
+        output_result_dict["npclassifier_class"] = pd.NA
+        output_result_dict["npclassifier_pathway"] = pd.NA
 
     # Adding a USI
     try:
@@ -255,65 +267,46 @@ def enrich_smiles_annotation_parallel(result_dict):
     return output_result_dict
 
 def enrich_summary_parallell_threads(library_summary_df, output_filename, num_threads=(os.cpu_count() or 1) * 5):
+    # clean the lib summary df, remove not used cols
+    library_summary_df = library_summary_df.loc[:, ~library_summary_df.columns.isin(['collision_energy', 'instrument',
+                                                                                     'ion_source', 'adduct'])]
     #with threading.Pool(processes=num_threads) as pool:
     #    output_list = pool.map(enrich_annotation_parallel, tqdm(library_summary_df.to_dict(orient="records")))
     # enrich parallell with tqdm interface for multiple threads
+    n = library_summary_df.shape[0]
+    print("Number of spectra in library: {}".format(n))
     output_list = thread_map(enrich_spectrum_annotation_parallel,
                          library_summary_df.to_dict(orient="records"),
                          max_workers=num_threads)
     output_spectrum_annotation = pd.DataFrame(output_list)
+    output_spectrum_annotation.to_csv(output_filename.replace(".tsv", "_spectrum_anns.tsv"), sep="\t", index=False)
+    m = output_spectrum_annotation.shape[0]
+    print("Number of spectra with annotations: {}".format(m))
     # clear some memory space
     del output_list,library_summary_df
     # get list of unique smiles to retrieve their info
     output_unique_smiles_dict = output_spectrum_annotation.loc[(~output_spectrum_annotation.Smiles.duplicated() &
-                                                                ~output_spectrum_annotation.Smiles.isna()),:].to_dict(orient="records")
+                                                                ~output_spectrum_annotation.Smiles.isna() &
+                                                                (output_spectrum_annotation.Smiles != "")),:].to_dict(orient="records")
     output_list = thread_map(enrich_smiles_annotation_parallel,
                              output_unique_smiles_dict,
                              max_workers=min(12,num_threads))
     output_smiles_annotation = pd.DataFrame(output_list)
     del output_unique_smiles_dict,output_list
+    output_smiles_annotation.to_csv(output_filename.replace(".tsv", "_smiles_anns.tsv"), sep="\t", index=False)
     # merge the unique smiles annotation to the spectrum annotation
     smiles_ann_cols = ["Smiles", "INCHI", "molecular_formula", "InChIKey", "InChIKey-Planar", "superclass", "class",
                        "subclass", "npclassifier_superclass", "npclassifier_class", "npclassifier_pathway", "library_usi"]
     output_spectrum_annotation = output_spectrum_annotation.loc[:, ~output_spectrum_annotation.columns.isin(smiles_ann_cols[1:])].merge(
         output_smiles_annotation.loc[:, (smiles_ann_cols)], on="Smiles", how='left')
-    # TODO Check if final size matches
+    m = output_spectrum_annotation.shape[0]
+    print("Number of spectra with annotations and Smiles info: {}".format(m))
+    # Check if final size matches
+    if m != n:
+        print("WARNING: Number of spectra in the original library does not match with the final annotated table.")
     # output full annotations
     output_spectrum_annotation.to_csv(output_filename, sep="\t", index=False)
 
-'''
-from tqdm import tqdm
-def enrich_summary(library_summary_df, output_filename,
-                    filtertostructures=False):
-    
-    output_list = []
-    for result_obj in tqdm(library_summary_df.to_dict(orient="records")):
-        #print(result_obj)
-        # Reading existing data
-        spectrum_id = result_obj["spectrum_id"]
-
-        # Here we will start to write the output dictionary
-        output_result_dict = result_obj
-
-        # Here we are going to do the enrichment
-        if "CCMSLIB" in str(spectrum_id):
-            output_result_dict = _enrich_gnps_annotation(output_result_dict)
-     
-        # Doing further enrichment
-        try:
-            output_result_dict = _enrich_annotations(output_result_dict)
-        except:
-            pass
-
-        output_list.append(output_result_dict)
-
-    # Here we can filter based upon the structure criteria
-    if filtertostructures is True:
-        # Filtering only if the length of Smiles and InchI are small
-        output_list = [x for x in output_list if len(x["Smiles"]) > 5 or len(x["INCHI"]) > 5]
-
-    pd.DataFrame(output_list).to_csv(output_filename, sep="\t", index=False)
-'''
 
 def main():
     parser = argparse.ArgumentParser(description='Pulling down GNPS identifications from online API data - needs internet connection. Enrich a library summary table with online info.')
@@ -335,8 +328,6 @@ def main():
         library_summary_df = None
         sys.exit("The library summary could not be loaded, it is not a valid tsv file.")
     
-    #enrich_summary(library_summary_df, output_result_filename,
-    #                filtertostructures=(args.filtertostructures == "1"))
     enrich_summary_parallell_threads(library_summary_df, output_result_filename, num_threads=args.numthreads)
 
 if __name__ == "__main__":
