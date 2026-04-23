@@ -484,9 +484,9 @@ def main():
         safe_filename = str(uuid.uuid3(uuid.NAMESPACE_DNS, safe_filename)) + ":" + safe_filename[-20:]
 
         # fixing the output filename
-        output_results_file = os.path.join(args.result_folder, safe_filename + "_" + os.path.basename(args.library_file) + ".tsv")
+        output_results_file = os.path.join(args.result_folder, safe_filename + "_" + os.path.basename(args.library_file) + "_gnps_indexed.tsv")
     else:
-        output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + os.path.basename(args.library_file) + "_indexed.tsv")
+        output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + os.path.basename(args.library_file) + "_gnps_indexed.tsv")
     
     results_df.to_csv(output_results_file, sep="\t", index=False)
     
