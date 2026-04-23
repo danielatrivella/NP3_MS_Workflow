@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# @Cris
+# Adapted from https://github.com/Wang-Bioinformatics-Lab/NextflowModules/blob/a31f16297ea5d7f996edb70897179b2e190b9778/bin/library_search/getGNPS_library_annotations.py
+# This is intended to be executed only offline and to retrieve all the data from an enriched library summary
+
 import sys
 import os
 import pandas as pd
