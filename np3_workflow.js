@@ -151,6 +151,15 @@ function convertSimilarityFunc(simFunc) {
     return(simFunc);
 }
 
+function convertGNPSSearchTool(tool) {
+    if (!["gnps_indexed", "gnps", "gnps_new"].includes(tool)) {
+        console.error('\nERROR. Wrong GNPS search tool parameter value. The GNPS search tool must be one of {"gnps_indexed", "gnps", "gnps_new"}. Execution aborted.');
+        process.exit(1);
+    }
+
+    return(tool);
+}
+
 function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_factor, logOutputPath, verbose)
 {
     const start_plot = process.hrtime.bigint();
@@ -1442,7 +1451,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
 // run GNPS Library Search using one of 3 different search tools: gnps (original), gnps_indexed and gnps_new
 // Search only in the default LC library, the ALL_GNPS_NO_PROPOGATED (do not need to merge different libraries search result at this point)
 // Also includes the summary of the library matches (available in the NP3 repo) and
-// filter the top 1 result using the GNPS algorithms adapted for the NP3 pipeline - all offline
+// filter the top 1 result - all steps using the GNPS algorithms adapted for the NP3 pipeline - all offline
 // the similarity algorithm used is the cos in all search tools, which is the default. Not using the Filter Only To Compounds with Structures - set to no.
 // original code from https://github.com/Wang-Bioinformatics-Lab/LibrarySearch_Workflow/blob/master/nf_workflow.nf
 function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, output_name, search_tool,
@@ -1519,7 +1528,7 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
             }
         }
     }
-    // TODO next the search result can be joined to the clean table
+    // next the search result can be joined to the clean table
     return resExec.code;
 }
 
@@ -1599,20 +1608,7 @@ program
         var countMinorError = 0;
         var call_cwd = process.cwd();
 
-        console.log('* Merging the UNPD csv file *\n');
-
-        shell.cd(__dirname+'/src/ISDB_tremolo_NP3/Data/dbs');
-        resExec = shell.exec('sh merge_db.sh', {async:false});
-        if (resExec.code) {
-            console.log(resExec.stdout);
-            console.log(resExec.stderr);
-            console.log('\nERROR. Could not merge the UNPD csv file. Tremolo identification is disabled.');
-            countMinorError = countMinorError + 1;
-        } else {
-            console.log("DONE!\n");
-        }
-        shell.cd(call_cwd);
-
+        // check installations dependencies
         if (isWindows())
         {
             if (!shell.which('python')) {
@@ -1649,6 +1645,65 @@ program
                 console.log("DONE!\n");
             }
         }
+
+         // check if R is installed
+        if (!shell.which('R')) {
+            console.log('ERROR. R not found, please ensure R is available and try again.');
+            process.exit(1);
+        } else {
+            // install R packages
+            console.log('* Checking R packages requirements *\n');
+
+            resExec = shell.exec('Rscript '+__dirname+'/src/R_requirements.R', {async:false, silent: false});
+            if (resExec.code) {
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                console.log('\nERROR. Could not install all R packages, retry with user privileges or do it manually.');
+
+                countError = countError + 1;
+            } else {
+                console.log("DONE!\n");
+            }
+        }
+
+        // checking the java installation, force reinstall if necessary
+        console.log('* Checking the Java openjdk installation *\n');
+
+        resExec = shell.exec('java -version', {async:false, silent: true});
+        if (resExec.code) {
+            console.log("\nFailed. Java interpreter doesn't work properly. Trying to reinstall openjdk from conda-forge.");
+            resExec = shell.exec('conda install -c conda-forge openjdk=11.0.8 --force-reinstall -y', {async:false, silent: true});
+            if (resExec.code) {
+                console.log("\nERROR. Could not reinstall the Java insterpreter with openjdk library. " +
+                    "The descriptors calculation using RCDK will be missing. " +
+                    "This will affect the PCA plotting for gnps_result command.");
+                countMinorError = countMinorError + 1;
+            } else {
+                console.log("DONE!\n");
+            }
+        } else {
+            console.log("DONE!\n");
+        }
+
+        if (!shell.which('make')) {
+            shell.echo('Make not found, please ensure make is available and try again.');
+            shell.exit(1);
+        }
+
+        // data setup
+        console.log('* Merging the UNPD csv file *\n');
+
+        shell.cd(__dirname+'/src/ISDB_tremolo_NP3/Data/dbs');
+        resExec = shell.exec('sh merge_db.sh', {async:false});
+        if (resExec.code) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+            console.log('\nERROR. Could not merge the UNPD csv file. Tremolo identification is disabled.');
+            countMinorError = countMinorError + 1;
+        } else {
+            console.log("DONE!\n");
+        }
+        shell.cd(call_cwd);
 
         // Download the large spec2vec model files - vectors and trainables
         var file_spec2vec = __dirname+'/src/spec2vec_models/spec2vec_UniqueInchikeys_ratio05_filtered_iter_50.model.wv.vectors.npy'
@@ -1709,49 +1764,18 @@ program
             countMinorError = countMinorError + 1;
         }
 
-        // check if R is installed
-        if (!shell.which('R')) {
-            console.log('ERROR. R not found, please ensure R is available and try again.');
-            process.exit(1);
-        } else {
-            // install R packages
-            console.log('* Checking R packages requirements *\n');
-
-            resExec = shell.exec('Rscript '+__dirname+'/src/R_requirements.R', {async:false, silent: false});
-            if (resExec.code) {
-                console.log(resExec.stdout);
-                console.log(resExec.stderr);
-                console.log('\nERROR. Could not install all R packages, retry with user privileges or do it manually.');
-
-                countError = countError + 1;
-            } else {
-                console.log("DONE!\n");
-            }
-        }
-
-        // checking the java installation, force reinstall if necessary
-        console.log('* Checking the Java openjdk installation *\n');
-
-        resExec = shell.exec('java -version', {async:false, silent: true});
+        console.log('* Retrieving the GNPS2 library search default LC library data - ALL_GNPS_NO_PROPAGATED *\n');
+        shell.cd(__dirname+'/src/GNPS_LibrarySearch/data/');
+        resExec = shell.exec('sh ./library_search_setup_get_data.sh');
         if (resExec.code) {
-            console.log("\nFailed. Java interpreter doesn't work properly. Trying to reinstall openjdk from conda-forge.");
-            resExec = shell.exec('conda install -c conda-forge openjdk=11.0.8 --force-reinstall -y', {async:false, silent: true});
-            if (resExec.code) {
-                console.log("\nERROR. Could not reinstall the Java insterpreter with openjdk library. " +
-                    "The descriptors calculation using RCDK will be missing. " +
-                    "This will affect the PCA plotting for gnps_result command.");
-                countMinorError = countMinorError + 1;
-            } else {
-                console.log("DONE!\n");
-            }
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+            console.log('\nERROR. Could not execute the GNPS library search setup for offline identification.\n');
+            countMinorError = countMinorError + 1;
         } else {
             console.log("DONE!\n");
         }
-
-        if (!shell.which('make')) {
-            shell.echo('Make not found, please ensure make is available and try again.');
-            shell.exit(1);
-        }
+        shell.cd(call_cwd);
 
         // Compile dotproduct with pybind
         console.log('* Compiling the NP3 shifted cosine function for the spectra viewer web app *\n');
@@ -3807,6 +3831,105 @@ program
             '--result_specnets_DB_path "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" ' +
             '--ms_count_path "/path/to/the/output/NP3/count_files/count.csv" --output_path "/path/to/the/output/NP3/outs/output_name/"');
     });
+
+program
+    .command('gnps_library_search')
+    .description('This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against '+
+                 'the ALL_GNPS_NO_PROPOGATED library (default for LC data).\n\n')
+    .option('-g, --input_mgf_file <path>','path to the input MGF file with ' +
+        'the MS/MS spectra data to be searched and identified')
+    .option('-o, --output_path <path>', 'if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. ' +
+        'It should contain the identifications folder, if not it will be created and the results will be stored in it. ' +
+        'If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).')
+    .option('-z, --mz_tolerance [x]', 'the tolerance for parent mass search in Daltons, depending on the instrument and data accuracy.',
+        parseFloat, 0.025)
+    .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. ' +
+        'Used for comparing the mass of the peaks during the search.', parseFloat, 0.05)
+    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching. ' +
+        'One of "gnps_indexed", "gnps" or "gnps_new". ' +
+        'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
+        convertGNPSSearchTool, "gnps_indexed")
+    .option('-s, --search_min_cosine [x]', 'the similarity threshold that determines if two spectra are a match. ' +
+        'The minimum cosine for a search match. Values greater or equal than 0.7 will retrieve more accurate results.', parseFloat, 0.7)
+    .option('-p --search_min_matched_peaks [x]', 'The minimum number of common peaks that the searched spectra must ' +
+        'share with a library spectrum to be considered as a match.', parseDecimal, 6)
+    .option('-k, --top_k [x]', 'defines the maximal number of results returned by the GNPS Search Tool for each input spectrum. ' +
+        'Additionally, the top 1 result is always computed at the end of the search.', parseDecimal, 5)
+    .option('-r, --trim_mz [x]', 'Filter precursor peaks and peaks around precursor m/z.' +
+        'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
+        'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
+        'before the search comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
+        'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
+        'spectra acquired on qTOFs.', toupper, "TRUE")
+    .option('-w, --window_filter [x]', 'If "TRUE", for each peak, it will check a window around that peak, ' +
+        'if it is not one of the top peaks in terms of intensity in that window, it will be filtered out. ' +
+        'This will speed up the search and reduce the effect of noise.', toupper, "TRUE")
+    .option('--analog_search [x]', 'If "TRUE", also search for analog spectra. ' +
+        'This allows as a match the spectra with different precursor mass and similar fragmentation pattern. ',
+        toupper, "FALSE")
+    .option('--analog_max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search when ' +
+        'analog_search is enabled. Only used when search_tool is "gnps_new".', parseFloat, 400)
+    .option('-c, --count_file_path [path]', 'Path to any of the count tables (peak_area or spectra) resulting ' +
+        'from the NP3 clustering or clean steps (which matches with the input_mgf_file used). If the peak_area is informed and the spectra table file '+
+        'exists in the same path (or the opposite), it will merge the GNPS results to both files. ' +
+        'Ignore if this is not a NP3 result (leave as empty string).', "")
+    .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
+        'distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).\n', "")
+    .option('-l, --parallel_threads [x]', 'the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. ' +
+        'For parallelization set x >= 1', parseDecimal, 2)
+    .action(function(options) {
+        if (typeof options.input_mgf_file === 'undefined') {
+            console.error('\nMissing the mandatory \'input_mgf_file\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.output_path === 'undefined') {
+            console.error('\nMissing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+
+        const start_gnpssearch = process.hrtime.bigint();
+        // run workflow
+        console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
+        const result_folder = options.output_path + osSep() + "identifications"
+        var output_name = basename(options.output_path)
+        var filter_window = "0"
+        if (options.window_filter === "TRUE")
+            filter_window = "1"
+        var filter_precursor = "0"
+        if (options.trim_mz === "TRUE")
+            filter_precursor = "1"
+        var analog_search = "0"
+        if (options.analog_search === "TRUE")
+            analog_search = "1"
+
+        var resExec = callGNPSLibrarySearch(library_mgf_path, options.input_mgf_file, result_folder, output_name,
+            options.search_tool, options.mz_tolerance, options.fragment_tolerance, options.search_min_cosine,
+            options.search_min_matched_peaks, options.top_k, filter_precursor, filter_window,
+            analog_search, options.analog_max_shift, options.parallel_threads)
+
+        if (!resExec && !(options.count_file_path === "")) {
+            var output_file_name = result_folder + "/" + output_name + options.search_tool.replace("gnps", "") + "_top1.tsv"
+            callJoinGNPS("", output_file_name,
+                options.count_file_path, options.output_path, options.metadata);
+        }
+
+        console.log("GNPS_library_search "+printTimeElapsed_bigint(start_gnpssearch, process.hrtime.bigint()));
+    })
+    .on('--help', function() {
+        console.log('');
+        console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
+        console.log('');
+        console.log('RESULTS:');
+        console.log('');
+        console.log('TODO.');
+        console.log('');
+        console.log('EXAMPLES:');
+        console.log('');
+        console.log('  $ node np3_workflow.js gnps_library_search TODO');
+    });
+
+
 
 
 program
