@@ -3,8 +3,8 @@
 # commit 4284470
 # Following the flow present in the GNPS2 LibrarySearch_Workflow
 # adapted here to be executed offline and using only the ALL_GNPS_NO_PROPOGATED.mgf library file
-cd src/GNPS_LibrarySearch/data
 
+#cd src/GNPS_LibrarySearch/data # expected location
 # mkdir if not created yet
 mkdir -p libraries && cd libraries
 # download the library file if a new version is present in the server
