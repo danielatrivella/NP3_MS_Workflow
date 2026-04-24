@@ -1,12 +1,11 @@
 #!/usr/bin/python
 
+# @ Cris
+# code adapted from https://github.com/Wang-Bioinformatics-Lab/NextflowModules/blob/a31f16297ea5d7f996edb70897179b2e190b9778/bin/library_search/filter_top1_hits.py
+# code adapted to select the top1 hits using not only the MQScore, but also the LibraryQualityString and the number of shared peaks
 
-import sys
-import getopt
-import os
 import pandas as pd
 import argparse
-import glob
 
 
 def main():
@@ -19,8 +18,14 @@ def main():
 
     results_df = pd.read_csv(args.input_full_results_file, sep="\t")
 
-    # grouping by filename and scan, sorting by MQScore
-    results_df = results_df.sort_values(by=['MQScore'], ascending=[False])
+    # change the LibraryQualityString column to a categorical column to allow correct sorting
+    # where Challenge is Unknown Identity, open to community to help annotate - it is still an experimental data, which is better than insilico
+    LibraryQualityString_order = ['Insilico', 'Challenge', 'Bronze', 'Silver', 'Gold']
+    results_df['LibraryQualityString'] = pd.Categorical(results_df['LibraryQualityString'],
+                                                        categories=LibraryQualityString_order, ordered=True)
+    
+    # grouping by filename and scan, sorting by MQScore, SharedPeaks and LibraryQualityString
+    results_df = results_df.sort_values(by=['MQScore', 'SharedPeaks', 'LibraryQualityString'], ascending=[False, False, False])
 
     # getting the top1 hits
     top1_df = results_df.groupby(['SpectrumFile', '#Scan#']).head(1)
