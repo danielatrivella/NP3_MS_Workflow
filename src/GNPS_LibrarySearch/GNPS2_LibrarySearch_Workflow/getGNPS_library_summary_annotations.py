@@ -18,7 +18,6 @@ import urllib.parse
 from functools import lru_cache 
 
 from tqdm.contrib.concurrent import thread_map
-#import tqdm.contrib.concurrent.thread_map as thread_map
 #import multiprocessing.dummy as threading
 
 from requests.exceptions import HTTPError
@@ -138,7 +137,7 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["INCHI"] = pd.NA
     
     # Calculating smiles, in case of error keep the smiles and remove the INCHI
-    if ~isNA(output_result_dict["INCHI"]) and (len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) > 5):
+    if not isNA(output_result_dict["INCHI"]) and (len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) > 5):
         try:
             smiles_url = "https://structure.gnps2.org/smiles?inchi={}".format(urllib.parse.quote_plus(output_result_dict["INCHI"]), 
                                 urllib.parse.quote_plus(output_result_dict["Smiles"]))
@@ -192,7 +191,7 @@ def _enrich_annotations(output_result_dict):
             output_result_dict["InChIKey-Planar"] = pd.NA
 
     # Getting Classyfire "superclass","class","subclass"
-    if ~isNA(output_result_dict["InChIKey"]) and len(output_result_dict["InChIKey"]) > 5:
+    if not isNA(output_result_dict["InChIKey"]) and len(output_result_dict["InChIKey"]) > 5:
         try:
             classyfire_url = "https://classyfire.gnps2.org/entities/{}.json".format(output_result_dict["InChIKey"])
             r = requests.get(classyfire_url, timeout=0.5)
@@ -216,7 +215,7 @@ def _enrich_annotations(output_result_dict):
         output_result_dict["subclass"] = pd.NA
 
     # Getting NP Classifier "npclassifier_superclass","npclassifier_class","npclassifier_pathway"
-    if ~isNA(output_result_dict["Smiles"]) and len(output_result_dict["Smiles"]) > 5:
+    if not isNA(output_result_dict["Smiles"]) and len(output_result_dict["Smiles"]) > 5:
         try:
             npclassifier_url = "https://npclassifier.gnps2.org/classify?smiles={}".format(output_result_dict["Smiles"])
             r = requests.get(npclassifier_url, timeout=10)
