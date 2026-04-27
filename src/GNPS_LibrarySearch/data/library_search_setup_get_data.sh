@@ -5,10 +5,13 @@
 # adapted here to be executed offline and using only the ALL_GNPS_NO_PROPOGATED.mgf library file
 
 #cd src/GNPS_LibrarySearch/data # expected location
+# untar the library summary with enriched annotations - library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv
+echo "Unzipping the library summary enriched annotations with online informations."; 
+tar -xvf library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv.tar.gz
+
 # mkdir if not created yet
 mkdir -p libraries && cd libraries
 # download the library file if a new version is present in the server
-#wget -N https://external.gnps2.org/gnpslibrary/GNPS-LIBRARY.mgf
 LIBRARY_FILE=ALL_GNPS_NO_PROPOGATED_SPLITS.mgf.tar.gz
 if [ -f "$LIBRARY_FILE" ]; then
     t1=$(stat -c %y $LIBRARY_FILE)
@@ -34,13 +37,19 @@ if wget -N https://external.gnps2.org/gnpslibrary/ALL_GNPS_NO_PROPOGATED_SPLITS.
         # execute a join between the library summary and the library summary enriched with annotations (hardcoded)
         #python GNPS2_LibrarySearch_Workflow/library_summary_merge_annotations.py data/library_summary_GNPS-LIBRARY.tsv data/library_summary_GNPS-LIBRARY_annotations.tsv data/library_summary_GNPS-LIBRARY_enriched.tsv
         python GNPS2_LibrarySearch_Workflow/library_summary_merge_annotations.py data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_enriched.tsv      
+        cd data # return to the data folder, original location
     else
-        echo "The ALL_GNPS_NO_PROPOGATED library is already present in its latest version."; fi
+        echo "The ALL_GNPS_NO_PROPOGATED library is already present in its latest version."; 
+        cd .. # return to the data folder, original location
     fi   
 else
     echo "Download Failed for ALL_GNPS_NO_PROPOGATED library =("
     echo "Check if there is enough space in your disk, at least 7Gb are necessary for downloading and joining the splitted parts. At the end, 3Gb will be used to store the full library."
+    cd .. # return to the data folder, original location
 fi
+
+# remove the extracted file
+rm library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv
 
 #wget https://external.gnps2.org/gnpslibrary/GNPS-SELLECKCHEM-FDA-PART1.mgf
 #cd ../ && mkdir spectra && cd spectra
