@@ -272,7 +272,7 @@ def enrich_output(input_filename, output_filename,
         sys.exit("ERROR: Input file does not exist: "+input_filename)
     
     try:
-        input_results_df = pd.read_csv(input_filename, sep="\t")
+        input_results_df = pd.read_csv(input_filename, sep="\t", low_memory=False)
     except:
         #open(output_filename, "w").close()
         sys.exit("ERROR: Input file is not a valid tsv file")
