@@ -4,15 +4,23 @@
 
 - - - - 
 
-# Current Version 1.2.2
+# Current Version 1.3.2
 
 - NEW features:
-  - (1.2.2) The command **join_jobs** was updated with integrative clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions. Also, the SAMPLE_CODE from the samples metadata among different original jobs are now allowed to contain duplicated values, which are automatically resolved and the original codes and last used codes are stored in new separated columns (see documentation). Additionally, now only the results from the joining jobs are needed, the results from all original jobs do not need to be kept for consecutive executions.
-  - (1.2.1) The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
-  - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job. Concatenate different jobs without the need of running them all together again. It uses the clean results from the provided NP³ jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations. The *join_jobs* can be used to join the results from multiple original jobs and also from previous joined jobs with a new original or joined job.
-      - The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
 
- 
+  - (1.3.2) Bug fix in the **join_jobs** command in Step 7 when integrating the IVAMNs from the original jobs. Some invalid annotations of the joined IVAMN were being kept with an empty string in the annotation type, leading to errors in the following steps or further joins.
+  - (1.3.1) The command **gnps_result** had its behaviour modified to only accept identifications from the clean MGF to join to the clean table (which also works for the join_jobs results). The older behavior could lead to wrong joins when using a join\_jobs result. For identifications from GNPS2, only the top 1 result is used. The GNPS identifications result of the test suite were updated.
+    - In the chemical report, the PCA plot for the UNPDxGNPS data now uses the default style and labels naming. In the chemical statistics table, added the number of [M+H]⁺ with beds included, which is equal to the number of nodes of the SSMN protonated.
+  - (1.3.0) A new command called **pca_plot** was implemented to create a PCA using the NP³ reference chemical space (UNPD+DrugBank+Allosteric datasets). The NP³ and other external tables may be used to create a new PCA in the NP³ chemical space.
+      - Now the PCA creation in the final reports procedure removes any blanks or beds before plotting; and also creates a PCA plot with only the putative protonated m/z.
+      - Bug fix in the join_jobs command, Step 7 to join IVAMNs (fixed the removal of invalid connections). 
+      - In the **test** command, added a new output_path parameter to allow running and storing the NP³ test results in a different folder (not in the repository folder).
+  - (1.2.2) The command **join_jobs** was updated with incremental clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions (see documentation).
+      - A final report was implemented and the conda environment was updated with new dependencies. The **setup** command must be executed again for this new version after updating the conda environment. 
+      - The **gnps_result** command have one new mandatory parameter called job_output_path and one new optional parameter equal to the metadata table path. 
+  - (1.2.1) The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
+  - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job.
+
 - - - -
 
 # Tutorial Videos
@@ -25,7 +33,7 @@
 
 # Overview 
 
-The NP³ MS workflow is a software system with a collection of scripts to process and analyse LC-MS/MS data from untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
+The NP³ MS workflow is a software system with a collection of scripts to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
 
 The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), separating isomers, of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions - called protonated representatives) and constructs molecular networks to improve the analysis and visualization of the results.
 
@@ -34,19 +42,23 @@ The NP³ MS workflow consists of ten major steps, where only the first requires 
 ![NP³ MS Workflow Pipeline](docs/img/NP3_MS_workflow_infographic.jpg "NP³ MS Workflow Pipeline") 
 
 
-This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS library identification results to the NP³ MS workflow quantification tables. And a fourth command to unite different results from the NP³ MS Workflow.
+This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS library identification results to the NP³ MS workflow quantification tables. A fourth command to unite different results from the NP³ MS Workflow. And a fifth command to create PCA plots int he NP³ reference chemical space.
 
-The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an integrative clustering approach.
+The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach. At the end of the pipeline processing, final reports are created containing quantification, chemical and molecular networking statistics and plots. The chemical space of the identified result using PCA method is also created using a reference dataset for comparison and reproducibility.
 
 For the complete details of each command see the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
 - - - -
 
-# Installation with Conda and Mamba
+# Installation with Conda or Mamba
+
+#### Sytem requeriments: Packages tzdata, zip and which must be installed.
+
+---
 ##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
 ##  Currently the *windows installation is not working* in all PCs, we recommend users to use Linux instead.
 
-NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
+NP³ MS workflow includes a mamba/conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
 First, download or clone the workflow repository. 
 
@@ -187,7 +199,7 @@ L754_bacs_test
 │  
 ├── outs                                        <- the results from the clustering steps in separated folders, and inside them the results from the other workflow steps as described below 
 │   │    
-│   ├── L754_bacs_test                          <- the final clustering (Step 3) result folder 
+│   ├── L754_bacs_test                          <- the final clustering (Step 3) result folder - final results!
 │   │   │ 
 |   |   ├── clust                               <- the folder with clusters membership files (which SCANS or msclusterID were joined in the final clustering step) (Step3) 
 │   │   │ 
@@ -196,7 +208,15 @@ L754_bacs_test
 │   │   │   ├── clean                           <- the folder with the quantification tables from Steps 5, 7 and 9 
 │   │   │   |  
 │   │   │   └── merge                           <- the folder with the quantification tables from Steps 8 and 9 
-│   │   │ 
+│   │   │
+|   |   ├── final_reports                       <- the folder with the final reports computed at the end of the processing based on the final clean counts and identifications
+│   │   │   |    
+│   │   │   ├── chemical_report                 <- the folder with the chemical statistics and PCA plots (chemical_space_identifications subfolder)
+│   │   │   |    
+│   │   │   ├── molecular_networking_report     <- the folder with the molecular networks statistics
+│   │   │   |  
+│   │   │   └── quantification_report           <- the folder with the quantification statistics
+│   │   │
 |   |   ├── identifications                     <- the folder with the complete list of identifications from UNPD returned by tremolo              
 │   │   │ 
 |   |   ├── mgf                                 <- the folder with the MGF files from the clustering Step 3 (named L754_bacs_test_all.mgf), containing the complete list of consensus spectra, and from the clean Step 5 (named L754_bacs_test_clean.mgf), containing the final list of clean consensus spectra. 
@@ -319,7 +339,8 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
-- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job using an integrative clustering approach. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their unique reference codes, the names of their used metadata and pre processing directory. It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations in an integrative clustering manner, except for Step 8 which is skipped. 
+- **join_jobs** [options]  :    Command to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job using an incremental clustering approach. Concatenate different jobs without the need of running them all together again. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their unique reference codes, the names of their used metadata and pre processing directory. It uses the clean results from the provided NP3 jobs and execute the main pipeline from Step 3 to 10 with some modifications and adaptations in an incremental clustering manner, except for Step 8 which is skipped.
+The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy)
     - List of mandatory options:
     - *\-n, \-\-output_name* \<name\>     :   the job name. It will be used to name the output directory and the results from joining the jobs. It must have less than 80 characters.
     - *\-m, \-\-metadata_join* \<file\>    :  path to the metadata_join table CSV file defining the jobs to be joined. Different format, see manual.
@@ -332,8 +353,16 @@ Commands:
     - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
     - *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder
     - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the NP³ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
-    - *\-o, \-\-output_path* \<path\>           :   path to the final result output data folder, inside the outs directory of the clustering result folder. It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.
- 
+    - *\-o, \-\-job_output_path* \<path\>           :   path to the job final result output data folder, inside the outs directory of the clustering result folder. It should contain the identifications folder, if not it will be created. The job name (output_name) will be extracted from here.
+
+- **pca_plot** [options] : This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES, then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
+    - List of mandatory options:
+    - *\-t, \-\-table_path* \<path\>       :  The path to a table in CSV format containing SMILES string in a
+                              column. Optionally, it may also contain the types/categories of
+                              each SMILES entry in another column. It must be comma ","
+                              separated.
+    - *\-s, \-\-smiles_column* \<path\>       :  The name of the column in table_path containing the SMILES string.
+
 - **chr** [options] :        This command runs an interactive prompt to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and to save to PNG image files. Depending on the provided parameters this can be a total ion chromatogram (TIC - default), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file.
 
 - **spectra_viewer** [options] : (for Unix OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
@@ -372,9 +401,6 @@ For more details about the samples order and the behavior of the clustering step
 
 ### Cite
 
-[NP3 MS Workflow](https://pubs.acs.org/doi/10.1021/acs.analchem.3c05829): An Open-Source Software System to Empower Natural Product-Based Drug Discovery Using Untargeted Metabolomics
-
-Cristina F. Bazzano, Rafael de Felicio, Luiz Fernando Giolo Alves, Jonas Henrique Costa, Raquel Ortega, Bruna Domingues Vieira, Raquel Peres Morais-Urano, Luciana Costa Furtado, Everton L. F. Ferreira, Juliana R. Gubiani, Roberto G. S. Berlinck, Leticia V. Costa-Lotufo, Guilherme P. Telles, and Daniela B. B. Trivella
-
+[NP3 MS Workflow](https://pubs.acs.org/doi/10.1021/acs.analchem.3c05829): An Open-Source Software System to Empower Natural Product-Based Drug Discovery Using Untargeted Metabolomics. Cristina F. Bazzano, Rafael de Felicio, Luiz Fernando Giolo Alves, Jonas Henrique Costa, Raquel Ortega, Bruna Domingues Vieira, Raquel Peres Morais-Urano, Luciana Costa Furtado, Everton L. F. Ferreira, Juliana R. Gubiani, Roberto G. S. Berlinck, Leticia V. Costa-Lotufo, Guilherme P. Telles, and Daniela B. B. Trivella.
 Analytical Chemistry 2024 96 (19), 7460-7469
 DOI: 10.1021/acs.analchem.3c05829

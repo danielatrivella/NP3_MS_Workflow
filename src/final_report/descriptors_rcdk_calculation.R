@@ -24,7 +24,9 @@ set_reference_descriptors_names_top24 <- c(set_reference_topological_descriptors
                                      set_reference_constitutional_descriptors_names_top24,
                                      set_reference_geometrical_descriptors_names_top24)
 
-
+# change global java options memory - set maximum heap size to 2Gb - allow processing big SMILES
+options(java.parameters = "-Xmx2g")
+# load libraries
 library(rJava)
 suppressPackageStartupMessages(library(rcdk))
 suppressPackageStartupMessages(library(dplyr))
@@ -33,15 +35,24 @@ library(readr)
 # read input
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 2) {
-  stop("Two arguments must be supplied to calculate the RCDK descriptors (topological, geometrical and constitutional) from a list of SMILES (valid only - not NA), the table containing the smiles and the column name:\n",
+  stop("Two arguments must be supplied to calculate the RCDK descriptors (topological, geometrical and constitutional) from a list of SMILES (valid only - not NA), the table containing the smiles and the column name. Optionally, the output path may be informed:\n",
        " 1 - smiles_file: the path to the table in CSV format containing SMILES string in a column;\n",
        " 2 - smiles_col: the name of the column containing the SMILES string;\n",
+       " 3 - output_path: (optional) the output directory to store the table with the descriptors columns concatenated to the smiles_file",
        call.=FALSE)
 } else {
   smiles_file <- file.path(args[[1]])
   smiles_col <- args[[2]]
+  output_path <- ""
+  if (length(args) >= 3) {
+    output_path <- file.path(args[[3]])
+    if (!dir.exists(output_path))
+    {
+    stop("The path to the output directory '", output_path,
+         "' do not exists. Provide a valid path to store the results.")
+    }
+  }
 }
-
 
 ## Extract the rcdk descriptors (topological, geometrical and constitutional) - all descriptors are retrieved by default -
 # of valid SMILES (not NA) present in a table, where *smiles_file* is the path 
@@ -52,7 +63,7 @@ if (length(args) < 2) {
 # if set_reference_descriptors_list is not 'all' it should contain a list with the descriptors
 # resulting column names to be kept, otherwise the set_descriptors_rcdk is used which contains all descriptors column names
 calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_reference_descriptors_names="all",
-                                       set_reference_descriptors_cols_list="all") {
+                                       set_reference_descriptors_cols_list="all", output_path="") {
   # check if smiles_file exists and read it
   smiles_file <- file.path(smiles_file)
   if (!file.exists(smiles_file))
@@ -61,17 +72,18 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
          "Provide a valid path to where the csv file with the list ",
          "of smiles to calculate the RCDK descriptors is located.")
   }
-  data <- suppressMessages(read_csv(file=smiles_file))
+  data <- suppressMessages(read_csv(file=smiles_file,guess_max = 5000))
   # check if the smiles column is present
   if (!(smiles_col %in% names(data))) {
     stop("The provided table '", smiles_file, "' does not contain the smiles ",
          "column named '", smiles_col, 
          "'. Provide a valid name for the column containing the SMILES list.")
   }
-  
-  cat("\n  - Parsing SMILES\n")
-  # select the valid smiles and parse them using rcdk to generate molecules info
+  # select the valid smiles
   valid_smiles <- !is.na(data[[smiles_col]])
+  n <- sum(valid_smiles)
+  cat("\n  - Parsing valid SMILES:",n," entries\n")
+  # parse the valid smiles using rcdk to generate molecules info
   data_SMILES <- data[valid_smiles, smiles_col]
   data_SMILES$smiles_char <- as.character(data_SMILES[[smiles_col]])
   data_SMILES$parsed_smiles <- parse.smiles(data_SMILES$smiles_char)
@@ -102,7 +114,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     topological_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
                                                   topological_desc_names), 
                                         error = function(e) {
-                                          cat(paste(e, "SMILES", i, ":", data_SMILES$smiles_char[i]))
+                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
                                           NULL
                                           })
    if (!is.null(topological_descriptors) && 
@@ -123,7 +135,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     geometrical_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
                                                   geometrical_desc_names), 
                                         error = function(e) {
-                                          cat(paste(e, "SMILES", i, ":", data_SMILES$smiles_char[i]))
+                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
                                           NULL
                                         })
     if (!is.null(geometrical_descriptors) && 
@@ -146,7 +158,7 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
     constitutional_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
                                                      constitutional_desc_names), 
                                         error = function(e) {
-                                          cat(paste(e, "SMILES", i, ":", data_SMILES$smiles_char[i]))
+                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
                                           NULL
                                         })
     if (!is.null(constitutional_descriptors) && 
@@ -167,15 +179,21 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
   }
   data_SMILES$parsed_smiles <- NULL
   data_SMILES <- data_SMILES[,-c(1,2)]
-  cat("  - Done computing", ncol(data_SMILES),"RCDK descriptors for", nrow(data_SMILES),"valid SMILES!\n\n")
+  cat("  - Done computing", ncol(data_SMILES),"RCDK descriptors for", nrow(data_SMILES),"/",n,
+      "(",round(nrow(data_SMILES)/n*100,1),"%) valid SMILES!\n\n")
   
   # add the descriptors result to the original data table
   data[valid_smiles, names(data_SMILES)] <- data_SMILES
   # save the original data table with the descriptors columns
-  write_csv(data, sub(".csv", "_descriptorsCDK.csv", smiles_file))
+  if (output_path == "") {
+    write_csv(data, sub(".csv", "_descriptorsCDK.csv", smiles_file))
+  } else {
+    write_csv(data, file.path(output_path, sub(".csv", "_descriptorsCDK.csv", basename(smiles_file))))
+  }
 }
 
-
 # call rcdk computation
-calculate_rcdk_descriptors(smiles_file = smiles_file, smiles_col = smiles_col, set_reference_descriptors_names_top24,
-                           set_reference_descriptors_bestCos_top24)
+calculate_rcdk_descriptors(smiles_file = smiles_file, smiles_col = smiles_col,
+                           set_reference_descriptors_names=set_reference_descriptors_names_top24,
+                           set_reference_descriptors_cols_list=set_reference_descriptors_bestCos_top24,
+                           output_path=output_path)

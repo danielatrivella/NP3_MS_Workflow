@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 from pyteomics import mgf
-from matchms import Spectrum, Spikes
+from matchms import Spectrum, Fragments
 from matchms.filtering import default_filters
 
 import streamlit as st
@@ -282,7 +282,7 @@ def sp_2_np(spec):
     """
     Converts spectra (matchms) to numpy 2d array
     """
-    return Spikes(spec.peaks.mz, spec.peaks.intensities).to_numpy
+    return Fragments(spec.peaks.mz, spec.peaks.intensities).to_numpy
 
 
 ###################################################

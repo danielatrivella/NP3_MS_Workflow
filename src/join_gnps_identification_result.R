@@ -88,7 +88,7 @@ if (cluster_info_path != "")
     # if the msclusterID = 0 was not removed by the noise filtering
     cluster_info$Scan[cluster_info$SpecIdx == 0] <- 0 
   }
-  # the Scan column contains the clusterIdx
+  # the Scan column of the lib_idres contains the clusterIdx
   # join the clusterinfo and the results spec tables using as key the ClusterIdx 
   # column in the first and the #Scan column in the second
   # rename the #Scan colum in the results spec table to ClusterIdx and join
@@ -106,33 +106,10 @@ rm(lib_idres)
 # use the Scan column of the clusterinfo table to match with the 
 # msclusterIDs of the count table
 lib_idres_scans$msclusterID <- lib_idres_scans$Scan
-# if it is the clean count tables match with the msclusterIDs present in the 
-# column joinedIDs of the clean count tables
-if (grepl("clean", ms_count_path))
-{
-  ms_count <- read.csv(ms_count_path, stringsAsFactors = FALSE,
-                       comment.char = "",
-                       strip.white = TRUE)[, c("msclusterID", "joinedIDs")]
-  num_msclusterid <- nrow(ms_count)
-  # get the joined ids
-  ms_count <- ms_count[!is.na(ms_count$joinedIDs),]
-  
-  if (nrow(ms_count) > 0) {
-    invisible(apply(ms_count, 1, function(x) 
-    {
-      joinedIDs <- as.numeric(strsplit(x[[2]], ";")[[1]])
-      
-      lib_idres_scans$msclusterID[
-        lib_idres_scans$Scan %in% joinedIDs] <<- as.numeric(x[[1]])
-    }))
-  }
-} else {
-  ms_count <- read.csv(ms_count_path, stringsAsFactors = FALSE,
-                       comment.char = "",
-                       strip.white = TRUE)[, c("msclusterID")]
-  num_msclusterid <- nrow(ms_count)
-}
-rm(ms_count)
+# now, even for clean table only match with the msclusterIDs - the user should use the mgf clean appropriated
+# for join_jobs the joinedIDs are from the clustering result and not the incremental IDs kept from the reference join_jobs
+# thus using the joinedIDs here for matching could create wrong matching - now always use msclusterID for matching
+# no need to map the lib scans using the joinedIDs
 
 # order by the msclusterID ascending and descending by the MQScore, to put the 
 # best results by spectra on top
@@ -196,6 +173,7 @@ if (grepl("peak_area", ms_count_path) && file.exists(sub("peak_area", "spectra",
 ms_count <- read.csv(ms_count_path, stringsAsFactors = FALSE,
                      comment.char = "",
                      strip.white = TRUE)
+num_msclusterid <- nrow(ms_count)
 if ("gnps_Smiles" %in% names(ms_count))
 {
   # filter the present smiles

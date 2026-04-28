@@ -89,7 +89,7 @@ if __name__ == "__main__":
 		output_name = sys.argv[4]
 		mz_tolerance = float(sys.argv[5])
 	else:
-		print("Error: Four arguments must be supplied to created the final report of the NP3 result:\n"
+		print("Error: Five arguments must be supplied to created the final report of the NP3 result:\n"
 			"  1 - metadata_path: Path to the job samples metadata table with the original samples codes and types (.csv);\n"
 			"  2 - clean_table_path: Path to the clean table with the final list of consensus spectra and UNPD identification if any (.csv);\n"
 			"  3 - output_path: Path to the final result folder, inside the outs folder, named with the output_name;\n"

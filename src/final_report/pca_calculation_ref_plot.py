@@ -123,11 +123,18 @@ def biplot_save_reference_PCA_wComponents(output_path, output_name, scores, poin
 
 data_types_style_new = {'UNPD': ['NP3-UNPD', 'tab:pink'],
 						'GNPS': ['NP3-GNPS', 'tab:orange']}
+# list of other colors to use for external table input, max to 8 classes
+data_types_style_new_external = ['tab:pink','tab:orange','tab:purple','tab:brown','tab:red','tab:olive','tab:cyan','#ff9896']
 
 # save PCA biplot of a new data - personalize name using data_type and output_name
 def biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores, point_labels, pvars=None,
                                     components=None, feature_labels=None):
-	data_types_style = data_types_style_new
+	#  create data_types_style for different data_types from external table
+	if data_type not in ['UNPD', 'GNPS', 'UNPDxGNPS']:
+		data_types_style = {label: [label,data_types_style_new_external[i]]
+		                    for i,label in enumerate(np.unique(point_labels))}
+	else:
+		data_types_style = data_types_style_new
 	# plot PCA
 	biplot_scatter_arrows(scores, point_labels, data_types_style, components=None, feature_labels=None, pvars=pvars)
 	if components is not None:
@@ -148,9 +155,11 @@ set_reference_descriptors_bestCos_top24 = ['WPOL','ATSp1','ATSp2','SP.3','Zagreb
 # ensuring consistency in the dimensionality reduction.
 # the reference data is expected to have unique mostly smiles (duplicates are not removed) and the top 24 descriptors columns,
 # also the Type, EntryID and SubType columns
-# data_reference_path must contain the list of top 24 descriptors; new_data_path is the clean data for UNPD and the descriptors list for GNPS
+# data_reference_path must contain the list of top 24 descriptors; new_data_path is the clean data for UNPD and the descriptors list for GNPS or an external dataset
 # If data_type is UNPD: output_path is the folder to store the plots, inside the final_reports/chemical_report/chemical_space_identifications
 # else if data_type is GNPS (also creates for UNPDxGNPS): output_path is the final clustering result, inside the outs dir
+# otherwise if data_type is an external data, plot directly to the output_path
+# for data_type == UNPD or GNPS, no blanks or beds are plotted
 def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, output_path, output_name, data_type="UNPD"):
 	# check if files exists
 	data_reference_path = Path(data_reference_path)
@@ -170,7 +179,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	# X_original is read here
 	data_reference_descriptors = pd.read_csv(data_reference_path,
 											 low_memory=False)
-	print("* Creating the NP3 reference PCA from SMILES for plotting *")
+	print("* Creating the NP3 reference PCA from SMILES for plotting",data_type,"*")
 	# not removing duplicates here - the reference contain the minimum of duplicates
 	#data_reference_descriptors = data_reference_descriptors.loc[~data_reference_descriptors.SMILES.duplicated(),:]
 	# filter the top 24 descriptors selected
@@ -263,8 +272,6 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 	# New data identified that you want to transform using the same eigenvectors
 	# read the new data here and filter the correct IDs
 	new_data = pd.read_csv(new_data_path, low_memory=False)
-	# add the curated tag to the output name
-	output_name = output_name + "_curated"
 	# for UNPD extraxt the X_new by matching the best identified SMILES against the data_reference_descriptors SMILES,
 	# # and return the corresponding not NA descriptors
 	# for GNPS a table with the descriptors must be informed
@@ -276,6 +283,8 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 		# the list of UNPD IDs will be matched against the reference table EntryID and its information will be filtered out
 		# test this merge, merge to retrieve the descriptors instead and set to the x_filtered
 		# check if curated result is present, if not skipt PCA
+		# add the curated tag to the output name
+		output_name = output_name + "_curated"
 		if "tremolo_UNPD_score_best" not in new_data.columns:
 			print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
 			         "curated identification result, column 'tremolo_UNPD_score_best' is missing. Skipping PCA for identifications.")
@@ -284,6 +293,19 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
 			         "best identification result, column 'tremolo_SMILES_best' is missing. Skipping PCA for identifications.")
 			return None
+		# filter only the not blank results
+		if "BLANKS_TOTAL" in new_data.columns:
+			new_data = new_data.loc[new_data.BLANKS_TOTAL == 0, :]
+		if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
+			print("No not blank and valid tremolo-UNPD curated identification is present in the provided clean table. "+
+			      "Could not create the chemical space. Skipping PCA for identifications.")
+			return None
+		# filter only the not bed results
+		if "BEDS_TOTAL" in new_data.columns:
+			new_data = new_data.loc[new_data.BEDS_TOTAL == 0, :]
+		if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
+			print("No not blank and not bed and valid tremolo-UNPD curated identification is present in the provided clean table. "+
+			      "Could not create the chemical space. Skipping PCA for identifications.")
 		# filter only the curated result with tremolo_UNPD_score_best > 0
 		new_data = new_data.loc[new_data.tremolo_UNPD_score_best > 0,:]
 		if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
@@ -291,37 +313,44 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			      "Could not create the chemical space. Skipping PCA for identifications.")
 			return None
 		# merge the new data with the reference descriptors using the best identified SMILES
-		new_data_desc = pd.merge(new_data.loc[~new_data.tremolo_SMILES_best.isna(), "tremolo_SMILES_best"],
-		         data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
-		         left_on="tremolo_SMILES_best", right_on="SMILES", how="left")
-		# remove not matched entries
-		new_data_desc = new_data_desc.loc[~new_data_desc.SMILES.isna(), :]
-		# check if new_data_desc have valid descriptors and transform the data to the reference PCA
-		if new_data_desc.shape[0] > 0:
-			# filter the descriptors columns and scale
-			X_new = new_data_desc.iloc[:, 2:]
-			X_new_scaled = scaler.fit_transform(X_new)
-			
-			# Transform the new data using the previously fitted PCA object
-			X_transformed = pca.transform(X_new_scaled)
-			
-			# now plot reference PCA without components as background for the new data
-			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
-			                                         feature_labels=None)
-			# plot the result new data in the PCA reference and save the result without components
-			biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-			                                point_labels=[data_type] * new_data_desc.shape[0],
-			                                pvars=pvars)
-			# then save it with components
-			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
-			                                         feature_labels=None)
-			biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-			                                point_labels=[data_type] * new_data_desc.shape[0],
-			                                pvars=pvars, components=arrows, feature_labels=features)
-		else:
-			print("No valid tremolo-UNPD curated identification after merging with reference SMILES. Skipping PCA for identifications.")
-			return None
+		new_data_desc = pd.merge(new_data.loc[~new_data.tremolo_SMILES_best.isna(), ["tremolo_SMILES_best","protonated_representative"]],
+		                         data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
+		                         left_on="tremolo_SMILES_best", right_on="SMILES", how="left")
+		for protonated in [0,1]:
+			if protonated == 1:
+				output_name = output_name + "_protonated"
+				# filter only the protonated nodes
+				new_data_desc = new_data_desc.loc[new_data_desc.protonated_representative == 1,:]
+			# remove not matched entries
+			new_data_desc_valid = new_data_desc.loc[~new_data_desc.SMILES.isna(), :]
+			# check if new_data_desc_valid have valid descriptors and transform the data to the reference PCA
+			if new_data_desc_valid.shape[0] > 0:
+				# filter the descriptors columns and scale
+				X_new = new_data_desc_valid.iloc[:, 3:]
+				X_new_scaled = scaler.fit_transform(X_new)
+				
+				# Transform the new data using the previously fitted PCA object
+				X_transformed = pca.transform(X_new_scaled)
+				
+				# now plot reference PCA without components as background for the new data
+				biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+				                                         feature_labels=None)
+				# plot the result new data in the PCA reference and save the result without components
+				biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+				                                point_labels=[data_type] * new_data_desc_valid.shape[0],
+				                                pvars=pvars)
+				# then save it with components
+				biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+				                                         feature_labels=None)
+				biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
+				                                point_labels=[data_type] * new_data_desc_valid.shape[0],
+				                                pvars=pvars, components=arrows, feature_labels=features)
+			else:
+				print(f"No valid tremolo-UNPD curated {'and protonated ' if protonated == 1 else ''}identification after merging with reference SMILES. Skipping PCA for identifications.")
+				return None
 	elif data_type == "GNPS":
+		# add the curated tag to the output name
+		output_name = output_name + "_curated"
 		# make pca with GNPS best separated and together with the unpd best - UNPDxGNPS.
 		# make pca with GNPS best result, read the calculated descriptors from output_path/identifications/gnps_results_smiles_descriptorsCDK.csv
 		# here output_path is the final clustering result, inside the outs dir
@@ -339,81 +368,181 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
 			print("The final output directory of the chemical report to store the chemical space PCA result could not"+
 			      " be created. PCA plotting for GNPS and UNPDxGNPS aborted.")
 			return None
-		
+		# filter only the not blank results
+		if "BLANKS_TOTAL" in new_data.columns:
+			new_data = new_data.loc[new_data.BLANKS_TOTAL == 0, :]
+		if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
+			print(
+				"No not blank and valid GNPS curated identification is present in the provided clean table. " +
+				"Could not create the chemical space. Skipping PCA for identifications.")
+			return None
+		# filter only the not bed results
+		if "BEDS_TOTAL" in new_data.columns:
+			new_data = new_data.loc[new_data.BEDS_TOTAL == 0, :]
+		if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
+			print(
+				"No not blank and not bed and valid GNPS curated identification is present in the provided clean table. " +
+				"Could not create the chemical space. Skipping PCA for identifications.")
 		# filter the valid gnps smiles with gnps_score > 0 and get their descriptors
-		new_data_desc = new_data.loc[new_data.gnps_score > 0 ,"gnps_Smiles"]
+		new_data_desc = new_data.loc[new_data.gnps_score > 0 ,["gnps_Smiles","protonated_representative"]]
 		if new_data_desc.shape[0] == 0:
 			print("  - No valid GNPS curated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
 			return None
 		# read the descriptors calculation result and filter the valid ones
 		gnps_descriptors_result = pd.read_csv(gnps_descriptors_file, low_memory=False)
-		new_data_desc = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(new_data_desc),:]
-		# filter only the descriptors columns
-		X_new = new_data_desc.iloc[:, 4:]
-		# remove rows with NaNs
-		valid_smiles_rows = (np.isnan(X_new).sum(1) == 0)
-		X_new_filtered = X_new.loc[valid_smiles_rows, :]
-		X_new_scaled = scaler.fit_transform(X_new_filtered)
-		X_transformed = pca.transform(X_new_scaled)
-		# now plot reference PCA without components as background for the new data
-		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
-		                                         feature_labels=None)
-		# plot the result new data in the PCA reference and save the result without components
-		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-		                                point_labels=[data_type] * X_new_filtered.shape[0],
-		                                pvars=pvars)
-		# then save it with components
-		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
-		                                         feature_labels=None)
-		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-		                                point_labels=[data_type] * X_new_filtered.shape[0],
-		                                pvars=pvars, components=arrows, feature_labels=features)
-		
+		for protonated in [0,1]:
+			if protonated == 1:
+				output_name_plot = output_name + "_protonated"
+				# filter only the protonated nodes
+				new_data_desc = new_data_desc.loc[new_data_desc.protonated_representative == 1,:]
+				if new_data_desc.shape[0] == 0:
+					print(
+						"  - No valid GNPS curated and protonated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+					break
+			else:
+				output_name_plot = output_name
+			new_data_desc_valid = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(new_data_desc.gnps_Smiles),:]
+			# filter only the descriptors columns
+			X_new = new_data_desc_valid.iloc[:, 4:]
+			# remove rows with NaNs
+			valid_smiles_rows = (np.isnan(X_new).sum(1) == 0)
+			X_new_filtered = X_new.loc[valid_smiles_rows, :]
+			if X_new_filtered.shape[0] == 0:
+				if protonated == 0:
+					print(
+						"  - No valid GNPS curated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+					return None
+				else:
+					print(
+						"  - No valid GNPS curated and protonated identification with score > 0. PCA plotting for GNPS protonated aborted.")
+					break # if no valid only for protonated, then go for UNPDxGNPS
+			X_new_scaled = scaler.fit_transform(X_new_filtered)
+			X_transformed = pca.transform(X_new_scaled)
+			# now plot reference PCA without components as background for the new data
+			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+			                                         feature_labels=None)
+			# plot the result new data in the PCA reference and save the result without components
+			biplot_save_new_PCA_wComponents(output_path, output_name_plot, data_type, scores=X_transformed,
+			                                point_labels=[data_type] * X_new_filtered.shape[0],
+			                                pvars=pvars)
+			# then save it with components
+			biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+			                                         feature_labels=None)
+			biplot_save_new_PCA_wComponents(output_path, output_name_plot, data_type, scores=X_transformed,
+			                                point_labels=[data_type] * X_new_filtered.shape[0],
+			                                pvars=pvars, components=arrows, feature_labels=features)
+			
 		## Now get best origin identification data_type == "UNPDxGNPS", if both results are present
 		# and plot PCA of UNPD and GNPS together for the curated_identification_best_origin
 		data_type = "UNPDxGNPS"
 		print("  - Transforming the new", data_type, "identified data to the reference PCA chemical space and plotting")
 		if new_data.columns.isin(["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best"]).sum() < 3:
 			print("  - The tremolo-UNPD best result is not present, skipping UNPDxGNPS PCA plotting.")
-			pass # go to plot the components circle plot
-		
-		new_data_desc = new_data.loc[~new_data.curated_identification_best_origin.isna(),
-		                             ["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best"]]
-		if new_data_desc.curated_identification_best_origin.unique().size < 2:
-			print("  - The curated_identification_best_origin only contains results from one source ('",
-			      new_data_desc.curated_identification_best_origin.unique()[0],"'), skipping UNPDxGNPS PCA plotting.")
-			
-		new_data_unpd_desc = pd.merge(new_data_desc.loc[new_data_desc.curated_identification_best_origin == 'UNPD'],
-		         data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
-		         left_on="tremolo_SMILES_best", right_on="SMILES", how="left")
-		new_data_gnps_desc = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(
-			new_data_desc.gnps_Smiles[new_data_desc.curated_identification_best_origin == 'GNPS']),:]
-		
-		X_new = pd.concat([new_data_unpd_desc.iloc[:, 4:], new_data_gnps_desc.iloc[:, 4:]], axis=0)
-		X_new.loc[:,"point_labels"] = ['UNPD'] * new_data_unpd_desc.shape[0] + ['GNPS'] * new_data_gnps_desc.shape[0]
+			# skipt to the components circle plot
+		else:
+			new_data_desc = new_data.loc[~new_data.curated_identification_best_origin.isna(),
+			                             ["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best",
+			                              "protonated_representative"]]
+			if new_data_desc.curated_identification_best_origin.unique().size < 2:
+				print("  - The curated_identification_best_origin only contains results from one source ('",
+				      new_data_desc.curated_identification_best_origin.unique()[0],"'), skipping UNPDxGNPS PCA plotting.")
+			else:
+				for protonated in [0, 1]:
+					if protonated == 1:
+						output_name_plot = output_name + "_protonated"
+						# filter only the protonated nodes
+						new_data_desc = new_data_desc.loc[new_data_desc.protonated_representative == 1, :]
+						if new_data_desc.shape[0] == 0:
+							print(
+								"  - No valid UNPDxGNPS curated and protonated identification with score > 0. PCA plotting for UNPDxGNPS protonated aborted.")
+							break
+					else:
+						output_name_plot = output_name
+					new_data_unpd_desc = pd.merge(new_data_desc.loc[new_data_desc.curated_identification_best_origin == 'UNPD'],
+					         data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
+					         left_on="tremolo_SMILES_best", right_on="SMILES", how="left")
+					new_data_gnps_desc = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(
+						new_data_desc.gnps_Smiles[new_data_desc.curated_identification_best_origin == 'GNPS']),:]
+					
+					X_new = pd.concat([new_data_unpd_desc.iloc[:, 5:], new_data_gnps_desc.iloc[:, 4:]], axis=0)
+					X_new.loc[:,"point_labels"] = ['UNPD'] * new_data_unpd_desc.shape[0] + ['GNPS'] * new_data_gnps_desc.shape[0]
+					# remove rows with NaNs
+					valid_smiles_rows = (np.isnan(X_new.iloc[:,:-1]).sum(1) == 0)
+					X_new_filtered = X_new.loc[valid_smiles_rows, :].copy()
+					point_labels_unpd_gnps = X_new_filtered.loc[:, "point_labels"]
+					X_new_filtered.drop(["point_labels"], axis=1, inplace=True)
+					X_new_scaled = scaler.fit_transform(X_new_filtered)
+					X_transformed = pca.transform(X_new_scaled)
+					# now plot reference PCA without components as background for the new data
+					biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+					                                         feature_labels=None)
+					# plot the result new data in the PCA reference and save the result without components
+					biplot_save_new_PCA_wComponents(output_path, output_name_plot, data_type, scores=X_transformed,
+					                                point_labels=point_labels_unpd_gnps,
+					                                pvars=pvars)
+					# then save it with components
+					biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
+					                                         feature_labels=None)
+					biplot_save_new_PCA_wComponents(output_path, output_name_plot, data_type, scores=X_transformed,
+					                                point_labels=point_labels_unpd_gnps,
+					                                pvars=pvars, components=arrows, feature_labels=features)
+	else: # external table
+		# make PCA with external data containing the descriptors columns in the provided table
+		# here output_path is the directory to save the outputs
+		# filter only the descriptors and data_type column, which is equal to the provided type
+		output_path.mkdir(exist_ok=True)
+		if not output_path.exists() or not output_path.is_dir():
+			sys.exit("The final output directory to store the PCA plots could not",
+			      "be created. PCA plotting for external data type (",data_type, ") aborted.")
+		output_name_plot = output_name
+		# check if new data contains the top 24 descriptors columns and the data_type column
+		if data_type not in new_data.columns:
+			print("WARNING: The provided data_type is not present in the columns of the provided smiles_descriptors_table_path.",
+			      "All the points will be colored with the same color and receive the same name equals to", data_type, ".")
+			points_type = np.asarray([data_type] * new_data.shape[0])
+		else:
+			points_type = new_data.loc[:, data_type].values
+			# convert any NA value to string
+			if pd.isna(points_type).any():
+			    points_type[pd.isna(points_type)] = "NA"
+			if np.unique(points_type).size > 8:
+				print("WARNING: The provided data_type contains more than 8 different classes,",
+				      "which is the maximum allowed number of classes. The points will be colored with the same color",
+				      "instead and receive the same name equals to ", data_type, ".")
+				points_type = np.asarray([data_type] * new_data.shape[0])
+		if not pd.Series(set_reference_descriptors_bestCos_top24).isin(new_data.columns).all():
+			sys.exit("The provided smiles_descriptors_table_path do not contain all the top 24 descriptors columns and thus",
+			      "can not be transformed to the NP3 chemical space. PCA plotting for external data type (", data_type,
+			      ") aborted.")
+		# filter only the descriptors columns
+		X_new = new_data.loc[:,set_reference_descriptors_bestCos_top24]
 		# remove rows with NaNs
-		valid_smiles_rows = (np.isnan(X_new.iloc[:,:-1]).sum(1) == 0)
-		X_new_filtered = X_new.loc[valid_smiles_rows, :].copy()
-		point_labels_unpd_gnps = X_new_filtered.loc[:, "point_labels"]
-		X_new_filtered.drop(["point_labels"], axis=1, inplace=True)
+		valid_smiles_rows = (np.isnan(X_new).sum(1) == 0)
+		X_new_filtered = X_new.loc[valid_smiles_rows, :]
+		if X_new_filtered.shape[0] == 0:
+			sys.exit("  - No valid descriptors in the provided external table, there are NAN in all rows.",
+				"PCA plotting for external data type (", data_type, ") aborted.")
+		if (~valid_smiles_rows).any():
+			points_type = points_type[valid_smiles_rows]
+			invalid_smiles = (~valid_smiles_rows).sum()
+			print("    - There were a total of", invalid_smiles, "invalid entry with at least one NaN descriptor value.",
+			      "The following rows (skipping the header) were removed from PCA:", np.where(~valid_smiles_rows)[0]+1)
+		# scale and transform the new data
 		X_new_scaled = scaler.fit_transform(X_new_filtered)
 		X_transformed = pca.transform(X_new_scaled)
 		# now plot reference PCA without components as background for the new data
 		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
 		                                         feature_labels=None)
 		# plot the result new data in the PCA reference and save the result without components
-		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-		                                point_labels=point_labels_unpd_gnps,
+		biplot_save_new_PCA_wComponents(output_path, output_name_plot, data_type, scores=X_transformed,
+		                                point_labels=points_type,
 		                                pvars=pvars)
 		# then save it with components
 		biplot_scatter_reference_PCA_wComponents(scores, point_labels, pvars=pvars, components=None,
 		                                         feature_labels=None)
-		biplot_save_new_PCA_wComponents(output_path, output_name, data_type, scores=X_transformed,
-		                                point_labels=point_labels_unpd_gnps,
+		biplot_save_new_PCA_wComponents(output_path, output_name_plot, data_type, scores=X_transformed,
+		                                point_labels=points_type,
 		                                pvars=pvars, components=arrows, feature_labels=features)
-	else:
-		print("Invalid data_type '"+data_type+"' informed! Skipping PCA for identifications.")
-		return None
 	#
 	print("  - Creating the PCA quality of representation circle plot with the reference components")
 	# plot the PCA quality of representation (cos2) - circle plot with components
@@ -437,7 +566,7 @@ def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
 	
 	# Original data
 	# X_original is read here
-	# TODO read the complete table and them filter the descriptor cols and the type cols - no filter for now
+	# TODO read the complete table and them filter the descriptor cols and the type cols - no filter for now - beta
 	clean_data_mz = pd.read_csv(clean_data_path,
 	                                         low_memory=False,
 	                                         usecols=["mzConsensus","rtMean","basePeakInt","sumInts","maxArea"])
@@ -461,7 +590,7 @@ def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
 	X_filtered = X_filtered.loc[valid_mzs_rows, :]
 	
 	# filter label in Type
-	# TODO define Type to use here, blanks or beds or none - no filter for now
+	# TODO define Type to use here, blanks or beds or none - no filter for now - beta testing
 	#point_labels = data_reference_descriptors.loc[valid_smiles_rows, "Type"]
 	point_labels = ["mzs"]*X_filtered.shape[0]
 	
@@ -513,15 +642,25 @@ def pca_calculation_mz_ref_plot(clean_data_path, output_path, output_name):
 	color_cos2_cmap = mcolors.LinearSegmentedColormap.from_list("OrRd_r", gradient_color_cos2)
 	plot_arrows_correlation_circle(output_path, loadings_scaled, features, pvars, color_cos2_cmap)
 
-
-####
-### save and load fitted model - alternative to recomputing PCA
-#import pickle
-# Save the fitted PCA model to a file
-#with open("fitted_pca_model.pkl", "wb") as f:
-#	pickle.dump(pca, f)
-# Load the fitted PCA model from the file
-#with open("fitted_pca_model.pkl", "rb") as f:
-#	loaded_pca = pickle.load(f)
-
-
+if __name__ == "__main__":
+	np3_chemical_space_reference_path = Path(__file__).resolve().parent / "Chemical_space_data" / "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv"
+	if len(sys.argv) > 4:
+		smiles_descriptors_table_path = sys.argv[1]
+		type_column = sys.argv[2]
+		output_path = sys.argv[3]
+		output_name = sys.argv[4]
+	else:
+		print("Error: Four arguments must be supplied to created a PCA plot from an external table containing data_types and the top 24 descriptors using the NP3 reference datasets to create the chemical space:\n"
+			"  1 - smiles_descriptors_table_path: Path to the external table containing the top 24 descriptors columns "
+		      "and one optional column for labeling the points (.csv);\n"
+			"  2 - data_type: a name defining the type of the data to be used to label the points or the name of a "
+		      "column from smiles_descriptors_table_path containing the types/categories names of each entry "
+		      "to be used to label the points in the final PCA plot. This name must be different from 'UNPD' or 'GNPS' and, "
+		      "in the case of a column, it must contain at most 8 different classes names, otherwise only the provided "
+		      "data_type name will be used to label the points. These column values will go to the legend of the PCA;\n"
+	        "  3 - output_path: the path to the directory to store the PCA plots;\n"
+	        "  4 - output_name: the output name to be used for naming the output plots.\n")
+		sys.exit(1)
+	# call PCA creation
+	pca_calculation_smiles_rcdk_ref_plot(np3_chemical_space_reference_path, smiles_descriptors_table_path, output_path, output_name, data_type=type_column)
+	

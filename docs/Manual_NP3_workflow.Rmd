@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.2.2
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.3.0
 author:  
-  - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br]
-  - Luiz F. G. Alves^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - luiz.alves@lnbio.cnpem.br]
-  - Rafael de Felicio^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
-  - Daniela B. B. Trivella^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil - daniela.trivella@lnbio.cnpem.br]
-  - Guilherme P. Telles^[Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - gpt@ic.unicamp.br]
-date: October, 2025 
+  - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
+  - Luiz F. G. Alves^\*^
+  - Rafael de Felicio^\*^
+  - Daniela B. B. Trivella^\*^
+  - Guilherme P. Telles^\†^
+date: December, 2025 
 output:
   pdf_document: default
   html_document:
@@ -16,11 +16,8 @@ output:
  
 # 1. Overview
  
-The $NP^{3}$ MS workflow is a software system with a collection of scripts to process and analyse LC-MS/MS data from untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
+The $NP^{3}$ MS workflow^[$NP^{3}$ MS Workflow. C.F. Bazzano, et al. Analytical Chemistry 2024 96 DOI: 10.1021/acs.analchem.3c05829] is a software system with a collection of scripts to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
 
-The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), separating isomers, of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions - called protonated representatives) and constructs molecular networks to improve the analysis and visualization of the results.
-
- 
 The $NP^{3}$ MS Workflow consists of ten major steps:
  
 * Step 1: Metadata table construction describing the input LC-MS/MS samples, bioactivity scores and groups. This is the only step that requires user intervention.
@@ -35,26 +32,28 @@ The $NP^{3}$ MS Workflow consists of ten major steps:
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments. It also computes the quantification grouping.
 * Step 10: Creation of a spectra similarity molecular network (SSMN) based on the clean consensus spectra similarity and creation of the protonated networks IVAMN [M+H]+ and SSMN [M+H]+ filtered.
  
-The Steps 2 to 10 can be automatically executed with the $NP^{3}$ command **run**. And different results from the $NP^{3}$ MS Workflow may be joined using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an integrative clustering approach.
+The workflow is an automatized procedure to cluster (join) and quantify the MS2 spectra (MS/MS) associated with the same ion, which eluted in concurrent chromatographic peaks (MS1), separating isomers, of a collection of samples from LC-MS/MS experiments. It generates a rank of candidate spectra responsible for the observed hits in bioactivity experiments, suggests the number of metabolites present in the samples ([M+H]+ ions - called protonated representatives) and constructs molecular networks to improve the analysis and visualization of the results.
 
-Final reports are created at the end of the $NP^{3}$ MS **run**, **join_jobs** and **clean** commands. These reports are separated in quantification, chemical and molecular networking analysis of the results. TO BE DOCUMENTED in the RUN command.
+The Steps 2 to 10 can be automatically executed with the $NP^{3}$ command **run**. And different results from the $NP^{3}$ MS Workflow may be joined using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach.
+
+Final reports are created at the end of the $NP^{3}$ MS **run**, **join_jobs** and **clean** commands. These reports are separated in quantification, chemical and network statistics and analysis of the results. Detailed in section 4.2.2. The PCA plotting can be executed separated using the **pca_plot** command.
  
 This workflow also contains two interactive commands for data visualization:
  
-* The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
-* The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Unix OS.
+* **chr**: The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
+* **spectra_viewer**: The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Unix OS.
  
-Furthermore, the user can manually identify the resulting consensus spectra against the GNPS [8] spectral libraries and use another separated command of this workflow to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables.
+Furthermore, the user can manually identify the resulting consensus spectra against the GNPS [8] spectral libraries and use another separated command of this workflow called **gnps_result** to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables.
  
 ## 1.1 Data
  
-The main input for the $NP^{3}$ MS workflow are LC-MS/MS raw data files in mzXML or mzML formats (mzData format could also be used, but was not vastly tested). It supports only the positive ([M+H]+) ion mode. The negative ([M-H]-) ion mode could also be used, but the Steps 7 and 8 were not vastly tested for it and could lead to undesired results. 
+The main input for the $NP^{3}$ MS workflow are LC-MS/MS raw data files in mzXML or mzML formats (mzData format could also be used, but was not vastly tested). It supports only the positive ([M+H]+) ion mode. The negative ([M-H]-) ion mode may also be used, but the Steps 7 and 8 were not vastly tested for it and may lead to undesired results. 
 
 The workflow output is organized in folders and depending on the command can contain: 
  
-- The pre-processed spectra in MGF files, containing all detected and filtered MS2 enriched with MS1 information.
+- The pre-processed spectra in MGF files, containing all detected and filtered MS2 enriched with MS1 information. (Step 2)
 - The collection of consensus spectra from Step 3 and Step 5 in MGF files
-- The consensus spectra quantification results in CSV files, referred to as count tables. The count tables contains a consensus spectra ID, named msclusterID (representing a m/z and a retention time interval), by row and its quantifications and indicators by column. The following count tables are created:
+- The consensus spectra quantification results in CSV files, referred to as count tables. The count tables contains a consensus spectra ID, named msclusterID (representing a m/z and a retention time interval), by row and its quantification and indicators by column. The following count tables are created:
     - Clustering count tables (Step 4)
     - Clean count tables, with the clustering count table redundancies aggregated (Step 5)
     - Merged count tables (Step 8)
@@ -69,6 +68,8 @@ The workflow output is organized in folders and depending on the command can con
     - SSMN filtered (Step 10)
     - IVAMN [M+H]+ (Step 10)
     - SSMN [M+H]+ filtered (Step 10)
+- The final reports with quantification, chemical and network statistics and analysis of the final results
+    - A chemical space of the identified spectra using PCA
  
 The pre-processed data and the clean data from the $NP^{3}$ results may be used as input for the joining jobs command.
 
@@ -77,7 +78,7 @@ The pre-processed data and the clean data from the $NP^{3}$ results may be used 
 ## Installation with Conda and Mamba
 ##  We recommend using Mamba because it's considerably faster, but if you want to use Conda, just replace commands starting with `mamba` by `conda`.
 
-NP³ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
+$NP^{3}$ MS workflow includes a mamba and conda environment file for Unix and Windows, enabling users to install package dependencies.  
 
 First, download or clone the workflow repository. 
 
@@ -124,7 +125,7 @@ To verify if the Conda and Mamba installation was successful, open a **new** ter
 
 If it outputs the `mamba`'s and `conda`'s versions you are good to go.    
 
-Now, go the NP³ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
+Now, go the $NP^{3}$ MS workflow repository folder that you have just downloaded and extracted, and open a terminal window there.  
 
 Then, create the $NP^{3}$ MS workflow conda environment to automatically install almost all the workflow programs and required packages using the following terminal command:
 
@@ -140,7 +141,7 @@ Windows OS:
   $ mamba env create -f environment_np3_win.yml 
 ``` 
 
-The $NP^{3}$ MS workflow conda environment must be created and activated before running the NP³ MS workflow commands. If the $NP^{3}$ MS workflow environment was created successfully, activate it with the following command: 
+The $NP^{3}$ MS workflow conda environment must be created and activated before running the $NP^{3}$ MS workflow commands. If the $NP^{3}$ MS workflow environment was created successfully, activate it with the following command: 
 
 ```{r, eval=F}   
   $ mamba activate np3 
@@ -294,11 +295,6 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
- 
-<!-- - **metfrag** [options] : Step 5: An interactive prompt to run the MetFrag [21] tool for identification search of individual spectra or of an entire experiment from a MGF file against the PubChem database. -->
-<!--     - List of mandatory options: -->
-<!--     - *\-g, \-\-mgf* <file>     :     path to the input MGF file with the MS/MS spectra data to be searched and identified -->
-<!--     - *\-o, \-\-output_path* <path> : path to where the identification results will be saved. Prefereable inside the final clustering results directory in the 'job_name/outs/job_name/identifications' folder -->
     
 - **annotate_protonated** [options] : Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables and creates the molecular network of annotations. It searches for adducts, neutral losses, multiple charges, dimers/trimers, isotopes and in-source fragmentation based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the molecular network of annotations to assign some of the consensus spectra as putative [M+H]+ representatives.
     - List of mandatory options:
@@ -325,7 +321,19 @@ Commands:
     - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
     - *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder
     - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the $NP^{3}$ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
+    - *\-o, \-\-output_path* \<path\>    :          path to the final output data folder, inside the outs
+                                        directory of the clustering result folder. It should contain
+                                        the identifications folder, if not, it will be created. The job
+                                        name (output_name) will be extracted from here.
    
+- **pca_plot** [options] : This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES and then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
+    - List of mandatory options:
+    - *\-t, \-\-table_path* \<path\>       :  The path to a table in CSV format containing SMILES string in a
+                              column. Optionally, it may also contain the types/categories of
+                              each SMILES entry in another column. It must be comma ","
+                              separated.
+    - *\-s, \-\-smiles_column* \<path\>       :  The name of the column in table_path containing the SMILES string.
+                              
 - **chr** [options] :        This command runs an interactive prompt to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and to save to PNG image files. Depending on the provided parameters this can be a total ion chromatogram (TIC - default), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file.
  
 <!-- - **compare_spectra** [options] : An interactive prompt to compare two spectra from a MGF file, to plot them against it other and to save the image to a PNG file. -->
@@ -366,7 +374,7 @@ The clustering will be performed using the DATA_COLLECTION_BATCH number and the 
  
 ## 4.2. Steps 2 to 10: Command *run*
  
-This command runs the entire $NP^{3}$ MS workflow (Steps 2 to 10).
+This command runs the entire $NP^{3}$ MS Workflow (Steps 2 to 10).
  
 For the complete list of options run:
  
@@ -384,7 +392,7 @@ Options for the command *run*:
 - *\-z, \-\-mz_tolerance* [x]              : this is the tolerance in Daltons for the m/z of the precursor that determines if two spectra will be compared and possibly joined. It is used in the clustering steps (Step 3), in the cleaning (Step 5), in the library identifications (Step 6) and in the annotation of ionization variants (Step 7) (default: 0.025)
 - *\-p, \-\-ppm_tolerance* [x]        : the maximum tolerated m/z deviation in parts per million (ppm) to be used in the pre-processing (Step 2). Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
 - *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
-- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine function is used. (default: "np3_shifted_cosine")
+- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the minimum similarity to be considered in the hierarchical clustering of Step 3, starts in 0.70 and decrease to X in 15 rounds. Also used in the Step 5 quantification cleaning (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-w, \-\-similarity_mn* [x] :     the minimum similarity score that must occur between a pair of consensus spectra to connect them with a link in the molecular network of similarity. Lower values will increase the components sizes by inducing the connection of less related spectra; and higher values will limit the components sizes to the opposite (default: 0.6) 
@@ -406,9 +414,9 @@ Options for the command *run*:
 - *\-q, \-\-processed_data_overwrite* [x]  : A logical "TRUE" or "FALSE" indicating if the pre-processed data present in the *processed_data_name* folder (if it already exists) should be overwritten and pre-processed again (default: "FALSE")
 - *\-\-bflag_cutoff* [x]            :      A positive numeric value to scale the interquartile range (IQR) of the blank spectra basePeakInt distribution and allow spectra with a basePeakInt value below this distribution median plus IQR\*bflag_cutoff to be joined with a blank spectrum without relying on the similarity value. Or FALSE to disable it. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile). The spectra with a basePeakInt value <= median + IQR\*bflag_cutoff of the blank spectra basePeakInt distribution and BFLAG TRUE will be joined to a blank spectrum in the clean step. This cutoff will affect the spectra with BFLAG TRUE that would not get joined to a blank spectra when relying only on the similarity cutoff. This is a turn around to the fact that blank spectra have low quality spectra and thus can not fully rely on the similarity values. (default: 1.5)
 - *\-\-noise_cutoff* [x]            :      A positive numeric value to scale the interquartile range (IQR) of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt value below this distribution median plus IQR*noise_cutoff after the clean Step 5. Or FALSE to disable it. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile) of the distribution. When no blank sample is present in the metadata, the full distribution is used. This cutoff will affect the spectra with with a low basePeakInt value that probably are noise features.  If the clustering Step 3 results in more than 25000 spectra, the noise cutoff will be applied before the clean Step 5 to prevent a long processing time (default: "FALSE")
-- *\-u, \-\-rules* [x]              :   path to the CSV file following the NP3 rules table format with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. To be used by the annotation algorithm (Step 7) (default: "rules/np3_modifications.csv")
+- *\-u, \-\-rules* [x]              :   path to the CSV file following the $NP^{3}$ rules table format with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. To be used by the annotation algorithm (Step 7) (default: "rules/np3_modifications.csv")
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
-- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
+- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the $NP^{3}$ shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased. To be used in Steps 6, 7 and 10 (default: 3000)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (Step 9) (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process (Step 5) (default: "FALSE") -->
@@ -430,7 +438,7 @@ A directory inside the *output_path* named with the *output_name* containing:
  
 The clustering steps results folders are named as 'B\_\<DATA\_COLLECTION_BATCH\>\_\<X\>' where *DATA\_COLLECTION\_BATCH* is the data collection batch number in the metadata file of each group of samples and *X* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
  
-The final integration step result is located inside the 'outs' directory in a folder named with the *output_name*. This folder contains the final counts and is where the user will find the final results. It also contains the following data:
+The final integration step result is located inside the 'outs' directory in a folder named with the *output_name*. This folder contains the final quantification and is where the user will find the final results. It also contains the following data:
  
 - Inside the 'count_tables' folder two subfolders named "clean" and "merge" containing CSV tables with the counts from Steps 6, 7, 8 and 9, and the base peak intensity distribution plot of the clustering counts in a PNG image file;
 - The 'identifications' folder with the tremolo identification results;
@@ -451,12 +459,55 @@ The final integration step result is located inside the 'outs' directory in a fo
           \<*max_component_size*\>.selfloops'
     - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as: \newline
       '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
+- The 'final_reports' folder containing statistics of the final result in separated subfolders for quantification, chemical and network analysis.
  
-##### 4.2.1. *run* Final Reports
+##### 4.2.2. *run* Final Reports
 
-TO BE DOCUMENTED.
+At the end of the pipeline processing, the $NP^{3}$ will automatically create different
+final reports with statistics of the final results. These reports are stored in a
+folder named 'final_reports', located in the final output folder inside outs/*output_name*/.
+
+The $NP^{3}$ MS Workflow final reports are organized in three groups of reports: *quantification*, *chemical* and *molecular networking* statistics, separated in different subfolders.
+
+The *quantification* report is located inside the quantification_report subfolder and contains:
+- A table with the final quantification of clean consensus spectra, with statistics of the total number of m/z in blank and bed samples, global spectral identification rate against UNPD-tremolo, average number of putative isomers, number of isotope ions and number of fragmented clusters.
+
+The *chemical* report is located inside the chemical_report subfolder and contains: 
+- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation.  
+- When gnps_result is executed, another two similar tables are created with the spectral identification and putative novelty against the GNPS libraries and also against the best origin identification GNPSxUNPD after and before the curation.
+- A folder named chemical_space_identifications with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
+- Another folder named chemical_space_mzs with the chemical space plot of the m/z, retention time and their quantification information.
+- An image with the distribution of the superclass groupings among the not blank samples.
+
+The identification curation is detailed in section 4.6.2 *tremolo*.
+
+The *molecular networking* report is located inside the molecular_networking_report subfolder and contains:
+- One table for each network created by the $NP^{3}$ pipeline containing some network statistics such as size, average degree, number of isolates, number of components by size and clustering coefficients.
+
+All statistics present in the created tables have a column with a detailed description explaining how they are calculated and what they represent. These values synthesize the final $NP^{3}$ results and accelerates further analysis.
+
+The *chemical space* of the identifications created in the chemical report was standardized to use *PCA* and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom were fixed). 
+
+The top 24 descriptors selected from CDK contains 18 topological and 6 constitutional descriptors and are named: 'WPOL','ATSp1','ATSp2','SP.3','Zagreb','VP.3','naAromAtom','SP.2','ATSp3','VP.2','ATSm3','nB',
+'ATSm2','nAromRings','nAromBlocks','C2SP2','khs.aasC','nAtomP','khs.aaCH','LipinskiFailures','MW',
+'nAtom','VP.1','WTPT.1. Their descriptions can be found in the CDK site https://cdk.github.io/ [26] or the supplementary information of review [27]. 
+The reference dataset used to create the PCA chemical space is deposited in the repository folder at:
+
+- 'NP3_MS_Workflow/src/final_report/Chemical_space_data/descriptors_reference_table.zip'. 
+
+The reference dataset contains all the SMILES from the three sources with their top 24 CDK descriptors calculated using R. 
+
+For each final $NP^{3}$ result, in the chemical report creation, the clean consensus spectra identified against UNPD and curated are used to create the PCA, blanks and beds are removed (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0 are used). The final best curated SMILES are selected (column tremolo_SMILES_best with tremolo_UNPD_score_best > 0) and their top CDK descriptors are extracted. These new data is then transformed into the reference PCA and plotted. The PCA for only protonated m/zs is also created following the same procedure (the name of its final plot will contain the 'protonated' tag).
+
+The format of the final chemical space and the circle plot with the top 24 components can be found at NP3_MS_Workflow/docs/chemical_space_reference. The PCA method was chosen to create the chemical space of the $NP^{3}$ results because it allows keeping a high understanding of the result with the principal components showing the respective variables information. A better understanding is more important here than a better clustering of the identifications.
+
+A PCA plot is also created in the *gnps_result* command using the curated identifications joined from GNPS (see details of this command).
+
+Another PCA is created in the chemical space plot of the final m/zs, which uses the final clean consensus spectra chromatographic information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no coloring or grouping is being applied in this PCA, this is a beta analysis to be improved.
+
+Furthermore, the command *pca_plot* may be used to create other PCA plots, a posteriori or with external data, using the $NP^{3}$ reference chemical space as base (exploratory analysis). See details in this command section.
  
-##### 4.2.2. *run* Examples
+##### 4.2.3. *run* Examples
  
 Fake examples using the *run* command:
 
@@ -781,7 +832,7 @@ Options for the command *clean*:
 - *\-z, \-\-mz_tolerance* [x]              : the tolerance in Daltons that determines if two spectra will be compared and possibly joined. It is also used in Step 7 to detect possible ion variants (default: 0.025)
 - *\-t, \-\-rt_tolerance* [x,y]        : tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. It is directly applied to the retention time minimum (subtracted) and maximum (added) of the spectra. It enlarges the peak boundaries to deal with disaligned samples or ionization variant spectra. The first tolerance [x] is used in the annotation Step 7; and the tolerance [y] is used in the clean Step 5 (default: 1,2)
 - *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
-- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine function is used. (default: "np3_shifted_cosine")
+- *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the similarity to be consider when joining clusters and merging their counts in not blank samples (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the similarity to be consider when joining clusters and merging their counts in blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-w, \-\-similarity_mn* [x] :     the minimum similarity score that must occur between a pair of consensus spectra to connect them with an edge in the molecular networking. Lower values will increase the component size of the clusters by inducing the connection of less related spectra; and higher values will limit the components sizes to the opposite (default: 0.6)
@@ -804,7 +855,7 @@ Options for the command *clean*:
   					(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, 
   					or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN  (default: 0)
 - *\-r, \-\-trim_mz* [x]                : A logical "TRUE" or "FALSE" indicating if the spectra fragmented peaks around the precursor m/z +-20 Da should be deleted before the pairwise comparisons. If "TRUE" this removes the residual precursor ion, which is frequently observed in MS/MS spectra acquired on qTOFs. (default: "TRUE")
-- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
+- *\-\-max_shift* [x]                   :  Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the $NP^{3}$ shifted cosine function. Shifts greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same compound. (default: 200)
 - *\-l, \-\-parallel_cores* [x]       :   the number of cores to be used for parallel processing (Step 5). x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1 (default: 2)
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process. (default: "FALSE") -->
@@ -840,6 +891,8 @@ The 'molecular_networking' folder is also created if not present yet, and inside
 - One CSV table containing the molecular network of annotations attributes and the assigned [M+H]+ representatives, named as 
     '\<*output_name*\>_ivamn_attributes.csv' (Step 7)
  
+The 'final_reports' folder is also created if not present yet to store the recomputed statistics and analysis of the result.
+
 Where the 'output_name' is extracted from the 'output_path';
  
 When running Tremolo the 'identification' folder is also created (if not present yet) with the identifications results inside it. These identifications are also added as new columns in the created clean count tables. 
@@ -867,15 +920,15 @@ The $NP^{3}$ shifted cosine algorithm first matches the same m/z's from fragment
 Next, the *clean* step use the computed similarity table of the resulting consensus spectra to reduce the clustering count tables. It works in the following steps: 
  
 1. Data cleaning step: the fragmented clusters are joined if their consensus spectra have a similarity value above the cutoff, or if they share at least one peakId or if they pass the bflag cutoff criteria. The similarity table is reduced based on the performed joins always keeping the maximum similarity value between the aggregated rows and columns (greedy heuristic). This procedure is repeated at most 10 times to take into account the results of the performed aggregations of previous steps, it stops earlier if no join is performed. At the first time of this step, only blank spectra are considered for the joining and teh bflag cutoff is applied. Finally, a noise cutoff is applied to remove spectra with a low base peak intensity value;
-2. Indicators step: the samples types indicators are computed for each row of the just obtained clean counts. All the indicators of Step 4 are computed plus another indicator showing the distance of each spectra to a blank spectrum (when blank samples are present). The joined clusters have their fragmented peak list and intensities aggregated in a consensus that is stored in the clean count table, and saved to the clean MGF file. The IDs of the joined clusters are stored in the clean count tables as well, in a column named 'joinedIds'; 
+2. Indicators step: the samples types indicators are computed for each row of the just obtained clean counts. At the end, all the indicators of Step 4 are computed plus another indicator showing the distance of each spectra to a blank spectrum (when blank samples are present). Additionally, a fragmented cluster indicator is computed to check the remaining not joined clean consensus spectra. The joined clusters have their fragmented peak list and intensities aggregated in a consensus that is stored in the clean count table, and saved to the clean MGF file. The IDs of the joined clusters are stored in the clean count tables as well, in a column named 'joinedIds'; 
  
-In the fragmented clusters search of the Data cleaning step, an additional condition was added in the criteria to join two spectra. It checks if the peak center devition between the spectra is less than 4 times the retention time tolerance or if their peak boundaries deviation is less than 2 times the retention time tolerance. If both of these conditions are not satisfied, the spectra are kept separated. By doind this, we try to prevent joining adjacent isomers that have a high similarity value. 
+In the Data cleaning step, when searching for fragmented clusters an additional condition was added in the criteria to join two spectra. It checks if the peak center deviation between the spectra is less than 4 times the retention time tolerance or if their peak boundaries deviation is less than 2 times the retention time tolerance. If both of these conditions are not satisfied, the spectra are kept separated. By doing this, we try to prevent joining adjacent isomers that have a high similarity value. 
 
 Also in the Data cleaning step, a bflag cutoff was implemented to allow joining spectra from blank samples that do not have a similarity value above the cutoff. This helps to reduce the fragmented clusters with bflag TRUE and a low base peak intensity, that could not fully rely in the similarity values. The bflag cutoff is computed as the median value of the base peak intensity distribution of blank spectra plus the factor informed by the user times the interquartile range (IQR) of this distribution. The IQR is the range between the 1st quartile (25th quantile) and the 3rd quartile (75th quantile) of a distribution. The consensus spectra with a basePeakInt value <= median + IQR*bflag_factor (from the blank spectra basePeakInt distribution) and BFLAG TRUE will be joined to a blank spectrum independent of their similarity values.
 
 At the end of the clean step a noise cutoff is applied to remove spectra with a low base peak intensity value. The noise cutoff is computed as the the median value of the base peak intensity distribution of blank spectra plus the factor informed by the user times the interquartile range (IQR) of this distribution. When no blank sample is present in the metadata, the full distribution of the base peak intensity from the clustering counts is used. This cutoff will affect the consensus spectra with a low basePeakInt value that probably are noise features. If the clustering Step 3 resulted in more than 15000 consensus spectra, the noise cutoff will be applied before the clean step to prevent a long processing time.
 
-The base peak intensity distribution plotted at the end of the clustering step helps the users to better define this cutoffs' factors and to better undersand its effect on their dataset.
+The base peak intensity distribution plotted at the end of the clustering step helps the users to better define this cutoffs' factors and to better understand its effect on their dataset.
  
 The count tables, in terms of the number of spectra and of peak area, of the joined clusters are aggregated following the same rules applied in Step 4 and the joined clusters peak information (m/z, retention time mean, minimum and maximum) are computed as the average of the joining clusters values weighted by their intensities (sumInts).
  
@@ -886,6 +939,7 @@ The following columns are added to the count tables in the *clean* step:
 | joinedIDs | the msclusterIDs of the joined spectra in the cleaning step, separated by a ';' | character with concatenated numbers |
 | numJoins | the number of spectra that were joined in the cleaning step | numeric |
 | BLANK_DIST | the distance in the molecular network of similarity from the current spectra to a spectrum of a blank sample. This distance ranges from 0 (if the current spectra appear in a blank sample) to 3 (if there are at least 3 links between the current spectra and a spectrum of a blank sample in the molecular network of similarity). If this value is NA it means that this distance is at least greater than 3, and thus was not computed. | numeric |
+| fragmented_cluster | the number of clean consensus spectra identified as a fragmented cluster of the current spectrum or -1 to indicate that the current spectrum is a fragmented cluster of another more intense spectrum. The clean consensus spectrum that receives a positive value greater or equal than one in this column is the candidate with the highest basePeakInt among the other spectra signalized as fragmented clusters within the same m/z and retention time interval, which receives a -1 value. The spectrum without fragmented clusters receives a value equals to 0. | numeric |
 Table: Clean Count Tables New Columns from the Data Cleaning Step
 
 
@@ -893,15 +947,19 @@ Table: Clean Count Tables New Columns from the Data Cleaning Step
  
 Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode.
 
-The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. NP³ MS Workflow will retrieve this information together with the identification results.
+The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the identification results.
  
+At the end of the identification step, a curation is performed to select the best result from the 
+top_k identifications of each spectra and to score them with a personalized
+criteria. Additionally, a superclass grouping of the NPClassifier result was proposed by the $NP^{3}$ team and is also applied here for the final curated superclass.
+
 A binary version of the tremolo tool is freely available for download in the following link: http://proteomics.ucsd.edu/software-tools/tremolo/.
  
 Options for the command *tremolo*:
  
-- *\-o, \-\-output_path <path>* :     path to where the spectral library search results will be stored
+- *\-o, \-\-output_path <path>* :     path to where the spectral library search results will be stored. This is usually the 'identifications' folder present in the final result.
 - *\-g, \-\-mgf <file>*       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
-- *\-c, \-\-count_files [name]*       :      optional paths to the count CSV files, separated by a comma and no space, as outputted by the $NP^{3}$ MS workflow where the identifications should be added as new columns. The top_k search results for each msclusterID will be added in 8 identification columns generated by tremolo. The count files header must be in the first row. (default: "")
+- *\-c, \-\-count_files [name]*       :      optional paths to the count CSV files, separated by a comma and no space, as outputted by the $NP^{3}$ MS workflow where the identifications should be added as new columns. The top_k search results for each msclusterID will be added in additional identification columns generated by tremolo, then the curated and best results will also be added in other columns. The count files header must be in the first row. (default: "")
 - *\-z, \-\-mz_tolerance <file>*       :      the tolerance for parent mass search in Daltons. Set a small tolerance for dereplication using parent ion mass as prefilter, keeping in mind the resolution of your data. Increase to the wanted range for variable dereplication search (ex: 100 or 200 Da) Caution as this will also increase calculation times! (default: 0.025)
 - *\-s, \-\-similarity <file>*       :      the similarity threshold that determines if two spectra are the same. Should be kept low when using in-silico DB, as recommended by the authors. Typically, 0.2 to 0.3 (default: 0.2)
 - *\-k, \-\-top_k <file>*       :      defines the maximal number of results returned by the tremolo tool, e.g. number of identifications by msclusterID
@@ -913,12 +971,12 @@ Options for the command *tremolo*:
 Two files are created inside the 'output_path' folder (this folder is created if missing):
  
 - 'logTremolo' a text file with the tremolo tool output information;
-- 'tremolo_results.csv' a CSV file with the tremolo search results for each spectra SCANS present in the provided MGF file.
+- 'tremolo_results.csv' a CSV file with the tremolo search results for each spectra SCANS present in the provided MGF file. Each top_k result is presented in a separated row in this table.
     
-When the count_files are provided the following columns are added to them:
+When the count_files are provided, the tremolo results are aggregated by spectra and the following columns are added to the tables:
  
 | Identification Columns | Description |
-| :--------------- | :------------------------------------: | 
+| :------------------------- | :---------------------------------: | 
 | tremolo_UNPD_IDs | the UNPD IDs of the top_k identified spectra concatenated with a ';'|
 | tremolo_SMILES    | the SMILES of the top_k identified spectra concatenated with a ','. A comma is used here to allow including this information in cytoscape to visualize the nodes annotated identified structure. This column must be quoted "" |
 | tremolo_chemicalNames    | the chemical names of the top_k identified spectra concatenated with a ';' |
@@ -939,10 +997,76 @@ When the count_files are provided the following columns are added to them:
 | tremolo_NPAtlas_origin_type	     | the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_genus	            | the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_origin_species     | the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';' |
+| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in the Identification Curation |
+| tremolo_<identification columns>_best | some of the previous identification columns with the best result from index tremolo_best_position | 
+| tremolo_NPClassifier_superclass_clean_best | the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe) |
+| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in the Identification Curation |
+| tremolo_UNPD_score_best | the corresponding score of the tremolo_UNPD_category_best |
+| curated_identification_best_origin | the database origin of the best identification, here it receives 'UNPD' for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). In the gnps_result it may also receive a value equal to 'GNPS' |
+| best_origin_SMILES | the SMILES of the curated identification from the best origin. Here where curated_identification_best_origin == UNPD it receives the value of the tremolo_SMILES_best | 
+| best_origin_curated_superclass | the NPClassifier superclass of the curated identification from the best origin. Here where curated_identification_best_origin == UNPD, it receives the value of the tremolo_NPClassifier_superclass_clean_best column |
+| tremolo_curated_superclass  | the result of the tremolo_NPClassifier_superclass_clean_best for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') |
+| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Identification Curation | 
+| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in the Identification Curation |
 
 For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md file and its documentation at src/ISDB_tremolo_NP3/Data/doc/Workflow_062016.pdf.
  
-##### 4.6.2. *tremolo* Examples
+##### 4.6.2. *tremolo* Identification Curation
+
+A curation of the identification results was proposed in order to score and rank the best identification from the UNPD-tremolo. The curations is executed after the identification results are merged to the count_files tables. Some chemical criteria were defined to automatically select the best candidate from the top_k results. Additionally, a chemical grouping of the NPClassifier superclass were proposed by the $NP^{3}$ team to ease the chemical understanding of the best identifications.
+
+The curation starts by selecting the best result among the top_k identifications for each identified spectra and then extract their value for all the identification columns, as follow:
+
+1. The best result is defined as the identification with the higher tremolo_MQScore which have tremolo_mzErrorPPM < 20 if any, otherwise it is defined equals to the identification with the smaller tremolo_mzErrorPPM rounded in the first decimal place which have the higher tremolo_MQScore;
+2. The best result is set in a new column named 'tremolo_best_position' which will store the index of the best result among the top_k identifications for each spectra;
+3. The identification columns with the best selected result are created equal to the identification columns names plus a suffix equals to '_best' and the result present in the tremolo_best_position is extracted and set to them.
+    - Additionally, it is created the column 'tremolo_NPClassifier_superclass_clean_best' with only the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe).
+
+After the best result were selected and their information extracted, the curation proceeds to a categorization and scoring of the best result. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+
+| Tremolo UNPD Category | Score | Criteria | 
+| :--------------- | :---: | :------------------------------------: | 
+| Top1\|mqs>=0.5 | 100 | mzE <= 20 and nsP >= 6 |
+| Top2\|0.4<=mqs<0.5 | 80 | mzE <= 20 and nsP >= 6 |
+| Top3\|sp<6 mqs>=0.5 | 60 | mzE <= 20 and nsP < 6 |
+| Top4\|sp<6 0.4<=mqs<0.5 | 50| mzE <= 20 and nsP < 6 |
+| Top5\|mqs>=0.2 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.4 |
+| Analog1\|mqs>=0.5 | 40 | mzE > 20 and nsP >= 6 |
+| Analog2\|0.4<=mqs<0.5 | 30 | mzE > 20 and nsP >= 6 |
+| Analog3\|sp<6 mqs>=0.5 |  20 | mzE > 20 and nsP < 6 |
+| Analog4\|sp<6 0.4<=mqs<0.5 | 10 | mzE > 20 and nsP < 6 |
+| Analog5\|mqs>=0.2 | 5 | mzE > 20 and nsP >= 6 and mqs<0.4 |
+| out | 0 | did not passed in any category - unreliable identification |
+  
+* Where mqs is the tremolo_MQScore_best, nsP is the tremolo_numSharedPeaks_best and mzE is the tremolo_mzErrorPPM_best values. 
+
+The defined category for each final best identification is stored in the column 'tremolo_UNPD_category_best' and its corresponding score is stored in the column 'tremolo_UNPD_score_best'.
+
+Finally, it is created the column 'curated_identification_best_origin' to store the name of the database that have the greatest curated score (UNPD or GNPS) for each spectra, from where the best identification originated. Here this column receives a value equals to 'UNPD' for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') and an empty string in the rest. When running the gnps_result command, some spectra may receive a value equal to 'GNPS' on this column depending on the comparison of the scores from the two identification origins (UNPD and GNPS), detailed in the gnps_result documentation section.
+
+The 'curated_identification_best_origin' column stores the best identification origin, and to complement this information the column 'best_origin_SMILES' and 'best_origin_curated_superclass' are also created with the SMILES and the superclass, respectively, from the best identification. Here it receives the tremolo-UNPD best values. In the gnps_result command it may receive values from the gnps result when they have a better score.
+
+Additionaly, the curation of the identification also defines and creates a grouping of the superclasses from the NPClassifier. In UNPD, there are 94 superclasses from the NPClassifier, which is a very large number for a fast analysis. Here the $NP^{3}$ team proposed a groupings with 10 major superclasses using a chemical reasoning to group related superclasses in a Drug Discovery perspective. The major superclasses groupings are presented in the table below:
+
+| Major Superclass Group | NPClassifier Superclasses |
+| :---------- | :---------------: |
+| Aminoacids_and_Peptides_and_OtherNComp | "Amino acid glycosides", "Mycosporine derivatives", "Oligopeptides", "Small peptides", "Aminosugars and aminoglycosides", "Diazotetronic acids and derivatives", "Mitomycin derivatives", "Organic nitrogen compounds", "Nucleosides, nucleotides, and analogues", "Nucleosides" |
+| Alkaloids_and_Lactams | "Alkaloids and derivatives", "Anthranilic acid alkaloids", "Lysine alkaloids", "Guanidine alkaloids", "Histidine alkaloids", "Ornithine alkaloids", "Peptide alkaloids", "Proline alkaloids", "Pseudoalkaloids", "Tetramate alkaloids", "Miscellaneous alkaloids", "Nicotinic acid alkaloids", "Serine alkaloids", "Tryptophan alkaloids", "Tyrosine alkaloids", "$\beta$-lactams", "$\gamma$-lactam-$\beta$-lactones" |
+| Terpenes_and_Carotenoids | "Diterpenoids", "Meroterpenoids", "Monoterpenoids", "Sesterterpenoids", "Triterpenoids", "Steroids", "Sesquiterpenoids", "Apocarotenoids", "Carotenoids (C40)", "Carotenoids (C45)", "Carotenoids (C50)" |
+| Fatty_Acids_and_Lipids | "Fatty Acids and Conjugates", "Fatty acyl glycosides", "Fatty acyls", "Fatty amides", "Fatty esters", "Lipids and lipid-like molecules", "Docosanoids", "Eicosanoids", "Glycerophospholipids", "Glycerolipids", "Octadecanoids", "Sphingolipids", "Hydrocarbons", "Hydrocarbon derivatives" |
+|		Polyketides | "Aromatic polyketides", "Cyclic polyketides", "Macrolides", "Linear polyketides", "Miscellaneous polyketides", "Polycyclic aromatic polyketides", "Polyethers" |
+| Benzenoids | "Benzenoids", "Diarylheptanoids", "Naphthalenes", "Phenanthrenoids", "Stilbenoids", "Terphenyls", "Diphenyl ethers (DPEs)", "Fluorenes" |
+| Flavonoids_and_Phenolic_derivatives | "Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)", "Phenylethanoids (C6-C2)", "Phenylpropanoids (C6-C3)", "Phloroglucinols", "Phenylpropanoids and polyketides" |
+| Organohalogen_and_Organometallic | "Organohalogen compounds", "Organometallic compounds", "Acetylides" |
+| Lignans_and_Other_Ocompounds | "Chromanes", "Coumarins", "Organic oxygen compounds", "Polyols", "Polyprenols", "Saccharides", "Styrylpyrones", "Xanthones", "Lignans", "Lignans, neolignans and related compounds", "Tropolones" |
+| Organic_Acids_and_OthersGenerals | "Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives", "Organoheterocyclic compounds", "Organosulfur compounds" |
+| Not_Annotated | "not_annotated" |
+
+At the end of the tremolo curation, it is created the column 'tremolo_curated_superclass' that receives the result of the best tremolo superclass for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). This column is then mapped to the superclasses grouping defined above and stored in column 'tremolo_curated_superclass_grouping'. If multiple superclasses were assigned to the spectra, they are separated by a ':'. Finally, for each curated superclass grouping, it is created a column named 'tremolo_curated_superclass_GR_\<curated superclass grouping\>' with 0 or +1 values checking if the curated identification of UNPD-tremolo of the spectra were assigned to the corresponding curated superclass grouping zero, one or more times.
+
+In the gnps_result command a curation of the best origin identification result, comparing UNPDxGNPS, is automatically computed. In the final reports, the curated identification result (more refined result) is used for the final statistics and compared with the best identification not curated (complete result). 
+
+##### 4.6.3. *tremolo* Examples
  
 Fake example to execute the Tremolo command:
  
@@ -1308,7 +1432,7 @@ It works as follow:
 
 ## 4.11. Command *join_jobs* 
 
-  Command to join different $NP^{3}$ jobs (results from the *run* or the *join_jobs* commands) into a single united job using an integrative clustering approach. It concatenates different jobs without the need of running them all together again, and always uses the first appearing job as the reference for keeping the same msclusterIDs. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes. It uses the clean results from the provided $NP^{3}$ jobs and execute the main pipeline from Steps 3 to 10 with some modifications and adaptations in an integrative clustering manner, except for Step 8 which is skipped (it may be executed a posteriori if needed). At the end, the final reports are created for the joined results.
+  Command to join different $NP^{3}$ jobs (results from the *run* or the *join_jobs* commands) into a single united job using an incremental clustering approach. It concatenates different jobs without the need of running them all together again, and always uses the first appearing job as the reference for keeping the same msclusterIDs. Uses a different metadata, called *metadata_join*, defining the jobs to be joined and their reference codes. It uses the clean results from the provided $NP^{3}$ jobs and execute the main pipeline from Steps 3 to 10 with some modifications and adaptations in an incremental clustering manner, except for Step 8 which is skipped (it may be executed a posteriori if needed). At the end, the final reports are created for the joined results.
   
   The following subsections define how to create the metadata_join table, its expected format, the data organization to execute the *join_jobs* command and details on its methods.
   
@@ -1318,11 +1442,13 @@ It works as follow:
   
   The *join_jobs* can be used to join the results from multiple original jobs and 
 also from previous joined jobs with a new original or joined job. There is no limit for
-joining $NP^{3}$ results, coming from the *run* or the *join_job* commands, the user may continuous join results from different jobs in a final integrative result without loosing reference from a previous main result. 
+joining $NP^{3}$ results, coming from the *run* or the *join_job* commands, the user may continuous join results from different jobs in a final incremental result without loosing reference from a previous main result. 
 
 If there is any duplicated sample code among different original jobs being joined (SAMPLE_CODE column from the original samples' metadata), these codes are automatically updated with a numerical and incremental suffix. The original sample codes are maintained in a separated column (see details in next subsections).
+
 The JOB_CODE must be unique among the different joining jobs.
 
+The final reports are created at the end of the join_jobs command!
 
 Options for the command *join_jobs*:
  
@@ -1331,10 +1457,10 @@ Options for the command *join_jobs*:
   
 - *-m, --metadata_join* \<file\> : path to the metadata table CSV file defining the jobs to be joined. Different format, see manual.
 - *-d, --jobs_data_path* \<path\> : path to the folder containing the input jobs result to be joined, 
-  this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. 
+  this should contain their previous $NP^{3}$ result, named accordingly to what is specified in the metadata_join. 
   Their clean mgf and quantification tables will be used.
 - *-y, --pre_processed_dir_path* \<path\> : path to the folder containing the input jobs pre processing result, 
-  this should contain all the original jobs previous NP3 pre processing result in separated folders named 
+  this should contain all the original jobs previous $NP^{3}$ pre processing result in separated folders named 
   accordingly to what is specified in the metadata_join.
 - *-o, --output_path* \<path\> : path to where the output directory will be created
 - *-f, --fragment_tolerance* [x] : the tolerance in Daltons for fragment peaks. Peaks in the
@@ -1360,7 +1486,7 @@ Options for the command *join_jobs*:
   					to create the pairwise similarity table after clustering and clean steps. 
   					If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) 
   					is used by spec2vec in the spectra comparison and the matchms library is used to compute 
-  					the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine 
+  					the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine 
   					function is used. One of "np3_shifted_cosine" or "spec2vec". (default: "np3_shifted_cosine")
 - *-s, --similarity* [x] : the minimum similarity to be consider in the hierarchical
   					clustering, starts in 0.70 and decrease to X in 15 rounds
@@ -1416,7 +1542,7 @@ Options for the command *join_jobs*:
   					before the pairwise comparisons. If "TRUE" this removes the 
   					residual precursor ion, which is frequently observed in MS/MS 
   					spectra acquired on qTOFs. (default: "TRUE")
-- *--max_shift* [x] : Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the NP3 shifted cosine function. Shifts
+- *--max_shift* [x] : Maximum difference between precursor m/zs that will be used in the search of shifted m/z fragment ions in the $NP^{3}$ shifted cosine function. Shifts
                                        greater than this value will be ignored and not used in the cosine computation. It can be useful to deal with local modifications of the same
                                        compound. (default: 200)
 - *-l, --parallel_cores* [x] : the number of cores to be used for parallel processing
@@ -1492,7 +1618,7 @@ Join the joined job from A and B (result from the join_jobs command) with origin
 
 ##### 4.11.3. *join_jobs* Metadata_join creation
 
-  The *metadata_join* table defines the list of $NP^{3}$ jobs to be united, it defines the joining jobs codes, original samples' metadata name and original pre processing result. It also defines if the joining jobs came from a *run* (called here original job) or a *join_jobs* (called here joined job) command result. The order of the jobs defined in the metadata_join matters, the *first* defined job is used as the *reference* job, from which the msclusterIDs' will be maintained in the final clean result (integrative clustering).
+  The *metadata_join* table defines the list of $NP^{3}$ jobs to be united, it defines the joining jobs codes, original samples' metadata name and original pre processing result. It also defines if the joining jobs came from a *run* (called here original job) or a *join_jobs* (called here joined job) command result. The order of the jobs defined in the metadata_join matters, the *first* defined job is used as the *reference* job, from which the msclusterIDs' will be maintained in the final clean result (incremental clustering).
   This table has the same format as the original samples' metadata, it must be a CSV file with columns separated by comma ',' and with the dot '.' as decimal point character. It can be created and edited in EXCEL, LibreOffice CALC or any other spreadsheet program, but must be saved in CSV (UTF-8) format. If any text name in the metadata_join file contains special characters, the file must be saved with the parameter to quote text cells set to TRUE. After the metadata_join file was finished it is recommended to open it with a simple text viewer, e.g., notepad, to make sure that the column separator character and the decimal point character were properly set. 
  
 A metadata_join template file is available in the $NP^{3}$ MS workflow repository, named 'METADATA_JOIN_TEMPLATE.csv'. It uses the Bra346 and the MA9 datasets as examples, provided in the $NP^{3}$ paper.
@@ -1521,7 +1647,7 @@ In a project intended to continue grow with new jobs being collected and process
 
 ##### 4.11.5. *join_jobs* Details
 
-The join_jobs command uses the main $NP^{3}$ MS Workflow steps (from command *run*) to integrate different jobs by uniting their $NP^{3}$ results. Some steps needed to be adapted (Steps 4 and 5) or replaced (step 7) to allow joining original $NP^{3}$ results using an integrative approach.
+The join_jobs command uses the main $NP^{3}$ MS Workflow steps (from command *run*) to integrate different jobs by uniting their $NP^{3}$ results. Some steps needed to be adapted (Steps 4 and 5) or replaced (step 7) to allow joining original $NP^{3}$ results using an incremental approach.
 
 The inputs to the join_jobs command are the pre processed data and the final results from other $NP^{3}$ executions (clean data is used), coming from a *run* execution (called original job) or from a *join_jobs* execution (called joined job). The clean data of the final results used are the clean MGF file, the clean count tables and the annotations of ionization variants. The ionization variants are not recomputed here because they are directly related to the original samples which were collected together, and instead, the original annotations are maintained from the original jobs, joined and updated here. 
 
@@ -1542,7 +1668,7 @@ The quantification step performs the count by number of spectra as a simple sum 
 
 Next, the join_jobs workflow proceeds to the cleaning (Step 5), which is executed similar to the main workflow. The main difference here is that at the end of the process the final msclusterID are saved in a new column called "cleanClustID" and the msclusterIDs are set to be equal to the minimum ID present in the mscluster_integrative column - this way the IDs from the reference job are kept in the final joined clean result. Another difference is that the peak area computation was adapted for multiple pre processed data, but works similarly. Then, the clean joined data are compared pairwise and the joined clean MGF is identified against UNPD using tremolo (Step 6).
 
-Following is the annotate_protonated (Step 7) which works in an integrative approach instead of recomputing ionization variants. The annotate_protonated step was replaced here by a procedure to merge the ionization annotations of the jobs being joined and then to recompute the [M+H]+ while keeping some of the original protonated representatives. The join_jobs flow of Step 7 is as follow: first it retrieves the IVAMNs of all the joining jobs and map their msclusterIDs to the new joined IDs (uses column joinedJobsID for reference), selfloops are removed and duplicated edges are merged. The edges attributes are recomputed with the new similarity values, the mzError receives the mean value of the merged edges and the rtError is recomputed again for the joined msclusterIDs. The annotations rules are applied again and removes any invalid annotation (similarity cutoff), any resulting empty edge is removed. This result in the final joined IVAMN, selfloops are added again at the end for the missing nodes. Then, the find protonated script is executed for the final joined IVAMN, resulting in a new list of [M+H]+ ions (column protonated_representatives = 1). This list is further merged with the previous protonated_representatives that have an in-degree > 0 in the final joined IVAMN (keep [M+H]+ with valid annotations), this prevent loosing relevant information from the previous jobs. Finally, a new script parses the information present in the final joined IVAMN and writes them as annotation columns to the joined clean tables, with a similar format to the main flow. The only missing column here is the 'analogs' one, which is not recomputed in the new procedure. The rest of the ionization annotation columns and the protonated_representative are written to the clean tables and to the joined IVAMN attribute table.
+Following is the annotate_protonated (Step 7) which works in an incremental approach instead of recomputing ionization variants. The annotate_protonated step was replaced here by a procedure to merge the ionization annotations of the jobs being joined and then to recompute the [M+H]+ while keeping some of the original protonated representatives. The join_jobs flow of Step 7 is as follow: first it retrieves the IVAMNs of all the joining jobs and map their msclusterIDs to the new joined IDs (uses column joinedJobsID for reference), selfloops are removed and duplicated edges are merged. The edges attributes are recomputed with the new similarity values, the mzError receives the mean value of the merged edges and the rtError is recomputed again for the joined msclusterIDs. The annotations rules are applied again and removes any invalid annotation (similarity cutoff), any resulting empty edge is removed. This result in the final joined IVAMN, selfloops are added again at the end for the missing nodes. Then, the find protonated script is executed for the final joined IVAMN, resulting in a new list of [M+H]+ ions (column protonated_representatives = 1). This list is further merged with the previous protonated_representatives that have an in-degree > 0 in the final joined IVAMN (keep [M+H]+ with valid annotations), this prevent loosing relevant information from the previous jobs. Finally, a new script parses the information present in the final joined IVAMN and writes them as annotation columns to the joined clean tables, with a similar format to the main flow. The only missing column here is the 'analogs' one, which is not recomputed in the new procedure. The rest of the ionization annotation columns and the protonated_representative are written to the clean tables and to the joined IVAMN attribute table.
 
 Next, the join_jobs workflow skips Step 8, the merging may result in too much additional data and may be executed separated by the user at the end of this procedure if needed. To execute the merge with the join_jobs result the user must inform the created original samples metadata as the metadata parameter. Then, the join_jobs command proceeds to the biocorrelation (Step 9), using the automatically created original samples metadata to perform the correlations and any grouping present in the original metadatas. At the end of this command, the user may add new correlations, bioactivities or quantification groupings to the original samples metadata and execute this step again (using command *corr*).
 
@@ -1551,20 +1677,32 @@ The join_jobs workflow ends with the molecular networking (Step 10) similar to t
 ## 4.12. Command *gnps_result*
  
 Join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'all identifications') workflows to the count tables of the $NP^{3}$ clustering or clean steps (Steps 3 or 5) from a run or a join_jobs result.
+
+It computes the CDK top descriptors for the unique SMILES identified in GNPS and then make the curation of the identifications to score and filter the more reliable results. At the end, it also performs the curation of the best identification origin from UNPDxGNPS.
  
 Options for the command *gnps_result*:
  
 - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
-- *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder
+- *\-s, \-\-result_specnets_DB_path* \<path\>       : If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'result_specnets_DB\'; and if this is the result of a Library Search workflow, this should be the path to the file inside the downloaded folder. When using GNPS2, this should be the top 1 results.
 - *\-c, \-\-count_file_path* \<path\>       : Path to any of the count tables (peak_area or spectra) resulting from the $NP^{3}$ MS workflow clustering or clean steps. If the peak_area is informed and the spectra table file exists in the same path (or the opposite), it will merge the GNPS results to both files
+- *\-o, \-\-job_output_path* \<path\>    :          path to the job final output data folder, inside the outs
+                                        directory of the clustering result folder. It should contain
+                                        the identifications folder, if not it will be created. The job
+                                        name (output_name) will be extracted from here.
+- *\-m, \-\-metadata* [file]   : path to the samples metadata table CSV file of the $NP^{3}$ job. This is necessary to plot the distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).  (default: "")
 - *\-h, \-\-help* : output usage information
  
 ##### 4.12.1. *gnps_result* Results
  
-The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
+The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", 
+\newline "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
 See the GNPS documentation for the description of these columns (https://ccms-ucsd.github.io/GNPSDocumentation/spectrumcuration/#adding-single-spectra).
  
 If there is more than one GNPS result for a single msclusterID the results are concatenated with a ';', except for the "gnps_Smiles" column which is concatenated with a ',' (ease visualization in cytoscape).
+
+The Identification Curation results are concatenated to these created columns, detailed below.
+Additional outputs are created in the job_output_path to the 'identifications' subfolder and to the final reports, also detailed below.
+
  
 ##### 4.12.2. *gnps_result* Examples
  
@@ -1575,19 +1713,109 @@ Fake example to use the GNPS Identification Join command:
     "/path/to/the/output/dir/GNPS_result/clusterinfo/file" 
     --result_specnets_DB_path 
     "/path/to/the/output/dir/GNPS_result/result_specnets_DB/file.tsv" 
-    --ms_count_path "/path/to/the/output/NP3/count_files/count.csv"
+    --ms_count_path "job_output_path/outs/output_name/count_files/clean/count_table.csv" 
+    --job_output_path "/path/to/the/output/NP3/output_name/"
 ```
  
 ##### 4.12.3. *gnps_result* Details
  
-The GNPS library identifications results should be obtained with the collection of consensus spectra present in the $NP^{3}$ MS workflow output MGF files, from the clustering (Step 3) or the clean (Step 5) results. In the cleaning Step 5 some consensus spectra can be joined, mostly due to the fragmented clusters case. Then, if the clean count table is informed for a library identification result obtained with the MGF from the clustering Step 3, the *gnps_result* will aggregate the identification results of the joined consensus spectra from Step 5 into a single result, using as reference the column 'joinedIDs'.
+The GNPS library identifications results should be obtained using the collection of consensus spectra present in the MGF files from the $NP^{3}$ MS workflow output, from the clustering (Step 3) or the clean (Step 5) results. If joining the identifications to the clean table, the clean mgf must be used in the GNPS workflows. If joining the identifications to the clustering table, the all mgf must be used in the GNPS workflows. For GNPS2 workflows, the top 1 result is used for joining (not the top k) - only one identification (the best) is expected for each spectrum.
  
-In the GNPS Molecular Networking (MN) workflow result, the 'clusterinfo' file contains the column 'SpecIdx' which is equal to the SCANS numbers present in the $NP^{3}$ MS workflow MGF file used for the identification job. The SCANS numbers of the MGF files are equal to the msclursterIDs of the $NP^{3}$ MS workflow count tables and some of then can be aggregated in the clean count tables, this information is present in the 'joinedIDs' column. The column 'ClusterIdx' of the GNPS MN output \'clusterinfo\' file is equivalent to the column '#Scan' of the \'result_specnets_DB\' file, and they are used to join the information of both files to obtain for each identification result the correct reference (the 'SpecIdx' column) to the msclusterIDs present in the $NP^{3}$ MS workflow count tables.
+In the GNPS Molecular Networking (MN) workflow result, the 'clusterinfo' file contains the column 'SpecIdx' which is equal to the SCANS numbers present in the $NP^{3}$ MS workflow MGF file used for the identification job. The SCANS numbers of the MGF files are equal to the msclursterIDs of the $NP^{3}$ MS workflow count tables for the respective result (clean MGF for clean and all MGF for clustering). The column 'ClusterIdx' of the GNPS MN output \'clusterinfo\' file is equivalent to the column '#Scan' of the \'result_specnets_DB\' file, and they are used to join the information of both files to obtain for each identification result the correct reference (the 'SpecIdx' column) to the msclusterIDs present in the $NP^{3}$ MS workflow count tables.
 
 In the GNPS Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
 
+At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
+
+##### 4.12.4. *gnps_result* Identification Curation and UNPDxGNPS Best Origin
+
+A curation of the identification results was also proposed for the gnps_result in order to score and rank the best identification from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
+
+The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
+
+Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
+
+Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the Identification Curation of UNPD-tremolo. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+
+| GNPS Category | Score | Criteria | 
+| :--------------- | :---: | :------------------------------------: | 
+| Top1\|mqs>=0.9 | 100 | mzE <= 20 and nsP >= 6 |
+| Top2\|0.8<=mqs<0.9 | 80 | mzE <= 20 and nsP >= 6 |
+| Top3\|sp<6 mqs>=0.9 | 60 | mzE <= 20 and nsP < 6 |
+| Top4\|sp<6 0.8<=mqs<0.9 | 50| mzE <= 20 and nsP < 6 |
+| Top5\|mqs>=0.7 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.8 |
+| Analog1\|mqs>=0.9 | 40 | mzE > 20  and nsP >= 6 |
+| Analog2\|0.8<=mqs<0.9 | 30 | mzE > 20 and nsP >= 6 |
+| Analog3\|sp<6 mqs>=0.9 |  20 | mzE > 20 and nsP < 6 |
+| Analog4\|sp<6 0.8<=mqs<0.9 | 10 | mzE > 20 and nsP < 6 |
+| Analog5\|mqs>=0.7 | 5 | mzE > 20 and nsP >= 6 and mqs<0.8 |
+| out | 0 | did not passed in any category - unreliable identification |
+  
+* Where mqs is the gnps_MQScore, nsP is the gnps_SharedPeaks and mzE is the gnps_MZErrorPPM values. 
+
+The defined category for each GNPS identification is stored in the column 'gnps_category' and its corresponding score is stored in the column 'gnps_score'.
+
+The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the  '|') and is stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.2.
+
+Finally, the curation proceeds to the UNPDxGNPS identification result comparison, if the UNPD result is present. The column 'curated_identification_best_origin' is set to 'GNPS' where the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Then, updates the 'best_origin_SMILES' column accordingly, set it to the gnps_Smiles values where curated_identification_best_origin == GNPS. And creates the superclass curated best origin results, the column 'best_origin_curated_superclass' receives the value from the gnps_curated_superclass or the tremolo_curated_superclass depending on the curated_identification_best_origin value, and the same occurs for the columns 'best_origin_curated_superclass_grouping' and 'best_origin_curated_superclass_GR_
+\<superclass group\>'.
+
+At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
+
+For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
+
+If the metadata path is informed, the plot of the distribution of the superclass grouping is also created for GNPS and UNPDxGNPS using columns gnps_curated_superclass_grouping and best_origin_curated_superclass_grouping, respectively, and stored in the chemical report folder.
+
+## 4.13. Command *pca_plot*
  
-## 4.13. Command *chr*
+This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric datasets. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES, then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
+
+The provided new data table may contain a column defining the types/categories of each SMILES entry to be used to label the points in the PCA plot.
+
+For processing very big SMILES, the user may manually increase the underline java maximum memory limit size to 4Gb or more (default to 2Gb). In the case of an error "Java Exception <no description because toString() failed>", before executing this command the user may run the following code in the command line: `export _JAVA_OPTIONS="-Xmx4g"`.
+ 
+Options for the command *pca_plot*:
+ 
+- *\-t, \-\-table_path* \<path\>       :  The path to a table in CSV format containing SMILES string in a column. Optionally, it may also contain the types/categories of each SMILES entry in another column. It must be comma "," separated.
+- *\-s, \-\-smiles_column* \<name\>       :  The name of the column in table_path containing the SMILES string.
+- *\-d, \-\-data_type* [name]       : A name defining the type of the data to be used to label the
+                              points or the name of a column from table_path containing the
+                              types/categories names of each SMILES entry to be used to label
+                              the points in the final PCA plot. This data_type must be
+                              different from "UNPD" or "GNPS" and, in the case of a column
+                              name, it must contain at most 8 different classes, otherwise
+                              only the provided data_type name will be used to label the
+                              points. These column values will go to the legend of the PCA plot.
+                              (default: "new_data")
+- *\-o, \-\-output_path* [path]    :          The path to the output directory where the final PCA plots will be stored, together with the descriptors table. If empty string
+                              "" (default), the output_path is set to the table_path base
+                              directory. (default: "")
+- *\-n, \-\-output_name* [file]   : The name to be used to name the final plots, used as a prefix in the PCA plots naming. (default: "new_data")
+- *\-h, \-\-help* : output usage information
+ 
+##### 4.13.1. *pca_plot* Results
+ 
+In the output_path directory four files are created: 
+
+1. One table with the computed CDK descriptors for each valid SMILES present in the provided table_path, named with the table_path name plus the suffix "_descriptorsCDK.csv";
+2. Two PCA plots containing the reference $NP^{3}$ dataset used to create the reference chemical space and the new transformed data. These plots are named as: "<output_name>_chemical_space_NP3_<data_type>_PCA_scores.png" and "<output_name>_chemical_space_NP3_<data_type>_PCA_biplot_components.png", this second plot is similar to the first plus the principal components;
+3. The PCA quality of representation circle plot with the reference components named as "pca_quality_representation_cos2_NP3_reference.png".
+
+The third plot result is always the same and depends only on the $NP^{3}$ reference dataset, used to create the PCA chemical space.
+
+ 
+##### 4.13.2. *pca_plot* Examples
+ 
+Example calling the creation of a PCA plot for an external data:
+ 
+```{r, eval=F} 
+  $ node np3_workflow.js pca_plot --table_path "/path/to/the/table/test_pca.csv" 
+--smiles_column SMILES --data_type Libraries 
+--output_path "/path/to/the/output/directory/" --output_name test_libraries
+```
+ 
+
+## 4.14. Command *chr*
  
 Runs the R interactive script to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and saves to PNG image(s) file(s). Depending on the provided parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file. In the interactive prompt is possible to select a mz and/or retention time window to better visualize interesting parts of the sample's chromatograms. The plots can be grouped by data collection batch, by a selection of samples, or all the samples can be plotted together.
  
@@ -1605,11 +1833,11 @@ Options for the command *chr*:
 <!-- - \-t, \-\-rt_range [X,Y]         two numeric separate by comma ',' without spaces and with decimal point equals dot '.' defining the lower and upper boundary for the retention time range/window(s) for the chromatogram(s). If not specified or 'NULL', a chromatogram representing the full retention time range is extracted (default: NULL) -->
 - *\-h, \-\-help*                   output usage information
  
-##### 4.13.1. *chr* Results
+##### 4.14.1. *chr* Results
  
 PNG image(s) file(s) with the extracted chromatogram(s) of the selected sample(s) and grouped as specified in the options.
  
-##### 4.13.2 *chr* Examples
+##### 4.14.2 *chr* Examples
  
 Fake example to execute the MS¹ Viewer command:
 
@@ -1650,7 +1878,7 @@ Fake example to execute the MS¹ Viewer command:
 <!--     --data_name "data_np3" --raw_data_path "/path/to/the/raw/data/directory" -->
 <!-- ``` -->
  
-## 4.14. Command *spectra_viewer*
+## 4.15. Command *spectra_viewer*
 
 This command runs the Streamlit interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. Currently, it is only supported for Unix OS.
   It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
@@ -1660,7 +1888,7 @@ Options for the command *spectra_viewer*:
 - *\-p, \-\-port* [port_number]  localhost server port number (default: "8501")
 - *\-h, \-\-help*              output usage information
 
-##### 4.14.1. *spectra_viewer* Examples:
+##### 4.15.1. *spectra_viewer* Examples:
 
 Example to execute the MS² spectra viewer application:
 
@@ -1668,9 +1896,9 @@ Example to execute the MS² spectra viewer application:
   $ node np3_workflow.js spectra_viewer --port 8080
 ```
 
-## 4.15. Command *test*
+## 4.16. Command *test*
  
-Run the NP³ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
+Run the $NP^{3}$ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
 
 It may take a long time; 30 minutes is expected. This option is intended for debugging purposes, and is not a part of the analysis workflow.
  
@@ -1679,15 +1907,19 @@ Options for the command *test*:
 - *\-p, \-\-pre_process* [x]  : 'TRUE' or 'FALSE' to test the pre-process step. (default: "FALSE")
 - *\-t, \-\-tremolo* [x]   :   'TRUE' or 'FALSE' to test the tremolo step. (default: "FALSE")
 - *\-s, \-\-skip* [x]       :  Skip to test x (default: 1)
+- *\-o, \-\-output_path* [x]       :  Path to the directory to store the tests outputs. A folder named
+                         "test" will be created inside it. The mzxml folder will be copied to
+                         the output_path/test directory. Default value to empty string "", which outputs
+                         to the $NP^{3}$ test folder. (default: "")
 - *\-h, \-\-help*              output usage information
  
-##### 4.15.1. *test* Results:
+##### 4.16.1. *test* Results:
  
-The NP³ jobs for the tested datasets. They are stored inside the test/Bra346 folder in the repository. The metadata table files present in the test/Bra346 folder are used in the testing cases and should not be modified.
+The results of the $NP^{3}$ jobs used in the tests. They are stored inside the test/L754_bacs folder of the repository by default, or in the output_path/test/L754_bacs. The metadata table files present in the test/L754_bacs folder are used in the testing cases and should not be modified.
  
-##### 4.15.2. *test* Examples:
+##### 4.16.2. *test* Examples:
  
-Example to execute the test suit from NP³ MS Workflow:
+Example to execute the test suit from $NP^{3}$ MS Workflow:
 
 ```{r, eval=F} 
   $ node np3_workflow.js test
@@ -1722,4 +1954,6 @@ Example to execute the test suit from NP³ MS Workflow:
 DOI: 10.1186/s13321-016-0174-y (ClassyFire)
 24. F Huber, L Ridder, S Verhoeven, JH Spaaks, F Diblen, S Rogers, JJJ van der Hooft, "Spec2Vec: Improved mass spectral similarity scoring through learning of structural relationships", bioRxiv, https://doi.org/10.1101/2020.08.11.245928, https://github.com/iomega/spec2vec_gnps_data_analysis?tab=readme-ov-file (spec2vec)
 25. F. Huber, S. Verhoeven, C. Meijer, H. Spreeuw, E. M. Villanueva Castilla, C. Geng, J.J.J. van der Hooft, S. Rogers, A. Belloum, F. Diblen, J.H. Spaaks, (2020). matchms - processing and similarity evaluation of mass spectrometry data. Journal of Open Source Software, 5(52), 2411, https://doi.org/10.21105/joss.02411 (matchms)
+26. Steinbeck et al. Recent Developments of the Chemistry Development Kit (CDK) - An Open-Source Java Library for Chemo- and Bioinformatics. Curr. Pharm. Des. 2006; 12(17):2111-2120, doi:10.2174/138161206777585274 (free green Open Acccess version) (CDK descriptors for PCA).
+27. Marjorie Bruder, Gina Polo, Daniela B.B. Trivella, Natural allosteric modulators and their biological targets: molecular signatures and mechanisms. See DOI: https://doi.org/10.1039/c9np00064j, Natural Product Reports, Volume 37, Issue 4, 2020, Pages 488-514, ISSN 0265-0568. (Allosteric Review)
 <!-- XX. C Ruttkies, E L Schymanski, S Wolf, J Hollender, S Neumann. MetFrag relaunched: incorporating strategies beyond in silico fragmentation. Journal of Cheminformatics 2016 8:3 -->
