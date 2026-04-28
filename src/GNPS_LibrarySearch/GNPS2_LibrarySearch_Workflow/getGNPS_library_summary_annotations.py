@@ -194,18 +194,20 @@ def _enrich_annotations(output_result_dict):
     if not isNA(output_result_dict["InChIKey"]) and len(output_result_dict["InChIKey"]) > 5:
         try:
             classyfire_url = "https://classyfire.gnps2.org/entities/{}.json".format(output_result_dict["InChIKey"])
-            r = requests.get(classyfire_url, timeout=0.5)
+            r = requests.get(classyfire_url, timeout=10)
             r.raise_for_status()
             classification_json = r.json()
-            output_result_dict["superclass"] = classification_json["superclass"]["name"]
-            output_result_dict["class"] = classification_json["class"]["name"]
-            output_result_dict["subclass"] = classification_json["subclass"]["name"]
+            # access valid results, prevent exception when accessing None value
+            output_result_dict["superclass"] = (classification_json["superclass"]["name"] if classification_json["superclass"] is not None else pd.NA)
+            output_result_dict["class"] = (classification_json["class"]["name"] if classification_json["class"] is not None else pd.NA)
+            output_result_dict["subclass"] = (classification_json["subclass"]["name"] if classification_json["subclass"] is not None else pd.NA)
         except HTTPError as http_err:
             print(f"Classyfire enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
             output_result_dict["superclass"] = pd.NA
             output_result_dict["class"] = pd.NA
             output_result_dict["subclass"] = pd.NA
-        except:
+        except Exception as e:
+            print(f"Classyfire enrichment - Error occurred: {e}")
             output_result_dict["superclass"] = pd.NA
             output_result_dict["class"] = pd.NA
             output_result_dict["subclass"] = pd.NA
@@ -222,15 +224,16 @@ def _enrich_annotations(output_result_dict):
             r.raise_for_status()
             classification_json = r.json()
 
-            output_result_dict["npclassifier_superclass"] = "|".join(classification_json["superclass_results"])
-            output_result_dict["npclassifier_class"] = "|".join(classification_json["class_results"])
-            output_result_dict["npclassifier_pathway"] = "|".join(classification_json["pathway_results"])
+            output_result_dict["npclassifier_superclass"] = ("|".join(classification_json["superclass_results"]) if classification_json["superclass_results"] is not None else pd.NA)
+            output_result_dict["npclassifier_class"] = ("|".join(classification_json["class_results"]) if classification_json["class_results"] is not None else pd.NA)
+            output_result_dict["npclassifier_pathway"] = ("|".join(classification_json["pathway_results"]) if classification_json["pathway_results"] is not None else pd.NA)
         except HTTPError as http_err:
             print(f"NPclassifier enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
             output_result_dict["npclassifier_superclass"] = pd.NA
             output_result_dict["npclassifier_class"] = pd.NA
             output_result_dict["npclassifier_pathway"] = pd.NA
-        except:
+        except Exception as e:
+            print(f"NPclassifier enrichment - Error occurred: {e}")
             output_result_dict["npclassifier_superclass"] = pd.NA
             output_result_dict["npclassifier_class"] = pd.NA
             output_result_dict["npclassifier_pathway"] = pd.NA
