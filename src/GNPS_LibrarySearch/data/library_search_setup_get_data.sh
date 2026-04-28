@@ -35,16 +35,18 @@ if wget -N https://external.gnps2.org/gnpslibrary/ALL_GNPS_NO_PROPOGATED_SPLITS.
         python GNPS2_LibrarySearch_Workflow/library_summary.py data/libraries/ALL_GNPS_NO_PROPOGATED.mgf data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv
         echo "Enriching the ALL_GNPS_NO_PROPOGATED library summary with other annotations!"
         # execute a join between the library summary and the library summary enriched with annotations (hardcoded)
-        #python GNPS2_LibrarySearch_Workflow/library_summary_merge_annotations.py data/library_summary_GNPS-LIBRARY.tsv data/library_summary_GNPS-LIBRARY_annotations.tsv data/library_summary_GNPS-LIBRARY_enriched.tsv
         python GNPS2_LibrarySearch_Workflow/library_summary_merge_annotations.py data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_enriched.tsv      
         cd data # return to the data folder, original location
     else
         echo "The ALL_GNPS_NO_PROPOGATED library is already present in its latest version."; 
-        cd .. # return to the data folder, original location
+        cd ../..
+        echo "Enriching the ALL_GNPS_NO_PROPOGATED library summary with other annotations!"
+        python GNPS2_LibrarySearch_Workflow/library_summary_merge_annotations.py data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_enriched.tsv 
+        cd data # return to the data folder, original location
     fi   
 else
     echo "Download Failed for ALL_GNPS_NO_PROPOGATED library =("
-    echo "Check if there is enough space in your disk, at least 7Gb are necessary for downloading and joining the splitted parts. At the end, 3Gb will be used to store the full library."
+    echo "Check if there is enough space in your disk, at least 7Gb are necessary for downloading and joining the splitted parts. At the end, 4Gb will be used to store the full library and summary table."
     cd .. # return to the data folder, original location
 fi
 
