@@ -1510,7 +1510,7 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
         resExec = shell.exec(python3()+' '+__dirname+
             '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/getGNPS_library_annotations.py ' +search_result_file+
             ' '+output_file_name+' --librarysummary '+__dirname+
-            '/src/GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv --topk '+topk, {async: false, silent: false});
+            '/src/GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_enriched.tsv --topk '+topk, {async: false, silent: false});
 
         if (resExec.code) {
             console.log('\nERROR in the library annotation aggregation. GNPS Library Search aborted.');
@@ -1629,7 +1629,6 @@ program
                 process.exit(1);
             }
         }
-
 
         if (!shell.which('pip')) {
             console.log('Pip not found, please ensure pip - the python 3 package management - is available and try again.\n');
@@ -1768,7 +1767,7 @@ program
 
         console.log('* Retrieving the GNPS2 library search default LC library data - ALL_GNPS_NO_PROPAGATED *\n');
         shell.cd(__dirname+'/src/GNPS_LibrarySearch/data/');
-        resExec = shell.exec('sh ./library_search_setup_get_data.sh');
+        resExec = shell.exec('sh ./library_search_setup_get_data.sh', {async:false, silent: false});
         if (resExec.code) {
             console.log(resExec.stdout);
             console.log(resExec.stderr);
@@ -1803,6 +1802,7 @@ program
             console.log('Linux/Unix Systems Only, skipped');
         }
         shell.cd(call_cwd);
+
 
         console.log('\n* Compiling NP3-MS-Clustering *\n');
         shell.cd(__dirname+'/NP3_MSCluster');
@@ -1985,7 +1985,7 @@ program
         'accepted ionization modification rules for detecting adducts,\n\t\t\t\t\t' +
         'multiple charge, dimers/trimers and their combination with\n\t\t\t\t\t' +
         'neutral losses. To be used by the annotation algorithm (Step 7)',__dirname+"/rules/np3_modifications.csv")
-    .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
+    .option('-r, --trim_mz [x]', 'Filter precursor peaks and peaks around precursor m/z. A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
         'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
         'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
         'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
@@ -2008,6 +2008,24 @@ program
     .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
         'the Tremolo tool should be used for the spectra matching\n\t\t\t\t\t' +
         'against the ISDB from the UNPD (Step 6)', toupper, "TRUE")
+    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
+        'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
+        'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
+        convertGNPSSearchTool, "gnps_indexed")
+    .option('--gnps_min_cosine [x]', 'the similarity threshold for the GNPS2 library search that determines if two spectra are a match. ' +
+        'The minimum cosine for a search match. Values greater or equal than 0.7 will retrieve more accurate results.', parseFloat, 0.7)
+    .option('--gnps_min_matched_peaks [x]', 'The minimum number of common peaks that the searched spectra must ' +
+        'share with a library spectrum to be considered as a match.', parseDecimal, 6)
+    .option('--gnps_window_filter [x]', 'If "TRUE", for each peak, it will check a window around that peak, ' +
+        'if it is not one of the top peaks in terms of intensity in that window, it will be filtered out. ' +
+        'This will speed up the library search and reduce the effect of noise.', toupper, "TRUE")
+    .option('--gnps_analog_search [x]', 'If "TRUE", also search for analog spectra in GNPS2 library search. ' +
+        'This allows as a match the spectra with different precursor mass and similar fragmentation pattern. ',
+        toupper, "FALSE")
+    .option('--gnps_analog_max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the GNPS2 library search when ' +
+        'analog_search is enabled. Only used when search_tool is "gnps_new".', parseFloat, 400)
+    .option('--gnps_parallel_threads [x]', 'the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. ' +
+        'For parallelization set x >= 1', parseDecimal, 4)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information.\n\t\t\t\t\t' +
         ' For values greater or equal to 10 a consistency test of \n\t\t\t\t\t' +
         'the results is also performed.', parseDecimal, 0)
@@ -2060,7 +2078,7 @@ program
         // run workflow
         console.log('*** NP3 MS Workflow RUN for \'' +options.output_name+ '\' - Steps 2 to 10 ***\n');
 
-        // set model dir
+        // setup NP3_MSCluster parms - set model dir
         // directory where model files are kept. If running MSCluster on Windows and not from the current
         // directory you should specify the path to 'Models_Windows'
         options.model_dir = defaultModelDir();
@@ -2072,6 +2090,19 @@ program
         options.mixture_prob = 0.4;
         // set min_peaks_output
         options.min_peaks_output = 5;
+
+        // setup GNPS library search parms and library path
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
+        const top_k = 5 // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
+        var filter_window = "0"
+        if (options.gnps_window_filter === "TRUE")
+            filter_window = "1"
+        var filter_precursor = "0"
+        if (options.trim_mz === "TRUE")
+            filter_precursor = "1"
+        var analog_search = "0"
+        if (options.gnps_analog_search === "TRUE")
+            analog_search = "1"
 
         var output_path = options.output_path+'/'+options.output_name;
         var specs_path = output_path + "/spec_lists";
@@ -2126,13 +2157,30 @@ program
         {
             counts_path = output_path+"/count_tables/clean/"+options.output_name;
             var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
+            var input_mgf_file = output_path+"/mgf/"+options.output_name+"_clean.mgf";
             // call tremolo with the clean mgf and merge results with clean counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 tremoloIdentification(options.output_name, output_path + "/identifications",
-                    output_path+"/mgf/"+options.output_name+"_clean.mgf",
+                    input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
+            // call GNPS2 Library Search here
+            if (options.gnps_search_tool !== "") {
+                // adapt some GNPS2 Library Search parameters
+                const result_folder = output_path + osSep() + "identifications"
+                counts_path = output_path + "/count_tables/clean/" + options.output_name + "_peak_area_clean.csv";
+                //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
+                var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
+                    options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
+                    options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
+                if (!resExec) {
+                    var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                    callJoinGNPS("", output_file_name, counts_path, output_path, options.metadata);
+                }
+            }
+
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
             // use the mz_tolerance in both mz and fragment tolerance and use the default absolute ms2 int cutoff
             resExec = callAnnotateCleanCounts(options, output_path,
@@ -2165,13 +2213,30 @@ program
         } else {
             // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
             var clustering_log_output = output_path+"/logClusteringOutput";
+            var input_mgf_file = output_path+"/mgf/"+options.output_name+"_all.mgf";
             // call tremole and merge the results with the clustering counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 // tremolo search for not windows OS
                 tremoloIdentification(options.output_name, output_path + "/identifications",
-                    output_path+"/mgf/"+options.output_name+"_all.mgf",
+                    input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv",
                         counts_path+"_peak_area.csv"], options.verbose, 0);
+            }
+
+            // call GNPS2 Library Search here
+            if (options.gnps_search_tool !== "") {
+                // adapt some GNPS2 Library Search parameters
+                const result_folder = output_path + osSep() + "identifications"
+                counts_path = counts_path + "_peak_area.csv"
+                //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
+                var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
+                    options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
+                    options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
+                if (!resExec) {
+                    var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                    callJoinGNPS("", output_file_name, counts_path, output_path, options.metadata);
+                }
             }
 
             // call correlation for the mscluster peak area count
@@ -3871,14 +3936,14 @@ program
         toupper, "FALSE")
     .option('--analog_max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search when ' +
         'analog_search is enabled. Only used when search_tool is "gnps_new".', parseFloat, 400)
+    .option('-l, --parallel_threads [x]', 'the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. ' +
+        'For parallelization set x >= 1', parseDecimal, 2)
     .option('-c, --count_file_path [path]', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps (which matches with the input_mgf_file used). If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files. ' +
         'Ignore if this is not a NP3 result (leave as empty string).', "")
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
         'distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).\n', "")
-    .option('-l, --parallel_threads [x]', 'the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. ' +
-        'For parallelization set x >= 1', parseDecimal, 2)
     .action(function(options) {
         if (typeof options.input_mgf_file === 'undefined') {
             console.error('\nMissing the mandatory \'input_mgf_file\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
