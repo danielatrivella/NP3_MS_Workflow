@@ -66,7 +66,7 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
     clean_table = pd.read_csv(clean_table_file, converters={'msclusterID':str}, low_memory=False)
     
     if not 'gnps_Smiles' in clean_table.columns:
-        sys.exit("- The GNPS result is not present in the provided count table, curation skipped.")
+        sys.exit("- The GNPS result ('gnps_Smiles' column) is not present in the provided count table, curation skipped.")
         
     print("* Creating the curated identification result for GNPS *")
     if 'tremolo_SMILES_best' in clean_table.columns:
