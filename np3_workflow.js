@@ -152,8 +152,8 @@ function convertSimilarityFunc(simFunc) {
 }
 
 function convertGNPSSearchTool(tool) {
-    if (!["gnps_indexed", "gnps", "gnps_new"].includes(tool)) {
-        console.error('\nERROR. Wrong GNPS search tool parameter value. The GNPS search tool must be one of {"gnps_indexed", "gnps", "gnps_new"}. Execution aborted.');
+    if (!["gnps_indexed", "gnps", "gnps_new", ""].includes(tool)) {
+        console.error('\nERROR. Wrong GNPS search tool parameter value. The GNPS search tool must be one of {"gnps_indexed", "gnps", "gnps_new", ""}. Execution aborted.');
         process.exit(1);
     }
 
@@ -2121,6 +2121,7 @@ program
         options.min_peaks_output = 5;
 
         // setup GNPS library search parms and library path
+        var resExec_gnps = 1 // set the execution as not executed
         const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
         const top_k = 5 // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
         var filter_window = "0"
@@ -2132,6 +2133,14 @@ program
         var analog_search = "0"
         if (options.gnps_analog_search === "TRUE")
             analog_search = "1"
+        // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
+        if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
+        {
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
+                        "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
+                        "Please execute the np3 setup command again to retrieve this library file and allow the search.")
+            options.gnps_search_tool = ""
+        }
 
         var output_path = options.output_path+'/'+options.output_name;
         var specs_path = output_path + "/spec_lists";
@@ -2197,17 +2206,12 @@ program
             // call GNPS2 Library Search here
             if (options.gnps_search_tool !== "") {
                 // adapt some GNPS2 Library Search parameters
-                const result_folder = output_path + osSep() + "identifications"
-                counts_path = output_path + "/count_tables/clean/" + options.output_name + "_peak_area_clean.csv";
+                var result_folder = output_path + osSep() + "identifications"
                 //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
-                var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
+                resExec_gnps = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
-                if (!resExec) {
-                    var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
-                    callJoinGNPS("", output_file_name, counts_path, output_path, options.metadata);
-                }
             }
 
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
@@ -2223,7 +2227,7 @@ program
                     options.method, 0, clean_log_output, options.verbose);
                 callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
-                area_counts_path = counts_path+"_peak_area_clean.csv"
+                var area_counts_path = counts_path+"_peak_area_clean.csv"
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
@@ -2233,7 +2237,13 @@ program
                 callComputeCorrelationGrouping(options.metadata, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
-                area_counts_path = counts_path+"_peak_area_clean_ann.csv"
+                var area_counts_path = counts_path+"_peak_area_clean_ann.csv"
+            }
+
+            // call GNPS join here, after annotation to retrieve the number of protonated representative in the curation step
+            if (!resExec_gnps && options.gnps_search_tool !== "") {
+                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata);
             }
 
             callMergeCounts(output_path, options.output_name,
@@ -2255,8 +2265,7 @@ program
             // call GNPS2 Library Search here
             if (options.gnps_search_tool !== "") {
                 // adapt some GNPS2 Library Search parameters
-                const result_folder = output_path + osSep() + "identifications"
-                counts_path = counts_path + "_peak_area.csv"
+                var result_folder = output_path + osSep() + "identifications"
                 //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
                 var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
@@ -2264,7 +2273,7 @@ program
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
                 if (!resExec) {
                     var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
-                    callJoinGNPS("", output_file_name, counts_path, output_path, options.metadata);
+                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata);
                 }
             }
 
@@ -3862,7 +3871,7 @@ program
 
 program
     .command('gnps_library_search')
-    .description('This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against '+
+    .description('Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against '+
                  'the ALL_GNPS_NO_PROPOGATED library (default for LC data).\n\n')
     .option('-g, --input_mgf_file <path>','path to the input MGF file with ' +
         'the MS/MS spectra data to be searched and identified')
@@ -3873,8 +3882,8 @@ program
         parseFloat, 0.025)
     .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. ' +
         'Used for comparing the mass of the peaks during the search.', parseFloat, 0.05)
-    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching. ' +
-        'One of "gnps_indexed", "gnps" or "gnps_new". ' +
+    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED. ' +
+        'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
         convertGNPSSearchTool, "gnps_indexed")
     .option('-s, --search_min_cosine [x]', 'the similarity threshold that determines if two spectra are a match. ' +
@@ -3956,7 +3965,7 @@ program
         console.log('');
         console.log('  $ node np3_workflow.js gnps_library_search TODO');
     });
-    
+
 program
     .command('gnps_result')
     .description('This command join the GNPS library identification result from the Molecular Networking (download clustered spectra) or ' +
