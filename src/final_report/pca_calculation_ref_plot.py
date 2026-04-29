@@ -274,7 +274,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
     new_data = pd.read_csv(new_data_path, low_memory=False)
     # check if the protonated_representative columns exists, if not create it with fake 0's
     if 'protonated_representative' not in new_data.columns:
-        new_data['protonated_representative'] = 0
+        new_data.loc[:,'protonated_representative'] = 0
     # for UNPD extraxt the X_new by matching the best identified SMILES against the data_reference_descriptors SMILES,
     # # and return the corresponding not NA descriptors
     # for GNPS a table with the descriptors must be informed
