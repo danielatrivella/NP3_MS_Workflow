@@ -42,6 +42,10 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 		# create for all not protonated mzs then only for protonated
 		for protonated in [0, 1]:
 			if protonated == 1:
+				if not ("protonated_representative" in clean_data.columns):
+					print(
+						"    - No protonated representative column present, skipping the protonated distribution plot.")
+					break
 				output_name_plot = superclass_grouping_name + "_protonated"
 				# filter only the protonated nodes
 				clean_data = clean_data.loc[clean_data.protonated_representative == 1, :]
@@ -336,7 +340,8 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 		gnps_curated = False
 		print("  - No valid GNPS curated data is available. All gnps_category is 'out' or missing. The chemical identification report for GNPS and best origin will use the best result not curated.")
 	if 'gnps_Smiles' in clean_data.columns and clean_data.gnps_Smiles.isna().all():
-		sys.exit("  - No valid GNPS identification data is available. All gnps_Smiles are NA. Aborting the chemical identification report for GNPS and best origin.")
+		print("  - No valid GNPS identification data is available. All gnps_Smiles are NA. Aborting the chemical identification report for GNPS and best origin.")
+		return 0
 	
 	# create dictionary to store the chemical and identification statistics of the job for GNPS result
 	gnps_statistics = {'Statistics': [],
