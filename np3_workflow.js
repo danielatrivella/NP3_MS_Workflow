@@ -3619,6 +3619,24 @@ program
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra to be loaded and processed in a\n\t\t\t\t\t" +
         "chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased",parseDecimal,3000)
+    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
+        'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
+        'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
+        convertGNPSSearchTool, "gnps_indexed")
+    .option('--gnps_min_cosine [x]', 'the similarity threshold for the GNPS2 library search that determines if two spectra are a match. ' +
+        'The minimum cosine for a search match. Values greater or equal than 0.7 will retrieve more accurate results.', parseFloat, 0.7)
+    .option('--gnps_min_matched_peaks [x]', 'The minimum number of common peaks that the searched spectra must ' +
+        'share with a library spectrum to be considered as a match.', parseDecimal, 6)
+    .option('--gnps_window_filter [x]', 'If "TRUE", for each peak, it will check a window around that peak, ' +
+        'if it is not one of the top peaks in terms of intensity in that window, it will be filtered out. ' +
+        'This will speed up the library search and reduce the effect of noise.', toupper, "TRUE")
+    .option('--gnps_analog_search [x]', 'If "TRUE", also search for analog spectra in GNPS2 library search. ' +
+        'This allows as a match the spectra with different precursor mass and similar fragmentation pattern. ',
+        toupper, "FALSE")
+    .option('--gnps_analog_max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the GNPS2 library search when ' +
+        'analog_search is enabled. Only used when search_tool is "gnps_new".', parseFloat, 400)
+    .option('--gnps_parallel_threads [x]', 'the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. ' +
+        'For parallelization set x >= 1', parseDecimal, 4)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information\n\t\t\t\t\t', parseDecimal, 0)
     .action(function(options) {
         // check mandatory params
@@ -3682,6 +3700,28 @@ program
         // set mixture probability
         // the probability wrongfully adding a spectrum to a cluster. [x] < 0.5
         options.mixture_prob = 0.4;
+
+        // setup GNPS library search parms and library path
+        var resExec_gnps = 1 // set the execution as not executed
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
+        const top_k = 5 // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
+        var filter_window = "0"
+        if (options.gnps_window_filter === "TRUE")
+            filter_window = "1"
+        var filter_precursor = "0"
+        if (options.trim_mz === "TRUE")
+            filter_precursor = "1"
+        var analog_search = "0"
+        if (options.gnps_analog_search === "TRUE")
+            analog_search = "1"
+        // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
+        if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
+        {
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
+                "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
+                "Please execute the np3 setup command again to retrieve this library file and allow the search.")
+            options.gnps_search_tool = ""
+        }
 
         var output_path;
         var specs_path;
@@ -3760,6 +3800,17 @@ program
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
+            // call GNPS2 Library Search here
+            if (options.gnps_search_tool !== "") {
+                // adapt some GNPS2 Library Search parameters
+                var result_folder = output_path + osSep() + "identifications"
+                //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
+                resExec_gnps = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
+                    options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
+                    options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
+            }
+
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
             // refactored annotation step for joining jobs -> join original ivamns and map old ids to the new ids ->
             // concat all ivamns into one joined net, removing redundancies
@@ -3785,6 +3836,11 @@ program
                     options.verbose);
                 area_counts_path = counts_path+"_peak_area_clean_ann.csv"
             }
+            // call GNPS join here, after annotation to retrieve the number of protonated representative of the curation step
+            if (!resExec_gnps && options.gnps_search_tool !== "") {
+                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples);
+            }
             // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
             // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
@@ -3796,6 +3852,20 @@ program
                     output_path+"/mgf/"+options.output_name+"_all.mgf",
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv", counts_path+"_peak_area.csv"],
                     options.verbose, 0);
+            }
+            // call GNPS2 Library Search here
+            if (options.gnps_search_tool !== "") {
+                // adapt some GNPS2 Library Search parameters
+                var result_folder = output_path + osSep() + "identifications"
+                //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
+                var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
+                    options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
+                    options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
+                if (!resExec) {
+                    var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples);
+                }
             }
 
             // call correlation for the mscluster peak area count
@@ -3907,7 +3977,7 @@ program
     .option('--analog_max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search when ' +
         'analog_search is enabled. Only used when search_tool is "gnps_new".', parseFloat, 400)
     .option('-l, --parallel_threads [x]', 'the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. ' +
-        'For parallelization set x >= 1', parseDecimal, 2)
+        'For parallelization set x >= 1', parseDecimal, 8)
     .option('-c, --count_file_path [path]', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps (which matches with the input_mgf_file used). If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files. ' +
@@ -4217,7 +4287,7 @@ program
         var unit_test_res = ['@@@@@ UNIT TEST NP3 Shifted cosine @@@@@\n'];
         var test_res = ['@@@@@ TEST 1 @@@@@\n','@@@@@ TEST 2 @@@@@\n','@@@@@ TEST 3 @@@@@\n','@@@@@ TEST 4 @@@@@\n','@@@@@ TEST 5 @@@@@',
             '@@@@@ TEST 6 @@@@@','@@@@@ TEST 7 @@@@@','@@@@@ TEST 8 @@@@@','@@@@@ TEST 9 @@@@@',
-            '@@@@@ TEST 10 @@@@@', '@@@@@ TEST 11 @@@@@', '@@@@@ TEST 12 @@@@@'];
+            '@@@@@ TEST 10 @@@@@', '@@@@@ TEST 11 @@@@@', '@@@@@ TEST 12 @@@@@', '@@@@@ TEST 13 @@@@@'];
         var resExec;
 
         // start with the unit tests
@@ -4238,7 +4308,7 @@ program
         }
 
 
-        // # not using parallel in the pairwise
+        // not calling the GNPS2 library search
         if (options.skip <= 1) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_all');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4247,8 +4317,8 @@ program
             resExec = shell.exec(np3_js_call+' run -n L754_bacs_all ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv ' +
                 '-d '+output_path+'/test/L754_bacs/mzxml -o '+output_path+'/test/L754_bacs ' +
-                '-j '+options.tremolo+' -v 10 -q '+options.pre_process+' -l 1 '+
-                '--noise_cutoff FALSE',
+                '-j '+options.tremolo+' -v 10 -q '+options.pre_process+' -l 4 '+
+                '--noise_cutoff FALSE --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4261,14 +4331,15 @@ program
                 console.log('DONE!\n');
             }
             //console.log("\n\n");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Test 1.1 - L754_bacs_all - gnps_result - Molecular Networking @@@@@");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Test 1.1 - L754_bacs_all - gnps_result - Classical Molecular Networking @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
-                '-i '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/clusterinfo/d36047cb3ccf4a0dbab271b1e0bae17d.clusterinfo ' +
-                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/result_specnets_DB/035a08716c904a3d96fcd5e9f111ec23.tsv ' +
+                '-i '+__dirname+'/test/L754_bacs/GNPS_tasks_result/L754_bacs_all_classical_mn_gnps1/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/clusterinfo/d36047cb3ccf4a0dbab271b1e0bae17d.clusterinfo ' +
+                '-s '+__dirname+'/test/L754_bacs/GNPS_tasks_result/L754_bacs_all_classical_mn_gnps1/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/result_specnets_DB/035a08716c904a3d96fcd5e9f111ec23.tsv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
-                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/',
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/ '+
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv',
                 {async:false, silent:true});
             var gnps_result_mn = "";
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -4279,14 +4350,14 @@ program
                 gnps_result_mn = "ERROR";
                 console.log('ERROR\n');
             } else {
-                gnps_result_mn = resExec.stdout.split('Time Elapsed:')[0];
+                gnps_result_mn = resExec.stdout.split('Time Elapsed:')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Test 1.2 - L754_bacs_all - gnps_result - Library Search @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
-                '-s '+__dirname+'/test/L754_bacs/ProteoSAFe-MOLECULAR-LIBRARYSEARCH-V2-d6333ae4-download_all_identifications/MOLECULAR-LIBRARYSEARCH-V2-d6333ae4-download_all_identifications-main.tsv ' +
+                '-s '+__dirname+'/test/L754_bacs/GNPS_tasks_result/L754_bacs_all_lib_search_gnps2/d810e2b507bd4cf180176667e5180c17-merged_results_with_gnps_top1.tsv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/ '+
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv',
@@ -4300,17 +4371,50 @@ program
                 gnps_result_ls = "ERROR";
                 console.log('ERROR\n');
             } else {
-                gnps_result_ls = resExec.stdout.split('Time Elapsed:')[0];
-                // test_res[0] = test_res[0] + '\n*** TESTING - gnps_result - Library Search ***\n\n' + resExec.stdout;
+                gnps_result_ls = resExec.stdout.split('Time Elapsed:')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
             if (gnps_result_mn == gnps_result_ls && gnps_result_mn != "ERROR" && gnps_result_ls != "ERROR") {
                 test_res[0] = test_res[0] +
-                    '\n*** Testing - gnps_result - Library Search & Molecular Networking ***\n\nEquality OK!\nDONE! :)\n'
+                    '\n*** Testing - gnps_result - Library Search & Classical Molecular Networking ***\n\nEquality OK!\nDONE! :)\n'
+            } else if (gnps_result_mn != gnps_result_ls && gnps_result_mn != "ERROR" && gnps_result_ls != "ERROR") {
+                // not matching results after joining gnps result from the two different workflows
+                test_res[0] = test_res[0] +
+                    '\n\ngnps_result - Library Search - EXEC OK - EQUALITY ERROR\n'
+                console.log('\n@@@@@ Testing - gnps_result - Library Search & Molecular Networking ***\n\nOutput Equality ERROR! :(\n')
+                console.log('@@@ gnps_result - Library Search - OUTPUT:\n\n'+gnps_result_ls+'\n');
+                console.log('@@@ gnps_result - Classical Molecular Networking - OUTPUT:\n\n'+gnps_result_mn+'\n\n');
             }
 
+            // call gnps_library_search command for all
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@ Test 1.3 - L754_bacs_all - gnps_library_search @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' gnps_library_search -g ' +
+                __dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/mgf/L754_bacs_all_clean.mgf ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv '+
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/ '+
+                '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
+                '-i gnps',
+                {async:false, silent:true});
+            var gnps_result_np3 = "";
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emmited msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[0] = test_res[0] + '\n\ngnps_library_search - EXEC ERROR';
+                console.log('ERROR\n');
+                gnps_result_np3 = "ERROR"
+            } else {
+                gnps_result_np3 = resExec.stdout.split('Time Elapsed:')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                console.log('DONE!\n');
+
+                console.log('@@@ gnps_library_search - Library Search - OUTPUT:\n\n'+gnps_result_np3+'\n');
+            }
+            // TODO  - compare its results with the online result for equality in the field expected to be equal
+
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Test 1.3 - L754_bacs_all - pca_plot - PCA with clean @@@@@");
+            console.log("@@@@@@ Test 1.4 - L754_bacs_all - pca_plot - PCA with clean @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' pca_plot ' +
                 '-s best_origin_SMILES -d curated_identification_best_origin ' +
@@ -4330,6 +4434,7 @@ program
         }
 
         // # test metadata with more than 10 samples in more than 10 data collections with all types
+        // use gnps_search tool equal to 'gnps_new'
         // use the same pre-processed data
         if (options.skip <= 2) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_multi_collection_11');
@@ -4339,7 +4444,7 @@ program
             resExec=shell.exec(np3_js_call+' run -n L754_bacs_multi_collection_11 ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv ' +
                 '-d '+output_path+'/test/L754_bacs/mzxml -o '+output_path+'/test/L754_bacs/ -j '+options.tremolo+' -v 11 ' +
-                '--noise_cutoff 2',
+                '--noise_cutoff 2 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4355,7 +4460,8 @@ program
         }
 
         // # test metadata with all samples in one data collection batch and without blanks
-        // # split the run cmd in the sub cmds calls and using a smaller chunk size
+        // and using a smaller chunk size
+        // and not using parallel in the pairwise and not calling GNPS library search
         if (options.skip <= 3) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_one_collection');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4366,7 +4472,7 @@ program
                 '-d '+output_path+'/test/L754_bacs/mzxml ' +
                 '-o '+output_path+'/test/L754_bacs/ -y processed_data_one_collection -j '+options.tremolo+' -b 200 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
-                ' --bflag_cutoff 1.5 --noise_cutoff 1.5 -i spec2vec',
+                ' --bflag_cutoff 1.5 --noise_cutoff 1.5 -i spec2vec --gnps_search_tool "" -l 1',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4391,7 +4497,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv ' +
                 '-d '+output_path+'/test/L754_bacs/mzxml ' +
                 '-o '+output_path+'/test/L754_bacs/ -y processed_data_blanks -j '+options.tremolo+' -v 11 -q '+
-                options.pre_process + ' --bflag_cutoff 1',
+                options.pre_process + ' --bflag_cutoff 1 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4406,6 +4512,7 @@ program
             //console.log("\n\n");
         }
 
+        // # split the run cmd in the sub cmds calls
         // # test metadata with only one samples;
         if (options.pre_process == "TRUE" && options.skip <= 5) {
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4578,7 +4685,7 @@ program
                 '-d '+output_path+'/test/L754_bacs/mzxml ' +
                 '-o '+output_path+'/test/L754_bacs/ -y processed_data_another_collection -j '+options.tremolo+' -b 100 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
-                ' --bflag_cutoff 1.5 --noise_cutoff 1.5',
+                ' --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4603,7 +4710,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
                 '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
                 '-o '+output_path+'/test/L754_bacs/ -j '+options.tremolo +
-                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5',
+                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool gnps_new',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4613,6 +4720,30 @@ program
                 console.log('ERROR\n');
             } else {
                 test_res[11] = test_res[11] + resExec.stdout.split('*** TESTING ***\n\n')[1];
+                console.log('DONE!\n');
+            }
+            //console.log("\n\n");
+        }
+
+        if (options.skip <= 13) {
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@ Test 13 - L754_bacs_blanks_one_sample - gnps_library_search with analog_search @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' gnps_library_search -g ' +
+                __dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_clean.mgf ' +
+                '--search_tool gnps_indexed --analog_search TRUE '+
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
+                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ ' +
+                '-c '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_peak_area_clean_ann.csv',
+                {async:false, silent:true});
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emmited msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[12] = test_res[12] + '\n\nEXEC ERROR';
+                console.log('ERROR\n');
+            } else {
+                test_res[12] = test_res[12] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
             }
             //console.log("\n\n");
