@@ -178,7 +178,7 @@ def _enrich_annotations(output_result_dict):
         try:
             inchikey_url = "https://structure.gnps2.org/inchikey?smiles={}&inchi={}".format(urllib.parse.quote_plus(output_result_dict["Smiles"]), 
                                 urllib.parse.quote_plus(output_result_dict["INCHI"]))
-            r = requests.get(inchikey_url)
+            r = requests.get(inchikey_url, timeout=10)
             r.raise_for_status()
             output_result_dict["InChIKey"] = r.text
             output_result_dict["InChIKey-Planar"] = r.text.split("-")[0]
@@ -186,7 +186,8 @@ def _enrich_annotations(output_result_dict):
             print(f"InChIKey enrichment - HTTP error occurred: {http_err}")  # e.g. 404 Client Error
             output_result_dict["InChIKey"] = pd.NA
             output_result_dict["InChIKey-Planar"] = pd.NA
-        except:
+        except Exception as e:
+            print(f"InChIKey enrichment - Error occurred: {e}")
             output_result_dict["InChIKey"] = pd.NA
             output_result_dict["InChIKey-Planar"] = pd.NA
 
@@ -296,7 +297,7 @@ def enrich_summary_parallell_threads(library_summary_df, output_filename, num_th
                                                                 (output_spectrum_annotation.Smiles != "")),:].to_dict(orient="records")
     output_list = thread_map(enrich_smiles_annotation_parallel,
                              output_unique_smiles_dict,
-                             max_workers=min(12,num_threads))
+                             max_workers=min(8,num_threads))
     output_smiles_annotation = pd.DataFrame(output_list)
     del output_unique_smiles_dict,output_list
     output_smiles_annotation.to_csv(output_filename.replace(".tsv", "_smiles_anns.tsv"), sep="\t", index=False)
