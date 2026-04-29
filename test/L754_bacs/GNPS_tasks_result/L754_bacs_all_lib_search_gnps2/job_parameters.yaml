@@ -1,0 +1,24 @@
+OMETAFLOW_SERVER: http://ometaflow-launchserver:4000
+OMETALIBRARY_SERVER: http://ometalibrary-web:5000/library
+OMETAMASST_SERVER: http://ometamasst-web:5000/masst
+OMETATASK: d810e2b507bd4cf180176667e5180c17
+OMETAUSER: crisfbazz
+analog_search: '0'
+create_time: 2026-04-29 13:34:50 PDT-0700
+description: L754_bacs_all_lib_search_gnps_tool_top5
+filter_precursor: '1'
+filter_window: '1'
+filtertostructures: '0'
+forceoffline: 'No'
+fragment_tolerance: '0.05'
+inputlibraries: /data/nf_data/server/nf_tasks/d810e2b507bd4cf180176667e5180c17/inputlibraries
+inputspectra: /data/nf_data/server/nf_tasks/d810e2b507bd4cf180176667e5180c17/inputspectra
+library_min_matched_peaks: '6'
+library_min_similarity: '0.7'
+pm_tolerance: '0.025'
+publishdir: /data/nf_data/server/nf_tasks/d810e2b507bd4cf180176667e5180c17
+searchtool: gnps
+task: d810e2b507bd4cf180176667e5180c17
+topk: '5'
+workflow_version: SERVER:2025.12.10;WORKFLOW:2026.03.24
+workflowname: librarysearch_workflow
