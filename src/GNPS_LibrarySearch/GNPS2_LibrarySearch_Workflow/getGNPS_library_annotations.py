@@ -273,6 +273,9 @@ def enrich_output(input_filename, output_filename,
     
     try:
         input_results_df = pd.read_csv(input_filename, sep="\t", low_memory=False)
+    except pd.errors.EmptyDataError:
+        print("WARNING: Input file is empty, there was no result in the library search. Skipping the annotation.\n")
+        sys.exit()
     except:
         #open(output_filename, "w").close()
         sys.exit("ERROR: Input file is not a valid tsv file")
