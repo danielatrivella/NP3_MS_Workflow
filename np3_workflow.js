@@ -1521,16 +1521,21 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
             return resExec.code;
         } else {
             console.log('DONE!\n');
-            console.log("   * Filtering the top 1 result from the library search *")
-            // finally, select the top 1 result
-            resExec = shell.exec(python3()+' '+__dirname+
-                '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/filter_top1_hits.py ' +output_file_name+
-                ' '+output_file_name.replace(".tsv", "_top1.tsv"), {async: false, silent: false});
-            if (resExec.code) {
-                console.log('\nERROR in the library filter top1 hits. GNPS Library Search aborted.');
-                return resExec.code;
-            } else {
-                console.log('DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n");
+            // check if the output_file_name was created, which means there was at least one valid search result
+            // if not skip this step
+            if (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))
+            {
+                console.log("   * Filtering the top 1 result from the library search *")
+                // finally, select the top 1 result
+                resExec = shell.exec(python3()+' '+__dirname+
+                    '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/filter_top1_hits.py ' +output_file_name+
+                    ' '+output_file_name.replace(".tsv", "_top1.tsv"), {async: false, silent: false});
+                if (resExec.code) {
+                    console.log('\nERROR in the library filter top1 hits. GNPS Library Search aborted.');
+                    return resExec.code;
+                } else {
+                    console.log('DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n");
+                }
             }
         }
     }
@@ -2241,8 +2246,8 @@ program
             }
 
             // call GNPS join here, after annotation to retrieve the number of protonated representative in the curation step
-            if (!resExec_gnps && options.gnps_search_tool !== "") {
-                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+            var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+            if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
                 callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata);
             }
 
@@ -2271,8 +2276,8 @@ program
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
-                if (!resExec) {
-                    var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
                     callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata);
                 }
             }
@@ -3764,7 +3769,7 @@ program
         // remove specs folder
         shell.rm('-rf', specs_path);
         // set the original samples metadata - to be used in the correlation step
-        metadata_original_samples = output_path+"/original_samples_METADATA.csv";
+        var metadata_original_samples = output_path+"/original_samples_METADATA.csv";
         // set the final output path inside the outs dir
         output_path = output_path+"/outs/"+options.output_name;
 
@@ -3789,14 +3794,15 @@ program
         // set the path to the count tables
         var counts_path = output_path+"/count_tables/"+options.output_name;
         //resExec = 0
-        if (!resExec) // if the clean was succesful, continue for annotation, correlation and merge
+        if (!resExec) // if the clean was successful, continue for annotation, correlation and merge
         {
             counts_path = output_path+"/count_tables/clean/"+options.output_name;
             var clean_log_output = output_path+"/count_tables/clean/logCleanOutput";
+            var input_mgf_file = output_path+"/mgf/"+options.output_name+"_clean.mgf";
             // call tremolo with the clean mgf and merge results with clean counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 tremoloIdentification(options.output_name, output_path + "/identifications",
-                    output_path+"/mgf/"+options.output_name+"_clean.mgf",
+                    input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
@@ -3824,7 +3830,7 @@ program
                     options.method, 0, clean_log_output, options.verbose);
                 callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra_clean.csv",
                     options.method, 0, clean_log_output, options.verbose);
-                area_counts_path = counts_path+"_peak_area_clean.csv"
+                var area_counts_path = counts_path+"_peak_area_clean.csv"
             } else {
                 // annotation worked
                 // call correlation for the cleaned peak area count and spectra area count
@@ -3834,22 +3840,23 @@ program
                 callComputeCorrelationGrouping(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
                     options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
                     options.verbose);
-                area_counts_path = counts_path+"_peak_area_clean_ann.csv"
+                var area_counts_path = counts_path+"_peak_area_clean_ann.csv"
             }
             // call GNPS join here, after annotation to retrieve the number of protonated representative of the curation step
-            if (!resExec_gnps && options.gnps_search_tool !== "") {
-                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+            var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+            if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
                 callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples);
             }
             // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
             // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
             var clustering_log_output = output_path+"/logClusteringOutput";
+            var input_mgf_file = output_path+"/mgf/"+options.output_name+"_all.mgf";
             // call tremole and merge the results with the clustering counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 // tremolo search for not windows OS
                 tremoloIdentification(options.output_name, output_path + "/identifications",
-                    output_path+"/mgf/"+options.output_name+"_all.mgf",
+                    input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv", counts_path+"_peak_area.csv"],
                     options.verbose, 0);
             }
@@ -3862,8 +3869,8 @@ program
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
-                if (!resExec) {
-                    var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
                     callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples);
                 }
             }
@@ -4014,11 +4021,9 @@ program
             options.search_tool, options.mz_tolerance, options.fragment_tolerance, options.search_min_cosine,
             options.search_min_matched_peaks, options.top_k, filter_precursor, filter_window,
             analog_search, options.analog_max_shift, options.parallel_threads)
-
-        if (!resExec && (options.count_file_path !== "")) {
-            var output_file_name = result_folder+"/"+output_name+"_library_search_"+options.search_tool+"_top1.tsv"
-            callJoinGNPS("", output_file_name,
-                options.count_file_path, options.output_path, options.metadata);
+        var output_file_name = result_folder+"/"+output_name+"_library_search_"+options.search_tool+"_top1.tsv"
+        if (!resExec && (options.count_file_path !== "") && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
+            callJoinGNPS("", output_file_name, options.count_file_path, options.output_path, options.metadata);
         }
 
         console.log("GNPS_library_search "+printTimeElapsed_bigint(start_gnpssearch, process.hrtime.bigint()));
@@ -4331,9 +4336,9 @@ program
                 console.log('DONE!\n');
             }
             //console.log("\n\n");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Test 1.1 - L754_bacs_all - gnps_result - Classical Molecular Networking @@@@@");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Test 1.1 - L754_bacs_all - gnps_result - GNPS Classical Molecular Networking @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-i '+__dirname+'/test/L754_bacs/GNPS_tasks_result/L754_bacs_all_classical_mn_gnps1/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/clusterinfo/d36047cb3ccf4a0dbab271b1e0bae17d.clusterinfo ' +
                 '-s '+__dirname+'/test/L754_bacs/GNPS_tasks_result/L754_bacs_all_classical_mn_gnps1/ProteoSAFe-METABOLOMICS-SNETS-V2-8ff4bd49-download_clustered_spectra/result_specnets_DB/035a08716c904a3d96fcd5e9f111ec23.tsv ' +
@@ -4350,12 +4355,12 @@ program
                 gnps_result_mn = "ERROR";
                 console.log('ERROR\n');
             } else {
-                gnps_result_mn = resExec.stdout.split('Time Elapsed:')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_mn = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Test 1.2 - L754_bacs_all - gnps_result - Library Search @@@@@");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Test 1.2 - L754_bacs_all - gnps_result - GNPS2 Library Search @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_result ' +
                 '-s '+__dirname+'/test/L754_bacs/GNPS_tasks_result/L754_bacs_all_lib_search_gnps2/d810e2b507bd4cf180176667e5180c17-merged_results_with_gnps_top1.tsv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
@@ -4371,19 +4376,8 @@ program
                 gnps_result_ls = "ERROR";
                 console.log('ERROR\n');
             } else {
-                gnps_result_ls = resExec.stdout.split('Time Elapsed:')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_ls = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
-            }
-            if (gnps_result_mn == gnps_result_ls && gnps_result_mn != "ERROR" && gnps_result_ls != "ERROR") {
-                test_res[0] = test_res[0] +
-                    '\n*** Testing - gnps_result - Library Search & Classical Molecular Networking ***\n\nEquality OK!\nDONE! :)\n'
-            } else if (gnps_result_mn != gnps_result_ls && gnps_result_mn != "ERROR" && gnps_result_ls != "ERROR") {
-                // not matching results after joining gnps result from the two different workflows
-                test_res[0] = test_res[0] +
-                    '\n\ngnps_result - Library Search - EXEC OK - EQUALITY ERROR\n'
-                console.log('\n@@@@@ Testing - gnps_result - Library Search & Molecular Networking ***\n\nOutput Equality ERROR! :(\n')
-                console.log('@@@ gnps_result - Library Search - OUTPUT:\n\n'+gnps_result_ls+'\n');
-                console.log('@@@ gnps_result - Classical Molecular Networking - OUTPUT:\n\n'+gnps_result_mn+'\n\n');
             }
 
             // call gnps_library_search command for all
@@ -4406,12 +4400,27 @@ program
                 console.log('ERROR\n');
                 gnps_result_np3 = "ERROR"
             } else {
-                gnps_result_np3 = resExec.stdout.split('Time Elapsed:')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
 
                 console.log('@@@ gnps_library_search - Library Search - OUTPUT:\n\n'+gnps_result_np3+'\n');
             }
             // TODO  - compare its results with the online result for equality in the field expected to be equal
+            // which is after *** Joining the GNPS library indentification results to the NP3 count files ***
+            // and before *** Computing the RCDK descriptors for the valid GNPS identification ***
+            // the smiles are different (because of how ties are resolved) so the rcdk result is different
+            // removing time
+            if (gnps_result_np3 == gnps_result_ls && gnps_result_np3 != "ERROR" && gnps_result_ls != "ERROR") {
+                test_res[0] = test_res[0] +
+                    '\n*** Testing Equality - gnps_result & gnps_library_search - GNPS2 Library Search ***\n\nEquality OK!\nDONE! :)\n'
+            } else if (gnps_result_np3 != gnps_result_ls && gnps_result_np3 != "ERROR" && gnps_result_ls != "ERROR") {
+                // not matching results after joining gnps result library search and running it locally and offline
+                test_res[0] = test_res[0] +
+                    '\n\ngnps_result & gnps_library_search - GNPS2 Library Search - EXEC OK - EQUALITY ERROR\n'
+                console.log('\n@@@@@ Testing Equality - gnps_result & gnps_library_search - GNPS2 Library Search ***\n\nOutput Equality ERROR! :(\n')
+                console.log('@@@ gnps_result - GNPS2 Library Search Online - OUTPUT:\n\n'+gnps_result_ls+'\n');
+                console.log('@@@ gnps_library_search - GNPS2 Library Search Offline - OUTPUT:\n\n'+gnps_result_np3+'\n\n');
+            }
 
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Test 1.4 - L754_bacs_all - pca_plot - PCA with clean @@@@@");
@@ -4732,7 +4741,7 @@ program
             resExec = shell.exec(np3_js_call+' gnps_library_search -g ' +
                 __dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_clean.mgf ' +
                 '--search_tool gnps_indexed --analog_search TRUE '+
-                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
                 '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ ' +
                 '-c '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_peak_area_clean_ann.csv',
                 {async:false, silent:true});
@@ -4743,7 +4752,7 @@ program
                 test_res[12] = test_res[12] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
             } else {
-                test_res[12] = test_res[12] + resExec.stdout.split('*** TESTING ***\n\n')[1];
+                test_res[12] = test_res[12] + '\n\nDone! :)';
                 console.log('DONE!\n');
             }
             //console.log("\n\n");
