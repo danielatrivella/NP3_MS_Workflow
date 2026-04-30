@@ -156,8 +156,8 @@ def main_batch(gnps_lib_mgf, qry_file, result_folder="search_results",
                     matches_buffer = []
                     header_out = False
 
-    # Write remaining matches
-    if matches_buffer:
+    # Write remaining matches, if header is still true there is no result - write empty table
+    if matches_buffer or header_out:
         write_batch_results(matches_buffer, out_path, header_out)
 
     return
