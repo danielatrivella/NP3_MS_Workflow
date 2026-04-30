@@ -6,6 +6,7 @@
 
 import pandas as pd
 import argparse
+import sys
 
 
 def main():
@@ -16,13 +17,20 @@ def main():
 
     args = parser.parse_args()
 
-    results_df = pd.read_csv(args.input_full_results_file, sep="\t")
+    try:
+        results_df = pd.read_csv(args.input_full_results_file, sep="\t", low_memory=False)
+    except pd.errors.EmptyDataError:
+        print("WARNING: Input result file is empty, there was no result in the library search. Skipping the top1 filter.\n")
+        sys.exit()
+    except:
+        #open(output_filename, "w").close()
+        sys.exit("ERROR: Input result file is not a valid tsv file")
 
     # change the LibraryQualityString column to a categorical column to allow correct sorting
     # where Challenge is Unknown Identity, open to community to help annotate - it is still an experimental data, which is better than insilico
-    LibraryQualityString_order = ['Insilico', 'Challenge', 'Bronze', 'Silver', 'Gold']
+    libraryQualityString_order = ['Insilico', 'Challenge', 'Bronze', 'Silver', 'Gold']
     results_df['LibraryQualityString'] = pd.Categorical(results_df['LibraryQualityString'],
-                                                        categories=LibraryQualityString_order, ordered=True)
+                                                        categories=libraryQualityString_order, ordered=True)
     
     # grouping by filename and scan, sorting by MQScore, SharedPeaks and LibraryQualityString
     results_df = results_df.sort_values(by=['MQScore', 'SharedPeaks', 'LibraryQualityString'], ascending=[False, False, False])
