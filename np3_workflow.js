@@ -1415,38 +1415,50 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
     return res_all;
 }
 
-function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path) {
+function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path, logOutputGNPSPath) {
     // check molecular networking consistency
-    console.log('\n*** Joining the GNPS identification to the NP3 counts tables ***\n');
+    var gnpsjoin_start = '\n*** Joining the GNPS identification to the NP3 counts tables ***\n';
+    console.log(gnpsjoin_start);
     resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
         result_specnets_DB_path+' '+ms_count_path+' '+output_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
+        shell.ShellString('\n' + gnpsjoin_start +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputGNPSPath);
         return resExec;
     } else {
         console.log('DONE!\n');
+        shell.ShellString('\n'+ gnpsjoin_start + resExec.stdout+'\n'+resExec.stderr+'\n'+'DONE!\n').toEnd(logOutputGNPSPath);
     }
 
     // call compute rcdk descriptors
-    console.log('\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n');
+    gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n';
+    console.log(gnpsjoin_start);
     resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
         output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
         console.log('ERROR computing the GNPS descriptores, its PCA will not be created.\n');
+        shell.ShellString('\n' + gnpsjoin_start +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR computing the GNPS descriptores, its PCA will not be created.').toEnd(logOutputGNPSPath);
     } else {
         console.log('DONE!\n');
+        shell.ShellString('\n'+ gnpsjoin_start + resExec.stdout+'\n'+resExec.stderr+'\n'+'DONE!\n').toEnd(logOutputGNPSPath);
     }
 
     // call curate GNPS identification and GNPSxUNPD
-    // and create additional final reports - PCA gnps and PCA best origin - using the calculated rcdk 
-    console.log('\n*** Curating the GNPS identification result and selecting best identification origin ***\n');
+    // and create additional final reports - PCA gnps and PCA best origin - using the calculated rcdk
+    gnpsjoin_start = '\n*** Curating the GNPS identification result and selecting best identification origin ***\n';
+    console.log(gnpsjoin_start);
     resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
         ms_count_path+' '+output_path+' '+metadata_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
+        shell.ShellString('\n' + gnpsjoin_start +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputGNPSPath);
     } else {
         console.log('DONE!\n');
+        shell.ShellString('\n'+ gnpsjoin_start + resExec.stdout+'\n'+resExec.stderr+'\n'+'DONE!\n').toEnd(logOutputGNPSPath);
     }
     
     return resExec;
@@ -1462,8 +1474,9 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
                                mz_tol, fragment_tol,
                                search_min_cosine, search_min_matched_peaks, topk, filter_precursor, filter_window,
                                analog_search, analog_max_shift, threads) {
+    var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
     const start_gnps_libsearch = process.hrtime.bigint();
-    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** \n'
+    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** \n';
     console.log(gnpslibsearch_start);
     if (search_tool === "gnps") {
         // there is no max shift for analog search and no parallelization
@@ -1494,21 +1507,27 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
             ' --min_matched_peak '+search_min_matched_peaks+
             ' --analog_search '+analog_search+' --analog_max_shift '+analog_max_shift, {async: false, silent: false});
     } else {
-        console.log('\nERROR. The GNPS search tool informed ('+search_tool+
+        console.log('\nERROR. The GNPS2 search tool informed ('+search_tool+
             ') is not valid. Please use one of: gnps, gnps_indexed or gnps_new.');
         return 1;
     }
 
     if (resExec.code) {
-        console.log('\nERROR in the search tool. GNPS Library Search aborted.');
+        console.log('\nERROR in the search tool. GNPS2 Library Search aborted.');
+        shell.ShellString('\n' + gnpslibsearch_start +
+            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputGNPSPath);
         return resExec.code;
     } else {
-        console.log('DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n");
+        var done_msg = 'DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n";
+        console.log(done_msg);
+        shell.ShellString('\n'+ gnpslibsearch_start + resExec.stdout+'\n'+resExec.stderr+'\n'+done_msg).toEnd(logOutputGNPSPath);
+
         // continue to include the library annotations
         // library merge process is disabled for now, only used when multiple library files are informed: python GNPS2_LibrarySearch_Workflow/tsv_merger.py
         // include library summary info getGNPS_library_annotations using only offline info from enriched summary
         // the filtertostructures is not used, all identifications are kept independent of having a structure determined
-        console.log("   * Retrieving the GNPS library annotations of the identified spectra *")
+        gnpslibsearch_start = "   * Retrieving the GNPS2 library annotations of the identified spectra *";
+        console.log(gnpslibsearch_start)
         var search_result_file = result_folder+"/"+basename(input_mgf_file)+'_'+basename(library_mgf_path)+"_"+search_tool+".tsv"
         var output_file_name = result_folder+"/"+output_name+"_library_search_"+search_tool+".tsv"
         resExec = shell.exec(python3()+' '+__dirname+
@@ -1518,23 +1537,32 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
 
         if (resExec.code) {
             console.log('\nERROR in the library annotation aggregation. GNPS Library Search aborted.');
+            shell.ShellString('\n' + gnpslibsearch_start +
+                resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputGNPSPath);
             return resExec.code;
         } else {
             console.log('DONE!\n');
+            shell.ShellString('\n'+ gnpslibsearch_start + resExec.stdout+'\n'+resExec.stderr+'\nDONE!\n').toEnd(logOutputGNPSPath);
+
             // check if the output_file_name was created, which means there was at least one valid search result
             // if not skip this step
             if (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))
             {
-                console.log("   * Filtering the top 1 result from the library search *")
+                gnpslibsearch_start = "   * Filtering the top 1 result from the GNPS2 library search *";
+                console.log(gnpslibsearch_start)
                 // finally, select the top 1 result
                 resExec = shell.exec(python3()+' '+__dirname+
                     '/src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/filter_top1_hits.py ' +output_file_name+
                     ' '+output_file_name.replace(".tsv", "_top1.tsv"), {async: false, silent: false});
                 if (resExec.code) {
                     console.log('\nERROR in the library filter top1 hits. GNPS Library Search aborted.');
+                    shell.ShellString('\n' + gnpslibsearch_start +
+                        resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR').toEnd(logOutputGNPSPath);
                     return resExec.code;
                 } else {
-                    console.log('DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n");
+                    done_msg = 'DONE! '+printTimeElapsed_bigint(start_gnps_libsearch, process.hrtime.bigint())+"\n";
+                    console.log(done_msg);
+                    shell.ShellString('\n'+ gnpslibsearch_start + resExec.stdout+'\n'+resExec.stderr+'\n'+done_msg).toEnd(logOutputGNPSPath);
                 }
             }
         }
@@ -2126,25 +2154,25 @@ program
         options.min_peaks_output = 5;
 
         // setup GNPS library search parms and library path
-        var resExec_gnps = 1 // set the execution as not executed
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
-        const top_k = 5 // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
-        var filter_window = "0"
+        var resExec_gnps = 1; // set the execution as not executed
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        const top_k = 5; // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
+        var filter_window = "0";
         if (options.gnps_window_filter === "TRUE")
-            filter_window = "1"
-        var filter_precursor = "0"
+            filter_window = "1";
+        var filter_precursor = "0";
         if (options.trim_mz === "TRUE")
-            filter_precursor = "1"
-        var analog_search = "0"
+            filter_precursor = "1";
+        var analog_search = "0";
         if (options.gnps_analog_search === "TRUE")
-            analog_search = "1"
+            analog_search = "1";
         // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
         if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
         {
             console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
                         "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
-                        "Please execute the np3 setup command again to retrieve this library file and allow the search.")
-            options.gnps_search_tool = ""
+                        "Please execute the np3 setup command again to retrieve this library file and allow the search.");
+            options.gnps_search_tool = "";
         }
 
         var output_path = options.output_path+'/'+options.output_name;
@@ -2209,14 +2237,14 @@ program
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
             // call GNPS2 Library Search here
+            // adapt some GNPS2 Library Search parameters
+            var result_folder = output_path + osSep() + "identifications"
             if (options.gnps_search_tool !== "") {
-                // adapt some GNPS2 Library Search parameters
-                var result_folder = output_path + osSep() + "identifications"
                 //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
                 resExec_gnps = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
-                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
             }
 
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
@@ -2227,30 +2255,30 @@ program
 
             if (resExec) {
                 // annotation step failed, use the clean tables instead
-                // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelationGrouping(options.metadata, counts_path+"_peak_area_clean.csv",
-                    options.method, 0, clean_log_output, options.verbose);
-                callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra_clean.csv",
-                    options.method, 0, clean_log_output, options.verbose);
-                var area_counts_path = counts_path+"_peak_area_clean.csv"
+                var area_counts_path = counts_path+"_peak_area_clean.csv";
+                var spectra_counts_path = counts_path+"_spectra_clean.csv";
+                var log_file = clean_log_output;
             } else {
                 // annotation worked
-                // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelationGrouping(options.metadata, counts_path + "_peak_area_clean_ann.csv",
-                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
-                    options.verbose);
-                callComputeCorrelationGrouping(options.metadata, counts_path + "_spectra_clean_ann.csv",
-                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
-                    options.verbose);
-                var area_counts_path = counts_path+"_peak_area_clean_ann.csv"
+                var area_counts_path = counts_path+"_peak_area_clean_ann.csv";
+                var spectra_counts_path = counts_path + "_spectra_clean_ann.csv";
+                var log_file = output_path+"/count_tables/clean/logAnnotateOutput";
             }
 
             // call GNPS join here, after annotation to retrieve the number of protonated representative in the curation step
             var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+            var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
             if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata);
+                callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata,logOutputGNPSPath);
             }
 
+            // call correlation for the cleaned peak area count and spectra area count
+            callComputeCorrelationGrouping(options.metadata, area_counts_path,
+                options.method, 0, log_file, options.verbose);
+            callComputeCorrelationGrouping(options.metadata, spectra_counts_path,
+                options.method, 0, log_file, options.verbose);
+
+            // call merge
             callMergeCounts(output_path, options.output_name,
                 options.raw_data_path + '/' + options.processed_data_name, options.metadata,
                 "TRUE", options.method, options.verbose);
@@ -2275,17 +2303,17 @@ program
                 var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
-                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
-                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
+                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
+                var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
                 if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata);
+                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata,logOutputGNPSPath);
                 }
             }
 
             // call correlation for the mscluster peak area count
             callComputeCorrelationGrouping(options.metadata, counts_path+"_peak_area.csv",
                 options.method, 0, clustering_log_output, options.verbose);
-
             // call correlation for the mscluster spectra count
             callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
@@ -3707,25 +3735,25 @@ program
         options.mixture_prob = 0.4;
 
         // setup GNPS library search parms and library path
-        var resExec_gnps = 1 // set the execution as not executed
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
-        const top_k = 5 // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
-        var filter_window = "0"
+        var resExec_gnps = 1; // set the execution as not executed
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        const top_k = 5; // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
+        var filter_window = "0";
         if (options.gnps_window_filter === "TRUE")
-            filter_window = "1"
-        var filter_precursor = "0"
+            filter_window = "1";
+        var filter_precursor = "0";
         if (options.trim_mz === "TRUE")
-            filter_precursor = "1"
-        var analog_search = "0"
+            filter_precursor = "1";
+        var analog_search = "0";
         if (options.gnps_analog_search === "TRUE")
-            analog_search = "1"
+            analog_search = "1";
         // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
         if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
         {
             console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
                 "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
-                "Please execute the np3 setup command again to retrieve this library file and allow the search.")
-            options.gnps_search_tool = ""
+                "Please execute the np3 setup command again to retrieve this library file and allow the search.");
+            options.gnps_search_tool = "";
         }
 
         var output_path;
@@ -3807,14 +3835,14 @@ program
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
             }
             // call GNPS2 Library Search here
+            // adapt some GNPS2 Library Search parameters
+            var result_folder = output_path + osSep() + "identifications";
             if (options.gnps_search_tool !== "") {
-                // adapt some GNPS2 Library Search parameters
-                var result_folder = output_path + osSep() + "identifications"
                 //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
                 resExec_gnps = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
-                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
             }
 
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
@@ -3825,28 +3853,26 @@ program
 
             if (resExec) {
                 // joining annotation step failed, use the clean tables instead
-                // call correlation for the cleaned peak area count and spectra count
-                callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_peak_area_clean.csv",
-                    options.method, 0, clean_log_output, options.verbose);
-                callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra_clean.csv",
-                    options.method, 0, clean_log_output, options.verbose);
-                var area_counts_path = counts_path+"_peak_area_clean.csv"
+                var area_counts_path = counts_path+"_peak_area_clean.csv";
+                var spectra_counts_path = counts_path+"_spectra_clean.csv";
+                var log_file = clean_log_output;
             } else {
                 // annotation worked
-                // call correlation for the cleaned peak area count and spectra area count
-                callComputeCorrelationGrouping(metadata_original_samples, counts_path + "_peak_area_clean_ann.csv",
-                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
-                    options.verbose);
-                callComputeCorrelationGrouping(metadata_original_samples, counts_path + "_spectra_clean_ann.csv",
-                    options.method, 0, output_path+"/count_tables/clean/logAnnotateOutput",
-                    options.verbose);
                 var area_counts_path = counts_path+"_peak_area_clean_ann.csv"
+                var spectra_counts_path = counts_path + "_spectra_clean_ann.csv";
+                var log_file = output_path+"/count_tables/clean/logAnnotateOutput";
             }
             // call GNPS join here, after annotation to retrieve the number of protonated representative of the curation step
-            var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+            var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
+            var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
             if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples);
+                callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples,logOutputGNPSPath);
             }
+            // call correlation for the cleaned peak area count and spectra count
+            callComputeCorrelationGrouping(metadata_original_samples, area_counts_path,
+                options.method, 0, log_file, options.verbose);
+            callComputeCorrelationGrouping(metadata_original_samples, spectra_counts_path,
+                options.method, 0, log_file, options.verbose);
             // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
             // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
@@ -3863,15 +3889,16 @@ program
             // call GNPS2 Library Search here
             if (options.gnps_search_tool !== "") {
                 // adapt some GNPS2 Library Search parameters
-                var result_folder = output_path + osSep() + "identifications"
+                var result_folder = output_path + osSep() + "identifications";
                 //console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
                 var resExec = callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, options.output_name,
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
-                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads)
-                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
+                    analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
+                var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
+                var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
                 if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples);
+                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples, logOutputGNPSPath);
                 }
             }
 
@@ -4004,26 +4031,28 @@ program
         const start_gnpssearch = process.hrtime.bigint();
         // run workflow
         console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf"
-        const result_folder = options.output_path + osSep() + "identifications"
-        var output_name = basename(options.output_path)
-        var filter_window = "0"
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        const result_folder = options.output_path + osSep() + "identifications";
+        var output_name = basename(options.output_path);
+        var filter_window = "0";
         if (options.window_filter === "TRUE")
-            filter_window = "1"
-        var filter_precursor = "0"
+            filter_window = "1";
+        var filter_precursor = "0";
         if (options.trim_mz === "TRUE")
-            filter_precursor = "1"
-        var analog_search = "0"
+            filter_precursor = "1";
+        var analog_search = "0";
         if (options.analog_search === "TRUE")
-            analog_search = "1"
+            analog_search = "1";
 
         var resExec = callGNPSLibrarySearch(library_mgf_path, options.input_mgf_file, result_folder, output_name,
             options.search_tool, options.mz_tolerance, options.fragment_tolerance, options.search_min_cosine,
             options.search_min_matched_peaks, options.top_k, filter_precursor, filter_window,
-            analog_search, options.analog_max_shift, options.parallel_threads)
-        var output_file_name = result_folder+"/"+output_name+"_library_search_"+options.search_tool+"_top1.tsv"
+            analog_search, options.analog_max_shift, options.parallel_threads);
+        var output_file_name = result_folder+"/"+output_name+"_library_search_"+options.search_tool+"_top1.tsv";
+
         if (!resExec && (options.count_file_path !== "") && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-            callJoinGNPS("", output_file_name, options.count_file_path, options.output_path, options.metadata);
+            var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
+            callJoinGNPS("", output_file_name, options.count_file_path, options.output_path, options.metadata,logOutputGNPSPath);
         }
 
         console.log("GNPS_library_search "+printTimeElapsed_bigint(start_gnpssearch, process.hrtime.bigint()));
@@ -4057,7 +4086,7 @@ program
         'exists in the same path (or the opposite), it will merge the GNPS results to both files. '+
         'The clean mgf must be used for the identifications to join the results to the clean table.')
     .option('-o, --job_output_path <path>', 'path to the job final output data folder, inside the outs directory of the clustering result folder. ' +
-        'It should contain the identifications folder, if not it will be created. The job name (output_name) may be extracted from here.')
+        'It should contain the "identifications" folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
         'distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).\n', "")
     .action(function(options) {
@@ -4080,10 +4109,10 @@ program
 
         const start_gnpsjoin = process.hrtime.bigint();
         // run workflow
-        console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
-
+        //console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
+        var logOutputGNPSPath = options.job_output_path + osSep() + "identifications" + osSep()+ "logGNPS2LibrarySearch";
         callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
-            options.count_file_path, options.job_output_path, options.metadata);
+            options.count_file_path, options.job_output_path, options.metadata,logOutputGNPSPath);
 
         console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
     })
@@ -4402,18 +4431,16 @@ program
             } else {
                 gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
-
-                console.log('@@@ gnps_library_search - Library Search - OUTPUT:\n\n'+gnps_result_np3+'\n');
             }
-            // TODO  - compare its results with the online result for equality in the field expected to be equal
+            // compare its results with the online result for equality in the field expected to be equal
             // which is after *** Joining the GNPS library indentification results to the NP3 count files ***
             // and before *** Computing the RCDK descriptors for the valid GNPS identification ***
             // the smiles are different (because of how ties are resolved) so the rcdk result is different
-            // removing time
-            if (gnps_result_np3 == gnps_result_ls && gnps_result_np3 != "ERROR" && gnps_result_ls != "ERROR") {
+            // also removing time
+            if (gnps_result_np3 === gnps_result_ls && gnps_result_np3 != "ERROR" && gnps_result_ls != "ERROR") {
                 test_res[0] = test_res[0] +
                     '\n*** Testing Equality - gnps_result & gnps_library_search - GNPS2 Library Search ***\n\nEquality OK!\nDONE! :)\n'
-            } else if (gnps_result_np3 != gnps_result_ls && gnps_result_np3 != "ERROR" && gnps_result_ls != "ERROR") {
+            } else if (gnps_result_np3 !== gnps_result_ls && gnps_result_np3 != "ERROR" && gnps_result_ls != "ERROR") {
                 // not matching results after joining gnps result library search and running it locally and offline
                 test_res[0] = test_res[0] +
                     '\n\ngnps_result & gnps_library_search - GNPS2 Library Search - EXEC OK - EQUALITY ERROR\n'
