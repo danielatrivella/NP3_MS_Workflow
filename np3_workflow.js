@@ -1649,7 +1649,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.3.2',  '--version')
+    .version('1.4.0',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -4063,11 +4063,17 @@ program
         console.log('');
         console.log('RESULTS:');
         console.log('');
-        console.log('TODO.');
+        console.log('Creates a directory named "identifications", inside the provided *output_path*, to store the results. ');
+        console.log('Three tables will be stored in this directory: \n' +
+            '1) one containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPOGATED.mgf) and the search tool used;\n' +
+            '2) another containing table 1 enriched with GNPS2 annotations named with the *output_path* basename plus the tag "library_search" and the search tool used;\n' +
+            '3) and the final result table with the top 1 result named with table 2 name plus a suffix equals "top1".\n' +
+            'A log file with the searching outputs is also created, named "logGNPS2LibrarySearch".');
         console.log('');
-        console.log('EXAMPLES:');
+        console.log('EXAMPLE:');
         console.log('');
-        console.log('  $ node np3_workflow.js gnps_library_search TODO');
+        console.log('  $ node np3_workflow.js gnps_library_search -g test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_clean.mgf ' +
+            '-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ -i gnps_new');
     });
 
 program
