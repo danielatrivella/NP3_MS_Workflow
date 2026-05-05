@@ -52,6 +52,9 @@ def main_batch(gnps_lib_mgf, qry_file, result_folder="search_results",
     #qry_basename = os.path.basename(qry_file).replace("/", "_").replace(".", "_").replace(" ", "_")
     out_path = os.path.join(result_folder, f"{qry_file_name}_{lib_mgf_basename}_gnps_new.tsv")
 
+    if not os.path.exists(result_folder):
+        os.makedirs(result_folder, exist_ok=True)
+
     min_matched_peak = max(min_matched_peak, 1)
 
     # Initialize list for batch writing
