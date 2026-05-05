@@ -4,22 +4,21 @@
 
 - - - - 
 
-# Current Version 1.3.2
+# Current Version 1.4.0
 
 - NEW features:
 
+  - (1.4.0) Added experimental identification against GNPS2 libraries offline! The **setup** command must be executed again for changes to make effect and the conda environment was updated.
+      - A new command was implemented, called **gnps_library_search**, which is capable of executing the GNPS2 Library Search workflow with some minor adaptations and full integration with the NP³ results and reports.
+      - The ALL\_GNPS\_NO\_PROPOGATED library (all LC data present in GNPS2) is retrieved locally (**setup** command) and its annotations were previous enriched on April 2026 (no internet connection is needed).
+      - This routine was also automated in the **run** command as step 6.1, which automatically identifies the result against GNPS2 experimental data.
   - (1.3.2) Bug fix in the **join_jobs** command in Step 7 when integrating the IVAMNs from the original jobs. Some invalid annotations of the joined IVAMN were being kept with an empty string in the annotation type, leading to errors in the following steps or further joins.
   - (1.3.1) The command **gnps_result** had its behaviour modified to only accept identifications from the clean MGF to join to the clean table (which also works for the join_jobs results). The older behavior could lead to wrong joins when using a join\_jobs result. For identifications from GNPS2, only the top 1 result is used. The GNPS identifications result of the test suite were updated.
-    - In the chemical report, the PCA plot for the UNPDxGNPS data now uses the default style and labels naming. In the chemical statistics table, added the number of [M+H]⁺ with beds included, which is equal to the number of nodes of the SSMN protonated.
+      - In the chemical report, the PCA plot for the UNPDxGNPS data now uses the default style and labels naming. In the chemical statistics table, added the number of [M+H]⁺ with beds included, which is equal to the number of nodes of the SSMN protonated.
   - (1.3.0) A new command called **pca_plot** was implemented to create a PCA using the NP³ reference chemical space (UNPD+DrugBank+Allosteric datasets). The NP³ and other external tables may be used to create a new PCA in the NP³ chemical space.
       - Now the PCA creation in the final reports procedure removes any blanks or beds before plotting; and also creates a PCA plot with only the putative protonated m/z.
       - Bug fix in the join_jobs command, Step 7 to join IVAMNs (fixed the removal of invalid connections). 
       - In the **test** command, added a new output_path parameter to allow running and storing the NP³ test results in a different folder (not in the repository folder).
-  - (1.2.2) The command **join_jobs** was updated with incremental clustering approaches to guarantee that the msclusterIDs from the reference job are maintained throughout consecutive executions (see documentation).
-      - A final report was implemented and the conda environment was updated with new dependencies. The **setup** command must be executed again for this new version after updating the conda environment. 
-      - The **gnps_result** command have one new mandatory parameter called job_output_path and one new optional parameter equal to the metadata table path. 
-  - (1.2.1) The quantification grouping is now performed by the *corr* command (Step 9) and before every biocorrelation computation. This allows adding extra groupings to a job a posteriori its processing. Useful to add groups to a joined job.
-  - (1.2.0) A new command called **join_jobs** was created! The *join_jobs* command is used to join NP³ jobs (results of the *run* or the *join_jobs* commands) into a single united job.
 
 - - - -
 
@@ -42,9 +41,9 @@ The NP³ MS workflow consists of ten major steps, where only the first requires 
 ![NP³ MS Workflow Pipeline](docs/img/NP3_MS_workflow_infographic.jpg "NP³ MS Workflow Pipeline") 
 
 
-This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS library identification results to the NP³ MS workflow quantification tables. A fourth command to unite different results from the NP³ MS Workflow. And a fifth command to create PCA plots int he NP³ reference chemical space.
+This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS or GNPS2 library identification results to the NP³ MS workflow quantification tables. A fourth command to execute locally the GNPS2 library search. A fifth command to unite different results from the NP³ MS Workflow. And a sixth command to create PCA plots in the NP³ reference chemical space.
 
-The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach. At the end of the pipeline processing, final reports are created containing quantification, chemical and molecular networking statistics and plots. The chemical space of the identified result using PCA method is also created using a reference dataset for comparison and reproducibility.
+The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach. At the end of the pipeline, final reports are created containing quantification, chemical and molecular networking statistics and plots. The chemical space of the identified result using PCA method is also created using a reference dataset for comparison and reproducibility.
 
 For the complete details of each command see the [NP³ MS workflow user manual](docs/Manual_NP3_workflow.pdf). 
 
@@ -217,7 +216,7 @@ L754_bacs_test
 │   │   │   |  
 │   │   │   └── quantification_report           <- the folder with the quantification statistics
 │   │   │
-|   |   ├── identifications                     <- the folder with the complete list of identifications from UNPD returned by tremolo              
+|   |   ├── identifications                     <- the folder with the complete list of identifications from UNPD returned by tremolo and from GNPS2 Library Search              
 │   │   │ 
 |   |   ├── mgf                                 <- the folder with the MGF files from the clustering Step 3 (named L754_bacs_test_all.mgf), containing the complete list of consensus spectra, and from the clean Step 5 (named L754_bacs_test_clean.mgf), containing the final list of clean consensus spectra. 
 │   │   │    
@@ -347,7 +346,12 @@ The *join_jobs* command may be useful for processing growing libraries, which wi
     - *\-d, \-\-jobs_data_path* \<path\>   :  path to the folder containing the input jobs result to be joined, this should contain their previous NP3 result, named accordingly to what is specified in the metadata_join. Their clean mgf and quantification tables will be used.
     - *\-y, \-\-pre_processed_dir_path* \<path\> :  path to the folder containing the input jobs pre processing result, this should contain all the original jobs previous NP3 pre processing result in separated folders named accordingly to what is specified in the metadata_join.
     - *\-o, \-\-output_path* \<path\>    :    path to where the output directory will be created
- 
+
+- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). 
+    - List of mandatory options:
+    - *-g, --input_mgf_file* \<path\>      :  path to the input MGF file with the MS/MS spectra data to be searched and identified
+    - *-o, --output_path* \<path\>         :  if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. It should contain the "identifications" folder, if not it will be created and the results will be stored in it. If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).
+
 - **gnps_result** [options] : This command join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'All identifications') workflows to the count tables of the NP³ clustering or clean steps. 
     - List of mandatory options:
     - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
