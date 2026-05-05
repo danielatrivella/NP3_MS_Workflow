@@ -4307,7 +4307,7 @@ program
     .option('-s, --skip [x]', 'Skip to test x', 1)
     .option('-o, --output_path [x]', 'Path to the directory to store the tests outputs. A folder named "test" will be '+
         'created inside it. The mzxml folder will be copied to the output_path/test directory. '+
-        'Default value to "", which outputs to the NP3 test folder.', "")
+        'Default value to "", which outputs to the NP3 repository folder.', "")
     .action(function(options) {
         const start_test = process.hrtime.bigint();
         var np3_js_call = 'node '+ __dirname +'/np3_workflow.js';
@@ -4316,9 +4316,9 @@ program
         var output_path = __dirname
         if (options.output_path != "") {
             output_path = options.output_path
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@");
-            console.log("@@@@@@ Output Setup @@@@@");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Output Path Setup @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             console.log("  - Copying the test dataset mzxml folder and files to the output_path\n");
             // create the test subfolder and copy the mzxml directory
             shell.mkdir("-p", output_path+"/test/L754_bacs/mzxml");
@@ -4420,7 +4420,7 @@ program
             console.log("@@@@@ Test 1.3 - L754_bacs_all - gnps_library_search @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_library_search -g ' +
-                __dirname+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/mgf/L754_bacs_all_clean.mgf ' +
+                output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/mgf/L754_bacs_all_clean.mgf ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/ '+
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
@@ -4772,11 +4772,11 @@ program
             console.log("@@@@@ Test 13 - L754_bacs_blanks_one_sample - gnps_library_search with analog_search @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' gnps_library_search -g ' +
-                __dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_clean.mgf ' +
+                output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_clean.mgf ' +
                 '--search_tool gnps_indexed --analog_search TRUE '+
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv ' +
-                '-o '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ ' +
-                '-c '+__dirname+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_peak_area_clean_ann.csv',
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ ' +
+                '-c '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_peak_area_clean_ann.csv',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
