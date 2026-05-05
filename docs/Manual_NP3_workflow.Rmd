@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.3.0
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.4.0
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
   - Luiz F. G. Alves^\*^
   - Rafael de Felicio^\*^
   - Daniela B. B. Trivella^\*^
   - Guilherme P. Telles^\†^
-date: December, 2025 
+date: May, 2026 
 output:
   pdf_document: default
   html_document:
@@ -16,7 +16,7 @@ output:
  
 # 1. Overview
  
-The $NP^{3}$ MS workflow^[$NP^{3}$ MS Workflow. C.F. Bazzano, et al. Analytical Chemistry 2024 96 DOI: 10.1021/acs.analchem.3c05829] is a software system with a collection of scripts to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research focused on drug discovery with optimization towards natural products. 
+The $NP^{3}$ MS workflow^[$NP^{3}$ MS Workflow. C.F. Bazzano, et al. Analytical Chemistry 2024 96 DOI: 10.1021/acs.analchem.3c05829] is a software system with a collection of scripts to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research. It's processing is focused on drug discovery with optimization towards natural products. 
 
 The $NP^{3}$ MS Workflow consists of ten major steps:
  
@@ -25,8 +25,7 @@ The $NP^{3}$ MS Workflow consists of ten major steps:
 * Step 3: Clustering of pre-processed MS2 spectra into a collection of consensus spectra.
 * Step 4: Quantification of consensus spectra per sample and computation of the sample type indicators.
 * Step 5: Pairwise similarity comparisons of consensus spectra and cleaning of their quantifications based on the similarity values into a set of clean consensus spectra.
-* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS and positive ion mode only).
-<!-- , and against the PubChem database using the MetFrag R package. -->
+* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS and positive ion mode only). And GNPS2 library search against community LC experimental data.
 * Step 7: Ionization variants annotation among concurrent clean consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a ionization variant annotation molecular network (IVAMN) and assignment of the most likely [M+H]+ consensus spectra representatives (for positive ion mode only).
 * Step 8: Merge of clean consensus spectra quantifications based on the annotated variants and the [M+H]+ representatives (for positive ion mode only).
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments. It also computes the quantification grouping.
@@ -43,7 +42,7 @@ This workflow also contains two interactive commands for data visualization:
 * **chr**: The first extracts chromatogram from raw MS1 data files and save the images to PNG files. Depending on the chosen parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC), extracted from each sample/file with customized groups, and m/z and retention time windows. 
 * **spectra_viewer**: The second visualizes and compares MS2 data from MGF files or peak lists. It can also save the images to PNG or SVG files. Currently, it is only supported for Unix OS.
  
-Furthermore, the user can manually identify the resulting consensus spectra against the GNPS [8] spectral libraries and use another separated command of this workflow called **gnps_result** to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables.
+Furthermore, the user may manually identify the resulting consensus spectra against the GNPS or GNPS2 [8] online spectral libraries and use another separated command of this workflow called **gnps_result** to join the GNPS identification results to the $NP^{3}$ MS workflow quantification tables. The GNPS2 Library Search Workflow may also be executed by this workflow offline using the command **gnps_library_search**, fully integrated with the $NP^{3}$ results.
  
 ## 1.1 Data
  
@@ -316,6 +315,11 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
+- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). 
+    - List of mandatory options:
+    - *\-g, \-\-input_mgf_file* \<path\>      :  path to the input MGF file with the MS/MS spectra data to be searched and identified
+    - *\-o, \-\-output_path* \<path\>         :  if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. It should contain the "identifications" folder, if not it will be created and the results will be stored in it. If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).
+
 - **gnps_result** [options] : This command join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'All identifications') workflows to the count tables of the $NP^{3}$ clustering or clean steps. 
     - List of mandatory options:
     - *\-i, \-\-cluster_info_path* \<path\>       :  If joining the result of a Molecular Networking job, this should be the path to the file inside the folder named \'clusterinfo\' of the downloaded output from GNPS. Not used for results coming from the Library Search workflow. (default: "")
@@ -1674,7 +1678,109 @@ Next, the join_jobs workflow skips Step 8, the merging may result in too much ad
 
 The join_jobs workflow ends with the molecular networking (Step 10) similar to the main flow. The data organization of the output is similar to the main flow and the additional steps may be executed the same way.
 
-## 4.12. Command *gnps_result*
+## 4.12. Command *gnps_library_search*
+
+Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data).
+
+Options for the command *gnps_library_search*:
+
+- *\-g, \-\-input\_mgf\_file* \<path\>        path to the input MGF file with the MS/MS spectra data
+                                     to be searched and identified
+- *\-o, \-\-output\_path* <path>           if the input is a NP3 result, the path to the final NP3
+                                     output data folder, inside the outs directory of the
+                                     clustering result folder. It should contain the
+                                     identifications folder, if not it will be created and
+                                     the results will be stored in it. If the input is not a
+                                     NP3 result, this should be a chosen result folder. The
+                                     job name (output_name) will be extracted from here
+                                     (basename).
+- *\-z, \-\-mz\_tolerance* [x]             the tolerance for parent mass search in Daltons,
+                                     depending on the instrument and data accuracy. (default:
+                                     0.025)
+- *\-f, \-\-fragment\_tolerance* [x]       the tolerance in Daltons for fragment peaks. Used for
+                                     comparing the mass of the peaks during the search.
+                                     (default: 0.05)
+- *\-i, \-\-search\_tool* [x]              the GNPS2 search tool to be used in the library
+                                     searching against the ALL_GNPS_NO_PROPOGATED. One of
+                                     "gnps_indexed", "gnps", "gnps_new" or "" (disabled). The
+                                     similarity function is hardcoded to be the cosine and
+                                     the peak transformation function is the square root.
+                                     (default: "gnps_indexed")
+- *\-s, \-\-search\_min\_cosine* [x]        the similarity threshold that determines if two spectra
+                                     are a match. The minimum cosine for a search match.
+                                     Values greater or equal than 0.7 will retrieve more
+                                     accurate results. (default: 0.7)
+- *-p \-\-search\_min\_matched\_peaks* [x]  The minimum number of common peaks that the searched
+                                     spectra must share with a library spectrum to be
+                                     considered as a match. (default: 6)
+- *\-k, \-\-top\_k* [x]                    defines the maximal number of results returned by the
+                                     GNPS Search Tool for each input spectrum. Additionally,
+                                     the top 1 result is always computed at the end of the
+                                     search. (default: 5)
+- *\-r, \-\-trim\_mz* [x]                  Filter precursor peaks and peaks around precursor m/z.A logical "TRUE" or "FALSE" indicating if the spectra fragmented 
+  					peaks around the precursor m/z +-20 Da should be deleted 
+  					before the search comparisons. If "TRUE" this removes the 
+  					residual precursor ion, which is frequently observed in MS/MS 
+  					spectra acquired on qTOFs. (default: "TRUE")
+- *\-w, \-\-window\_filter* [x]            If "TRUE", for each peak, it will check a window around
+                                     that peak, if it is not one of the top peaks in terms of
+                                     intensity in that window, it will be filtered out. This
+                                     will speed up the search and reduce the effect of noise.
+                                     (default: "TRUE")
+- *\-\-analog\_search* [x]                If "TRUE", also search for analog spectra. This allows
+                                     as a match the spectra with different precursor mass and
+                                     similar fragmentation pattern.  (default: "FALSE")
+- *\-\-analog\_max\_shift* [x]             Maximum difference between precursor m/zs that will be
+                                     used in the search when analog_search is enabled. Only
+                                     used when search_tool is "gnps_new". (default: 400)
+- *\-l, \-\-parallel\_threads* [x]         the number of threads to be used for parallel processing
+                                     in the search when search_tool is gnps_indexed. For
+                                     parallelization set x >= 1 (default: 8)
+- *\-c, \-\-count\_file\_path* [path]       Path to any of the count tables (peak_area or spectra)
+                                     resulting from the NP3 clustering or clean steps (which
+                                     matches with the input_mgf_file used). If the peak_area
+                                     is informed and the spectra table file exists in the
+                                     same path (or the opposite), it will merge the GNPS
+                                     results to both files. Ignore if this is not a NP3
+                                     result (leave as empty string). (default: "")
+- *\-m, \-\-metadata* [file]              path to the metadata table CSV file of the NP3 job. This is necessary to plot the distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).
+   (default: "")
+   
+##### 4.12.1. *gnps_library_search* Results
+
+Creates a directory named "identifications", inside the provided *output_path*, to store the results. 
+
+Three tables will be stored in this directory: 
+
+1. One containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPOGATED.mgf) and the search tool used;
+2. Another containing table 1 enriched with GNPS2 annotations named with the *output_path* basename plus the tag "library_search" and the search tool used;
+3. And the final result table with the top 1 result named with table 2 name plus a suffix equals "top1".
+
+A log file with the searching outputs is also created, named "logGNPS2LibrarySearch".
+
+##### 4.12.2. *gnps_library_search* Examples
+
+Example identifying the result of one of the test cases using the gnps_new search tool.
+
+```{r, eval=F} 
+$ node np3_workflow.js gnps_library_search -g test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/
+L754_bacs_blanks_one_sample_clean.mgf -o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ -i gnps_new
+```
+
+##### 4.12.3. *gnps_library_search* Details
+
+The GNPS2 Library Search workflow was adapted and integrated to the $NP^{3}$ MS Workflow. All LC libraries, aggregated in the ALL_GNPS_NO_PROPOGATED library (https://external.gnps2.org/gnpslibrary), are used in this routine. It's MGF is retrieved locally in the *setup* command and enriched with online annotations previous organized from April 2026. This annotations will be updated with GNPS2 online data from time to time by the admins of this repository. 
+
+Three search tools from GNPS2 are used here for the local identifications: gnps_indexed (current default in GNPS2), gnps and gnps_new. The following filters that are applied in GNPS2 Library Search workflow were also adapted to use the offline annotations enrichment and the top1 selection was adapted to resolve ties in the MQScore by using the number of matched peaks and the library quality string of the retrieved matches (different from GNPS2 online which only uses the MQScore).
+
+The ALL_GNPS_NO_PROPOGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from 90388 unique molecules which counts the unique SMILES present in the annotations. Additional disk space is necessary to store this library offline, around 4Gbs are used.
+
+The GNPS2 data and the codes adapted and modified from GNPS2 are located in: 'src/GNPS_LibrarySearch'; The enriched annotations are located in:
+
+'GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv.tar.gz'. 
+
+
+## 4.13. Command *gnps_result*
  
 Join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'all identifications') workflows to the count tables of the $NP^{3}$ clustering or clean steps (Steps 3 or 5) from a run or a join_jobs result.
 
@@ -1692,7 +1798,7 @@ Options for the command *gnps_result*:
 - *\-m, \-\-metadata* [file]   : path to the samples metadata table CSV file of the $NP^{3}$ job. This is necessary to plot the distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).  (default: "")
 - *\-h, \-\-help* : output usage information
  
-##### 4.12.1. *gnps_result* Results
+##### 4.13.1. *gnps_result* Results
  
 The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", 
 \newline "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
@@ -1704,7 +1810,7 @@ The Identification Curation results are concatenated to these created columns, d
 Additional outputs are created in the job_output_path to the 'identifications' subfolder and to the final reports, also detailed below.
 
  
-##### 4.12.2. *gnps_result* Examples
+##### 4.13.2. *gnps_result* Examples
  
 Fake example to use the GNPS Identification Join command:
  
@@ -1717,7 +1823,7 @@ Fake example to use the GNPS Identification Join command:
     --job_output_path "/path/to/the/output/NP3/output_name/"
 ```
  
-##### 4.12.3. *gnps_result* Details
+##### 4.13.3. *gnps_result* Details
  
 The GNPS library identifications results should be obtained using the collection of consensus spectra present in the MGF files from the $NP^{3}$ MS workflow output, from the clustering (Step 3) or the clean (Step 5) results. If joining the identifications to the clean table, the clean mgf must be used in the GNPS workflows. If joining the identifications to the clustering table, the all mgf must be used in the GNPS workflows. For GNPS2 workflows, the top 1 result is used for joining (not the top k) - only one identification (the best) is expected for each spectrum.
  
@@ -1727,7 +1833,7 @@ In the GNPS Library Search (LS) workflow result, the '#Scan' column present in t
 
 At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
 
-##### 4.12.4. *gnps_result* Identification Curation and UNPDxGNPS Best Origin
+##### 4.13.4. *gnps_result* Identification Curation and UNPDxGNPS Best Origin
 
 A curation of the identification results was also proposed for the gnps_result in order to score and rank the best identification from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
 
@@ -1766,7 +1872,7 @@ For the chemical space plotting using PCA, the CDK descriptors of the GNPS resul
 
 If the metadata path is informed, the plot of the distribution of the superclass grouping is also created for GNPS and UNPDxGNPS using columns gnps_curated_superclass_grouping and best_origin_curated_superclass_grouping, respectively, and stored in the chemical report folder.
 
-## 4.13. Command *pca_plot*
+## 4.14. Command *pca_plot*
  
 This command creates a PCA plot of a new data in the $NP^{3}$ reference chemical space, composed by UNPD+DrugBank+Allosteric datasets. The procedure to create the PCA plots is to first compute the CDK descriptors of a provided list of SMILES, then to create the $NP^{3}$ reference PCA and to transform these new data to the created chemical space.
 
@@ -1793,7 +1899,7 @@ Options for the command *pca_plot*:
 - *\-n, \-\-output_name* [file]   : The name to be used to name the final plots, used as a prefix in the PCA plots naming. (default: "new_data")
 - *\-h, \-\-help* : output usage information
  
-##### 4.13.1. *pca_plot* Results
+##### 4.14.1. *pca_plot* Results
  
 In the output_path directory four files are created: 
 
@@ -1804,7 +1910,7 @@ In the output_path directory four files are created:
 The third plot result is always the same and depends only on the $NP^{3}$ reference dataset, used to create the PCA chemical space.
 
  
-##### 4.13.2. *pca_plot* Examples
+##### 4.14.2. *pca_plot* Examples
  
 Example calling the creation of a PCA plot for an external data:
  
@@ -1815,7 +1921,7 @@ Example calling the creation of a PCA plot for an external data:
 ```
  
 
-## 4.14. Command *chr*
+## 4.15. Command *chr*
  
 Runs the R interactive script to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and saves to PNG image(s) file(s). Depending on the provided parameters this can be a total ion chromatogram (TIC), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file. In the interactive prompt is possible to select a mz and/or retention time window to better visualize interesting parts of the sample's chromatograms. The plots can be grouped by data collection batch, by a selection of samples, or all the samples can be plotted together.
  
@@ -1833,11 +1939,11 @@ Options for the command *chr*:
 <!-- - \-t, \-\-rt_range [X,Y]         two numeric separate by comma ',' without spaces and with decimal point equals dot '.' defining the lower and upper boundary for the retention time range/window(s) for the chromatogram(s). If not specified or 'NULL', a chromatogram representing the full retention time range is extracted (default: NULL) -->
 - *\-h, \-\-help*                   output usage information
  
-##### 4.14.1. *chr* Results
+##### 4.15.1. *chr* Results
  
 PNG image(s) file(s) with the extracted chromatogram(s) of the selected sample(s) and grouped as specified in the options.
  
-##### 4.14.2 *chr* Examples
+##### 4.15.2 *chr* Examples
  
 Fake example to execute the MS¹ Viewer command:
 
@@ -1878,7 +1984,7 @@ Fake example to execute the MS¹ Viewer command:
 <!--     --data_name "data_np3" --raw_data_path "/path/to/the/raw/data/directory" -->
 <!-- ``` -->
  
-## 4.15. Command *spectra_viewer*
+## 4.16. Command *spectra_viewer*
 
 This command runs the Streamlit interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. Currently, it is only supported for Unix OS.
   It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
@@ -1888,7 +1994,7 @@ Options for the command *spectra_viewer*:
 - *\-p, \-\-port* [port_number]  localhost server port number (default: "8501")
 - *\-h, \-\-help*              output usage information
 
-##### 4.15.1. *spectra_viewer* Examples:
+##### 4.16.1. *spectra_viewer* Examples:
 
 Example to execute the MS² spectra viewer application:
 
@@ -1896,7 +2002,7 @@ Example to execute the MS² spectra viewer application:
   $ node np3_workflow.js spectra_viewer --port 8080
 ```
 
-## 4.16. Command *test*
+## 4.17. Command *test*
  
 Run the $NP^{3}$ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
 
@@ -1913,11 +2019,11 @@ Options for the command *test*:
                          to the $NP^{3}$ test folder. (default: "")
 - *\-h, \-\-help*              output usage information
  
-##### 4.16.1. *test* Results:
+##### 4.17.1. *test* Results:
  
 The results of the $NP^{3}$ jobs used in the tests. They are stored inside the test/L754_bacs folder of the repository by default, or in the output_path/test/L754_bacs. The metadata table files present in the test/L754_bacs folder are used in the testing cases and should not be modified.
  
-##### 4.16.2. *test* Examples:
+##### 4.17.2. *test* Examples:
  
 Example to execute the test suit from $NP^{3}$ MS Workflow:
 
