@@ -142,6 +142,9 @@ def main():
     
     lib_mgf_basename = os.path.basename(args.library_file)
     
+    if not os.path.exists(args.result_folder):
+        os.makedirs(args.result_folder, exist_ok=True)
+    
     # Reformatting the output
     output_results_file = os.path.join(args.result_folder, os.path.basename(args.spectrum_file) + "_" + lib_mgf_basename + "_gnps.tsv")
     
