@@ -2,7 +2,8 @@
 
 # @ Cris
 # code adapted from https://github.com/Wang-Bioinformatics-Lab/NextflowModules/blob/a31f16297ea5d7f996edb70897179b2e190b9778/bin/library_search/filter_top1_hits.py
-# code adapted to select the top1 hits using not only the MQScore, but also the LibraryQualityString and the number of shared peaks
+# code adapted to select the top1 hits using not only the MQScore,
+# # but also the LibraryQualityString and the number of shared peaks to resolve ties
 
 import pandas as pd
 import argparse
