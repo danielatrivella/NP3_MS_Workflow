@@ -25,7 +25,7 @@ The $NP^{3}$ MS Workflow consists of ten major steps:
 * Step 3: Clustering of pre-processed MS2 spectra into a collection of consensus spectra.
 * Step 4: Quantification of consensus spectra per sample and computation of the sample type indicators.
 * Step 5: Pairwise similarity comparisons of consensus spectra and cleaning of their quantifications based on the similarity values into a set of clean consensus spectra.
-* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS and positive ion mode only). And GNPS2 library search against community LC experimental data.
+* Step 6: Library spectra identification of consensus spectra against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the Universal Natural Products Database (UNPD) using the tremolo tool (for Unix OS and positive ion mode only). And GNPS2 library search (6.1) against community LC experimental data.
 * Step 7: Ionization variants annotation among concurrent clean consensus spectra (adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragmentation are considered), creation of a ionization variant annotation molecular network (IVAMN) and assignment of the most likely [M+H]+ consensus spectra representatives (for positive ion mode only).
 * Step 8: Merge of clean consensus spectra quantifications based on the annotated variants and the [M+H]+ representatives (for positive ion mode only).
 * Step 9: Correlation between the consensus spectra quantifications and the samples bioactivity scores to rank the candidates responsible for the observed hits in bioactivity experiments. It also computes the quantification grouping.
@@ -425,6 +425,13 @@ Options for the command *run*:
 - *\-e, \-\-method* [name]           : a character string indicating which correlation coefficient is to be computed. One of “pearson”, “kendall”, or “spearman” (Step 9) (default: spearman)
 <!-- - *\-i, \-\-metfrag_identification* [x]  : a logical "TRUE" or "FALSE" indicating if the MetFrag tool should be used for spectra identification search against the PubChem database of the top correlated spectra. The Metfrag API is not very fast and could raise some errors, if this happens the user must stop the process (Step 5) (default: "FALSE") -->
 - *\-j, \-\-tremolo_identification* [x]  : (not Windows OS's) A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used for the spectral matching against the ISDB from the UNPD (Step 5) (default: "TRUE")
+- *--gnps_search_tool* [x]          :    the GNPS2 search tool to be used in the library searching against the ALL\_GNPS\_NO_PROPOGATED (Step 6.1). One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). The similarity function is hardcoded to be the cosine, the peak transformation function is the square root and top k equals 5. (default: "gnps_indexed")
+- *--gnps_min_cosine* [x]         :      the similarity threshold for the GNPS2 library search that determines if two spectra are a match. The minimum cosine for a search match. Values greater or equal than 0.7 will retrieve more accurate results. (default: 0.7)
+- *--gnps_min_matched_peaks* [x]     :   The minimum number of common peaks that the searched spectra must share with a library spectrum to be considered as a match. (default: 6)
+- *--gnps_window_filter* [x]       :     If "TRUE", for each peak, it will check a window around that peak, if it is not one of the top peaks in terms of intensity in that window, it will be filtered out. This will speed up the library search and reduce the effect of noise. (default: "TRUE")
+- *--gnps_analog_search* [x]      :      If "TRUE", also search for analog spectra in GNPS2 library search. This allows as a match the spectra with different precursor mass and similar fragmentation pattern.  (default: "FALSE")
+- *--gnps_analog_max_shift* [x]    :     Maximum difference between precursor m/zs that will be used in the GNPS2 library search when analog_search is enabled. Only used when search_tool is "gnps_new". (default: 400)
+- *--gnps_parallel_threads* [x]     :    the number of threads to be used for parallel processing in the search when search_tool is gnps_indexed. For parallelization set x >= 1 (default: 4)
 - *\-v, \-\-verbose* [x]             : for values X\>0 show the scripts output information. For values greater or equal to 10 a consistency test of the results is also performed. (default: 0)
 - *\-h, \-\-help*                    : output usage information
  
@@ -476,9 +483,8 @@ The $NP^{3}$ MS Workflow final reports are organized in three groups of reports:
 The *quantification* report is located inside the quantification_report subfolder and contains:
 - A table with the final quantification of clean consensus spectra, with statistics of the total number of m/z in blank and bed samples, global spectral identification rate against UNPD-tremolo, average number of putative isomers, number of isotope ions and number of fragmented clusters.
 
-The *chemical* report is located inside the chemical_report subfolder and contains: 
-- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation.  
-- When gnps_result is executed, another two similar tables are created with the spectral identification and putative novelty against the GNPS libraries and also against the best origin identification GNPSxUNPD after and before the curation.
+The *chemical* report is located inside the chemical_report subfolder and contains: TODO
+- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation. If the GNPS2 library search is enable or when gnps_result is executed, another two similar tables are created with the spectral identification and putative novelty against the GNPS libraries and also against the best origin identification GNPSxUNPD after and before the curation.
 - A folder named chemical_space_identifications with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
 - Another folder named chemical_space_mzs with the chemical space plot of the m/z, retention time and their quantification information.
 - An image with the distribution of the superclass groupings among the not blank samples.
@@ -949,7 +955,7 @@ Table: Clean Count Tables New Columns from the Data Cleaning Step
 
 ## 4.6. Step 6: Command *tremolo*
  
-Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode.
+Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode. The Step 6.1 corresponds to the GNPS2 Library Search and is described in section 4.12.
 
 The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the identification results.
  
@@ -1680,7 +1686,7 @@ The join_jobs workflow ends with the molecular networking (Step 10) similar to t
 
 ## 4.12. Command *gnps_library_search*
 
-Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data).
+Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). Data was enriched in April 2026.
 
 Options for the command *gnps_library_search*:
 
