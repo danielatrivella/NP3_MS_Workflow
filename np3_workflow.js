@@ -2072,7 +2072,7 @@ program
         'against the ISDB from the UNPD (Step 6)', toupper, "TRUE")
     .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
-        'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
+        'The similarity function is hardcoded to be the cosine, the peak transformation function is the square root and top k equals 5.',
         convertGNPSSearchTool, "gnps_indexed")
     .option('--gnps_min_cosine [x]', 'the similarity threshold for the GNPS2 library search that determines if two spectra are a match. ' +
         'The minimum cosine for a search match. Values greater or equal than 0.7 will retrieve more accurate results.', parseFloat, 0.7)
