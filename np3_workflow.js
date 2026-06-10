@@ -3548,7 +3548,7 @@ program
         'in the library identifications (Step 6)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
         'to be used in the pre-processing step if ran\n\t\t\t\t\t', parseFloat, 5)
-    .option('-t, --rt_tolerance [x,y]', 'tolerances in seconds for the retention time width of the\n\t\t\t\t\t' +
+    .option('-t, --rt_tolerance [x]', 'tolerance in seconds for the retention time width of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
         'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
         'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t', parseFloat, 2)
@@ -3970,7 +3970,7 @@ program
         console.log('');
         console.log('  $ node np3_workflow.js join_jobs -n "test_join_ab_c" -o "/path/where/the/output/will/be/stored" ' +
             '-m "/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y "/path/to/the/dir/with/joining/jobs/pre/process/results" ' +
-            '-d "/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10');
+            '-d "/path/where/the/joining/jobs/output/is/stored" -t 5 -v 10');
     });
 
 program

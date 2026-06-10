@@ -1484,7 +1484,7 @@ Options for the command *join_jobs*:
 - *-p, --ppm_tolerance* [x] : the maximal tolerated m/z deviation in parts per million (ppm)
   					to be used in the pre-processing step if ran
   					 (default: 5)
-- *-t, --rt_tolerance* [x,y] : tolerances in seconds for the retention time width of the
+- *-t, --rt_tolerance* [x] : tolerance in seconds for the retention time width of the
   					precursor that determines if two spectra will be compared
   					and possibly joined. It is directly applied to the retention
   					time minimum (subtracted) and maximum (added) of the spectra.
@@ -1623,7 +1623,7 @@ Join the joined job from A and B (result from the join_jobs command) with origin
 "/path/where/the/output/will/be/stored" -m 
 "/path/to/the/metadata_join/file/test_np3_join_ab_c_metadata.csv" -y
 "/path/to/the/dir/with/joining/jobs/pre/process/results" -d 
-"/path/where/the/joining/jobs/output/is/stored" -t 3.5,5 -v 10
+"/path/where/the/joining/jobs/output/is/stored" -t 5 -v 10
 ```
 
 ##### 4.11.3. *join_jobs* Metadata_join creation
