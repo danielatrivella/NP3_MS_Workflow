@@ -20,7 +20,9 @@ if (length(args) < 1) {
   }
 }
 
-cat("Loading packages readr, dplyr...\n")
+#cat("Loading packages readr, dplyr...\n")
+# import contabilize_annotations_type function
+source(file.path(script_path(),"annotate_spectra_molecular_network.R"))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
 
@@ -174,6 +176,10 @@ convert_ivamn_annotation_columns <- function(output_path) {
   write_csv(ms_clean_count, path = path_clean_spectra_count)
   
   # TODO evaluate if analogs should be retrieved again
+  
+  # print summary of annotations by type - count the number of annotations in the final table
+  contabilize_annotations_type(mspectra_annotation)
+  
   # remove intermediary clean count files when exists
   if (file.exists(file.path(output_path, "count_tables", "clean", paste0(output_name, "_peak_area_clean.csv")))) {
     invisible(file.remove(file.path(output_path, "count_tables", "clean", paste0(output_name, "_peak_area_clean.csv")),
