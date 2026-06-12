@@ -15,9 +15,10 @@ script_path <- function() {
   }
 }
 
-cat("Loading packages Rcpp, readr, dplyr...\n")
+cat("Loading packages Rcpp, readr, dplyr, stringr...\n")
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
+library(stringr)
 source(file.path(script_path(),"read_metadata_table.R"))
 Rcpp::sourceCpp(file.path(script_path(),
                           'norm_dot_product.cpp'))
@@ -36,6 +37,26 @@ RMSE <- function(x, y){
   x <- as.numeric(x)
   y <- as.numeric(y)
   sqrt(mean((x - y)^2))
+}
+
+# count the number of annotations occuring by type for the 5 major groups:
+# "adducts", "isotopes", "dimers", "multiCharges", "fragments"
+# counts number of unique annotations which are separated by ; in each 
+# respective column of the final table
+contabilize_annotations_type <- function(anns_cols_df) {
+  anns_counts <- list()
+  cat("\n** Annotation summary by type **\n")
+  
+  for (ann_type in c("adducts", "isotopes", "dimers", "multiCharges", "fragments")) {
+    ann_valid <- !is.na(anns_cols_df[,ann_type])
+    if (any(ann_valid)) {
+      ann_count <- sum(sapply(anns_cols_df[ann_valid, ann_type], str_count, ";")+1)
+    } else {
+      ann_count <- 0
+    }
+    cat(paste("  * ",ann_type," = ",ann_count, "\n"))
+  }
+  cat("\n")
 }
 
 annFormat <- function(ann, sim, mzError, rtError, variant_ID, num_common_samples) {
@@ -1341,6 +1362,8 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
   ms_spectra_count <- bind_cols(ms_spectra_count, annotations_cols)
   write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
                                                paste0(output_name, "_spectra_clean_ann.csv")))
+  # print summary of annotations by type - count the number of annotations in the final table
+  contabilize_annotations_type(annotations_cols)
   
   # remove intermediary clean count files when exists
   if (file.exists(file.path(output_path, "count_tables", "clean", paste0(output_name, "_peak_area_clean.csv")))) {
@@ -1348,3 +1371,5 @@ annotate_spectra_table_network <- function(output_path,  # path to the last outp
                         file.path(output_path, "count_tables", "clean", paste0(output_name, "_spectra_clean.csv"))))
   }
 }
+
+
