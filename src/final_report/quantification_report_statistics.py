@@ -21,8 +21,8 @@ def compute_quantification_report_statistics(clean_table_file, output_path, mz_t
 	print("  - Computing the quantification statistics\n")
 	# create dictionary to store the quantification statistics of the job
 	quantification_statistics = {'Statistics': [],
-	                       'Value': [],
-	                       'Description': []}
+                               'Value': [],
+                               'Description': []}
 	
 	quantification_statistics['Statistics'].append("Total number of m/zs")
 	quantification_statistics['Value'].append(str(n))
@@ -54,12 +54,13 @@ def compute_quantification_report_statistics(clean_table_file, output_path, mz_t
 			"Total number of bed (culture media) m/zs in the final table, BEDS_TOTAL > 0.")
 	
 	# Compute number of isotope ions
-	number_isotope_ions = clean_data.isotope_ion.sum()
-	quantification_statistics['Statistics'].append("Number of isotope ion m/zs")
-	quantification_statistics['Value'].append(
-		f"{number_isotope_ions} ({number_isotope_ions / n * 100:.1f}%)")
-	quantification_statistics['Description'].append(
-		"Total number of isotope ion m/zs that were assigned as [M+1]+ (isotope_ion == 1) using the MS1 data. And its percentage over the total number of m/zs.")
+	if 'isotope_ion' in clean_data.columns:
+		number_isotope_ions = clean_data.isotope_ion.sum()
+		quantification_statistics['Statistics'].append("Number of isotope ion m/zs")
+		quantification_statistics['Value'].append(
+			f"{number_isotope_ions} ({number_isotope_ions / n * 100:.1f}%)")
+		quantification_statistics['Description'].append(
+			"Total number of isotope ion m/zs that were assigned as [M+1]+ (isotope_ion == 1) using the MS1 data. And its percentage over the total number of m/zs.")
 	
 	# UNPD identification statistics for spectra identification rate
 	if 'tremolo_UNPD_category_best' in clean_data.columns:
