@@ -173,7 +173,7 @@ convert_ivamn_annotation_columns <- function(output_path) {
   }
   write_csv(ms_clean_count, path = path_clean_spectra_count)
   
-  # TODO avaliate if analogs should be retrieved again
+  # TODO evaluate if analogs should be retrieved again
   # remove intermediary clean count files when exists
   if (file.exists(file.path(output_path, "count_tables", "clean", paste0(output_name, "_peak_area_clean.csv")))) {
     invisible(file.remove(file.path(output_path, "count_tables", "clean", paste0(output_name, "_peak_area_clean.csv")),
