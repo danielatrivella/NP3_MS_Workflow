@@ -4742,7 +4742,7 @@ program
             //console.log("\n\n");
         }
 
-        // test join_jobs command joining one_collections with another_collection
+        // test join_jobs command joining one_collections with another_collection, with and without noise cutoff
         if (options.skip <= 12) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4752,7 +4752,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
                 '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
                 '-o '+output_path+'/test/L754_bacs/ -j '+options.tremolo +
-                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool gnps_new',
+                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --gnps_search_tool gnps_new',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4764,7 +4764,27 @@ program
                 test_res[11] = test_res[11] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
             }
-            //console.log("\n\n");
+
+            shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections_noise');
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@ Test 12.1 - L754_bacs_join_collections_noise - join_jobs with noise cutoff @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' join_jobs -n L754_bacs_join_collections_noise ' +
+                '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
+                '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
+                '-o '+output_path+'/test/L754_bacs/ -j '+options.tremolo +
+                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool ""',
+                {async:false, silent:true});
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emmited msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[11] = test_res[11] + '\n\nTEST 12.1\n\nEXEC ERROR';
+                console.log('ERROR\n');
+            } else {
+                test_res[11] = test_res[11] + "\n\nTEST 12.1\n\n" + resExec.stdout.split('*** TESTING ***\n\n')[1];
+                console.log('DONE!\n');
+            }
         }
 
         if (options.skip <= 13) {
