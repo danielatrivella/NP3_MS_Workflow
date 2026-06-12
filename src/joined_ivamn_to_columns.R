@@ -4,6 +4,19 @@
 # use reverse engineering from the original annotation flow
 ##
 
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+
 # read input
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 1) {
