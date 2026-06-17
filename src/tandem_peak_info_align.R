@@ -63,7 +63,7 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
                                            "log_MS2_no_MS1peak_match.csv"),guess_max = 5000))
   cat("\n\n* Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *\n\n")
   if (nrow(mzs_nomatch) == 0) {
-    cat("All MS2 spectra had a MS1 peak correspondence!!")
+    cat("Great, all MS2 spectra had a MS1 peak correspondence!!")
     return()
   }
   
@@ -72,6 +72,8 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   ms1_w_ms2_list <- suppressMessages(readr::read_csv(file.path(path_raw_data, processed_data_dir,
                                                                "MS1_list_with_MS2.csv"), guess_max = 5000))
   ms1_w_ms2_list$BFLAG <- FALSE
+  ms1_w_ms2_list[ms1_w_ms2_list$rtMin == 0 & ms1_w_ms2_list$rtMax == 1000000, 
+                 "BFLAG"] <- TRUE
   if (length(blank_mzs) > 0) 
   {
     # remove mzs from blank sample
@@ -96,7 +98,10 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   # in other words, remove no matchs from blank m/zs that appear in samples that are not blank
   summary_MS2_no_MS1 <- as.data.frame.matrix(table(mzs_nomatch[mzs_nomatch$blank != 2,
                                                                c("sample_code", "no_match")]))
-  summary_MS2_no_MS1$total_MS2 <- sapply(row.names(summary_MS2_no_MS1), function(x) total_spectra[[x]])
+  # use only the samples preprocessed in this execution, which are present in the total_spectra list
+  samples_summary_names <- row.names(summary_MS2_no_MS1)[row.names(summary_MS2_no_MS1) %in% names(total_spectra)]
+  summary_MS2_no_MS1 <- summary_MS2_no_MS1[samples_summary_names,]
+  summary_MS2_no_MS1$total_MS2 <- sapply(samples_summary_names, function(x) total_spectra[[x]])
   # if there is no mzs without a mz or a rt match, set the proper column to zero
   if (is.null(summary_MS2_no_MS1$no_mz)) {
     summary_MS2_no_MS1$no_mz <- 0
@@ -110,7 +115,7 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   summary_MS2_no_MS1 <- tibble::rownames_to_column(summary_MS2_no_MS1, var='SAMPLE_CODE')
   
   # check if the summary includes all sample codes, 
-  # if not include the missing ones without no correspondece (good pre-processed samples)
+  # if not include the missing ones without no correspondence (good pre-processed samples)
   if (!all(names(total_spectra) %in% summary_MS2_no_MS1$SAMPLE_CODE)) {
     summary_MS2_no_MS1 <- bind_rows(summary_MS2_no_MS1,
               lapply(names(total_spectra)[!(names(total_spectra) %in% summary_MS2_no_MS1$SAMPLE_CODE)], 
@@ -136,6 +141,12 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   mzs_nomatch <- mzs_nomatch[mzs_nomatch$blank == 0,1:5]
   mzs_nomatch <- arrange(mzs_nomatch, desc(int))
   summary_MS2_no_MS1 <- as.data.frame.matrix(table(mzs_nomatch[,c("sample_code", "no_match")]))
+  # use only the samples preprocessed in this execution, which are present in the total_spectra list
+  samples_summary_names <- row.names(summary_MS2_no_MS1)[row.names(summary_MS2_no_MS1) %in% names(total_spectra)]
+  if (length(samples_summary_names) == 0) {
+    return()
+  }
+  summary_MS2_no_MS1 <- summary_MS2_no_MS1[samples_summary_names,]
   summary_MS2_no_MS1$total_MS2 <- sapply(row.names(summary_MS2_no_MS1), function(x) total_spectra[[x]])
   # if there is no mzs without a mz or a rt match, set the proper column to zero
   if (is.null(summary_MS2_no_MS1$no_mz)) {
@@ -441,24 +452,45 @@ if (!dir.exists(file.path(path_raw_data, processed_data_dir))) {
     }
     q("no")
   }
-  # if at least one sample was already preprocessed skip alignment
+  # if the pre processing data of at least one sample is present (it was already preprocessed),
+  # skip alignment
   if (sum(overwrite_preprocess) < nrow(metadata)) {
-    cat("Using already pre processed files, only pre processing the missing ones. ",
-            "Alignment disabled.\n")
-    
+    cat("\n* Using already pre processed files, only pre processing the missing ones. ",
+        "Alignment disabled (partial pre processing). *\n\n")
     n_samples_batch_align <- 0
+    missing_samples_preprocess <- paste0(metadata$SAMPLE_CODE[overwrite_preprocess], "_area")
     # do not overwrite table header to store not fragmented mzs
+    # extract current table header and append the new samples that will be processed to the no_ms2_htable
+    previous_no_ms2_htable <- read.csv(file.path(path_raw_data, processed_data_dir,
+                                   "MS1_list_no_MS2.csv"), stringsAsFactors = FALSE, 
+                                   comment.char = "", strip.white = TRUE)
+    no_ms2_htable <-  c(names(previous_no_ms2_htable), 
+                        missing_samples_preprocess)
+    previous_no_ms2_htable[,missing_samples_preprocess] <- 0
+    write.table(previous_no_ms2_htable, sep = ",", 
+                file = file.path(path_raw_data, processed_data_dir,
+                                                "MS1_list_no_MS2.csv"), 
+                row.names = FALSE)
+    rm(previous_no_ms2_htable)
+    # add extra headers to the table "MS1_list_with_MS2.csv" as well, rm bflag if present
+    previous_ms1_w_ms2_htable <- read.csv(file.path(path_raw_data, processed_data_dir,
+                                                    "MS1_list_with_MS2.csv"), 
+                                          stringsAsFactors = FALSE, 
+                                          comment.char = "", strip.white = TRUE)
+    previous_ms1_w_ms2_htable[,missing_samples_preprocess] <- 0
+    previous_ms1_w_ms2_htable[,"BFLAG"] <- NULL
+    write.table(previous_ms1_w_ms2_htable, sep = ",", 
+                file = file.path(path_raw_data, processed_data_dir,
+                                 "MS1_list_with_MS2.csv"), 
+                row.names = FALSE)
   } else {
-    # write table header to store not fragmented mzs
-    write.table(t(no_ms2_htable), sep = ",",
-                file =  file.path(path_raw_data, processed_data_dir,
-                                  "MS1_list_no_MS2.csv"),
-                row.names = FALSE, col.names = FALSE)
-    # and to write the fragmented mzs 
-    write.table(t(no_ms2_htable), sep = ",",
-                file =  file.path(path_raw_data, processed_data_dir,
-                                  "MS1_list_with_MS2.csv"),
-                row.names = FALSE, col.names = FALSE)
+    # complete overwrite would be required, but it is disabled - error
+    # another pre processed dir must be chosen
+    stop("There is another pre process result in the provided processed_data_name ('", 
+         processed_data_dir,"') inside the raw_data_path, ",
+         "with a different set of samples from the current metadata. ",
+         "Please chose a different pre processed directory name or remove the existing one and retry.",
+         " Aborting...\n\n")
   }
   
   metadata <- metadata[overwrite_preprocess,]
@@ -553,17 +585,24 @@ cat("*** Starting to extract peak info for", data_name, "***\n")
 # write.table("START", "memory_use")
 # write.table(gc(), "memory_use", append = T)
 # write the alignment file header, this file will store the max diff in the batches alignment
-if (n_samples_batch_align > 0) {
+if (n_samples_batch_align > 0 & 
+    !file.exists(file.path(path_raw_data, processed_data_dir, "samples_alignment.csv"))) {
   write.table(data.frame("batch", "samples_aligned", "rtTolMin", "rtTol1stQu","rtTolMedian", 
                          "rtTolMean", "rtTol3rdQu","rtTolMax"), sep = ",",
               file =  file.path(path_raw_data, processed_data_dir, "samples_alignment.csv"),
               row.names = FALSE, col.names = FALSE)
 }
+
+
 # write the header of the table that will store the MS2 mzs without a MS1 peak correspondence
-write.table(data.frame("sample_code", "no_match", "mz", "rt", "int", "blank"), sep = ",",
-            file =  file.path(path_raw_data, processed_data_dir,
-                              "log_MS2_no_MS1peak_match.csv"),
-            row.names = FALSE, col.names = FALSE)
+# do not overwrite here if using previous result, check if file exists
+if (!file.exists(file.path(path_raw_data, processed_data_dir,
+                           "log_MS2_no_MS1peak_match.csv"))) {
+  write.table(data.frame("sample_code", "no_match", "mz", "rt", "int", "blank"), sep = ",",
+              file =  file.path(path_raw_data, processed_data_dir,
+                                "log_MS2_no_MS1peak_match.csv"),
+              row.names = FALSE, col.names = FALSE)
+}
 total_spectra <- list()
 blank_mzs <- c() # store the MS2 mzs that appear in blank samples
 sample_count <- 0
@@ -572,8 +611,9 @@ ti <- Sys.time()
 error_reading <- c()
 # store the number of mzs that had 0 to 300 MS1 peaks assigned to them, or more (aggregated in the 301 position)
 mzs_number_peaks <- numeric(length = 301) 
+
 ##### Match MS1 peak info with tandem MS2 data and rewrite raw data to mgf with peak annotation
-# batches_rttol <- c() # max diff in the batches alignment
+
 batches_data <- lapply(unique(metadata$DATA_COLLECTION_BATCH), function(batch)
 {
   # write.table(paste("start Batch ", batch), "memory_use", append = T)
