@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.4.0
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.4.1
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
   - Luiz F. G. Alves^\*^
   - Rafael de Felicio^\*^
   - Daniela B. B. Trivella^\*^
   - Guilherme P. Telles^\†^
-date: May, 2026 
+date: June, 2026 
 output:
   pdf_document: default
   html_document:
@@ -540,7 +540,7 @@ Runs the pre-process of the LC-MS/MS raw data. It extracts the list of MS1 peaks
  
 If *max_samples_batch_align* > 0, align the samples to obtain a good guess for the retention time disaliagment between samples of the same data collection batch and between all samples. The alignment does not modify the samples retention time, it's only used to suggest a retention time tolerance value for the following commands (clustering, clean, annotate_protonated and merge).
  
-It generates one MGF by sample containing all the detected MS2 spectra enriched with their respectively matched MS1 peak dimensions, e.g., retention time minimum, maximum, peak area and peak ID (given by the peak detection algorithm). When using the same *raw_data_path* to pre-process the LC-MS/MS raw data files using different metadata tables, a different *processed_data_name* must be used to avoid overwriting useful files and to store the created MGFs in different folders.
+It generates one MGF by sample containing all the detected MS2 spectra enriched with their respectively matched MS1 peak dimensions, e.g., retention time minimum, maximum, peak area and peak ID (given by the peak detection algorithm). When using the same *raw_data_path* to pre-process the LC-MS/MS raw data files using different metadata tables, a different *processed_data_name* must be used to avoid overwriting useful files and to store the created MGFs in different folders. If the new job intersects with the result present in the same *processed_data_name*, the user may choose to maintain this folder and the pre processing will only process the missing samples (partial pre processing) and reuse and increment the previous result. 
 
 Running the pre-process step with a big data collection (number of samples above ~100) can be time consuming and impracticable to repeat this step more than one time to try to improve the parameters values based on the final diagnostic and suggestions. In this case, we recommend the user to build a metadata table with only a small selection of the samples, choosing the ones that could be more representative of the data collection and all blank samples (to correctly remove the blank m/zs). Then, iteratively pre-process these small selection of samples until better results are obtained based on the final diagnostic and suggestions for the parameters values. Finally, the user can run the pre-process for the complete data collection using the parameters that yielded the best result.
  
