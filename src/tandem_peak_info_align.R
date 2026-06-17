@@ -61,6 +61,10 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   # and if not send a warning
   mzs_nomatch <- suppressMessages(readr::read_csv(file.path(path_raw_data, processed_data_dir,
                                            "log_MS2_no_MS1peak_match.csv"),guess_max = 5000))
+  # filter only the samples present in the current job
+  # use only the samples preprocessed in this execution, which are present in the total_spectra list
+  mzs_nomatch <- mzs_nomatch[mzs_nomatch$sample_code %in% names(total_spectra),]
+  
   cat("\n\n* Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *\n\n")
   if (nrow(mzs_nomatch) == 0) {
     cat("Great, all MS2 spectra had a MS1 peak correspondence!!")
@@ -98,10 +102,7 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   # in other words, remove no matchs from blank m/zs that appear in samples that are not blank
   summary_MS2_no_MS1 <- as.data.frame.matrix(table(mzs_nomatch[mzs_nomatch$blank != 2,
                                                                c("sample_code", "no_match")]))
-  # use only the samples preprocessed in this execution, which are present in the total_spectra list
-  samples_summary_names <- row.names(summary_MS2_no_MS1)[row.names(summary_MS2_no_MS1) %in% names(total_spectra)]
-  summary_MS2_no_MS1 <- summary_MS2_no_MS1[samples_summary_names,]
-  summary_MS2_no_MS1$total_MS2 <- sapply(samples_summary_names, function(x) total_spectra[[x]])
+  summary_MS2_no_MS1$total_MS2 <- sapply(row.names(summary_MS2_no_MS1), function(x) total_spectra[[x]])
   # if there is no mzs without a mz or a rt match, set the proper column to zero
   if (is.null(summary_MS2_no_MS1$no_mz)) {
     summary_MS2_no_MS1$no_mz <- 0
@@ -141,12 +142,6 @@ check_preprocess_correspondence <- function(path_raw_data, processed_data_dir,
   mzs_nomatch <- mzs_nomatch[mzs_nomatch$blank == 0,1:5]
   mzs_nomatch <- arrange(mzs_nomatch, desc(int))
   summary_MS2_no_MS1 <- as.data.frame.matrix(table(mzs_nomatch[,c("sample_code", "no_match")]))
-  # use only the samples preprocessed in this execution, which are present in the total_spectra list
-  samples_summary_names <- row.names(summary_MS2_no_MS1)[row.names(summary_MS2_no_MS1) %in% names(total_spectra)]
-  if (length(samples_summary_names) == 0) {
-    return()
-  }
-  summary_MS2_no_MS1 <- summary_MS2_no_MS1[samples_summary_names,]
   summary_MS2_no_MS1$total_MS2 <- sapply(row.names(summary_MS2_no_MS1), function(x) total_spectra[[x]])
   # if there is no mzs without a mz or a rt match, set the proper column to zero
   if (is.null(summary_MS2_no_MS1$no_mz)) {
