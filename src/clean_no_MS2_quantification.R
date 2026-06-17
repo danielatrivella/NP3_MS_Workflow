@@ -133,6 +133,10 @@ clean_quantification <- function(quantification_table, metadata, output_path, mz
   quantification_table$numJoins <- 0
   quantification_table$sumAreas <- rowSums(quantification_table[, metadata$SAMPLE_CODE])
   
+  # remove rows with sumAreas equals 0, from mzs that do not appear in this metadata
+  # this is the case when reusing a preprocess from another job which this intersects with
+  quantification_table <- quantification_table[quantification_table$sumAreas > 0,]
+  
   cat("\n** Cleanning counts and aggregating data of not fragmented MS1 m/z's **\n")
   t0 <- Sys.time()
   step_join <- 1
