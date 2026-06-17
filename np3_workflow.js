@@ -2013,9 +2013,9 @@ program
         'Otherwise it will depend on the processed_data_overwrite\n\t\t\t\t\t' +
         'parameter value', "processed_data")
     .option('-q, --processed_data_overwrite [x]', 'A logical "TRUE" or "FALSE" indicating if the pre processed\n\t\t\t\t\t' +
-        'data present in the processed_data_name folder (if it\n\t\t\t\t\t' +
-        'already exists) should be used (FALSE) or overwritten ' +
-        'and pre processed again (TRUE) with the default values of the \n\t\t\t\t\t' +
+        'data present in the processed_data_name folder \n\t\t\t\t\t' +
+        'should be used (FALSE) and partially incremented if needed, in case it already exists, or overwritten ' +
+        'and pre processed again (TRUE) with the default values of the ' +
         'missing Step 2 options', toupper, "FALSE")
     .option('--bflag_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
         'of the blank spectra basePeakInt distribution from the clustering result and to allow spectra with a basePeakInt\n\t\t\t\t\t' +
@@ -2493,7 +2493,7 @@ program
         'the density method used in the alignment process.', parseFloat, 100)
     .option('-q, --processed_data_overwrite [x]', 'A logical "TRUE" or "FALSE" indicating if the pre processed\n\t\t\t\t\t' +
         'data present in the processed_data_name folder should be\n\t\t\t\t\t' +
-        'overwritten and pre processed again if it already exists\n\t\t\t\t\t', toupper, "FALSE")
+        'overwritten and pre processed again in case it already exists. Otherwise a previous result may be used for a partial pre processing.\n\t\t\t\t\t', toupper, "FALSE")
     .option('-v, --verbose [x]', 'for values x>0 show the script output information\n\t\t\t\t\t', parseDecimal,0)
     .action(function(options) {
         // console.log(options)
@@ -2632,9 +2632,9 @@ program
         'Otherwise it will depend on the processed_data_overwrite\n\t\t\t\t\t' +
         'parameter value', "processed_data")
     .option('-q, --processed_data_overwrite [x]', 'A logical "TRUE" or "FALSE" indicating if the pre processed\n\t\t\t\t\t' +
-        'data present in the processed_data_name folder (if it\n\t\t\t\t\t' +
-        'already exists) should be used (FALSE) or overwritten ' +
-        'and pre processed again (TRUE) with the default values of the \n\t\t\t\t\t' +
+        'data present in the processed_data_name folder \n\t\t\t\t\t' +
+        'should be used (FALSE) and partially incremented if needed, in case it already exists, or overwritten ' +
+        'and pre processed again (TRUE) with the default values of the ' +
         'missing Step 2 options', toupper, "FALSE")
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Step 3).\n\t\t\t\t\t' +
