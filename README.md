@@ -9,6 +9,7 @@
 - NEW features:
  
   - (1.4.1) Bug fix in the pre processing step, when reusing a previous pre processed result (partial pre processing). Now the MS1_no_MS2 table is correctly incremented and cleaned in further processing. The pre process statistics is also working now for a partial pre processing.
+      - Added an error counting in the run and join_jobs commands, printing the detected erros by step at the end.   
   - (1.4.0) Added experimental identification against GNPS2 libraries offline! The **setup** command must be executed again for changes to make effect and the conda environment was updated.
       - A new command was implemented, called **gnps_library_search**, which is capable of executing the GNPS2 Library Search workflow with some minor adaptations and full integration with the NP³ results and reports.
       - The ALL\_GNPS\_NO\_PROPOGATED library (all LC data present in GNPS2) is retrieved locally (**setup** command) and its annotations were previous enriched on April 2026 (no internet connection is needed).
