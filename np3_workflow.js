@@ -2210,7 +2210,7 @@ program
 
         var process_res = callClustering(options, output_path, specs_path);
         if (process_res > 0) {
-            steps_errors.push("Step 3 Clustering subprocess erros = "+process_res);
+            steps_errors.push("Step 3 Clustering subprocess errors = "+process_res);
         }
 
         // clean output folder
@@ -3841,7 +3841,7 @@ program
         // run clustering step for joining jobs
         let process_res = callClusteringJoinJobs(options, output_path, specs_path);
         if (process_res > 0) {
-            steps_errors.push("Step 3 Clustering Join Jobs subprocess erros = "+process_res);
+            steps_errors.push("Step 3 Clustering Join Jobs subprocess errors = "+process_res);
         }
 
         // clean output folder
