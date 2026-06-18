@@ -186,6 +186,7 @@ function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_fac
         shell.ShellString(step_name +
             resExec.stdout+'\n'+resExec.stderr + done_msg).toEnd(logOutputPath);
     }
+    return(resExec.code);
 }
 
 function callClustering(options, output_path, specs_path) {
@@ -270,32 +271,40 @@ function callClustering(options, output_path, specs_path) {
     console.log(step_time);
     shell.ShellString(step_time).toEnd(logOutputPath);
 
+    // count subprocess errors
+    let resExec_subprocess = 0;
     // for analysing the clustering counts
-    callAnalyseCount(output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
+    resExec_subprocess += callAnalyseCount(output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
         output_path+"/outs/"+options.output_name+"/count_tables/analyseCountClustering",
         logOutputPath);
 
     // concatenate spectra peak list
-    callExtractPeakList(options.output_name, output_path+"/outs/"+options.output_name+"/mgf/",
+    resExec_subprocess += callExtractPeakList(options.output_name, output_path+"/outs/"+options.output_name+"/mgf/",
         output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area.csv",
         output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
         options.fragment_tolerance, options.scale_factor, logOutputPath);
 
     // call plot basePeakInt distribution!!
-    callPlotBasePeakIntDistribution(output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
+    resExec_subprocess += callPlotBasePeakIntDistribution(output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_spectra.csv",
         options.bflag_cutoff, logOutputPath, options.verbose);
 
     // call aggregation of not fragmented MS1 peaks
     // if exists options.raw_data_path+'/'+options.processed_data_name+'/'+"MS1_list_no_MS2.csv"
     if (shell.test('-e', options.raw_data_path+'/'+options.processed_data_name+"/MS1_list_no_MS2.csv"))
-        callCleanNoMs2Counts(options.raw_data_path+'/'+options.processed_data_name+"/MS1_list_no_MS2.csv" ,
+        resExec_subprocess += callCleanNoMs2Counts(options.raw_data_path+'/'+options.processed_data_name+"/MS1_list_no_MS2.csv" ,
             options.metadata, output_path+"/outs/"+options.output_name+"/count_tables/"+options.output_name+"_peak_area_MS1.csv",
             options.mz_tolerance, options.rt_tolerance[1], options.method, logOutputPath,
             options.verbose);
 
-    step_time = '\n======\nFinish Steps 3 and 4! ' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n======\n";
+    if (resExec_subprocess > 0) {
+        step_time = "\n* Number of subprocesses with an error:" + resExec_subprocess + " *\n";
+    } else {
+        step_time = "";
+    }
+    step_time += '\n======\nFinish Steps 3 and 4! ' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n======\n";
     console.log(step_time);
     shell.ShellString(step_time).toEnd(logOutputPath);
+    return(resExec_subprocess);
 }
 
 function callClusteringJoinJobs(options, output_path, specs_path) {
@@ -318,24 +327,31 @@ function callClusteringJoinJobs(options, output_path, specs_path) {
     console.log(step_time);
     shell.ShellString(step_time).toEnd(logOutputPath);
 
+    let resExec_subprocess = 0;
     // for analysing the clustering counts
-    callAnalyseCount(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
+    resExec_subprocess += callAnalyseCount(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
         output_path+"/count_tables/analyseCountClustering",
         logOutputPath);
 
     // concatenate spectra peak list
-    callExtractPeakList(options.output_name, output_path+"/mgf/",
+    resExec_subprocess += callExtractPeakList(options.output_name, output_path+"/mgf/",
         output_path+"/count_tables/"+options.output_name+"_peak_area.csv",
         output_path+"/count_tables/"+options.output_name+"_spectra.csv",
         options.fragment_tolerance, options.scale_factor, logOutputPath);
 
     // call plot basePeakInt distribution!!
-    callPlotBasePeakIntDistribution(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
+    resExec_subprocess += callPlotBasePeakIntDistribution(output_path+"/count_tables/"+options.output_name+"_spectra.csv",
         options.bflag_cutoff, logOutputPath, options.verbose);
 
-    step_time = '\n======\nFinish Steps 3 and 4 for joining jobs! ' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n======\n";
+    if (resExec_subprocess > 0) {
+        step_time = "\n* Number of subprocesses with an error:" + resExec_subprocess + " *\n";
+    } else {
+        step_time = "";
+    }
+    step_time += '\n======\nFinish Steps 3 and 4 for joining jobs! ' + printTimeElapsed_bigint(start_clust, process.hrtime.bigint())+ "\n======\n";
     console.log(step_time);
     shell.ShellString(step_time).toEnd(logOutputPath);
+    return(resExec_subprocess);
 }
 
 
@@ -515,7 +531,7 @@ function callComputeCorrelationGrouping(metadata, counts, method, bio_cutoff, lo
         shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+done_msg).toEnd(logOutputPath);
     }
 
-
+    return resExec.code;
 }
 
 function callAnalyseCount(counts, out_path, logOutputPath)
@@ -538,6 +554,7 @@ function callAnalyseCount(counts, out_path, logOutputPath)
         shell.ShellString('\n'+step_name+resExec.stdout+'\n'+resExec.stderr+
             '\nDONE!\n').toEnd(logOutputPath);
     }
+    return(resExec.code);
 }
 
 function callExtractPeakList(job_name, mgf_dir, counts_area, counts_spectra, bin_size, scale_factor, logOutputPath)
@@ -557,6 +574,7 @@ function callExtractPeakList(job_name, mgf_dir, counts_area, counts_spectra, bin
         console.log('\nDONE!\n');
         shell.ShellString('\n'+ step_name + resExec.stdout+'\n'+resExec.stderr+'\nDONE!\n').toEnd(logOutputPath);
     }
+    return(resExec.code);
 }
 
 // output_path file name with path to save the result
@@ -584,6 +602,7 @@ function callCleanNoMs2Counts(quantification_table_path, metadata_path, output_p
         callComputeCorrelationGrouping(metadata_path, output_path,
             method, 0, logOutputPath, verbose);
     }
+    return(resExec.code);
 }
 
 function callMergeCounts(output_path, output_name, processed_dir, metadata_path, merge_protonated, method, verbose)
@@ -596,7 +615,7 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
 
     var resExec = shell.exec('Rscript '+__dirname+'/src/merge_annotation_counts.R '+output_path+' '+annotations_merge+' '+
         metadata_path+' '+processed_dir+' '+merge_protonated, {async:false, silent:(verbose === 0)});
-
+    var subprocess_res = 0;
     if (resExec.code) {
         if (verbose === 0) {
             console.log(resExec.stdout);
@@ -615,11 +634,11 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
         if (typeof metadata_path != "undefined" && shell.test('-e',merge_output_path +
             output_name + '_peak_area_merged_ann.csv')) {
             // call correlation
-            callComputeCorrelationGrouping(metadata_path, merge_output_path +
+            subprocess_res = callComputeCorrelationGrouping(metadata_path, merge_output_path +
                 output_name + '_peak_area_merged_ann.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
             // call correlation
-            callComputeCorrelationGrouping(metadata_path, merge_output_path +
+            subprocess_res += callComputeCorrelationGrouping(metadata_path, merge_output_path +
                 output_name + '_spectra_merged_ann.csv',
                 method, 0, merge_output_path+'logMergeOutput', verbose);
         }
@@ -627,6 +646,7 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
         console.log(done_msg);
         shell.ShellString(done_msg).toEnd(merge_output_path+'logMergeOutput');
     }
+    return resExec.code+subprocess_res;
 }
 
 // call the clean step
@@ -854,7 +874,7 @@ function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling
         shell.ShellString(output_msg).toEnd(out_path+'/logPairwiseComparisonOutput');
     }
 
-    return(output_msg)
+    return(output_msg);
 }
 
 function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matched_peaks, max_chunk_spectra,
@@ -931,7 +951,7 @@ function callCreatMN(out_path, sim_mn, net_top_k, max_component_size, min_matche
             resExec.stdout + '\n' + resExec.stderr + '\nDONE!\n' + mn_time).toEnd(out_path+'/molecular_networking/logMnOutput');
     }
 
-    return(resExec.code)
+    return(resExec.code);
 }
 
 function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, verbose)
@@ -956,7 +976,7 @@ function callPreProcessSuggestion(metadata_path, processed_data_dir, out_path, v
         shell.ShellString(resExec.stdout+ppsuggest_time).toEnd(processed_data_dir+'logPreProcessOutput');
         return resExec.stdout
     }
-    return ''
+    return '';
 }
 
 function callGroupsfunc(metadata_path, count_tables, logOutputPath, verbose)
@@ -979,7 +999,7 @@ function callGroupsfunc(metadata_path, count_tables, logOutputPath, verbose)
             resExec.stdout+'\nDONE!\n').toEnd(logOutputPath);
     }
 
-    return ''
+    return resExec.code;
 }
 
 function callPreProcessData(job, metadata, raw_dir, parms, verbose)
@@ -1105,11 +1125,12 @@ function curateTremoloResults(path_count_file, logTremoloFile, verbose)
         }
         console.log("\nERROR");
         shell.ShellString(e+"\nERROR!\n").toEnd(logTremoloFile);
-        return;
+        return 1;
     }
 
     console.log('\nDONE! '+printTimeElapsed_bigint(start_curatetremolo, process.hrtime.bigint())+"\n");
     shell.ShellString("\nDONE!\n").toEnd(logTremoloFile);
+    return 0;
 }
 
 function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, top_k, path_count_files,
@@ -1293,25 +1314,6 @@ function renameTremoloJoinedIds(path_clean_count, path_tremolo_result, verbose)
     console.log('DONE! '+printTimeElapsed_bigint(start_renametremolo, process.hrtime.bigint())+"\n");
 }
 
-// function callMetfragPubChem(output_name, output_path, method, ion_mode, ppm_tolerance, fragment_tolerance,scale_factor,
-//                             verbose)
-// {
-//     console.log('*** Step 6 - Running a MetFrag identification with PubChem for ' + output_name + ' ***\n');
-//
-//     resExec = shell.exec('Rscript '+__dirname+'/src/metfrag_autosearch.R ' + output_path + "/" + ' ' +
-//         method + ' ' +ion_mode + ' ' + ppm_tolerance + ' ' + fragment_tolerance +
-//         ' ' + scale_factor, {async: false, silent: (verbose <= 0)});
-//     // { code:..., stdout:... , stderr:... }
-//     if (resExec.code) {
-//         if (verbose <= 0) {
-//             console.log(resExec.stdout);
-//             console.log(resExec.stderr);
-//         }
-//         console.log('ERROR\n');
-//     } else {
-//         console.log('DONE!\n');
-//     }
-// }
 
 function checkCountsConsistency(output_path, processed_data, metadata, min_peaks_output,
                                 clustering=false, clean=false, merge=false)
@@ -1419,7 +1421,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     // check molecular networking consistency
     var gnpsjoin_start = '\n*** Joining the GNPS identification to the NP3 counts tables ***\n';
     console.log(gnpsjoin_start);
-    resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
+    let resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
         result_specnets_DB_path+' '+ms_count_path+' '+output_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
@@ -1434,16 +1436,16 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     // call compute rcdk descriptors
     gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n';
     console.log(gnpsjoin_start);
-    resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
+    var resExec_rcdk = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
         output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
-    if (resExec.code) {
+    if (resExec_rcdk.code) {
         console.log('ERROR\n');
         console.log('ERROR computing the GNPS descriptores, its PCA will not be created.\n');
         shell.ShellString('\n' + gnpsjoin_start +
-            resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\nERROR computing the GNPS descriptores, its PCA will not be created.').toEnd(logOutputGNPSPath);
+            resExec_rcdk.stdout + '\nSTDERR:\n' + resExec_rcdk.stderr + '\nERROR computing the GNPS descriptores, its PCA will not be created.').toEnd(logOutputGNPSPath);
     } else {
         console.log('DONE!\n');
-        shell.ShellString('\n'+ gnpsjoin_start + resExec.stdout+'\n'+resExec.stderr+'\n'+'DONE!\n').toEnd(logOutputGNPSPath);
+        shell.ShellString('\n'+ gnpsjoin_start + resExec_rcdk.stdout+'\n'+resExec_rcdk.stderr+'\n'+'DONE!\n').toEnd(logOutputGNPSPath);
     }
 
     // call curate GNPS identification and GNPSxUNPD
@@ -1461,7 +1463,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
         shell.ShellString('\n'+ gnpsjoin_start + resExec.stdout+'\n'+resExec.stderr+'\n'+'DONE!\n').toEnd(logOutputGNPSPath);
     }
     
-    return resExec;
+    return resExec.code+resExec_rcdk.code;
 }
 
 // run GNPS Library Search using one of 3 different search tools: gnps (original), gnps_indexed and gnps_new
@@ -1576,7 +1578,7 @@ function createPersonalizedPCA(table_path, smiles_column, type_column, output_pa
     // call compute rcdk descriptors
     console.log('* Computing the CDK descriptors for the valid SMILES *');
     // print the total and percentage of smiles that were correctly processed
-    resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
+    let resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
         table_path+' '+smiles_column+' '+output_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
@@ -1594,6 +1596,7 @@ function createPersonalizedPCA(table_path, smiles_column, type_column, output_pa
             console.log('\nDONE!\n');
         }
     }
+    return resExec.code;
 }
 
 // create the final report folder and files inside the output_path, it should be the final result folder inside the outs
@@ -2175,6 +2178,10 @@ program
             options.gnps_search_tool = "";
         }
 
+        // create var to store any error in the workflow steps
+        let steps_errors = []
+
+        // configure paths
         var output_path = options.output_path+'/'+options.output_name;
         var specs_path = output_path + "/spec_lists";
 
@@ -2201,7 +2208,10 @@ program
         // copy rules
         shell.cp(options.rules, output_path);
 
-        callClustering(options, output_path, specs_path);
+        var process_res = callClustering(options, output_path, specs_path);
+        if (process_res > 0) {
+            steps_errors.push("Step 3 Clustering subprocess erros = "+process_res);
+        }
 
         // clean output folder
         // remove specs folder
@@ -2231,10 +2241,13 @@ program
             var input_mgf_file = output_path+"/mgf/"+options.output_name+"_clean.mgf";
             // call tremolo with the clean mgf and merge results with clean counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
-                tremoloIdentification(options.output_name, output_path + "/identifications",
+                process_res = tremoloIdentification(options.output_name, output_path + "/identifications",
                     input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
+                if (process_res > 0) {
+                    steps_errors.push("Step 6 Tremolo-UNPD Identification error");
+                }
             }
             // call GNPS2 Library Search here
             // adapt some GNPS2 Library Search parameters
@@ -2245,6 +2258,9 @@ program
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
+                if (resExec_gnps > 0) {
+                    steps_errors.push("Step 6.1 GNPS Library Search Identification error");
+                }
             }
 
             // annotate spectra variants in the clean counts and create the molecular networking of annotations
@@ -2258,6 +2274,7 @@ program
                 var area_counts_path = counts_path+"_peak_area_clean.csv";
                 var spectra_counts_path = counts_path+"_spectra_clean.csv";
                 var log_file = clean_log_output;
+                steps_errors.push("Step 7 Annotation Ion Variants error");
             } else {
                 // annotation worked
                 var area_counts_path = counts_path+"_peak_area_clean_ann.csv";
@@ -2269,30 +2286,43 @@ program
             var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
             var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
             if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata,logOutputGNPSPath);
+                process_res = callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata,logOutputGNPSPath);
+                if (process_res > 0) {
+                    steps_errors.push("Step 6.1 GNPS Library Search Join result error");
+                }
             }
 
             // call correlation for the cleaned peak area count and spectra area count
-            callComputeCorrelationGrouping(options.metadata, area_counts_path,
+            process_res = callComputeCorrelationGrouping(options.metadata, area_counts_path,
                 options.method, 0, log_file, options.verbose);
-            callComputeCorrelationGrouping(options.metadata, spectra_counts_path,
+            process_res += callComputeCorrelationGrouping(options.metadata, spectra_counts_path,
                 options.method, 0, log_file, options.verbose);
+            if (process_res > 0) {
+                steps_errors.push("Step 9 Biocorrelation error in Clean counts");
+            }
 
             // call merge
-            callMergeCounts(output_path, options.output_name,
+            process_res = callMergeCounts(output_path, options.output_name,
                 options.raw_data_path + '/' + options.processed_data_name, options.metadata,
                 "TRUE", options.method, options.verbose);
+            if (process_res > 0) {
+                steps_errors.push("Step 8 Merge error");
+            }
         } else {
             // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
+            steps_errors.push("Step 5 Clean error");
             var clustering_log_output = output_path+"/logClusteringOutput";
             var input_mgf_file = output_path+"/mgf/"+options.output_name+"_all.mgf";
             // call tremole and merge the results with the clustering counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 // tremolo search for not windows OS
-                tremoloIdentification(options.output_name, output_path + "/identifications",
+                process_res = tremoloIdentification(options.output_name, output_path + "/identifications",
                     input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv",
                         counts_path+"_peak_area.csv"], options.verbose, 0);
+                if (process_res > 0) {
+                    steps_errors.push("Step 6 Tremolo-UNPD Identification error");
+                }
             }
 
             // call GNPS2 Library Search here
@@ -2304,42 +2334,58 @@ program
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
+                if (resExec > 0) {
+                    steps_errors.push("Step 6.1 GNPS Library Search Identification error");
+                }
                 var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
                 var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
                 if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata,logOutputGNPSPath);
+                    process_res = callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata,logOutputGNPSPath);
+                    if (process_res > 0) {
+                        steps_errors.push("Step 6.1 GNPS Library Search Join result error");
+                    }
                 }
             }
 
             // call correlation for the mscluster peak area count
-            callComputeCorrelationGrouping(options.metadata, counts_path+"_peak_area.csv",
+            process_res = callComputeCorrelationGrouping(options.metadata, counts_path+"_peak_area.csv",
                 options.method, 0, clustering_log_output, options.verbose);
             // call correlation for the mscluster spectra count
-            callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra.csv",
+            process_res += callComputeCorrelationGrouping(options.metadata, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
-            area_counts_path = counts_path+"_peak_area.csv"
+            if (process_res > 0) {
+                steps_errors.push("Step 9 Biocorrelation error in clustering counts");
+            }
+            area_counts_path = counts_path+"_peak_area.csv";
         }
-        callCreatMN(output_path, options.similarity_mn, options.net_top_k,
+        process_res = callCreatMN(output_path, options.similarity_mn, options.net_top_k,
             options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra, options.blank_expansion, options.verbose);
+        if (process_res > 0) {
+            steps_errors.push("Step 10 Molecular Networking error");
+        }
 
         // print the pre-processing warning at the end of the process
         if (preprocessing_warning !== undefined) {
             console.log('*** Pre-processing warning - read the messages below to improve your data processing result ****');
             console.log(preprocessing_warning);
-            console.log('*** Done for '+options.output_name+' with one major WARNING in the pre process step. See message above ***');
+            console.log('*** Done for '+options.output_name+' with one major WARNING in the pre process step. See message above ***\n');
         } else {
-            console.log('*** Done for '+options.output_name+' ***');
-        }
-        if (resExec) {
-            console.log('ERROR in the clean and annotation step, check if this is not wanted.');
+            console.log('*** Done for '+options.output_name+' ***\n');
         }
 
         // call the creation of the final reports
-        callFinalReportsCreation(options.metadata, area_counts_path, output_path, options.output_name,
-            options.mz_tolerance, options.verbose)
+        process_res = callFinalReportsCreation(options.metadata, area_counts_path, output_path, options.output_name,
+            options.mz_tolerance, options.verbose);
+        if (process_res > 0) {
+            steps_errors.push("Final Reports error");
+        }
 
         var run_end_msg = "\n\nRUN "+printTimeElapsed_bigint(start_run, process.hrtime.bigint());
+        if (steps_errors.length > 0) {
+            run_end_msg += "\n\nA total of "+steps_errors.length+" ERRORS were detected during the processing of the following steps:\n";
+            run_end_msg += " - "+steps_errors.join('\n - ')+"\n";
+        }
         console.log(run_end_msg);
         shell.ShellString(run_end_msg+"\n").toEnd(options.output_path+'/'+options.output_name+'/logRunParms');
 
@@ -3756,9 +3802,11 @@ program
             options.gnps_search_tool = "";
         }
 
+        // create var to store any error in the workflow steps
+        let steps_errors = []
+        // config paths
         var output_path;
         var specs_path;
-
         if (isWindows())
         {
             output_path = options.output_path+"\\"+options.output_name;
@@ -3791,7 +3839,10 @@ program
         options.bflag_cutoff = 1.5; // just to plot the vertical lines in the basePeakInt distribution
 
         // run clustering step for joining jobs
-        callClusteringJoinJobs(options, output_path, specs_path);
+        let process_res = callClusteringJoinJobs(options, output_path, specs_path);
+        if (process_res > 0) {
+            steps_errors.push("Step 3 Clustering Join Jobs subprocess erros = "+process_res);
+        }
 
         // clean output folder
         // remove specs folder
@@ -3829,10 +3880,13 @@ program
             var input_mgf_file = output_path+"/mgf/"+options.output_name+"_clean.mgf";
             // call tremolo with the clean mgf and merge results with clean counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
-                tremoloIdentification(options.output_name, output_path + "/identifications",
+                process_res = tremoloIdentification(options.output_name, output_path + "/identifications",
                     input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra_clean.csv",
                         counts_path+"_peak_area_clean.csv"], options.verbose, 0);
+                if (process_res > 0) {
+                    steps_errors.push("Step 6 Tremolo-UNPD Identification error");
+                }
             }
             // call GNPS2 Library Search here
             // adapt some GNPS2 Library Search parameters
@@ -3853,6 +3907,7 @@ program
 
             if (resExec) {
                 // joining annotation step failed, use the clean tables instead
+                steps_errors.push("Step 7 Annotation Ion Variants Join Jobs error");
                 var area_counts_path = counts_path+"_peak_area_clean.csv";
                 var spectra_counts_path = counts_path+"_spectra_clean.csv";
                 var log_file = clean_log_output;
@@ -3866,25 +3921,35 @@ program
             var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
             var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
             if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples,logOutputGNPSPath);
+                process_res = callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples,logOutputGNPSPath);
+                if (process_res > 0) {
+                    steps_errors.push("Step 6.1 GNPS Library Search Join result error");
+                }
             }
             // call correlation for the cleaned peak area count and spectra count
-            callComputeCorrelationGrouping(metadata_original_samples, area_counts_path,
+            process_res = callComputeCorrelationGrouping(metadata_original_samples, area_counts_path,
                 options.method, 0, log_file, options.verbose);
-            callComputeCorrelationGrouping(metadata_original_samples, spectra_counts_path,
+            process_res += callComputeCorrelationGrouping(metadata_original_samples, spectra_counts_path,
                 options.method, 0, log_file, options.verbose);
+            if (process_res > 0) {
+                steps_errors.push("Step 9 Biocorrelation error in clean counts");
+            }
             // skip the merge step when joining jobs - the user may run it separated if necessary
         } else {
             // the clean was not successful, call tremolo for the clustered mgf and corr the not clean counts
+            steps_errors.push("Step 5 Clean Join Jobs error");
             var clustering_log_output = output_path+"/logClusteringOutput";
             var input_mgf_file = output_path+"/mgf/"+options.output_name+"_all.mgf";
             // call tremole and merge the results with the clustering counts files
             if (!isWindows() && options.tremolo_identification === "TRUE") {
                 // tremolo search for not windows OS
-                tremoloIdentification(options.output_name, output_path + "/identifications",
+                process_res = tremoloIdentification(options.output_name, output_path + "/identifications",
                     input_mgf_file,
                     options.mz_tolerance,0.2, 10, [counts_path+"_spectra.csv", counts_path+"_peak_area.csv"],
                     options.verbose, 0);
+                if (process_res > 0) {
+                    steps_errors.push("Step 6 Tremolo-UNPD Identification error");
+                }
             }
             // call GNPS2 Library Search here
             if (options.gnps_search_tool !== "") {
@@ -3895,32 +3960,51 @@ program
                     options.gnps_search_tool, options.mz_tolerance, options.fragment_tolerance, options.gnps_min_cosine,
                     options.gnps_min_matched_peaks, top_k, filter_precursor, filter_window,
                     analog_search, options.gnps_analog_max_shift, options.gnps_parallel_threads);
+                if (resExec > 0) {
+                    steps_errors.push("Step 6.1 GNPS Library Search Identification error");
+                }
                 var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
                 var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
                 if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                    callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples, logOutputGNPSPath);
+                    process_res = callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples, logOutputGNPSPath);
+                    if (process_res > 0) {
+                        steps_errors.push("Step 6.1 GNPS Library Search Join result error");
+                    }
                 }
             }
 
             // call correlation for the mscluster peak area count
-            callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_peak_area.csv",
+            process_res = callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_peak_area.csv",
                 options.method, 0, clustering_log_output, options.verbose);
             // call correlation for the mscluster spectra count
-            callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra.csv",
+            process_res += callComputeCorrelationGrouping(metadata_original_samples, counts_path+"_spectra.csv",
                 options.method, 0,  clustering_log_output, options.verbose);
+            if (process_res > 0) {
+                steps_errors.push("Step 9 Biocorrelation error in clustering counts");
+            }
             area_counts_path = counts_path+"_peak_area.csv"
         }
-        callCreatMN(output_path, options.similarity_mn, options.net_top_k,
+        process_res = callCreatMN(output_path, options.similarity_mn, options.net_top_k,
             options.max_component_size, options.min_matched_peaks,
             options.max_chunk_spectra, options.blank_expansion, options.verbose);
+        if (process_res > 0) {
+            steps_errors.push("Step 10 Molecular Networking error");
+        }
 
         // call creation of the final reports
-        callFinalReportsCreation(metadata_original_samples, area_counts_path, output_path, options.output_name,
+        process_res = callFinalReportsCreation(metadata_original_samples, area_counts_path, output_path, options.output_name,
             options.mz_tolerance, options.verbose)
+        if (process_res > 0) {
+            steps_errors.push("Final Reports error");
+        }
 
-        var clust_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
-        console.log(clust_end_msg);
-        shell.ShellString(clust_end_msg+"\n").toEnd(output_path+'/logRunParms');
+        var join_jobs_end_msg = "\n\nJoining jobs "+printTimeElapsed_bigint(start_clust, process.hrtime.bigint());
+        if (steps_errors.length > 0) {
+            join_jobs_end_msg += "\n\nA total of "+steps_errors.length+" ERRORS were detected during the processing of the following steps:\n";
+            join_jobs_end_msg += " - "+steps_errors.join('\n - ')+"\n";
+        }
+        console.log(join_jobs_end_msg);
+        shell.ShellString(join_jobs_end_msg+"\n").toEnd(output_path+'/logRunParms');
 
         if (options.verbose >= 10) {
             console.log("\n*** TESTING ***\n\n");
