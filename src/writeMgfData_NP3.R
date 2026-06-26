@@ -20,6 +20,7 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
   } else {
     cat("Creating MGF", file_MGF, "!\n")
   }
+  file_MGF <- normalizePath(file_MGF)
   
   con <- file(description = file_MGF, open = "wb", encoding = "UTF-8")
   on.exit(close(con))
@@ -322,6 +323,7 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
   } else {
     cat("Creating MGF", file_MGF, "!\n")
   }
+  file_MGF <- normalizePath(file_MGF)
   
   con <- file(description = file_MGF, open = "wb", encoding = "UTF-8")
   on.exit(close(con))

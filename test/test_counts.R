@@ -165,8 +165,8 @@ wrong_scans <- lapply(seq_along(metadata$SAMPLE_CODE), function(j)
   if ("SAMPLE_CODE_ORIGINAL" %in% names(metadata)) {
     y <- metadata$SAMPLE_CODE_ORIGINAL[[j]]
   }
-  preprocessed_mgf_path <- file.path(retrieve_processed_data_path(metadata$JOB_CODE[metadata$SAMPLE_CODE == x]), 
-                                     paste0(y, '_peak_info.mgf'))
+  preprocessed_mgf_path <- normalizePath(file.path(retrieve_processed_data_path(metadata$JOB_CODE[metadata$SAMPLE_CODE == x]), 
+                                     paste0(y, '_peak_info.mgf')))
   if (!file.exists(preprocessed_mgf_path)) {
     stop("Error checking peakId, peak areas and scan header consistency of sample code ",x,
          ". Its pre processed MGF file does not exists: ", preprocessed_mgf_path, 

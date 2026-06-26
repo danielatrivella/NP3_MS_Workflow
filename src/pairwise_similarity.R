@@ -98,7 +98,7 @@ compareSpectraNormDotProductSample <- function(i, peaks_sample_B, ints_sample_B,
 # if a file was passed, read the mgf from the clean step
 # else if a directory was passed, parse the mgfs from the clustering step
 if (file.exists(path_mgf_dir) && !dir.exists(path_mgf_dir) && grepl(".mgf$",path_mgf_dir)) {
-  path_mgf <- path_mgf_dir
+  path_mgf <- normalizePath(path_mgf_dir)
 } else {
   if (!dir.exists(path_mgf_dir) || !any(grepl(".mgf$", list.files(path_mgf_dir))))
   {
@@ -107,7 +107,7 @@ if (file.exists(path_mgf_dir) && !dir.exists(path_mgf_dir) && grepl(".mgf$",path
          "Provide a valid path to where the MGF files are located.")
   }
   # get the path to each mgf file inside the mgf dir
-  path_mgf <- file.path(path_mgf_dir, list.files(path_mgf_dir)[grepl("_[0-9]+.mgf$", list.files(path_mgf_dir))])
+  path_mgf <- normalizePath(file.path(path_mgf_dir, list.files(path_mgf_dir)[grepl("_[0-9]+.mgf$", list.files(path_mgf_dir))]))
   # order paths by mz and mz count (number of files with that mz range)
   path_mgf <- path_mgf[order(sapply(strsplit(gsub(paste0(data_name, "_[0-9]+_[0-9]+_|.mgf"), 
                                                   "", basename(path_mgf)), "_"),

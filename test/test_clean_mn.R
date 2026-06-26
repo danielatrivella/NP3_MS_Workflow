@@ -179,8 +179,8 @@ if (any(grepl("\\[M\\+H-(NH3|H2O|NH3-H2O)]\\+", ann_selfloops$annotation) &
 
 # check if readMgfPeaksList and the readMgfHeader function are consistent 
 # and match the table attributes
-path_mgf_clean <- file.path(output_path, "mgf", 
-                            paste0( output_name, "_clean.mgf"))
+path_mgf_clean <- normalizePath(file.path(output_path, "mgf", 
+                            paste0( output_name, "_clean.mgf")))
 mgf_clean <- readMgfPeaksList(path_mgf_clean, mz_tol, -1, 1, 0)
 mgf_clean_header <- readMgfHeader(path_mgf_clean)
 if (!all(mgf_clean$SCANS == mgf_clean_header$scans)) {

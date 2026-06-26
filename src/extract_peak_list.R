@@ -81,7 +81,7 @@ if (!dir.exists(path_mgf_dir) || !any(grepl(".mgf$", list.files(path_mgf_dir))))
 }
 ti <- Sys.time()
 # get the path to each mgf file inside the mgf dir
-path_mgf <- file.path(path_mgf_dir, list.files(path_mgf_dir)[grepl("_[0-9]+.mgf$", list.files(path_mgf_dir))])
+path_mgf <- normalizePath(file.path(path_mgf_dir, list.files(path_mgf_dir)[grepl("_[0-9]+.mgf$", list.files(path_mgf_dir))]))
 # order paths by mass
 path_mgf <- path_mgf[order(as.numeric(gsub(paste0(data_name, "_[0-9]+_[0-9]+_|_[0-9]+.mgf"), "", basename(path_mgf))))]
 n_mgf <- length(path_mgf)

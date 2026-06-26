@@ -56,7 +56,7 @@ compute_peak_area <- function(processed_data_path, msclusterIDs, scans_count,
   {
     x <- metadata$SAMPLE_CODE[j]
     y <- original_samples_codes[j]
-    preprocessed_mgf_path <- file.path(processed_data_path, paste0(y, '_peak_info.mgf'))
+    preprocessed_mgf_path <- normalizePath(file.path(processed_data_path, paste0(y, '_peak_info.mgf')))
     if (!file.exists(preprocessed_mgf_path)) {
       stop("Error computing the peak area of sample code ",x,
            ". Its pre processed MGF file does not exists: ", preprocessed_mgf_path, 
