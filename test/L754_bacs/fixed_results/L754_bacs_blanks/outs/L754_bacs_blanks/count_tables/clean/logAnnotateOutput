@@ -1,0 +1,122 @@
+*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** 
+Loading packages Rcpp, readr, dplyr, stringr...
+# A tibble: 10 x 2
+   variables             values                                                 
+   <chr>                 <chr>                                                  
+ 1 output_path           /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 2 path_batch_metadata   /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 3 modification_file     /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/rules/…
+ 4 mz_tol                0.025                                                  
+ 5 fragment_tol          0.025                                                  
+ 6 rt_tol                1                                                      
+ 7 ms2_peaks_intensity_… 15                                                     
+ 8 scale_factor          0.5                                                    
+ 9 ion_mode              +                                                      
+10 table_limit_size      3000                                                   
+
+** Getting list of fragmented peaks and data collection batches by cluster **
+
+  * Done in 0.02 secs *
+
+
+** Annotating variant spectra that are in concurrent MS1 peaks **
+  * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
+  |                          |
+  |==========================|
+  * Done annotating clusters in 0.16 secs *
+
+
+** Creating the IVAMN and separating the annotations by types of ionization variants **
+  * Done in 0.09 secs *
+
+
+** Annotation summary by type **
+  *  adducts  =  17 
+  *  isotopes  =  0 
+  *  dimers  =  10 
+  *  multiCharges  =  0 
+  *  fragments  =  0 
+
+
+Warning message:
+`...` is not empty.
+
+We detected these problematic arguments:
+* `needs_dots`
+
+These dots only exist to allow future extensions and should be empty.
+Did you misspecify an argument? 
+
+DONE!
+*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** 
+
+* Molecular Network of Annotations Statistics *
+
+Name: 
+Type: DiGraph
+Number of nodes: 86
+Number of edges: 23
+Average in degree:   0.2674
+Average out degree:   0.2674
+Number of components: 69
+Number of isolated nodes:  57
+Number of protonated_representative nodes (with isolated nodes): 61
+
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Step 7 Time Elapsed: 0.17min
+======
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_blanks/outs/L754_bacs_blanks/count_tables/clean/L754_bacs_blanks_peak_area_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+
+No group column (GR_) found.
+	Aborting groups.py
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_peak_area_clean_ann.csv *** 
+
+Warning message:
+No bioactivity score column with prefix 'BIOACTIVITY_' was present in the marine_bacteria_library_L754_metadata_blanks.csv metadata table. Correlation disabled. 
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_blanks/outs/L754_bacs_blanks/count_tables/clean/L754_bacs_blanks_spectra_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+
+No group column (GR_) found.
+	Aborting groups.py
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_spectra_clean_ann.csv *** 
+
+Warning message:
+No bioactivity score column with prefix 'BIOACTIVITY_' was present in the marine_bacteria_library_L754_metadata_blanks.csv metadata table. Correlation disabled. 
+
+DONE! Time Elapsed: 0.01min

@@ -1,0 +1,109 @@
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_another_collection_diff result spectra pairwise *
+        |       |
+        |=======|
+    * Done making 5050 pairwise comparisions in 21.25 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.48min
+======
+
+*** Step 5 - Cleaning the clustering counts tables *** 
+Loading packages Rcpp, readr, dplyr, CPP functions...
+
+BFLAG cutoff : basePeakInt median + 1.5 * (q75-q25) = 8492.5 
+
+NOISE cutoff : basePeakInt median + 1.5 * (q75-q25) = 8492.5 
+
+** Cleanning counts, removing redudancies and aggregating data **
+
+      * Step 0 *
+  |                          |
+  |==========================|
+        * Joined 1 similar clusters in 0.04 secs *
+          * Aggregating similarity table with the joined Ids *
+            |  |
+            |==|
+          * Done aggregating similarity table in 0.07 secs *
+
+      * Step 1 *
+  |                          |
+  |==========================|
+        * Joined 0 similar clusters in 0.07 secs *
+
+  * Done reducing 1 similar clusters in 0.39 secs *
+
+
+  ** Computing Peak Area by Sample ** 
+
+
+  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <= 8492.5 **
+
+  * Done removing 89 noise spectra  *
+
+
+  ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **
+
+  ** Adding blanks neighborhood information **
+
+  ** Saving the clean MGF file **
+
+Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/L754_bacs_another_collection_diff/mgf/L754_bacs_another_collection_diff_clean.mgf !
+  |                                                                              |                                                                      |   0%  |                                                                              |======                                                                |   9%  |                                                                              |=============                                                         |  18%  |                                                                              |===================                                                   |  27%  |                                                                              |=========================                                             |  36%  |                                                                              |================================                                      |  45%  |                                                                              |======================================                                |  55%  |                                                                              |=============================================                         |  64%  |                                                                              |===================================================                   |  73%  |                                                                              |=========================================================             |  82%  |                                                                              |================================================================      |  91%  |                                                                              |======================================================================| 100%
+Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/L754_bacs_another_collection_diff/mgf/L754_bacs_another_collection_diff_clean.mgf  ........... OK!
+
+  - Computing the number of fragmented cluster in the clean table
+
+    - Total number of m/zs that had at least one putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    * Done in 0.26 secs *
+
+
+
+DONE! Time Elapsed: 0.22min
+
+*** Analysing the count of spectra  *** 
+
+Total number of consensus spectra:
+11
+
+Total number of consensus spectra NOT blank:
+9
+
+Number of consensus spectra by size (number of clustered spectra):
+  1   5  15  16  33  34  57  63  70  97 
+"2" "1" "1" "1" "1" "1" "1" "1" "1" "1" 
+
+Total number of processed spectra from the raw MS/MS data:
+392
+Number of unique m/z rounded in digit 2:
+11
+Mean number of consensus spectra by m/z: 
+1
+
+DONE!
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_another_collection_diff_clean result spectra pairwise *
+        | |
+        |=|
+    * Done making 55 pairwise comparisions in 4.23 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.20min
+======
+
+======
+Finish Step 5 Time Elapsed: 0.43min (without the clustered spectra comparison time) 
+======

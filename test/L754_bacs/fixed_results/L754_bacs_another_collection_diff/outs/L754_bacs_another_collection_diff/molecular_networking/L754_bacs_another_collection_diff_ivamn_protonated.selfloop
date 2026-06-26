@@ -1,0 +1,7 @@
+msclusterID_source,msclusterID_target,cosine,annotation,mzError,rtError,numCommonSamples,componentIndex
+70,70,1.000,,0.000,0.000,,1
+100,100,1.000,,0.000,0.000,,2
+10,10,1.000,,0.000,0.000,,3
+14,14,1.000,,0.000,0.000,,4
+18,18,1.000,,0.000,0.000,,5
+82,82,1.000,,0.000,0.000,,6

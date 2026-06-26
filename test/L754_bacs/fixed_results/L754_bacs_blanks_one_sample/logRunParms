@@ -1,0 +1,9 @@
+NP3 MS Workflow - version 1.4.1
+
+output_name: L754_bacs_blanks_one_sample
+
+cmd: 
+
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js clustering -n L754_bacs_blanks_one_sample -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs -y processed_data_blanks_one_sample -v 13 -b 500 -q FALSE -j TRUE
+
+Clustering Time Elapsed: 0.65min

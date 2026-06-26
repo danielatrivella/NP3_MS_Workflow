@@ -1,0 +1,2 @@
+/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_one_collection/MEOH_1_peak_info.mgf
+/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_one_collection/DMSO_18_peak_info.mgf

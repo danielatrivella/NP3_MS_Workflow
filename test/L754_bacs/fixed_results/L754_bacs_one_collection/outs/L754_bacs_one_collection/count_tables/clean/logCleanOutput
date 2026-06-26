@@ -1,0 +1,103 @@
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+number of spectra: 155
+Time to create 155 documents: 0.006399393081665039 s.
+Calculated 155x155 scores in 1.8619780540466309 s.
+Calculated 155x155 matches in 0.3205549716949463 s.
+
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.10min
+======
+
+*** Step 5 - Cleaning the clustering counts tables *** 
+Loading packages Rcpp, readr, dplyr, CPP functions...
+
+BFLAG cutoff : basePeakInt median + 1.5 * (q75-q25) = 8972.5 
+
+NOISE cutoff : basePeakInt median + 1.5 * (q75-q25) = 8972.5 
+
+** Cleanning counts, removing redudancies and aggregating data **
+
+      * Step 0 *
+  |                          |
+  |==========================|
+        * Joined 7 similar clusters in 0.08 secs *
+          * Aggregating similarity table with the joined Ids *
+            | |
+            |=|
+          * Done aggregating similarity table in 0.08 secs *
+
+      * Step 1 *
+  |                          |
+  |==========================|
+        * Joined 0 similar clusters in 0.1 secs *
+
+  * Done reducing 7 similar clusters in 0.48 secs *
+
+
+  ** Computing Peak Area by Sample ** 
+
+
+  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <= 8972.5 **
+
+  * Done removing 127 noise spectra  *
+
+
+  ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **
+
+  ** Adding blanks neighborhood information **
+
+  ** Saving the clean MGF file **
+
+Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_one_collection/outs/L754_bacs_one_collection/mgf/L754_bacs_one_collection_clean.mgf !
+  |                                                                              |                                                                      |   0%  |                                                                              |===                                                                   |   5%  |                                                                              |=======                                                               |  10%  |                                                                              |==========                                                            |  14%  |                                                                              |=============                                                         |  19%  |                                                                              |=================                                                     |  24%  |                                                                              |====================                                                  |  29%  |                                                                              |=======================                                               |  33%  |                                                                              |===========================                                           |  38%  |                                                                              |==============================                                        |  43%  |                                                                              |=================================                                     |  48%  |                                                                              |=====================================                                 |  52%  |                                                                              |========================================                              |  57%  |                                                                              |===========================================                           |  62%  |                                                                              |===============================================                       |  67%  |                                                                              |==================================================                    |  71%  |                                                                              |=====================================================                 |  76%  |                                                                              |=========================================================             |  81%  |                                                                              |============================================================          |  86%  |                                                                              |===============================================================       |  90%  |                                                                              |===================================================================   |  95%  |                                                                              |======================================================================| 100%
+Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_one_collection/outs/L754_bacs_one_collection/mgf/L754_bacs_one_collection_clean.mgf  ........... OK!
+
+  - Computing the number of fragmented cluster in the clean table
+
+    - Total number of m/zs that had at least one putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    * Done in 0.27 secs *
+
+
+
+DONE! Time Elapsed: 0.22min
+
+*** Analysing the count of spectra  *** 
+
+Total number of consensus spectra:
+21
+
+Total number of consensus spectra NOT blank:
+4
+
+Number of consensus spectra by size (number of clustered spectra):
+  1   2   3   4   5   6   9  10  11  12  13  14  15  16  18  24  25  34 
+"1" "2" "1" "1" "1" "3" "1" "1" "1" "1" "1" "1" "1" "1" "1" "1" "1" "1" 
+
+Total number of processed spectra from the raw MS/MS data:
+236
+Number of unique m/z rounded in digit 2:
+21
+Mean number of consensus spectra by m/z: 
+1
+
+DONE!
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+number of spectra: 21
+Time to create 21 documents: 0.0010747909545898438 s.
+Calculated 21x21 scores in 1.786191701889038 s.
+Calculated 21x21 matches in 0.12018895149230957 s.
+
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.09min
+======
+
+======
+Finish Step 5 Time Elapsed: 0.31min (without the clustered spectra comparison time) 
+======

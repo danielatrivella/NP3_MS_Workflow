@@ -1,0 +1,12 @@
+Statistics,Value,Description
+Total number of m/zs,11,"Total number of m/zs in the final table, no filter."
+Total number of not blank m/zs,9 (81.8%),"Total number of not blank m/zs in the final table, BLANKS_TOTAL == 0."
+Total number of blank m/zs,2 (18.2%),"Total number of blank m/zs in the final table, BLANKS_TOTAL > 0."
+Number of isotope ion m/zs,0 (0.0%),Total number of isotope ion m/zs that were assigned as [M+1]+ (isotope_ion == 1) using the MS1 data. And its percentage over the total number of m/zs.
+Number of m/zs identified in UNPD and spectral identification rate,7 (63.6%),Total number of m/zs that were identified against the UNPD using tremolo and passed the curation (tremolo_UNPD_category_best != 'out'). And its percentage over the total number of m/zs - the spectral identification rate.
+Number of unique UNPD identifications,7,Total number of unique UNPD identifications that passed the curation (unique tremolo_SMILES_best with tremolo_UNPD_category_best != 'out') - unique identified molecules
+Total number of pre processed raw MS2 ions,392,Total number of pre processed raw MS2 ions (sum of numSpectra).
+Number of unique m/zs withing tolerance,11,Number of unique m/zs withing tolerance (mzConsensus +- mz_tolerance)
+Average number of putative isomers by m/z,1.0 +- 0.0,"Mean number of m/zs within tolerance and its standard deviation - putative average number of isomers (same m/z, different retention times)"
+Number of m/zs that had at least one fragmented cluster,0 (0.0%),Number of m/zs that had at least one putative fragmented cluster within the RT and m/z tolerance and percentage overall m/zs - which are clusters from the same ion that kept separated - number of m/zs with mass dissipation.
+Number of putative fragmented cluster,0 (0.0%),"Number of m/zs that were assigned as putative fragmented clusters from the same ion and percentage overall m/zs - number of putative mass dissipation - this could also be counting minor numerical coincidences. This measures the quality of the clustering (very low < 5% mass dissipation is better). For blank m/zs, only its precursor m/z accounts for the match."

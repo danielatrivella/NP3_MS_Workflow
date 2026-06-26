@@ -1,0 +1,200 @@
+
+*** Step 3 - Clustering the pre-processed MS2 spectra using the MS1 information *** 
+
+*** Calling NP3_MSCluster for: B_3_1 *** 
+
+MsCluster v2.0 
+Started job on: Fri Jun 19 16:24:58 2026
+
+Parameter values:
+-----------------
+outputName = B_3_1
+modelDir   = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models
+outDir     = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1
+tmpDir     = /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv
+list	      = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/spec_lists/blank_lists/B_3_1.txt
+mixtureProb   = 0.4
+minSimilarity = 0.3
+rtTolerance = 1
+minNumPeaks = 1
+scaleFactor = 0.5
+
+COMMAND LINE = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/NP3_MSCluster_bin --list /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/spec_lists/blank_lists/B_3_1.txt --output-name B_3_1 --out-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1 --rt-tolerance 1 --fragment-tolerance 0.05 --window 0.025 --similarity 0.3 --model-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models --sqs 0.0 --num-rounds 15 --mixture-prob 0.4 --tmp-dir /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv --min-peaks-output 1 --scale-factor 0.5 --verbose-level 10 --output-mgf --assign-charges --major-increment 100 --output-file-size 3000
+
+Pass 1: reading spectra files and writing to dat with 25 Da increments.
+----------------------------------------------------------------------
+
+Read 1 paths to spectra files.
+Converting data to DAT, using m/z increment of 25.00
+0	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data/DMSO_19_peak_info.mgf [0 : 0]
+	Found 168 spectra...	OPENED 1: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_400_0.dat
+	OPENED 2: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_300_0.dat
+	OPENED 3: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_275_0.dat
+	OPENED 4: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_575_0.dat
+	OPENED 5: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_550_0.dat
+	OPENED 6: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_350_0.dat
+	OPENED 7: /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_500_0.dat
+ Wrote 168 to dat files (this took 0.00 sec.)
+
+
+SUMMARY (first pass):
+---------------------
+Wrote 7 dat files to /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv
+These files contain 168 spectra (from a total of 168 that were read)
+
+Pass 2: Splitting dat files into smaller files with 1 Da increments.
+--------------------------------------------------------------------
+
+0	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_275_0.dat
+All group paths: 3
+1	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_300_0.dat
+All group paths: 7
+2	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_350_0.dat
+All group paths: 8
+3	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_400_0.dat
+All group paths: 10
+4	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_500_0.dat
+All group paths: 11
+5	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_550_0.dat
+All group paths: 13
+6	1	/tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_R1_575_0.dat
+All group paths: 14
+
+
+
+SUMMARY (second pass):
+---------------------
+Read  168 spectra from original input files.
+Wrote 168 spectra into dat files in the first pass.
+Wrote 168 spectra to dat files in the second pass.
+The second pass spectra were written to 14 dat files.
+(list of dat files written to /tmp/NP3_MSCluster_6uzjoak8//tmp_B_3_1_rmv/B_3_1_dat_list.txt)
+Time required for dat file creation: 0.00
+Allocating 0.500 GB.
+
+Bytes for data storage       = 461708984
+sizeof(MAX_SIMILARITY_LIST)  = 22000000
+sizeof(Peak)                 = 12
+sizeof(Cluster)              = 920
+sizeof(SingleSpectrumHeader) = 176
+Total cost per singleton     = 4592
+Allocating room for N = 95755 singletons (439706960 bytes)
+This means that up to 47877 spectra can simultaneously be evaluated.
+
+Allocated memory successfully...
+
+
+Initalizing storage, examining dat files...
+Max margin in dat files: 0.013
+
+Found 168 spectra, in 14 dat files, precursor m/z range 279.16 - 579.29
+
+1	#Freed 0	#Read 38	#In memory 38
+Clustering: [ 0 at 0 m/z = 279.16 ]	   to	 [ 37 at 37 m/z = 309.20 ]
+Writing clusters for 28 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/clust/B_3_1_0_0_200_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/mgf/B_3_1_0_0_200_0.mgf
+Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/clust/B_3_1_0_0_300_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/mgf/B_3_1_0_0_300_0.mgf
+ written into 6 clusters    Cumulative 6 : 28 ..done.
+
+2	#Freed 28	#Read 70	#In memory 80
+Clustering: [ 38 at 10 m/z = 324.95 ]	   to	 [ 107 at 79 m/z = 360.29 ]
+Writing clusters for 78 singletons... written into 3 clusters    Cumulative 9 : 106 ..done.
+
+3	#Freed 78	#Read 36	#In memory 38
+Clustering: [ 108 at 2 m/z = 401.92 ]	   to	 [ 143 at 37 m/z = 412.32 ]
+Writing clusters for 31 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/clust/B_3_1_0_0_400_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/mgf/B_3_1_0_0_400_0.mgf
+ written into 2 clusters    Cumulative 11 : 137 ..done.
+
+4	#Freed 31	#Read 18	#In memory 25
+Clustering: [ 144 at 7 m/z = 522.60 ]	   to	 [ 161 at 24 m/z = 553.39 ]
+Writing clusters for 16 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/clust/B_3_1_0_0_500_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/mgf/B_3_1_0_0_500_0.mgf
+ written into 2 clusters    Cumulative 13 : 153 ..done.
+
+5	#Freed 16	#Read 6	#In memory 15
+Clustering: [ 162 at 9 m/z = 563.55 ]	   to	 [ 167 at 14 m/z = 579.29 ]
+Writing clusters for 15 singletons... written into 3 clusters    Cumulative 16 : 168 ..done.
+
+
+Done clustering files.
+Time (without dat creation): 0.00
+
+Final statistics:
+-----------------
+
+Total similarity computations: 245 average per spectrum 1.46
+
+Breakdown of spectra joins:
+---------------------------
+Round	Thresh	#joins	% of total
+1	0.70	145	(0.954)
+2	0.671	2	(0.013)
+3	0.643	1	(0.007)
+4	0.614	0	(0.000)
+5	0.586	1	(0.007)
+6	0.557	1	(0.007)
+7	0.529	0	(0.000)
+8	0.500	0	(0.000)
+9	0.471	0	(0.000)
+10	0.443	1	(0.007)
+11	0.414	1	(0.007)
+12	0.386	0	(0.000)
+13	0.357	0	(0.000)
+14	0.329	0	(0.000)
+15	0.300	0	(0.000)
+
+
+Final clustering report:
+------------------------
+
+size	#clust	(%)	#sing	(%)
+1	2	(0.125)	2	(0.012)
+2	3	(0.188)	6	(0.036)
+3	1	(0.062)	3	(0.018)
+4	1	(0.062)	4	(0.024)
+5	0	(0.000)	0	(0.000)
+6	2	(0.125)	12	(0.071)
+7	1	(0.062)	7	(0.042)
+8	0	(0.000)	0	(0.000)
+9	3	(0.188)	27	(0.161)
+10	1	(0.062)	10	(0.060)
+11-15	0	(0.000)	0	(0.000)
+16-20	0	(0.000)	0	(0.000)
+21-30	1	(0.062)	29	(0.173)
+31-40	0	(0.000)	0	(0.000)
+41-50	0	(0.000)	0	(0.000)
+51-100	1	(0.062)	68	(0.405)
+101-200	0	(0.000)	0	(0.000)
+201-500	0	(0.000)	0	(0.000)
+501+	0	(0.000)	0	(0.000)
+
+Total: 16	1.0	168	(1.0)
+
+Summary of output files:
+------------------------
+clust files written: 4
+mgf   files writeen: 4
+dat   files writeen: 0
+
+
+Ended job on: Fri Jun 19 16:24:58 2026
+
+Summary of output files:
+------------------------
+clust files written: 4
+mgf   files writeen: 4
+dat   files writeen: 0
+
+
+DONE!
+
+*** Step 4 - Counting peak area and spectra by sample B_3_1 *** 
+- Start scanning file:  B_3_1_0_0_200_0.clust DONE!
+- Start scanning file:  B_3_1_0_0_300_0.clust DONE!
+- Start scanning file:  B_3_1_0_0_400_0.clust DONE!
+- Start scanning file:  B_3_1_0_0_500_0.clust DONE!
+
+
+DONE!

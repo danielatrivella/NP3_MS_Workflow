@@ -1,0 +1,2 @@
+/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_0/mgf/B_3_0_all.mgf
+/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/B_3_1/mgf/B_3_1_all.mgf

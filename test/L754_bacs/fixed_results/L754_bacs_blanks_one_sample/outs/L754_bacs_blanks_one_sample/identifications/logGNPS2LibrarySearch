@@ -1,0 +1,57 @@
+
+*** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** 
+
+
+DONE! Time Elapsed: 12.25min
+
+   * Retrieving the GNPS2 library annotations of the identified spectra *
+  0%|          | 0/201 [00:00<?, ?it/s]100%|██████████| 201/201 [00:00<00:00, 43546.23it/s]
+
+DONE!
+
+   * Filtering the top 1 result from the GNPS2 library search *
+
+DONE! Time Elapsed: 12.82min
+
+
+*** Joining the GNPS identification to the NP3 counts tables ***
+
+*** Joining the GNPS library indentification results to the NP3 count files ***
+
+  * Done joining a total of 52 GNPS identifications from 36 unique identifications to 52 consensus spectra in 0.11 secs *
+
+  * Spectra identification rate (with blanks) = 66.67 %
+
+
+
+DONE!
+
+
+*** Computing the RCDK descriptors for the valid GNPS identification ***
+
+  - Parsing valid SMILES: 46  entries
+  - Calculating descriptors 
+  - Done computing 24 RCDK descriptors for 46 / 46 ( 100 %) valid SMILES!
+
+
+
+DONE!
+
+
+*** Curating the GNPS identification result and selecting best identification origin ***
+* Creating the curated identification result for GNPS *
+* Computing Tanimoto between UNPDxGNPS smiles *
+  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin:  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_peak_area_clean_ann.csv
+  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin:  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_spectra_clean_ann.csv
+* Computing the chemical and identification statistics for GNPS and UNPDxGNPS best origin *
+
+  - No valid GNPS curated data is available. All gnps_category is 'out' or missing. The chemical identification report for GNPS and best origin will use the best result not curated.
+  - No valid GNPS identification data is available. All gnps_Smiles are NA. Aborting the chemical identification report for GNPS and best origin.
+* Creating the NP3 reference PCA from SMILES for plotting GNPS *
+  - Explained variance: PC1 65.74% and PC2 25.39%
+  - Cumulative: 91.13%
+  - Transforming the new GNPS identified data to the reference PCA chemical space and plotting
+No not blank and valid GNPS curated identification is present in the provided clean table. Could not create the chemical space. Skipping PCA for identifications.
+
+
+DONE!

@@ -1,0 +1,291 @@
+
+*** Step 3 - Clustering the pre-processed MS2 spectra using the MS1 information *** 
+
+*** Calling NP3_MSCluster for: B_1_0 *** 
+
+MsCluster v2.0 
+Started job on: Fri Jun 19 16:51:17 2026
+
+Parameter values:
+-----------------
+outputName = B_1_0
+modelDir   = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models
+outDir     = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0
+tmpDir     = /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv
+list	      = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/spec_lists/data_lists/B_1_0.txt
+mixtureProb   = 0.4
+minSimilarity = 0.55
+rtTolerance = 5
+minNumPeaks = 1
+scaleFactor = 0.5
+
+COMMAND LINE = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/NP3_MSCluster_bin --list /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/spec_lists/data_lists/B_1_0.txt --output-name B_1_0 --out-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0 --rt-tolerance 5 --fragment-tolerance 0.05 --window 0.025 --similarity 0.55 --model-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models --sqs 0.0 --num-rounds 15 --mixture-prob 0.4 --tmp-dir /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv --min-peaks-output 1 --scale-factor 0.5 --verbose-level 10 --output-mgf --assign-charges --major-increment 100 --output-file-size 100
+
+Pass 1: reading spectra files and writing to dat with 25 Da increments.
+----------------------------------------------------------------------
+
+Read 4 paths to spectra files.
+Converting data to DAT, using m/z increment of 25.00
+0	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_00_peak_info.mgf [0 : 0]
+	Found 394 spectra...	OPENED 1: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_275_0.dat
+	OPENED 2: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_225_0.dat
+	OPENED 3: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_350_0.dat
+	OPENED 4: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_375_0.dat
+	OPENED 5: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_325_0.dat
+	OPENED 6: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_250_0.dat
+	OPENED 7: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_200_0.dat
+	OPENED 8: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_300_0.dat
+	OPENED 9: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_425_0.dat
+	OPENED 10: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_650_0.dat
+	OPENED 11: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_575_0.dat
+	OPENED 12: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_400_0.dat
+	OPENED 13: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_500_0.dat
+ Wrote 394 to dat files (this took 0.00 sec.)
+
+1	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_01_peak_info.mgf [0 : 1]
+	Found 195 spectra... Wrote 195 to dat files (this took 0.00 sec.)
+
+2	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_02_peak_info.mgf [0 : 2]
+	Found 492 spectra...	OPENED 14: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_700_0.dat
+	OPENED 15: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_475_0.dat
+	OPENED 16: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_450_0.dat
+	OPENED 17: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_825_0.dat
+	OPENED 18: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_550_0.dat
+ Wrote 492 to dat files (this took 0.00 sec.)
+
+3	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_03_peak_info.mgf [0 : 3]
+	Found 595 spectra...	OPENED 19: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_600_0.dat
+	OPENED 20: /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_525_0.dat
+ Wrote 595 to dat files (this took 0.00 sec.)
+
+
+SUMMARY (first pass):
+---------------------
+Wrote 20 dat files to /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv
+These files contain 1676 spectra (from a total of 1676 that were read)
+
+Pass 2: Splitting dat files into smaller files with 1 Da increments.
+--------------------------------------------------------------------
+
+0	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_200_0.dat
+All group paths: 6
+1	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_225_0.dat
+All group paths: 12
+2	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_250_0.dat
+All group paths: 20
+3	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_275_0.dat
+All group paths: 32
+4	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_300_0.dat
+All group paths: 42
+5	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_325_0.dat
+All group paths: 47
+6	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_350_0.dat
+All group paths: 52
+7	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_375_0.dat
+All group paths: 56
+8	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_400_0.dat
+All group paths: 60
+9	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_425_0.dat
+All group paths: 63
+10	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_450_0.dat
+All group paths: 67
+11	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_475_0.dat
+All group paths: 69
+12	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_500_0.dat
+All group paths: 72
+13	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_525_0.dat
+All group paths: 74
+14	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_550_0.dat
+All group paths: 77
+15	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_575_0.dat
+All group paths: 80
+16	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_600_0.dat
+All group paths: 83
+17	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_650_0.dat
+All group paths: 84
+18	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_700_0.dat
+All group paths: 85
+19	1	/tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_R1_825_0.dat
+All group paths: 86
+
+
+
+SUMMARY (second pass):
+---------------------
+Read  1676 spectra from original input files.
+Wrote 1676 spectra into dat files in the first pass.
+Wrote 1676 spectra to dat files in the second pass.
+The second pass spectra were written to 86 dat files.
+(list of dat files written to /tmp/NP3_MSCluster_0c6aas6t//tmp_B_1_0_rmv/B_1_0_dat_list.txt)
+Time required for dat file creation: 0.00
+Allocating 0.500 GB.
+
+Bytes for data storage       = 461708984
+sizeof(MAX_SIMILARITY_LIST)  = 22000000
+sizeof(Peak)                 = 12
+sizeof(Cluster)              = 920
+sizeof(SingleSpectrumHeader) = 176
+Total cost per singleton     = 4592
+Allocating room for N = 95755 singletons (439706960 bytes)
+This means that up to 47877 spectra can simultaneously be evaluated.
+
+Allocated memory successfully...
+
+
+Initalizing storage, examining dat files...
+Max margin in dat files: 0.834
+
+Found 1676 spectra, in 86 dat files, precursor m/z range 200.11 - 846.44
+
+1	#Freed 0	#Read 310	#In memory 310
+Clustering: [ 0 at 0 m/z = 200.11 ]	   to	 [ 309 at 309 m/z = 235.12 ]
+Writing clusters for 247 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_200_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_200_0.mgf
+ written into 14 clusters    Cumulative 14 : 247 ..done.
+
+2	#Freed 247	#Read 265	#In memory 328
+Clustering: [ 310 at 63 m/z = 245.09 ]	   to	 [ 574 at 327 m/z = 284.66 ]
+Writing clusters for 325 singletons... written into 29 clusters    Cumulative 43 : 572 ..done.
+
+Problem with distance peaks: num peaks = 0 (1)
+BAD creation 761 L754_EDTA50_03.5312
+3	#Freed 325	#Read 551	#In memory 554
+Clustering: [ 575 at 3 m/z = 286.14 ]	   to	 [ 1125 at 553 m/z = 325.11 ]
+Writing clusters for 525 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_300_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_300_0.mgf
+ written into 25 clusters    Cumulative 68 : 1097 ..done.
+
+4	#Freed 525	#Read 136	#In memory 165
+Clustering: [ 1126 at 29 m/z = 326.17 ]	   to	 [ 1261 at 164 m/z = 365.11 ]
+Writing clusters for 150 singletons... written into 14 clusters    Cumulative 82 : 1247 ..done.
+
+5	#Freed 150	#Read 50	#In memory 65
+Clustering: [ 1262 at 15 m/z = 374.22 ]	   to	 [ 1311 at 64 m/z = 412.32 ]
+Writing clusters for 38 singletons... written into 7 clusters    Cumulative 89 : 1285 ..done.
+
+6	#Freed 38	#Read 168	#In memory 195
+Clustering: [ 1312 at 27 m/z = 415.21 ]	   to	 [ 1479 at 194 m/z = 453.18 ]
+Writing clusters for 189 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_400_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_400_0.mgf
+ written into 10 clusters    Cumulative 99 : 1474 ..done.
+
+7	#Freed 189	#Read 22	#In memory 28
+Clustering: [ 1480 at 6 m/z = 456.23 ]	   to	 [ 1501 at 27 m/z = 494.57 ]
+Writing clusters for 26 singletons... written into 5 clusters    Cumulative 104 : 1500 ..done.
+
+8	#Freed 26	#Read 77	#In memory 79
+Clustering: [ 1502 at 2 m/z = 513.27 ]	   to	 [ 1578 at 78 m/z = 550.63 ]
+Writing clusters for 77 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_500_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_500_0.mgf
+ written into 5 clusters    Cumulative 109 : 1577 ..done.
+
+9	#Freed 77	#Read 69	#In memory 71
+Clustering: [ 1579 at 2 m/z = 553.39 ]	   to	 [ 1647 at 70 m/z = 582.79 ]
+Writing clusters for 69 singletons... written into 7 clusters    Cumulative 116 : 1646 ..done.
+
+10	#Freed 69	#Read 22	#In memory 24
+Clustering: [ 1648 at 2 m/z = 606.29 ]	   to	 [ 1669 at 23 m/z = 622.28 ]
+Writing clusters for 17 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_600_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_600_0.mgf
+ written into 3 clusters    Cumulative 119 : 1663 ..done.
+
+11	#Freed 17	#Read 4	#In memory 11
+Clustering: [ 1670 at 7 m/z = 654.35 ]	   to	 [ 1673 at 10 m/z = 654.35 ]
+Writing clusters for 7 singletons... written into 2 clusters    Cumulative 121 : 1670 ..done.
+
+12	#Freed 7	#Read 1	#In memory 5
+Clustering: [ 1674 at 4 m/z = 707.22 ]	   to	 [ 1674 at 4 m/z = 707.22 ]
+Writing clusters for 4 singletons... written into 1 clusters    Cumulative 122 : 1674 ..done.
+
+13	#Freed 4	#Read 1	#In memory 2
+Clustering: [ 1675 at 1 m/z = 846.44 ]	   to	 [ 1675 at 1 m/z = 846.44 ]
+Writing clusters for 2 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_700_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_700_0.mgf
+Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/clust/B_1_0_0_0_800_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/B_1_0/mgf/B_1_0_0_0_800_0.mgf
+ written into 2 clusters    Cumulative 124 : 1676 ..done.
+
+
+Done clustering files.
+Time (without dat creation): 0.00
+
+Final statistics:
+-----------------
+
+Total similarity computations: 2142 average per spectrum 1.28
+
+Breakdown of spectra joins:
+---------------------------
+Round	Thresh	#joins	% of total
+1	0.70	1539	(0.992)
+2	0.689	3	(0.002)
+3	0.679	3	(0.002)
+4	0.668	1	(0.001)
+5	0.657	0	(0.000)
+6	0.646	1	(0.001)
+7	0.636	1	(0.001)
+8	0.625	0	(0.000)
+9	0.614	0	(0.000)
+10	0.604	0	(0.000)
+11	0.593	1	(0.001)
+12	0.582	0	(0.000)
+13	0.571	0	(0.000)
+14	0.561	0	(0.000)
+15	0.550	2	(0.001)
+
+
+Final clustering report:
+------------------------
+
+size	#clust	(%)	#sing	(%)
+1	27	(0.218)	27	(0.016)
+2	7	(0.056)	14	(0.008)
+3	12	(0.097)	36	(0.021)
+4	7	(0.056)	28	(0.017)
+5	5	(0.040)	25	(0.015)
+6	9	(0.073)	54	(0.032)
+7	4	(0.032)	28	(0.017)
+8	6	(0.048)	48	(0.029)
+9	4	(0.032)	36	(0.021)
+10	4	(0.032)	40	(0.024)
+11-15	12	(0.097)	150	(0.090)
+16-20	2	(0.016)	36	(0.021)
+21-30	10	(0.081)	256	(0.153)
+31-40	6	(0.048)	214	(0.128)
+41-50	2	(0.016)	89	(0.053)
+51-100	6	(0.048)	418	(0.250)
+101-200	1	(0.008)	176	(0.105)
+201-500	0	(0.000)	0	(0.000)
+501+	0	(0.000)	0	(0.000)
+
+Total: 124	1.0	1675	(1.0)
+
+Summary of output files:
+------------------------
+clust files written: 7
+mgf   files writeen: 7
+dat   files writeen: 0
+
+
+Ended job on: Fri Jun 19 16:51:17 2026
+
+Summary of output files:
+------------------------
+clust files written: 7
+mgf   files writeen: 7
+dat   files writeen: 0
+
+
+DONE!
+
+*** Step 4 - Counting peak area and spectra by sample B_1_0 *** 
+- Start scanning file:  B_1_0_0_0_200_0.clust DONE!
+- Start scanning file:  B_1_0_0_0_300_0.clust DONE!
+- Start scanning file:  B_1_0_0_0_400_0.clust DONE!
+- Start scanning file:  B_1_0_0_0_500_0.clust DONE!
+- Start scanning file:  B_1_0_0_0_600_0.clust DONE!
+- Start scanning file:  B_1_0_0_0_700_0.clust DONE!
+- Start scanning file:  B_1_0_0_0_800_0.clust DONE!
+
+
+DONE!

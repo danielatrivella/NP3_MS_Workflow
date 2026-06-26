@@ -1,0 +1,84 @@
+*** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** 
+Loading package readr, dplyr, dlls...
+
+  * Creating the Molecular Networking of Similarities with 86 nodes *
+        |                               |
+        |===============================|
+    * Done creating the molecular network of similarities in 0.14 secs *
+
+
+DONE!
+
+*** Filtering the SSMN - minimum matched peaks, top k neighbours and max component size  *** 
+  Filter min_matched_peaks 6 fragment ions
+  Starting Number of Edges 293
+  After Min Matched Peak  254
+  Filter Top_K 15 neighbors
+  Starting Number of Edges 254
+  After Top K Mutual 254
+  After 2 rounds of Component Pruning 254
+  Added 10 selfloop edges
+
+  * Network SSMN filtered info *
+
+    Name: SSMN filtered
+    Type: Graph
+    Number of nodes: 86
+    Number of edges: 264
+    Average degree:   6.1395
+    Number of components: 24
+    Number of isolated nodes:  18 
+
+
+
+DONE!
+
+*** Creating the [M+H]+ networks without blanks - protonated SSMN and IVAMN *** 
+  * Creating the IVAMN [M+H]+ network *
+	1. Remove blanks from IVAMN using the blank_expansion
+	2. Select the [M+H]+ ions in the remaining IVAMN
+
+    Done for IVAMN [M+H]+!
+
+  * Network IVAMN [M+H]+ info *
+
+    Name: IVAMN [M+H]+
+    Type: DiGraph
+    Number of nodes: 0
+    Number of edges: 0
+    
+    Number of components: 0
+    Number of isolated nodes:  0 
+
+  * Creating the SSMN [M+H]+ network *
+	3. Use the nodes from IVAMN [M+H]+ to filter the SSMN
+	4. Filter the SSMN [M+H]+ using the top_k, max_component size and min_matched_peaks
+  Filter min_matched_peaks 6 fragment ions
+  Starting Number of Edges 0
+  After Min Matched Peak  0
+  Filter Top_K 15 neighbors
+  Starting Number of Edges 0
+  After Top K Mutual 0
+  After 2 rounds of Component Pruning 0
+  Added 0 selfloop edges
+
+    Done for SSMN [M+H]+ filtered!
+
+  * Network SSMN [M+H]+ filtered info *
+
+    Name: SSMN [M+H]+ filtered
+    Type: Graph
+    Number of nodes: 0
+    Number of edges: 0
+    
+    Number of components: 0
+    Number of isolated nodes:  0 
+
+
+
+DONE!
+
+DONE! 
+======
+Finish Step 10 Time Elapsed: 0.11min
+======

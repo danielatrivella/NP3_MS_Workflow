@@ -1,0 +1,80 @@
+EXISTING_LIBRARY_MGF = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p01.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p02.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p03.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p04.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p05.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p06.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p07.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p08.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf
+NODECOUNT = 1
+NODEIDX = 0
+RESULTS_DIR = /tmp/ISDB_tremolo_NP3_yj9wpkx0//Data/results/Results_tremolo_L754_bacs_one_collection.out
+SCORE_THRESHOLD = 0.2
+SEARCHABUNDANCE = 0
+SLGFLOADMODE = 1
+TOP_K_RESULTS = 10
+search_decoy = 0
+searchspectra = /tmp/ISDB_tremolo_NP3_yj9wpkx0//Data/results/spectra_mgf_L754_bacs_one_collection.pklbin
+tolerance.PM_tolerance = 0.025
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p01.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p02.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p03.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p04.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p05.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p06.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p07.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p08.mgf	 as an annotated mgf file
+LOADING TARGET MGF
+
+LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf	 as an annotated mgf file
+Loading Search Spectra
+LOADED Search	/tmp/ISDB_tremolo_NP3_yj9wpkx0//Data/results/spectra_mgf_L754_bacs_one_collection.pklbin	 as a pklbin file
+Invoke
+170602
+After Creating Annotation Ends: 170602
+Filtering No PSM170602
+Filter Amino Acids: 170602
+Envelope Filter: 170602
+P Value Filter: 170602
+FDR Filter of -1: 170602
+Filtering Multiple Interpretations: 170602
+Charge Filter: 170602
+Fragmentation Filter: 170602
+After Best Rep: 170602
+After Spectra Simplicity: 170602
+Done Creating Library
+=============================================
+SEARCH
+21
+DONE!
+
+
+ Treating the SMILES list: treated 213177 compounds
+ Treating the result file /tmp/ISDB_tremolo_NP3_yj9wpkx0//Data/results/Results_tremolo_L754_bacs_one_collection.out
+
+Converting tremolo result to CSV
+DONE!
+
+*** Merging the tremolo result with the counts tables ***
+
+DONE!
+
+*** Curating the tremolo-UNPD identification result - selecting best results ***
+
+DONE!
+
+
+Tremolo search ended!
+
+======
+Finish Step 6 Time Elapsed: 0.29min
+======

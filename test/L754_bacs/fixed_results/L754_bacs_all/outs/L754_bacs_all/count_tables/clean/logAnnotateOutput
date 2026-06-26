@@ -1,0 +1,190 @@
+*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** 
+Loading packages Rcpp, readr, dplyr, stringr...
+# A tibble: 10 x 2
+   variables             values                                                 
+   <chr>                 <chr>                                                  
+ 1 output_path           /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 2 path_batch_metadata   /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 3 modification_file     /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/rules/…
+ 4 mz_tol                0.025                                                  
+ 5 fragment_tol          0.025                                                  
+ 6 rt_tol                1                                                      
+ 7 ms2_peaks_intensity_… 15                                                     
+ 8 scale_factor          0.5                                                    
+ 9 ion_mode              +                                                      
+10 table_limit_size      3000                                                   
+
+** Getting list of fragmented peaks and data collection batches by cluster **
+
+  * Done in 0.07 secs *
+
+
+** Annotating variant spectra that are in concurrent MS1 peaks **
+  * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
+  |                          |
+  |==========================|
+  * Done annotating clusters in 0.43 secs *
+
+
+** Creating the IVAMN and separating the annotations by types of ionization variants **
+  * Done in 0.1 secs *
+
+
+** Annotation summary by type **
+  *  adducts  =  27 
+  *  isotopes  =  0 
+  *  dimers  =  16 
+  *  multiCharges  =  1 
+  *  fragments  =  6 
+
+
+Warning message:
+`...` is not empty.
+
+We detected these problematic arguments:
+* `needs_dots`
+
+These dots only exist to allow future extensions and should be empty.
+Did you misspecify an argument? 
+
+DONE!
+*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** 
+
+* Molecular Network of Annotations Statistics *
+
+Name: 
+Type: DiGraph
+Number of nodes: 227
+Number of edges: 41
+Average in degree:   0.1806
+Average out degree:   0.1806
+Number of components: 196
+Number of isolated nodes:  174
+Number of protonated_representative nodes (with isolated nodes): 181
+
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Step 7 Time Elapsed: 0.18min
+======
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 5 group(s)
+['GR_color', 'GR_empty', 'GR_one', 'GR_two', 'GR_all']
+
+DONE!
+Subgroups for GR_color
+['R', 'G', 'B']
+Computing column "color_R"
+Computing column "color_G"
+Computing column "color_B"
+DONE for GR_color
+
+Subgroups for GR_empty
+[]
+DONE for GR_empty
+
+Subgroups for GR_one
+['this']
+Computing column "one_this"
+DONE for GR_one
+
+Subgroups for GR_two
+['a', 'b']
+Computing column "two_a"
+Computing column "two_b"
+DONE for GR_two
+
+Subgroups for GR_all
+['A']
+Computing column "all_A"
+DONE for GR_all
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_all_peak_area_clean_ann.csv *** 
+
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
+  the standard deviation is zero
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 5 group(s)
+['GR_color', 'GR_empty', 'GR_one', 'GR_two', 'GR_all']
+
+DONE!
+Subgroups for GR_color
+['R', 'G', 'B']
+Computing column "color_R"
+Computing column "color_G"
+Computing column "color_B"
+DONE for GR_color
+
+Subgroups for GR_empty
+[]
+DONE for GR_empty
+
+Subgroups for GR_one
+['this']
+Computing column "one_this"
+DONE for GR_one
+
+Subgroups for GR_two
+['a', 'b']
+Computing column "two_a"
+Computing column "two_b"
+DONE for GR_two
+
+Subgroups for GR_all
+['A']
+Computing column "all_A"
+DONE for GR_all
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_all_spectra_clean_ann.csv *** 
+
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+
+DONE! Time Elapsed: 0.01min

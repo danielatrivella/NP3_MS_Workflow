@@ -1,0 +1,2 @@
+/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_one_collection/outs/L754_bacs_one_collection/mgf/L754_bacs_one_collection_clean.mgf
+/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_another_collection_diff/outs/L754_bacs_another_collection_diff/mgf/L754_bacs_another_collection_diff_clean.mgf

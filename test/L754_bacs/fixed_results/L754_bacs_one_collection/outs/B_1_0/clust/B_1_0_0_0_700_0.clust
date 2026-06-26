@@ -1,0 +1,3 @@
+jobName, clustId, clustSize, rtMean, mzConsensus, chargeConsensus, rtMin, rtMax,precursorInt,peptideStrConsensus,datasetIdx, fileIndex, scanNumber, peakArea, peakId, rt, mz, simToConsensus, pValue, charge, peptideStr
+B_1_0_0_0,93,1,29.583000,707.219177,1,26.583000,32.583000,33120.000000,,0,1,228,33120.000000,fake_L754_00,29.583000,707.219177,1.0,0,1
+B_1_0_0_0,94,1,352.105988,758.408813,1,349.911987,353.714996,11067.000000,,0,0,2588,2153.000000,142_YEME_EXT,352.105988,758.408813,1.0,0,1

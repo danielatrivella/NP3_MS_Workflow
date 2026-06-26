@@ -1,0 +1,9 @@
+NP3 MS Workflow - version 1.4.1
+
+output_name: L754_bacs_blanks
+
+cmd: 
+
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js run -n L754_bacs_blanks -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -y processed_data_blanks -j TRUE -v 11 -q FALSE --bflag_cutoff 1 --gnps_search_tool 
+
+RUN Time Elapsed: 1.97min

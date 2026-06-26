@@ -1,0 +1,6 @@
+"gnps_SpectrumID","Type","gnps_Compound_Name","gnps_Smiles"
+"CCMSLIB00013938980","GNPS","Dodine","CCCCCCCCCCCCNC(N)=N"
+"CCMSLIB00016264840","GNPS","Octadecanamide [CCS=194.519] [M+H]+","CCCCCCCCCCCCCCCCCC(N)=O"
+"CCMSLIB00005435779","GNPS","Ethylenediaminetetraacetic acid EDTA M+H","C(CN(CC(=O)O)CC(=O)O)N(CC(=O)O)CC(=O)O"
+"CCMSLIB00000853386","GNPS","NCGC00385123-01_C22H30O6_7b,9-Dihydroxy-3-(hydroxymethyl)-1,1,6,8-tetramethyl-5-oxo-1,1a,1b,4,4a,5,7a,7b,8,9-decahydro-9aH-cyclopropa[3,4]benzo[1,2-e]azulen-9a-yl acetate M+ACN+H","CC1C(O)C2(OC(C)=O)C(C3\C=C(CO)/CC4C(\C=C(C)/C4=O)C13O)C2(C)C"
+"CCMSLIB00012349259","GNPS","Cyclo(his-pro) [M+H]+","O=C1N[C@@H](Cc2cnc[nH]2)C(=O)N2CCC[C@@H]12"

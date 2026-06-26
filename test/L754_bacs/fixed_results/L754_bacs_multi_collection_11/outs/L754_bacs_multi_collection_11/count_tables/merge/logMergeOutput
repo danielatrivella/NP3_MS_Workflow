@@ -1,0 +1,82 @@
+*** Step 8 - Merging the counts table based on the provided chemical annotations *** 
+Loading packages readr and auxiliary functions...
+
+** Merging counts based on the isotopes, adducts, dimers, multiCharges, fragments annotations **
+
+    |     |
+    |=====|
+
+  * Done creating 1 symbolic clusters in 0.11 secs *
+
+  ** Computing Peak Area by Sample ** 
+
+  * Done in 0.17 secs *
+
+Registered S3 methods overwritten by 'tibble':
+  method     from  
+  format.tbl pillar
+  print.tbl  pillar
+
+DONE! Time Elapsed: 0.08min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/outs/L754_bacs_multi_collection_11/count_tables/merge/L754_bacs_multi_collection_11_peak_area_merged_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+
+No group column (GR_) found.
+	Aborting groups.py
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_multi_collection_11_peak_area_merged_ann.csv *** 
+
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
+  the standard deviation is zero
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/outs/L754_bacs_multi_collection_11/count_tables/merge/L754_bacs_multi_collection_11_spectra_merged_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+
+No group column (GR_) found.
+	Aborting groups.py
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_multi_collection_11_spectra_merged_ann.csv *** 
+
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Step 8 Time Elapsed: 0.11min
+======

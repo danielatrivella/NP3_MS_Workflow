@@ -1,0 +1,105 @@
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_join_collections_noise result spectra pairwise *
+        |      |
+        |======|
+    * Done making 300 pairwise comparisions in 12.63 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.34min
+======
+
+*** Step 5 - Cleaning the clustering counts tables *** 
+Loading packages Rcpp, readr, dplyr, CPP functions...
+
+BFLAG cutoff : basePeakInt median + 1.5 * (q75-q25) = 37293 
+
+NOISE cutoff : basePeakInt median + 1.5 * (q75-q25) = 37293 
+
+** Cleanning counts, removing redudancies and aggregating data **
+
+      * Step 0 *
+  |                         |
+  |=========================|
+        * Joined 0 similar clusters in 0.01 secs *
+
+      * Step 1 *
+  |                         |
+  |=========================|
+        * Joined 0 similar clusters in 0.01 secs *
+
+  * Done reducing 0 similar clusters in 0.24 secs *
+
+
+  ** Computing Peak Area by Sample ** 
+
+
+  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <= 37293 **
+
+  * Done removing 22 noise spectra  *
+
+
+  ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **
+
+  ** Adding blanks neighborhood information **
+
+  ** Saving the clean MGF file **
+
+Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections_noise/outs/L754_bacs_join_collections_noise/mgf/L754_bacs_join_collections_noise_clean.mgf !
+  |                                                                              |                                                                      |   0%  |                                                                              |=======================                                               |  33%  |                                                                              |===============================================                       |  67%  |                                                                              |======================================================================| 100%
+Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections_noise/outs/L754_bacs_join_collections_noise/mgf/L754_bacs_join_collections_noise_clean.mgf  ........... OK!
+
+  - Computing the number of fragmented cluster in the clean table
+
+    - Total number of m/zs that had at least one putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    * Done in 0.3 secs *
+
+
+
+DONE! Time Elapsed: 0.22min
+
+*** Analysing the count of spectra  *** 
+
+Total number of consensus spectra:
+3
+
+Total number of consensus spectra NOT blank:
+0
+
+Number of consensus spectra by size (number of clustered spectra):
+  6  13 
+"2" "1" 
+
+Total number of processed spectra from the raw MS/MS data:
+25
+Number of unique m/z rounded in digit 2:
+3
+Mean number of consensus spectra by m/z: 
+1
+
+DONE!
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_join_collections_noise_clean result spectra pairwise *
+        | |
+        |=|
+    * Done making 3 pairwise comparisions in 4.19 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.20min
+======
+
+======
+Finish Step 5 Time Elapsed: 0.42min (without the clustered spectra comparison time) 
+======

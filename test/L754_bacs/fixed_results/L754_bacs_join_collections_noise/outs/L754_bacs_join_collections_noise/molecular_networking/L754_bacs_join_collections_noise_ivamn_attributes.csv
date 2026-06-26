@@ -1,0 +1,4 @@
+msclusterID,mzConsensus,rtMean,rtMin,rtMax,multicharge_ion,isotope_ion,in_degree,total_degree,pagerank,number_ancestors,protonated_representative,protonated_mzError_sum,protonated_rtError_sum,protonated_num_ancestors_edges
+91,455.4565,662.5974,0,1000000,0,0,0,0,0.3333333333333333,0,1,0.0,0.0,0
+102,511.5192,705.6617,0,1000000,0,0,0,0,0.3333333333333333,0,1,0.0,0.0,0
+132,563.55,712.2359,0,1000000,0,0,0,0,0.3333333333333333,0,1,0.0,0.0,0

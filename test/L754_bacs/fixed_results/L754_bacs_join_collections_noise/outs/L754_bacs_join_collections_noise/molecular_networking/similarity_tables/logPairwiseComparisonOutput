@@ -1,0 +1,28 @@
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_join_collections_noise result spectra pairwise *
+        |      |
+        |======|
+    * Done making 300 pairwise comparisions in 12.63 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.34min
+======
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_join_collections_noise_clean result spectra pairwise *
+        | |
+        |=|
+    * Done making 3 pairwise comparisions in 4.19 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.20min
+======

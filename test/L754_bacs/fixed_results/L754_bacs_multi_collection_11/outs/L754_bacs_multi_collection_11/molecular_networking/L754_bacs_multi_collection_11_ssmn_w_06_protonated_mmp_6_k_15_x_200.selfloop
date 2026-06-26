@@ -1,0 +1,8 @@
+msclusterID_source,msclusterID_target,cosine,num_matched_peaks,annotation,num_peaks_source,num_peaks_target,componentIndex
+23,23,1,-1,,138,138,1
+270,270,1,-1,,11,11,2
+15,15,1,-1,,54,54,3
+33,33,1,-1,,65,65,4
+86,86,1,-1,,49,49,5
+191,191,1,-1,,8,8,6
+210,210,1,-1,,35,35,7

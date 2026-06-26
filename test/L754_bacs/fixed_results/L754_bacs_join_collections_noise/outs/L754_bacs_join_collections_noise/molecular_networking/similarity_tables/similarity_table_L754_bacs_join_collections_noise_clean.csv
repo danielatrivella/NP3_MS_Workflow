@@ -1,0 +1,4 @@
+"parameters sim pairwise - scale_factor:0.5;bin_size:0.05;trim_mz:1;max_shift:200","91","102","132"
+"91",1,0,0
+"102",,1,0
+"132",,,1

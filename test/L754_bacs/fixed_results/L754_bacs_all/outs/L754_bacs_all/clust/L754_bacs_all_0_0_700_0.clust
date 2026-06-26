@@ -1,0 +1,4 @@
+jobName, clustId, clustSize, rtMean, mzConsensus, chargeConsensus, rtMin, rtMax,precursorInt,peptideStrConsensus,datasetIdx, fileIndex, scanNumber, peakArea, peakId, rt, mz, simToConsensus, pValue, charge, peptideStr
+L754_bacs_all_0_0,239,2,30.085592,707.219788,1,27.085592,33.085594,52489.000000,,0,1,158,0.000000,fake_,30.0856,707.219,1.00,0,1
+L754_bacs_all_0_0,239,2,30.085592,707.219788,1,27.085592,33.085594,52489.000000,,0,2,134,0.000000,fake_,30.94,707.22,1.00,0,1
+L754_bacs_all_0_0,240,1,352.105988,758.408813,1,349.911987,353.714996,11067.000000,,0,0,173,0.000000,fake_,352.105988,758.408813,1.0,0,1

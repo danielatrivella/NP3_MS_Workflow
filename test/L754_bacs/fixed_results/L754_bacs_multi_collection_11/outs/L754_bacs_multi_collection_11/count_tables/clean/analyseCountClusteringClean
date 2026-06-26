@@ -1,0 +1,19 @@
+
+Total number of consensus spectra:
+32
+
+Total number of consensus spectra NOT blank:
+10
+
+Number of consensus spectra by size (number of clustered spectra):
+  1   2   3   4   5   6  10  12  13  18  20  22  23  24  26  31  36  48  54  56 
+"1" "2" "2" "1" "2" "2" "1" "1" "2" "1" "1" "1" "1" "1" "2" "1" "1" "1" "1" "1" 
+ 63  65  69  95  98 143 
+"1" "1" "1" "1" "1" "1" 
+
+Total number of processed spectra from the raw MS/MS data:
+1002
+Number of unique m/z rounded in digit 2:
+31
+Mean number of consensus spectra by m/z: 
+1.032

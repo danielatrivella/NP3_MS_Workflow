@@ -1,0 +1,100 @@
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_join_collections result spectra pairwise *
+        |      |
+        |======|
+    * Done making 300 pairwise comparisions in 12.61 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.34min
+======
+
+*** Step 5 - Cleaning the clustering counts tables *** 
+Loading packages Rcpp, readr, dplyr, CPP functions...
+
+BFLAG cutoff : basePeakInt median + 1.5 * (q75-q25) = 37293 
+
+NOISE cutoff : disabled
+
+** Cleanning counts, removing redudancies and aggregating data **
+
+      * Step 0 *
+  |                         |
+  |=========================|
+        * Joined 0 similar clusters in 0.01 secs *
+
+      * Step 1 *
+  |                         |
+  |=========================|
+        * Joined 0 similar clusters in 0.02 secs *
+
+  * Done reducing 0 similar clusters in 0.24 secs *
+
+
+  ** Computing Peak Area by Sample ** 
+
+
+  ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **
+
+  ** Adding blanks neighborhood information **
+
+  ** Saving the clean MGF file **
+
+Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections/outs/L754_bacs_join_collections/mgf/L754_bacs_join_collections_clean.mgf !
+  |                                                                              |                                                                      |   0%  |                                                                              |===                                                                   |   4%  |                                                                              |======                                                                |   8%  |                                                                              |========                                                              |  12%  |                                                                              |===========                                                           |  16%  |                                                                              |==============                                                        |  20%  |                                                                              |=================                                                     |  24%  |                                                                              |====================                                                  |  28%  |                                                                              |======================                                                |  32%  |                                                                              |=========================                                             |  36%  |                                                                              |============================                                          |  40%  |                                                                              |===============================                                       |  44%  |                                                                              |==================================                                    |  48%  |                                                                              |====================================                                  |  52%  |                                                                              |=======================================                               |  56%  |                                                                              |==========================================                            |  60%  |                                                                              |=============================================                         |  64%  |                                                                              |================================================                      |  68%  |                                                                              |==================================================                    |  72%  |                                                                              |=====================================================                 |  76%  |                                                                              |========================================================              |  80%  |                                                                              |===========================================================           |  84%  |                                                                              |==============================================================        |  88%  |                                                                              |================================================================      |  92%  |                                                                              |===================================================================   |  96%  |                                                                              |======================================================================| 100%
+Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections/outs/L754_bacs_join_collections/mgf/L754_bacs_join_collections_clean.mgf  ........... OK!
+
+  - Computing the number of fragmented cluster in the clean table
+
+    - Total number of m/zs that had at least one putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
+
+    * Done in 0.31 secs *
+
+
+
+DONE! Time Elapsed: 0.22min
+
+*** Analysing the count of spectra  *** 
+
+Total number of consensus spectra:
+25
+
+Total number of consensus spectra NOT blank:
+8
+
+Number of consensus spectra by size (number of clustered spectra):
+  2   3   5   6  10  11  12  13  15  18  24  25  30  50  57  63  97 104 
+"3" "1" "3" "3" "1" "1" "1" "1" "1" "1" "1" "1" "1" "1" "2" "1" "1" "1" 
+
+Total number of processed spectra from the raw MS/MS data:
+628
+Number of unique m/z rounded in digit 2:
+25
+Mean number of consensus spectra by m/z: 
+1
+
+DONE!
+*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
+Loading package dplyr and Rcpp functions...
+
+  * Comparing L754_bacs_join_collections_clean result spectra pairwise *
+        | |
+        |=|
+    * Done making 300 pairwise comparisions in 4.23 secs *
+
+Loading required package: parallel
+
+DONE! 
+======
+Finish pairwise comparison Time Elapsed: 0.20min
+======
+
+======
+Finish Step 5 Time Elapsed: 0.43min (without the clustered spectra comparison time) 
+======

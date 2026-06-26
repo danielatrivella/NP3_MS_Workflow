@@ -1,0 +1,14 @@
+
+* Descriptive analysis of the basePeakInt distribution for BLANKS *
+
+count      107.000000
+mean      4587.523364
+std      10496.893850
+min         46.000000
+25%        223.500000
+50%        921.000000
+75%       3515.500000
+max      77523.000000
+
+- Interquartile rank (IQR) = 3292.0
+- Median + 1.0 * IQR = 4213.0

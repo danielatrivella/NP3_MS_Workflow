@@ -1,0 +1,162 @@
+*** Step 7 - Joining the Annotations of ionization variants in the Original Jobs of the clean counts table, creating the joined molecular network of annotations (IVAMN) and Assigning the putative [M+H]+ spectra representatives in the joined IVAMN *** 
+* Joining the previous IVAMNs of the Joined Jobs * 
+    - Mapping and reducing the IVAMN of job code L754_bacs_1
+    - Mapping and reducing the IVAMN of job code L754_bacs_2
+    - Integrating and reducing the mapped IVAMNs for current joined job L754_bacs_join_collections
+    - Recomputing the edges' attributes of the joined IVAMN 
+    - Removing fragment's and neutral losses annotations with similarity < 0.2 and isotope annotations with similarity < 0.75
+    - Adding selfloop edges to the IVAMN
+    - Adding the multicharge_ion and isotope_ion to the clean count tables
+
+* Assigning the putative [M+H]+ spectra representatives in the joined IVAMN and merging with original [M+H]+ that have in-degree > 0 *
+
+* Molecular Network of Annotations Statistics *
+
+Name: 
+Type: DiGraph
+Number of nodes: 25
+Number of edges: 12
+Average in degree:   0.4800
+Average out degree:   0.4800
+Number of components: 16
+Number of isolated nodes:  9
+Number of protonated_representative nodes (with isolated nodes): 16
+Number of protonated_representative nodes (with isolated nodes) after merge with old protonated that have in-degree > 0: 16
+
+
+DONE!
+*** Step 7 - Parse and format the resulting annotations in the joined IVAMN by ionization variants to columns in the clean counts table *** 
+Loading packages Rcpp, readr, dplyr, stringr...
+
+** Annotation summary by type **
+  *  adducts  =  6 
+  *  isotopes  =  0 
+  *  dimers  =  7 
+  *  multiCharges  =  0 
+  *  fragments  =  2 
+
+
+
+DONE! Time Elapsed: 0.15min
+
+======
+Finish Step 7 Time Elapsed: 0.16min
+======
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections/original_samples_METADATA.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections/outs/L754_bacs_join_collections/count_tables/clean/L754_bacs_join_collections_peak_area_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 5 group(s)
+['GR_COLOR', 'GR_EMPTY', 'GR_ONE', 'GR_TWO', 'GR_ALL']
+
+DONE!
+Subgroups for GR_COLOR
+['R', 'G', 'B']
+Computing column "COLOR_R"
+Computing column "COLOR_G"
+Computing column "COLOR_B"
+DONE for GR_COLOR
+
+Subgroups for GR_EMPTY
+[]
+DONE for GR_EMPTY
+
+Subgroups for GR_ONE
+['hit']
+Computing column "ONE_hit"
+DONE for GR_ONE
+
+Subgroups for GR_TWO
+['b']
+Computing column "TWO_b"
+DONE for GR_TWO
+
+Subgroups for GR_ALL
+['A']
+Computing column "ALL_A"
+DONE for GR_ALL
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_join_collections_peak_area_clean_ann.csv *** 
+
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
+  the standard deviation is zero
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections/original_samples_METADATA.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_join_collections/outs/L754_bacs_join_collections/count_tables/clean/L754_bacs_join_collections_spectra_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 5 group(s)
+['GR_COLOR', 'GR_EMPTY', 'GR_ONE', 'GR_TWO', 'GR_ALL']
+
+DONE!
+Subgroups for GR_COLOR
+['R', 'G', 'B']
+Computing column "COLOR_R"
+Computing column "COLOR_G"
+Computing column "COLOR_B"
+DONE for GR_COLOR
+
+Subgroups for GR_EMPTY
+[]
+DONE for GR_EMPTY
+
+Subgroups for GR_ONE
+['hit']
+Computing column "ONE_hit"
+DONE for GR_ONE
+
+Subgroups for GR_TWO
+['b']
+Computing column "TWO_b"
+DONE for GR_TWO
+
+Subgroups for GR_ALL
+['A']
+Computing column "ALL_A"
+DONE for GR_ALL
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_join_collections_spectra_clean_ann.csv *** 
+
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+
+DONE! Time Elapsed: 0.01min

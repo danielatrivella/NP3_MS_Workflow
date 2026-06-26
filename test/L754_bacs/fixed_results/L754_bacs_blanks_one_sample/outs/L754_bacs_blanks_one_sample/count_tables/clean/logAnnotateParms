@@ -1,0 +1,5 @@
+output_name: L754_bacs_blanks_one_sample
+
+cmd: 
+
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js annotate_protonated -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample -b 500 -v 13 -t 2 -i 500

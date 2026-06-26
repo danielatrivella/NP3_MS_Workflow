@@ -1,0 +1,7 @@
+NP3 MS Workflow - version 1.4.1
+
+output_name: L754_bacs_join_collections_noise
+
+cmd: 
+
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js join_jobs -n L754_bacs_join_collections_noise -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv -y /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -j TRUE -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool 

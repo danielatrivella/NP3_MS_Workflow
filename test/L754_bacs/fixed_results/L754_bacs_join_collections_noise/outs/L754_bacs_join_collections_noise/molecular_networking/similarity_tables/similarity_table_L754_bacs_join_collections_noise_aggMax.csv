@@ -1,0 +1,4 @@
+parameters sim pairwise - scale_factor:0.5;bin_size:0.05;trim_mz:1;max_shift:200,12,15,19
+12,1,0,0
+15,NA,1,0
+19,NA,NA,1

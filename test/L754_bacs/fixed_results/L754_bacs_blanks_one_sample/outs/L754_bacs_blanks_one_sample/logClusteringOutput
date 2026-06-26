@@ -1,0 +1,470 @@
+
+*** Step 3 - Clustering the pre-processed MS2 spectra using the MS1 information *** 
+
+*** Calling NP3_MSCluster for: L754_bacs_blanks_one_sample *** 
+
+MsCluster v2.0 
+Started job on: Fri Jun 19 16:47:53 2026
+
+Parameter values:
+-----------------
+outputName = L754_bacs_blanks_one_sample
+modelDir   = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models
+outDir     = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample
+tmpDir     = /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv
+list	      = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/spec_lists/out_spec_lists.txt
+mixtureProb   = 0.4
+minSimilarity = 0.55
+rtTolerance = 2
+minNumPeaks = 5
+scaleFactor = 0.5
+
+COMMAND LINE = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/NP3_MSCluster_bin --list /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/spec_lists/out_spec_lists.txt --output-name L754_bacs_blanks_one_sample --out-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample --rt-tolerance 2 --fragment-tolerance 0.05 --window 0.025 --similarity 0.55 --model-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models --sqs 0.0 --num-rounds 15 --mixture-prob 0.4 --tmp-dir /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv --min-peaks-output 5 --scale-factor 0.5 --verbose-level 10 --output-mgf --assign-charges --major-increment 100 --output-file-size 500
+
+Pass 1: reading spectra files and writing to dat with 25 Da increments.
+----------------------------------------------------------------------
+
+Read 1 paths to spectra files.
+Converting data to DAT, using m/z increment of 25.00
+0	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_blanks_one_sample/MEOH_1_peak_info.mgf [0 : 0]
+	Found 769 spectra...	OPENED 1: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_225_0.dat
+	OPENED 2: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_275_0.dat
+	OPENED 3: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_300_0.dat
+	OPENED 4: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_250_0.dat
+	OPENED 5: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_400_0.dat
+	OPENED 6: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_425_0.dat
+	OPENED 7: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_350_0.dat
+	OPENED 8: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_200_0.dat
+	OPENED 9: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_450_0.dat
+	OPENED 10: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_575_0.dat
+	OPENED 11: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_500_0.dat
+	OPENED 12: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_550_0.dat
+	OPENED 13: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_325_0.dat
+	OPENED 14: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_475_0.dat
+	OPENED 15: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_600_0.dat
+	OPENED 16: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_525_0.dat
+	OPENED 17: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_375_0.dat
+	OPENED 18: /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_625_0.dat
+ Wrote 769 to dat files (this took 1.00 sec.)
+
+
+SUMMARY (first pass):
+---------------------
+Wrote 18 dat files to /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv
+These files contain 769 spectra (from a total of 769 that were read)
+
+Pass 2: Splitting dat files into smaller files with 1 Da increments.
+--------------------------------------------------------------------
+
+0	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_200_0.dat
+All group paths: 1
+1	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_225_0.dat
+All group paths: 5
+2	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_250_0.dat
+All group paths: 13
+3	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_275_0.dat
+All group paths: 23
+4	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_300_0.dat
+All group paths: 35
+5	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_325_0.dat
+All group paths: 38
+6	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_350_0.dat
+All group paths: 42
+7	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_375_0.dat
+All group paths: 43
+8	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_400_0.dat
+All group paths: 45
+9	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_425_0.dat
+All group paths: 46
+10	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_450_0.dat
+All group paths: 49
+11	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_475_0.dat
+All group paths: 52
+12	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_500_0.dat
+All group paths: 59
+13	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_525_0.dat
+All group paths: 64
+14	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_550_0.dat
+All group paths: 70
+15	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_575_0.dat
+All group paths: 77
+16	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_600_0.dat
+All group paths: 81
+17	1	/tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_R1_625_0.dat
+All group paths: 82
+
+
+
+SUMMARY (second pass):
+---------------------
+Read  769 spectra from original input files.
+Wrote 769 spectra into dat files in the first pass.
+Wrote 769 spectra to dat files in the second pass.
+The second pass spectra were written to 82 dat files.
+(list of dat files written to /tmp/NP3_MSCluster_e9d9qy2a//tmp_L754_bacs_blanks_one_sample_rmv/L754_bacs_blanks_one_sample_dat_list.txt)
+Time required for dat file creation: 1.00
+Allocating 0.500 GB.
+
+Bytes for data storage       = 461708984
+sizeof(MAX_SIMILARITY_LIST)  = 22000000
+sizeof(Peak)                 = 12
+sizeof(Cluster)              = 920
+sizeof(SingleSpectrumHeader) = 176
+Total cost per singleton     = 4592
+Allocating room for N = 95755 singletons (439706960 bytes)
+This means that up to 47877 spectra can simultaneously be evaluated.
+
+Allocated memory successfully...
+
+
+Initalizing storage, examining dat files...
+Max margin in dat files: 0.134
+
+Found 769 spectra, in 82 dat files, precursor m/z range 200.20 - 637.47
+
+1	#Freed 0	#Read 19	#In memory 19
+Clustering: [ 0 at 0 m/z = 200.20 ]	   to	 [ 18 at 18 m/z = 228.23 ]
+Writing clusters for 7 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/clust/L754_bacs_blanks_one_sample_0_0_200_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_0_0_200_0.mgf
+ written into 2 clusters    Cumulative 2 : 7 ..done.
+
+2	#Freed 7	#Read 149	#In memory 161
+Clustering: [ 19 at 12 m/z = 240.16 ]	   to	 [ 167 at 160 m/z = 279.23 ]
+Writing clusters for 156 singletons... written into 17 clusters    Cumulative 19 : 163 ..done.
+
+3	#Freed 156	#Read 374	#In memory 379
+Clustering: [ 168 at 5 m/z = 280.26 ]	   to	 [ 541 at 378 m/z = 318.28 ]
+Writing clusters for 378 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/clust/L754_bacs_blanks_one_sample_0_0_300_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_0_0_300_0.mgf
+ written into 39 clusters    Cumulative 58 : 541 ..done.
+
+4	#Freed 378	#Read 46	#In memory 47
+Clustering: [ 542 at 1 m/z = 320.26 ]	   to	 [ 587 at 46 m/z = 355.12 ]
+Writing clusters for 42 singletons... written into 3 clusters    Cumulative 61 : 583 ..done.
+
+5	#Freed 42	#Read 9	#In memory 14
+Clustering: [ 588 at 5 m/z = 363.22 ]	   to	 [ 596 at 13 m/z = 391.29 ]
+Writing clusters for 12 singletons... written into 3 clusters    Cumulative 64 : 595 ..done.
+
+6	#Freed 12	#Read 14	#In memory 16
+Clustering: [ 597 at 2 m/z = 413.27 ]	   to	 [ 610 at 15 m/z = 451.43 ]
+Writing clusters for 15 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/clust/L754_bacs_blanks_one_sample_0_0_400_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_0_0_400_0.mgf
+ written into 3 clusters    Cumulative 67 : 610 ..done.
+
+7	#Freed 15	#Read 12	#In memory 13
+Clustering: [ 611 at 1 m/z = 455.46 ]	   to	 [ 622 at 12 m/z = 491.37 ]
+Writing clusters for 12 singletons... written into 4 clusters    Cumulative 71 : 622 ..done.
+
+8	#Freed 12	#Read 49	#In memory 50
+Clustering: [ 623 at 1 m/z = 495.49 ]	   to	 [ 671 at 49 m/z = 533.50 ]
+Writing clusters for 45 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/clust/L754_bacs_blanks_one_sample_0_0_500_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_0_0_500_0.mgf
+ written into 10 clusters    Cumulative 81 : 667 ..done.
+
+9	#Freed 45	#Read 53	#In memory 58
+Clustering: [ 672 at 5 m/z = 535.40 ]	   to	 [ 724 at 57 m/z = 571.43 ]
+Writing clusters for 52 singletons... written into 10 clusters    Cumulative 91 : 719 ..done.
+
+10	#Freed 52	#Read 41	#In memory 47
+Clustering: [ 725 at 6 m/z = 579.29 ]	   to	 [ 765 at 46 m/z = 615.46 ]
+Writing clusters for 43 singletons...Opening: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/clust/L754_bacs_blanks_one_sample_0_0_600_0.clust
+         /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_0_0_600_0.mgf
+ written into 12 clusters    Cumulative 103 : 762 ..done.
+
+11	#Freed 43	#Read 3	#In memory 7
+Clustering: [ 766 at 4 m/z = 637.47 ]	   to	 [ 768 at 6 m/z = 637.47 ]
+Writing clusters for 7 singletons... written into 2 clusters    Cumulative 105 : 769 ..done.
+
+
+Done clustering files.
+Time (without dat creation): 0.00
+
+Final statistics:
+-----------------
+
+Total similarity computations: 9763 average per spectrum 12.70
+
+Breakdown of spectra joins:
+---------------------------
+Round	Thresh	#joins	% of total
+1	0.70	534	(0.865)
+2	0.689	19	(0.031)
+3	0.679	13	(0.021)
+4	0.668	5	(0.008)
+5	0.657	8	(0.013)
+6	0.646	4	(0.006)
+7	0.636	3	(0.005)
+8	0.625	8	(0.013)
+9	0.614	3	(0.005)
+10	0.604	3	(0.005)
+11	0.593	5	(0.008)
+12	0.582	2	(0.003)
+13	0.571	7	(0.011)
+14	0.561	2	(0.003)
+15	0.550	1	(0.002)
+
+
+Final clustering report:
+------------------------
+
+size	#clust	(%)	#sing	(%)
+1	24	(0.229)	24	(0.036)
+2	11	(0.105)	22	(0.033)
+3	14	(0.133)	42	(0.063)
+4	12	(0.114)	48	(0.072)
+5	6	(0.057)	30	(0.045)
+6	6	(0.057)	36	(0.054)
+7	11	(0.105)	77	(0.116)
+8	1	(0.010)	8	(0.012)
+9	0	(0.000)	0	(0.000)
+10	2	(0.019)	20	(0.030)
+11-15	11	(0.105)	135	(0.203)
+16-20	3	(0.029)	54	(0.081)
+21-30	2	(0.019)	55	(0.083)
+31-40	1	(0.010)	36	(0.054)
+41-50	0	(0.000)	0	(0.000)
+51-100	1	(0.010)	77	(0.116)
+101-200	0	(0.000)	0	(0.000)
+201-500	0	(0.000)	0	(0.000)
+501+	0	(0.000)	0	(0.000)
+
+Total: 105	1.0	664	(1.0)
+
+Summary of output files:
+------------------------
+clust files written: 5
+mgf   files writeen: 5
+dat   files writeen: 0
+
+
+Ended job on: Fri Jun 19 16:47:54 2026
+
+Summary of output files:
+------------------------
+clust files written: 5
+mgf   files writeen: 5
+dat   files writeen: 0
+
+
+DONE!
+
+*** Step 4 - Counting peak area and spectra by sample L754_bacs_blanks_one_sample *** 
+- Start scanning file:  L754_bacs_blanks_one_sample_0_0_200_0.clust DONE!
+- Start scanning file:  L754_bacs_blanks_one_sample_0_0_300_0.clust DONE!
+- Start scanning file:  L754_bacs_blanks_one_sample_0_0_400_0.clust DONE!
+- Start scanning file:  L754_bacs_blanks_one_sample_0_0_500_0.clust DONE!
+- Start scanning file:  L754_bacs_blanks_one_sample_0_0_600_0.clust DONE!
+
+
+DONE!
+
+DONE clustering and counting spectra!
+Time Elapsed: 0.09min
+
+*** Analysing the count of spectra  *** 
+
+Total number of consensus spectra:
+105
+
+Total number of consensus spectra NOT blank:
+0
+
+Number of consensus spectra by size (number of clustered spectra):
+   1    2    3    4    5    6    7    8   10   11   12   14   15   17   18   19 
+"24" "11" "14" "12"  "6"  "6" "11"  "1"  "2"  "6"  "1"  "3"  "1"  "1"  "1"  "1" 
+  25   30   36   77 
+ "1"  "1"  "1"  "1" 
+
+Total number of processed spectra from the raw MS/MS data:
+664
+Number of unique m/z rounded in digit 2:
+79
+Mean number of consensus spectra by m/z: 
+1.329
+
+DONE!
+
+*** Extracting the fragmented peaks list from the clustered MGF and concatenating it to the counts table *** 
+Loading Rcpp functions...
+
+  * Extracting, normalizing and scaling fragment peaks list of L754_bacs_blanks_one_sample clustered spectra to concatenate in the counts files *
+        |     |
+        |=====|
+    * Done extracting peak list in 0.03 secs *
+
+
+DONE!
+*** Plotting the base peak intensity distribution of the clustering counts ***
+
+* Descriptive analysis of the basePeakInt distribution for BLANKS *
+
+count      105.000000
+mean      4624.238095
+std      10594.292532
+min         46.000000
+25%        164.000000
+50%        851.000000
+75%       3453.000000
+max      77523.000000
+
+- Interquartile rank (IQR) = 3289.0
+- Median + 1.5 * IQR = 5784.5
+
+Base peak intensity distribution saved to basePeakInt_distribution.png file!
+DONE!
+
+
+
+DONE! Time Elapsed: 0.05min
+
+*** Cleaning the counts table of not fragmented MS1 peaks  *** 
+Loading functions...
+
+** Cleanning counts and aggregating data of not fragmented MS1 m/z's **
+
+      * Step 1 *
+  |                          |
+  |==========================|
+        * Joined 46 similar clusters in 0.06 secs *
+
+      * Step 2 *
+  |                          |
+  |==========================|
+        * Joined 0 similar clusters in 0 secs *
+
+ * Done reducing 46 MS1 peaks in 0.17 secs  *
+
+
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/L754_bacs_blanks_one_sample_peak_area_MS1.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 1 group(s)
+['GR_One']
+
+DONE!
+Subgroups for GR_One
+['Um']
+Computing column "One_Um"
+DONE for GR_One
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_one_sample_peak_area_MS1.csv *** 
+
+Warning messages:
+1: The bioactivity scores of the 'BIOACTIVITY_FAKE' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+2: The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+No VALID bioactivity score column was present in the metadata CSV file. To run the bioactivity correlation at least one of each one of the following columns must be present in the metadata file: 
+  - BIOACTIVITY_<name>: (numeric values) must contain the samples bioactivity scores to be used in the correlation computation;
+  - COR_<name>: (0 or 1's values) must contain at least one correlation group. 
+
+Where <name> is a unique identifier for each bioactivity score or correlation group that the user might want to add. 
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Steps 3 and 4! Time Elapsed: 0.24min
+======
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/L754_bacs_blanks_one_sample_peak_area.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 1 group(s)
+['GR_One']
+
+DONE!
+Subgroups for GR_One
+['Um']
+Computing column "One_Um"
+DONE for GR_One
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_one_sample_peak_area.csv *** 
+
+Warning messages:
+1: The bioactivity scores of the 'BIOACTIVITY_FAKE' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+2: The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+No VALID bioactivity score column was present in the metadata CSV file. To run the bioactivity correlation at least one of each one of the following columns must be present in the metadata file: 
+  - BIOACTIVITY_<name>: (numeric values) must contain the samples bioactivity scores to be used in the correlation computation;
+  - COR_<name>: (0 or 1's values) must contain at least one correlation group. 
+
+Where <name> is a unique identifier for each bioactivity score or correlation group that the user might want to add. 
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/L754_bacs_blanks_one_sample_spectra.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 1 group(s)
+['GR_One']
+
+DONE!
+Subgroups for GR_One
+['Um']
+Computing column "One_Um"
+DONE for GR_One
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_one_sample_spectra.csv *** 
+
+Warning messages:
+1: The bioactivity scores of the 'BIOACTIVITY_FAKE' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+2: The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+No VALID bioactivity score column was present in the metadata CSV file. To run the bioactivity correlation at least one of each one of the following columns must be present in the metadata file: 
+  - BIOACTIVITY_<name>: (numeric values) must contain the samples bioactivity scores to be used in the correlation computation;
+  - COR_<name>: (0 or 1's values) must contain at least one correlation group. 
+
+Where <name> is a unique identifier for each bioactivity score or correlation group that the user might want to add. 
+
+DONE! Time Elapsed: 0.01min

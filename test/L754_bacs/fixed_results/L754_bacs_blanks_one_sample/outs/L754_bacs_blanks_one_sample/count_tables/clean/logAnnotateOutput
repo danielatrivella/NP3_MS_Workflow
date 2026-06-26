@@ -1,0 +1,224 @@
+*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** 
+Loading packages Rcpp, readr, dplyr, stringr...
+# A tibble: 10 x 2
+   variables             values                                                 
+   <chr>                 <chr>                                                  
+ 1 output_path           /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 2 path_batch_metadata   /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 3 modification_file     /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/rules/…
+ 4 mz_tol                0.025                                                  
+ 5 fragment_tol          0.025                                                  
+ 6 rt_tol                2                                                      
+ 7 ms2_peaks_intensity_… 15                                                     
+ 8 scale_factor          0.5                                                    
+ 9 ion_mode              +                                                      
+10 table_limit_size      500                                                    
+
+** Getting list of fragmented peaks and data collection batches by cluster **
+
+  * Done in 0.02 secs *
+
+
+** Annotating variant spectra that are in concurrent MS1 peaks **
+  * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
+  |                          |
+  |==========================|
+  * Done annotating clusters in 0.18 secs *
+
+
+** Creating the IVAMN and separating the annotations by types of ionization variants **
+  * Done in 0.09 secs *
+
+
+** Annotation summary by type **
+  *  adducts  =  14 
+  *  isotopes  =  0 
+  *  dimers  =  11 
+  *  multiCharges  =  0 
+  *  fragments  =  0 
+
+
+Warning message:
+`...` is not empty.
+
+We detected these problematic arguments:
+* `needs_dots`
+
+These dots only exist to allow future extensions and should be empty.
+Did you misspecify an argument? 
+
+DONE!
+*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** 
+
+* Molecular Network of Annotations Statistics *
+
+Name: 
+Type: DiGraph
+Number of nodes: 78
+Number of edges: 22
+Average in degree:   0.2821
+Average out degree:   0.2821
+Number of components: 61
+Number of isolated nodes:  49
+Number of protonated_representative nodes (with isolated nodes): 53
+
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Step 7 Time Elapsed: 0.17min
+======
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_peak_area_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 1 group(s)
+['GR_One']
+
+DONE!
+Subgroups for GR_One
+['Um']
+Computing column "One_Um"
+DONE for GR_One
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_one_sample_peak_area_clean_ann.csv *** 
+
+Warning messages:
+1: The bioactivity scores of the 'BIOACTIVITY_FAKE' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+2: The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+No VALID bioactivity score column was present in the metadata CSV file. To run the bioactivity correlation at least one of each one of the following columns must be present in the metadata file: 
+  - BIOACTIVITY_<name>: (numeric values) must contain the samples bioactivity scores to be used in the correlation computation;
+  - COR_<name>: (0 or 1's values) must contain at least one correlation group. 
+
+Where <name> is a unique identifier for each bioactivity score or correlation group that the user might want to add. 
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/count_tables/clean/L754_bacs_blanks_one_sample_spectra_clean_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+Found 1 group(s)
+['GR_One']
+
+DONE!
+Subgroups for GR_One
+['Um']
+Computing column "One_Um"
+DONE for GR_One
+
+Exporting table with new groups: 
+DONE!
+All DONE!!
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_blanks_one_sample_spectra_clean_ann.csv *** 
+
+Warning messages:
+1: The bioactivity scores of the 'BIOACTIVITY_FAKE' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+2: The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+No VALID bioactivity score column was present in the metadata CSV file. To run the bioactivity correlation at least one of each one of the following columns must be present in the metadata file: 
+  - BIOACTIVITY_<name>: (numeric values) must contain the samples bioactivity scores to be used in the correlation computation;
+  - COR_<name>: (0 or 1's values) must contain at least one correlation group. 
+
+Where <name> is a unique identifier for each bioactivity score or correlation group that the user might want to add. 
+
+DONE! Time Elapsed: 0.01min
+*** Step 7 - Annotating ionization variants in the clean counts table and creating the molecular network of annotations (IVAMN) *** 
+Loading packages Rcpp, readr, dplyr, stringr...
+# A tibble: 10 x 2
+   variables             values                                                 
+   <chr>                 <chr>                                                  
+ 1 output_path           /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 2 path_batch_metadata   /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L…
+ 3 modification_file     /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/rules/…
+ 4 mz_tol                0.025                                                  
+ 5 fragment_tol          0.025                                                  
+ 6 rt_tol                2                                                      
+ 7 ms2_peaks_intensity_… 500                                                    
+ 8 scale_factor          0.5                                                    
+ 9 ion_mode              +                                                      
+10 table_limit_size      500                                                    
+
+** Getting list of fragmented peaks and data collection batches by cluster **
+
+  * Done in 0.02 secs *
+
+
+** Annotating variant spectra that are in concurrent MS1 peaks **
+  * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
+  |                          |
+  |==========================|
+  * Done annotating clusters in 0.18 secs *
+
+
+** Creating the IVAMN and separating the annotations by types of ionization variants **
+  * Done in 0.09 secs *
+
+
+** Annotation summary by type **
+  *  adducts  =  14 
+  *  isotopes  =  0 
+  *  dimers  =  12 
+  *  multiCharges  =  0 
+  *  fragments  =  0 
+
+
+Warning message:
+`...` is not empty.
+
+We detected these problematic arguments:
+* `needs_dots`
+
+These dots only exist to allow future extensions and should be empty.
+Did you misspecify an argument? 
+
+DONE!
+*** Step 7 - Assigning the putative [M+H]+ spectra representatives in the IVAMN *** 
+
+* Molecular Network of Annotations Statistics *
+
+Name: 
+Type: DiGraph
+Number of nodes: 78
+Number of edges: 23
+Average in degree:   0.2949
+Average out degree:   0.2949
+Number of components: 60
+Number of isolated nodes:  47
+Number of protonated_representative nodes (with isolated nodes): 52
+
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Step 7 Time Elapsed: 0.17min
+======

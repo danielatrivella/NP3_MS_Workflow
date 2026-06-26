@@ -1,0 +1,80 @@
+*** Step 8 - Merging the counts table based on the provided chemical annotations *** 
+Loading packages readr and auxiliary functions...
+
+** Merging counts based on the isotopes, adducts, dimers, multiCharges, fragments annotations **
+
+    |     |
+    |=====|
+
+  * Done creating 1 symbolic clusters in 0.09 secs *
+
+  ** Computing Peak Area by Sample ** 
+
+  * Done in 0.12 secs *
+
+Registered S3 methods overwritten by 'tibble':
+  method     from  
+  format.tbl pillar
+  print.tbl  pillar
+
+DONE! Time Elapsed: 0.08min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_collection.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_one_collection/outs/L754_bacs_one_collection/count_tables/merge/L754_bacs_one_collection_peak_area_merged_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+
+No group column (GR_) found.
+	Aborting groups.py
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_one_collection_peak_area_merged_ann.csv *** 
+
+Warning message:
+The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+Correlation group COR_TEST_PEAK do not have more than one sample selected and thus will be skipped. 
+
+DONE! Time Elapsed: 0.01min
+
+*** Step 9 - Creating the quantification groupings based on the metadata information *** 
+
+Parameters:
+	METADATA NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_one_collection.csv
+	COUNT TABLE NAME: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_one_collection/outs/L754_bacs_one_collection/count_tables/merge/L754_bacs_one_collection_spectra_merged_ann.csv
+	SKIP ROWS ON COUNT TABLES: 0
+	OVERWRITE: True
+	VERBOSE: True
+
+
+Creating DataFrame for process: 
+DONE!
+Verifying groups columns existence
+
+No group column (GR_) found.
+	Aborting groups.py
+
+DONE!
+
+*** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_one_collection_spectra_merged_ann.csv *** 
+
+Warning message:
+The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero values and will not be used. If this behaviour is not wanted, refactor your metadata file and retry. 
+Warning message:
+Correlation group COR_TEST_PEAK do not have more than one sample selected and thus will be skipped. 
+
+DONE! Time Elapsed: 0.01min
+
+======
+Finish Step 8 Time Elapsed: 0.11min
+======
