@@ -186,6 +186,7 @@ std::vector<std::vector<double> > joinAdjPeaksScalee(std::vector<double> peaks,
   return out;
 }
 
+// filePath must be the complete path
 // bin_size peaks with mz diff < bin_size will be joined - to disable the join set bin_size to 0
 // if trim_mz == -1 do not trim spectra; if trim_mz != -1 trim spectra by precursor mz +- 20
 // scale_factor: 0 - ln; (0,] expoent of pow; and if 1 no scale; if -1 no norm
@@ -194,6 +195,11 @@ std::vector<std::vector<double> > joinAdjPeaksScalee(std::vector<double> peaks,
 List readMgfPeaksList(std::string filePath, double bin_size, float trim_mz, 
                       double scale_factor, int join_isotopic_peaks) {
   FILE*  mgfStream = fopen(filePath.c_str(),"r");
+  
+  // Safety check: stops the crash if path is wrong or file is missing
+  if (mgfStream == NULL) {
+    Rcpp::stop("MGF file not found or cannot be opened at (complete path needed): " + filePath);
+  }
   
   //double ISO_MASS = 1.0033;
   std::vector<double> mz, inty, mz_prec;
@@ -339,6 +345,11 @@ List readMgfPeaksList(std::string filePath, double bin_size, float trim_mz,
 // [[Rcpp::export]]
 List readMgfHeader(std::string filePath) {
   FILE*  mgfStream = fopen(filePath.c_str(),"r");
+  
+  // Safety check: stops the crash if path is wrong or file is missing
+  if (mgfStream == NULL) {
+    Rcpp::stop("MGF file not found or cannot be opened at (complete path needed): " + filePath);
+  }
   
   std::vector<double> mz_prec;
   std::vector<double> ms2_int;
