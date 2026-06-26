@@ -242,7 +242,6 @@ save_spectra_plot <- function(i, j, main, filename, trim_spec)
 mz_tol <- 0.05
 relative <- FALSE # for absolute tolerance in Daltons
 
-path_mgf <- "../Bra-mzXML/Bra_RT1_2_area/outs/Bra_RT1_2_area/mgf/Bra_RT1_2_area_all_clean.mgf"
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
