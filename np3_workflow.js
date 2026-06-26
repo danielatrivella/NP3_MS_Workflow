@@ -4391,7 +4391,7 @@ program
     .option('-s, --skip [x]', 'Skip to test x', 1)
     .option('-o, --output_path [x]', 'Path to the directory to store the tests outputs. A folder named "test" will be '+
         'created inside it. The mzxml folder will be copied to the output_path/test directory. '+
-        'Default value to "", which outputs to the NP3 repository folder.', "")
+        'Default value to "", which outputs to the test folder in the NP3 repository.', "")
     .action(function(options) {
         const start_test = process.hrtime.bigint();
         var np3_js_call = 'node '+ __dirname +'/np3_workflow.js';
