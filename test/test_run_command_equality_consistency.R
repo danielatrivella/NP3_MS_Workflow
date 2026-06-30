@@ -32,17 +32,17 @@ tremolo_exec=TRUE
 # read input
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 9) {
-  stop("Nine arguments must be supplied to test the run or the join_jobs commands results for equality consistency:\n", 
-       " 1 - output_path_test: the path to the output_path from the test command parameter. This directory path concatenated with the sub folders '/test/compare_np3_fixed_results/' is where the difference tables will be stored, if any;\n",
-       " 2 - fixed_result_path: the path to a fixed result of a np3 run or join_jobs result to be used as reference - the job name is extracted from here;\n", 
-       " 3 - new_result_path: the path to a new result of the same np3 job to be checked for consistency - the new job name is extracted from here;\n", 
-       " 4 - sim_w_cutoff: the similarity cutoff parm of the SSMN in character as written in the output file;\n",
-       " 5 - topk: the top k neigbours parm of the SSMN of the jobs;\n",
-       " 6 - maxComponentSize: the maximum component size parm of the SSMN of the jobs;\n",
-       " 7 - minMachedPeaks: the minimum number of matched peaks parm of the SSMN of the jobs;\n",
-       " 8 - gnps_library_search_tool: the name of the gnps library search tool used or an empty string '' if it was disabled;\n",
-       " 9 - tremolo_exec: a boolean TRUE or FALSE indicating if the tremolo search tool was executed;\n",
-       call.=FALSE)
+  cat(paste0("Nine arguments must be supplied to test the run or the join_jobs commands results for equality consistency:\n", 
+             " 1 - output_path_test: the path to the output_path from the test command parameter. This directory path concatenated with the sub folders '/test/compare_np3_fixed_results/' is where the difference tables will be stored, if any;\n",
+             " 2 - fixed_result_path: the path to a fixed result of a np3 run or join_jobs result to be used as reference - the job name is extracted from here;\n", 
+             " 3 - new_result_path: the path to a new result of the same np3 job to be checked for consistency - the new job name is extracted from here;\n", 
+             " 4 - sim_w_cutoff: the similarity cutoff parm of the SSMN in character as written in the output file;\n",
+             " 5 - topk: the top k neigbours parm of the SSMN of the jobs;\n",
+             " 6 - maxComponentSize: the maximum component size parm of the SSMN of the jobs;\n",
+             " 7 - minMachedPeaks: the minimum number of matched peaks parm of the SSMN of the jobs;\n",
+             " 8 - gnps_library_search_tool: the name of the gnps library search tool used or an empty string '' if it was disabled;\n",
+             " 9 - tremolo_exec: a boolean TRUE or FALSE indicating if the tremolo search tool was executed;\n"))
+  stop("ERROR",call.=FALSE)
 } else {
   #print(args)
   output_path_test <- file.path(args[[1]])
