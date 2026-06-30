@@ -28,7 +28,6 @@ minMachedPeaks=6
 gnps_library_search_tool="gnps"
 tremolo_exec=TRUE
 ##
-# Rscript test/test_run_command_equality_consistency.R /tmp/np3_ms_workflow/ ./test/L754_bacs/fixed_results/L754_bacs_one_collection/ ./test/L754_bacs/L754_bacs_one_collection/ 06 15 200 6 '' TRUE
 
 # read input
 args <- commandArgs(trailingOnly=TRUE)
