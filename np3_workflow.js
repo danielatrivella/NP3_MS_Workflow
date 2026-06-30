@@ -4555,7 +4555,7 @@ program
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_all',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_all',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
-                    minMachedPeaks=6, gnps_library_search_tool="",
+                    minMachedPeaks=6, gnps_library_search_tool="gnps",
                     tremolo_exec=options.tremolo)
             }
             // compare its results with the online result for equality in the field expected to be equal
