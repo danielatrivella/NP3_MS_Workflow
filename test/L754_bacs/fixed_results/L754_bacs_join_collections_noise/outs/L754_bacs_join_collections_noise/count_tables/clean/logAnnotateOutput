@@ -30,10 +30,10 @@ DONE!
 Loading packages Rcpp, readr, dplyr, stringr...
 
 
-DONE! Time Elapsed: 0.15min
+DONE! Time Elapsed: 0.18min
 
 ======
-Finish Step 7 Time Elapsed: 0.16min
+Finish Step 7 Time Elapsed: 0.19min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 

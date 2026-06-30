@@ -4,13 +4,13 @@ Loading package dplyr and Rcpp functions...
   * Comparing L754_bacs_blanks_one_sample result spectra pairwise *
         |     |
         |=====|
-    * Done making 5460 pairwise comparisions in 19.81 secs *
+    * Done making 5460 pairwise comparisions in 23.57 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.46min
+Finish pairwise comparison Time Elapsed: 0.56min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -25,18 +25,18 @@ NOISE cutoff : disabled
       * Step 0 *
   |                          |
   |==========================|
-        * Joined 27 similar clusters in 0.07 secs *
+        * Joined 27 similar clusters in 0.15 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
-          * Done aggregating similarity table in 0.08 secs *
+          * Done aggregating similarity table in 0.13 secs *
 
       * Step 1 *
   |                          |
   |==========================|
-        * Joined 0 similar clusters in 0.04 secs *
+        * Joined 0 similar clusters in 0.09 secs *
 
-  * Done reducing 27 similar clusters in 0.42 secs *
+  * Done reducing 27 similar clusters in 0.76 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -58,11 +58,14 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.3 secs *
+    * Done in 0.56 secs *
 
 
+Warning message:
+In normalizePath(file_MGF) :
+  path[1]="/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_clean.mgf": No such file or directory
 
-DONE! Time Elapsed: 0.23min
+DONE! Time Elapsed: 0.26min
 
 *** Analysing the count of spectra  *** 
 
@@ -92,15 +95,15 @@ Loading package dplyr and Rcpp functions...
   * Comparing L754_bacs_blanks_one_sample_clean result spectra pairwise *
         | |
         |=|
-    * Done making 3003 pairwise comparisions in 4.32 secs *
+    * Done making 3003 pairwise comparisions in 4.24 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.21min
+Finish pairwise comparison Time Elapsed: 0.22min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.44min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.49min (without the clustered spectra comparison time) 
 ======

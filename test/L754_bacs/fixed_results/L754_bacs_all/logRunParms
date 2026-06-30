@@ -6,4 +6,4 @@ cmd:
 
 /home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js run -n L754_bacs_all -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs -j TRUE -v 10 -q FALSE -l 4 --noise_cutoff FALSE --gnps_search_tool 
 
-RUN Time Elapsed: 2.81min
+RUN Time Elapsed: 3.21min

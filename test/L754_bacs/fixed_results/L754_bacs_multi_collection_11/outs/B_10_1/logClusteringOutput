@@ -4,14 +4,14 @@
 *** Calling NP3_MSCluster for: B_10_1 *** 
 
 MsCluster v2.0 
-Started job on: Fri Jun 19 16:40:07 2026
+Started job on: Mon Jun 29 21:36:44 2026
 
 Parameter values:
 -----------------
 outputName = B_10_1
 modelDir   = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models
 outDir     = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/outs/B_10_1
-tmpDir     = /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv
+tmpDir     = /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv
 list	      = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/spec_lists/blank_lists/B_10_1.txt
 mixtureProb   = 0.4
 minSimilarity = 0.3
@@ -19,7 +19,7 @@ rtTolerance = 1
 minNumPeaks = 1
 scaleFactor = 0.5
 
-COMMAND LINE = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/NP3_MSCluster_bin --list /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/spec_lists/blank_lists/B_10_1.txt --output-name B_10_1 --out-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/outs/B_10_1 --rt-tolerance 1 --fragment-tolerance 0.05 --window 0.025 --similarity 0.3 --model-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models --sqs 0.0 --num-rounds 15 --mixture-prob 0.4 --tmp-dir /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv --min-peaks-output 1 --scale-factor 0.5 --verbose-level 10 --output-mgf --assign-charges --major-increment 100 --output-file-size 3000
+COMMAND LINE = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/NP3_MSCluster_bin --list /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/spec_lists/blank_lists/B_10_1.txt --output-name B_10_1 --out-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/outs/B_10_1 --rt-tolerance 1 --fragment-tolerance 0.05 --window 0.025 --similarity 0.3 --model-dir /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/NP3_MSCluster/Models --sqs 0.0 --num-rounds 15 --mixture-prob 0.4 --tmp-dir /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv --min-peaks-output 1 --scale-factor 0.5 --verbose-level 10 --output-mgf --assign-charges --major-increment 100 --output-file-size 3000
 
 Pass 1: reading spectra files and writing to dat with 25 Da increments.
 ----------------------------------------------------------------------
@@ -27,37 +27,37 @@ Pass 1: reading spectra files and writing to dat with 25 Da increments.
 Read 1 paths to spectra files.
 Converting data to DAT, using m/z increment of 25.00
 0	Extracting from: /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data/DMSO_19_peak_info.mgf [0 : 0]
-	Found 168 spectra...	OPENED 1: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_400_0.dat
-	OPENED 2: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_300_0.dat
-	OPENED 3: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_275_0.dat
-	OPENED 4: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_575_0.dat
-	OPENED 5: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_550_0.dat
-	OPENED 6: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_350_0.dat
-	OPENED 7: /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_500_0.dat
+	Found 168 spectra...	OPENED 1: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_400_0.dat
+	OPENED 2: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_300_0.dat
+	OPENED 3: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_275_0.dat
+	OPENED 4: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_575_0.dat
+	OPENED 5: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_550_0.dat
+	OPENED 6: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_350_0.dat
+	OPENED 7: /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_500_0.dat
  Wrote 168 to dat files (this took 0.00 sec.)
 
 
 SUMMARY (first pass):
 ---------------------
-Wrote 7 dat files to /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv
+Wrote 7 dat files to /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv
 These files contain 168 spectra (from a total of 168 that were read)
 
 Pass 2: Splitting dat files into smaller files with 1 Da increments.
 --------------------------------------------------------------------
 
-0	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_275_0.dat
+0	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_275_0.dat
 All group paths: 3
-1	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_300_0.dat
+1	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_300_0.dat
 All group paths: 7
-2	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_350_0.dat
+2	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_350_0.dat
 All group paths: 8
-3	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_400_0.dat
+3	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_400_0.dat
 All group paths: 10
-4	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_500_0.dat
+4	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_500_0.dat
 All group paths: 11
-5	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_550_0.dat
+5	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_550_0.dat
 All group paths: 13
-6	1	/tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_R1_575_0.dat
+6	1	/tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_R1_575_0.dat
 All group paths: 14
 
 
@@ -68,7 +68,7 @@ Read  168 spectra from original input files.
 Wrote 168 spectra into dat files in the first pass.
 Wrote 168 spectra to dat files in the second pass.
 The second pass spectra were written to 14 dat files.
-(list of dat files written to /tmp/NP3_MSCluster_8rhva76n//tmp_B_10_1_rmv/B_10_1_dat_list.txt)
+(list of dat files written to /tmp/NP3_MSCluster_sv96baap//tmp_B_10_1_rmv/B_10_1_dat_list.txt)
 Time required for dat file creation: 0.00
 Allocating 0.500 GB.
 
@@ -119,7 +119,7 @@ Writing clusters for 15 singletons... written into 3 clusters    Cumulative 16 :
 
 
 Done clustering files.
-Time (without dat creation): 0.00
+Time (without dat creation): 1.00
 
 Final statistics:
 -----------------
@@ -179,7 +179,7 @@ mgf   files writeen: 4
 dat   files writeen: 0
 
 
-Ended job on: Fri Jun 19 16:40:07 2026
+Ended job on: Mon Jun 29 21:36:45 2026
 
 Summary of output files:
 ------------------------

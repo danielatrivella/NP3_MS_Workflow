@@ -23,7 +23,7 @@ Loading packages Rcpp, readr, dplyr, stringr...
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
   |                     |
   |=====================|
-  * Done annotating clusters in 0.07 secs *
+  * Done annotating clusters in 0.06 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **
@@ -66,7 +66,7 @@ Number of protonated_representative nodes (with isolated nodes): 12
 DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 7 Time Elapsed: 0.17min
+Finish Step 7 Time Elapsed: 0.21min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 

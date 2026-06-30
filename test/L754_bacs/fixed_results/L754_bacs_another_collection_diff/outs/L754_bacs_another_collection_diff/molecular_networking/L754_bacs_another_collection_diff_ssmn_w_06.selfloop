@@ -1,7 +1,7 @@
 msclusterID_source,msclusterID_target,cosine,num_matched_peaks,annotation,num_peaks_source,num_peaks_target
 14,64,0.666,3,,43,8
 64,100,0.939,4,fragment,8,7
-70,76,0.897,23,[M+NH4]+;[M+H2O]+;fragment;[M+H-NH3]+,40,40
+70,76,0.897,23,fragment;[M+H-NH3]+;[M+NH4]+;[M+H2O]+,40,40
 10,10,1,-1,,38,38
 18,18,1,-1,,43,43
 27,27,1,-1,,19,19

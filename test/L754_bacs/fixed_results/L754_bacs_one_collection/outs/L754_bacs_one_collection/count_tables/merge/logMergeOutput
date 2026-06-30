@@ -6,7 +6,7 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 1 symbolic clusters in 0.09 secs *
+  * Done creating 1 symbolic clusters in 0.1 secs *
 
   ** Computing Peak Area by Sample ** 
 
@@ -73,8 +73,8 @@ The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero valu
 Warning message:
 Correlation group COR_TEST_PEAK do not have more than one sample selected and thus will be skipped. 
 
-DONE! Time Elapsed: 0.01min
+DONE! Time Elapsed: 0.02min
 
 ======
-Finish Step 8 Time Elapsed: 0.11min
+Finish Step 8 Time Elapsed: 0.13min
 ======

@@ -6,7 +6,7 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 1 symbolic clusters in 0.11 secs *
+  * Done creating 1 symbolic clusters in 0.1 secs *
 
   ** Computing Peak Area by Sample ** 
 
@@ -75,8 +75,8 @@ Warning messages:
 2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
   the standard deviation is zero
 
-DONE! Time Elapsed: 0.01min
+DONE! Time Elapsed: 0.02min
 
 ======
-Finish Step 8 Time Elapsed: 0.11min
+Finish Step 8 Time Elapsed: 0.12min
 ======

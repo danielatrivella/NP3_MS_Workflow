@@ -4,13 +4,13 @@ Loading package dplyr and Rcpp functions...
   * Comparing L754_bacs_blanks result spectra pairwise *
         |     |
         |=====|
-    * Done making 5671 pairwise comparisions in 19.4 secs *
+    * Done making 5671 pairwise comparisions in 25.12 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.45min
+Finish pairwise comparison Time Elapsed: 0.56min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -36,7 +36,7 @@ NOISE cutoff : disabled
   |==========================|
         * Joined 0 similar clusters in 0.04 secs *
 
-  * Done reducing 21 similar clusters in 0.39 secs *
+  * Done reducing 21 similar clusters in 0.4 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -58,11 +58,14 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.28 secs *
+    * Done in 0.29 secs *
 
 
+Warning message:
+In normalizePath(file_MGF) :
+  path[1]="/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_blanks/outs/L754_bacs_blanks/mgf/L754_bacs_blanks_clean.mgf": No such file or directory
 
-DONE! Time Elapsed: 0.22min
+DONE! Time Elapsed: 0.26min
 
 *** Analysing the count of spectra  *** 
 
@@ -92,15 +95,15 @@ Loading package dplyr and Rcpp functions...
   * Comparing L754_bacs_blanks_clean result spectra pairwise *
         | |
         |=|
-    * Done making 3655 pairwise comparisions in 3.96 secs *
+    * Done making 3655 pairwise comparisions in 6.57 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.19min
+Finish pairwise comparison Time Elapsed: 0.24min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.42min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.50min (without the clustered spectra comparison time) 
 ======

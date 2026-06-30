@@ -4,7 +4,7 @@ Loading package readr, dplyr, dlls...
   * Creating the Molecular Networking of Similarities with 3 nodes *
         |   |
         |===|
-    * Done creating the molecular network of similarities in 0.1 secs *
+    * Done creating the molecular network of similarities in 0.18 secs *
 
 Warning messages:
 1: Unknown or uninitialised column: 'msclusterID_source'. 
@@ -83,5 +83,5 @@ DONE!
 
 DONE! 
 ======
-Finish Step 10 Time Elapsed: 0.11min
+Finish Step 10 Time Elapsed: 0.14min
 ======

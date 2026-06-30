@@ -1,13 +1,13 @@
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 number of spectra: 155
-Time to create 155 documents: 0.006399393081665039 s.
-Calculated 155x155 scores in 1.8619780540466309 s.
-Calculated 155x155 matches in 0.3205549716949463 s.
+Time to create 155 documents: 0.0066182613372802734 s.
+Calculated 155x155 scores in 1.9028191566467285 s.
+Calculated 155x155 matches in 0.35974740982055664 s.
 
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.10min
+Finish pairwise comparison Time Elapsed: 0.11min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -60,11 +60,14 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.27 secs *
+    * Done in 0.28 secs *
 
 
+Warning message:
+In normalizePath(file_MGF) :
+  path[1]="/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_one_collection/outs/L754_bacs_one_collection/mgf/L754_bacs_one_collection_clean.mgf": No such file or directory
 
-DONE! Time Elapsed: 0.22min
+DONE! Time Elapsed: 0.26min
 
 *** Analysing the count of spectra  *** 
 
@@ -88,16 +91,16 @@ Mean number of consensus spectra by m/z:
 DONE!
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 number of spectra: 21
-Time to create 21 documents: 0.0010747909545898438 s.
-Calculated 21x21 scores in 1.786191701889038 s.
-Calculated 21x21 matches in 0.12018895149230957 s.
+Time to create 21 documents: 0.002010345458984375 s.
+Calculated 21x21 scores in 2.265791416168213 s.
+Calculated 21x21 matches in 0.12142801284790039 s.
 
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.09min
+Finish pairwise comparison Time Elapsed: 0.13min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.31min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.39min (without the clustered spectra comparison time) 
 ======

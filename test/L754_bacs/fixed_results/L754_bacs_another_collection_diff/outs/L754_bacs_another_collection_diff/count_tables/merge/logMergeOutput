@@ -17,7 +17,7 @@ Registered S3 methods overwritten by 'tibble':
   format.tbl pillar
   print.tbl  pillar
 
-DONE! Time Elapsed: 0.08min
+DONE! Time Elapsed: 0.12min
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
 
@@ -128,5 +128,5 @@ DONE!
 DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 8 Time Elapsed: 0.11min
+Finish Step 8 Time Elapsed: 0.15min
 ======

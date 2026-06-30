@@ -4,13 +4,13 @@ Loading package dplyr and Rcpp functions...
   * Comparing L754_bacs_multi_collection_11 result spectra pairwise *
         |       |
         |=======|
-    * Done making 37128 pairwise comparisions in 27.34 secs *
+    * Done making 37128 pairwise comparisions in 33.08 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.58min
+Finish pairwise comparison Time Elapsed: 0.68min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -25,16 +25,16 @@ NOISE cutoff : basePeakInt median + 2 * (q75-q25) = 8222
       * Step 0 *
   |                          |
   |==========================|
-        * Joined 45 similar clusters in 0.12 secs *
+        * Joined 45 similar clusters in 0.21 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
-          * Done aggregating similarity table in 0.11 secs *
+          * Done aggregating similarity table in 0.16 secs *
 
       * Step 1 *
   |                          |
   |==========================|
-        * Joined 2 similar clusters in 0.2 secs *
+        * Joined 2 similar clusters in 0.23 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
@@ -43,9 +43,9 @@ NOISE cutoff : basePeakInt median + 2 * (q75-q25) = 8222
       * Step 2 *
   |                          |
   |==========================|
-        * Joined 0 similar clusters in 0.06 secs *
+        * Joined 0 similar clusters in 0.07 secs *
 
-  * Done reducing 47 similar clusters in 0.76 secs *
+  * Done reducing 47 similar clusters in 1.11 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -72,11 +72,14 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.39 secs *
+    * Done in 0.4 secs *
 
 
+Warning message:
+In normalizePath(file_MGF) :
+  path[1]="/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_multi_collection_11/outs/L754_bacs_multi_collection_11/mgf/L754_bacs_multi_collection_11_clean.mgf": No such file or directory
 
-DONE! Time Elapsed: 0.23min
+DONE! Time Elapsed: 0.28min
 
 *** Analysing the count of spectra  *** 
 
@@ -106,15 +109,15 @@ Loading package dplyr and Rcpp functions...
   * Comparing L754_bacs_multi_collection_11_clean result spectra pairwise *
         | |
         |=|
-    * Done making 496 pairwise comparisions in 3.8 secs *
+    * Done making 496 pairwise comparisions in 6.39 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.19min
+Finish pairwise comparison Time Elapsed: 0.24min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.42min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.52min (without the clustered spectra comparison time) 
 ======
