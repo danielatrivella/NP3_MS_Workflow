@@ -44,8 +44,10 @@ tremolo_exec=TRUE
 # the output_path_test_diff is the path to where the difference table will be stored in case the fixed table does
 # not match with the new table; 
 # the anti_join_by is a list of column names to be used in the anti_join to 
-# extract the different cells from the fixed and new table, if this value is NULL 
-# all common columns are used instead (default);
+#   extract the different cells from the fixed and new table, 
+#   this must be the set of columns in common between the two tables. 
+#   This set of columns will be used to filter the two tables (columns expected to be equal). 
+#   If this value is NULL all columns with a common name are used instead (default);
 # sep is the separator character of the provided tables, used to parse and read them;
 ## Returns TRUE if the fixed table matches with the new table (all equal); otherwise
 # returns a list with the differences in terms of columns, rows, cells and the
@@ -64,27 +66,47 @@ compare_tables <- function(fixed_table_path, new_table_path,
   } else {
     return("Error in the separator type, not supported.")
   }
+  if (!is.null(anti_join_by)) {
+    # filter only the columns expected to be equal
+    if (!all(anti_join_by %in% names(fixed_table))) {
+      return(paste0("Error in the columns selected for the anti_join_by, the following are not present in the fixed_table: ",
+             paste0(anti_join_by[!(anti_join_by %in% names(fixed_table))], collapse=","),"."))
+    }
+    fixed_table <- fixed_table[,anti_join_by]
+    new_table <- new_table[,anti_join_by]
+  }
+  
   # runs equality test
   test_tables_equal <- all.equal(fixed_table, new_table)
   if (length(test_tables_equal) > 1 || test_tables_equal != TRUE)
   {
-    test_tables_equal <- c(paste("Differences in the fixed table (x) and the new table (y) of", table_type),
+    test_tables_equal <- c(paste("  Differences in the fixed table (x) and the new table (y) of", table_type),
                            test_tables_equal)
     # creates df with differences present in fixed_table and missing/diff in new_table
-    table_diff <- anti_join(fixed_table, new_table, by=anti_join_by) 
+    # suppress msg when anti_join_by is NULL - uses all columns for complete equality
+    table_diff <- suppressMessages(anti_join(fixed_table, new_table, by=anti_join_by))
+    if (is.null(anti_join_by))
+    {
+      anti_join_by <- "all common columns"
+    }
     # computes number of different rows
     test_tables_equal <- c(test_tables_equal, 
-                           paste0("Rows in x but not in y (by=",paste(anti_join_by,collapse=","),"): ", 
+                           paste0("  Number of rows in x but not in y (by=",paste(anti_join_by,collapse=","),"): ", 
                                   nrow(table_diff)))
     # store difference table if there is different rows/cells
     if (nrow(table_diff) > 0) {
       table_diff_out_path <- file.path(output_path_test_diff, 
                                        paste0(job_name, "_", table_type,"_diff.csv"))
       test_tables_equal <- c(test_tables_equal, 
-                             paste0("Difference table (cells present in the fixed table and absent in the new table) stored at: ", 
+                             paste0("  Difference table (cells present in the fixed table and absent in the new table) stored at: ", 
                                     table_diff_out_path))
       write_csv(table_diff, path=table_diff_out_path)
     }
+  }
+  
+  if (length(test_tables_equal) > 1) {
+    # concatenate the error messages
+    test_tables_equal <- paste0(test_tables_equal, collapse = "\n")
   }
   
   return(test_tables_equal)
@@ -224,6 +246,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
   if (!dir.exists(output_path_test_diff)) {
     dir.create(output_path_test_diff, recursive = TRUE)
   }
+  output_path_test_diff <- normalizePath(output_path_test_diff)
   
   # check the results paths
   if (!dir.exists(fixed_result_path))
@@ -269,7 +292,11 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
     new_count_table_path <- file.path(new_result_path, "outs", new_job_name, 
                                       "count_tables", count_table_subfolder[[i]],
                                       paste0(new_job_name, count_tables_suffix[[i]]))
-    if (!file.exists(new_count_table_path)) {
+    if (!file.exists(fixed_count_table_path)) {
+      # if the fixed count table does not exists, this result is not expected
+      test_count <- FALSE
+    }
+    else if (!file.exists(new_count_table_path)) {
       test_count <- paste("The ", count_table_names[[i]],
                           " count table of the new job was not created - missing file.")
     } else {
@@ -283,6 +310,10 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
     return(test_count)
   })
   names(test_count_tables) <- count_table_names
+  # remove any missing data from the fixed result, which had test result = FALSE
+  if (any(test_count_tables == FALSE)) {
+    test_count_tables <- test_count_tables[test_count_tables != FALSE]
+  }
   
   ## Compare MGFs ##
   
@@ -395,7 +426,14 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                                      new_table_path=new_tremolo_path,
                                      table_type="tremolo_identifications", 
                                      job_name=job_name, 
-                                     output_path_test_diff=output_path_test_diff)
+                                     output_path_test_diff=output_path_test_diff,
+                                     anti_join_by = c("msclusterID", "dbIndex", "Charge",
+                                            "MQScore", "CompoundName", "mzErrorPPM",
+                                            "SMILES", "LibSearchSharedPeaks", 
+                                            "chemicalNames", "molecularFormula",
+                                            "molecularWeight", "CAS", "PARENTMASS",
+                                            "InChIKey", "NPClassifier_superclass",
+                                            "ClassyFire_subclass", "NPAtlas_id"))
     }
   } else {
     # tremolo was not executed, return TRUE
