@@ -4481,14 +4481,6 @@ program
             } else {
                 test_res[0] = test_res[0] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
-                // run equality comparison in the obtained result
-                test_res[0] = test_res[0] + callTestRunEquality(job_name="L754_bacs_all",
-                    output_path_test=output_path+'/test/equality_test/',
-                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_all',
-                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_all',
-                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
-                    minMachedPeaks=6, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo)
             }
             //console.log("\n\n");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4557,6 +4549,14 @@ program
             } else {
                 gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[0] = test_res[0] + callTestRunEquality(job_name="L754_bacs_all",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_all',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_all',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             // compare its results with the online result for equality in the field expected to be equal
             // which is after *** Joining the GNPS library indentification results to the NP3 count files ***
