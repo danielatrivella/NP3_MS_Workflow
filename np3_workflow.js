@@ -1620,6 +1620,34 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
     return resExec.code
 }
 
+// call the equality test consistency for a job from the run or join_jobs commands
+function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_result_path, sim_w_cutoff="06", topk=15,
+                             maxComponentSize=200,minMachedPeaks=6, gnps_library_search_tool="", tremolo_exec="TRUE",
+                             verbose=0)
+{
+    const start_test = process.hrtime.bigint();
+    let testing_outs = '*** Testing equality consistency of job '+ job_name + ' *** \n';
+    console.log(testing_outs)
+    let resExec = shell.exec('Rscript '+__dirname+'/test/test_run_command_equality_consistency.R  '+output_path_test+' '+
+        fixed_result_path+' '+new_result_path+' '+sim_w_cutoff+' '+topk+' '+maxComponentSize+' '+minMachedPeaks+' "'+
+        gnps_library_search_tool+'" '+tremolo_exec, {async:false, silent:(verbose === 0)});
+    // check for ERROR tag in the output
+    if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+        console.log('\nSTDOUT:\n'+resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\n')
+        let error_msg = '\nERROR - DIFFERENCE in the new job result \n';
+        testing_outs += error_msg;
+        console.log(error_msg);
+    } else {
+
+        let done_msg = '\nDONE - EQUALITY OK! '+printTimeElapsed_bigint(start_test, process.hrtime.bigint())+"\n";
+        console.log(done_msg);
+        testing_outs += '\n'+resExec.stdout+'\n\n'+resExec.stderr + done_msg + '\n';
+
+    }
+    return(testing_outs);
+}
+
+// ############# COMMANDS START ####################
 
 function isWindows()
 {
@@ -4453,6 +4481,14 @@ program
             } else {
                 test_res[0] = test_res[0] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[0] = test_res[0] + callTestRunEquality(job_name="L754_bacs_all",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_all',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_all',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             //console.log("\n\n");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4581,6 +4617,14 @@ program
             } else {
                 test_res[1] = test_res[1] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[1] = test_res[1] + callTestRunEquality(job_name="L754_bacs_multi_collection_11",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_multi_collection_11',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_multi_collection_11',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             //console.log("\n\n");
         }
@@ -4609,6 +4653,14 @@ program
             } else {
                 test_res[2] = test_res[2] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[2] = test_res[2] + callTestRunEquality(job_name="L754_bacs_one_collection",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_one_collection',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_one_collection',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             //console.log("\n\n");
         }
@@ -4634,6 +4686,14 @@ program
             } else {
                 test_res[3] = test_res[3] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[3] = test_res[3] + callTestRunEquality(job_name="L754_bacs_blanks",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             //console.log("\n\n");
         }
@@ -4657,6 +4717,7 @@ program
             } else {
                 test_res[4] = test_res[4] + '\n\nDone! :)';
                 console.log('DONE!\n');
+                // TODO test pre process equality here
             }
             //console.log("\n\n");
         } else if (options.skip <= 5) {
@@ -4795,6 +4856,14 @@ program
             } else {
                 test_res[9] = test_res[9] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[9] = test_res[9] + callTestRunEquality(job_name="L754_bacs_blanks_one_sample",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks_one_sample',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample',
+                    sim_w_cutoff="09", topk=5,maxComponentSize=200,
+                    minMachedPeaks=1, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             console.log("\n\n");
         }
@@ -4822,6 +4891,14 @@ program
             } else {
                 test_res[10] = test_res[10] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[10] = test_res[10] + callTestRunEquality(job_name="L754_bacs_another_collection_diff",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_another_collection_diff',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_another_collection_diff',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
             //console.log("\n\n");
         }
@@ -4847,6 +4924,14 @@ program
             } else {
                 test_res[11] = test_res[11] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[11] = test_res[11] + callTestRunEquality(job_name="L754_bacs_join_collections",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_join_collections',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_join_collections',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="gnps_new",
+                    tremolo_exec=options.tremolo)
             }
 
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections_noise');
@@ -4868,6 +4953,14 @@ program
             } else {
                 test_res[11] = test_res[11] + "\n\nTEST 12.1\n\n" + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result
+                test_res[11] = test_res[11] + callTestRunEquality(job_name="L754_bacs_join_collections_noise",
+                    output_path_test=output_path+'/test/equality_test/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_join_collections_noise',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_join_collections_noise',
+                    sim_w_cutoff="06", topk=15,maxComponentSize=200,
+                    minMachedPeaks=6, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo)
             }
         }
 
