@@ -14,10 +14,12 @@ def output_mn_annotations(G, filename):
 	#write header
 	output_file.write(",".join(["msclusterID_source","msclusterID_target","cosine","annotation",
 								"mzError","rtError","numCommonSamples", "componentIndex"]) + "\n")
-	#write edges
-	for component in nx.weakly_connected_components(G):
+	# write edges, larger components go first  
+	# use sorted which converts the result to list and guarantees the ordering
+	for component in sorted(nx.weakly_connected_components(G), key=len, reverse=True):
 		component_index += 1
-		for edge in G.subgraph(component).edges(data=True):
+		# also sort the edges by the source node ID in numerical ordering - reproducibility
+		for edge in sorted(G.subgraph(component).edges(data=True), key=lambda x: int(x[0])):
 			output_list = []
 			output_list.append(str(edge[0]))
 			output_list.append(str(edge[1]))
