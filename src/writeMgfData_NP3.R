@@ -13,6 +13,7 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
                                           "CHARGE", "PRECURSOR_INTENSITY", "PEPMASS",
                                           "END IONS"),
                                  verbose = isMSnbaseVerbose()) {
+  file_MGF <- path.expand(file_MGF)
   if (class(file_MGF) == "character" && file.exists(file_MGF)) 
   {
     cat("Overwriting", file_MGF, "!\n")
@@ -20,7 +21,6 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
   } else {
     cat("Creating MGF", file_MGF, "!\n")
   }
-  file_MGF <- normalizePath(file_MGF)
   
   con <- file(description = file_MGF, open = "wb", encoding = "UTF-8")
   on.exit(close(con))
@@ -316,6 +316,7 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
            "RTMIN", "RTMAX", "CLUSTER_SIZE",
            "CHARGE", "PRECURSOR_INTENSITY", "PEPMASS",
            "END IONS")
+  file_MGF <- path.expand(file_MGF)
   if (class(file_MGF) == "character" && file.exists(file_MGF)) 
   {
     cat("Overwriting", file_MGF, "!\n")
@@ -323,7 +324,6 @@ writeMgfDataFile_NP3_table <- function(ms_count_table, file_MGF, output_name,
   } else {
     cat("Creating MGF", file_MGF, "!\n")
   }
-  file_MGF <- normalizePath(file_MGF)
   
   con <- file(description = file_MGF, open = "wb", encoding = "UTF-8")
   on.exit(close(con))
