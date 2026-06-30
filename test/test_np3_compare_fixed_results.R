@@ -295,8 +295,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
     if (!file.exists(fixed_count_table_path)) {
       # if the fixed count table does not exists, this result is not expected
       test_count <- FALSE
-    }
-    else if (!file.exists(new_count_table_path)) {
+    } else if (!file.exists(new_count_table_path)) {
       test_count <- paste("The ", count_table_names[[i]],
                           " count table of the new job was not created - missing file.")
     } else {
@@ -311,7 +310,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
   })
   names(test_count_tables) <- count_table_names
   # remove any missing data from the fixed result, which had test result = FALSE
-  if (any(test_count_tables == FALSE)) {
+  if (any(unlist(test_count_tables) == FALSE)) {
     test_count_tables <- test_count_tables[test_count_tables != FALSE]
   }
   
