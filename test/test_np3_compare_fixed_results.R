@@ -240,7 +240,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                                         gnps_library_search_tool="gnps",
                                         tremolo_exec=TRUE)
     {
-  cat("\n*** Testing the equality of the new NP3 results against the fixed results ***\n")
+  cat("* Testing the equality of the new NP3 results against the fixed results *\n")
   # creates the output dir to store the test results if not present yet
   output_path_test_diff <- file.path(output_path_test, "/test/compare_np3_fixed_results/")
   if (!dir.exists(output_path_test_diff)) {
@@ -362,7 +362,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
     if (!file.exists(new_sim_table_path)) {
       test_sim_matches <- paste0("The ", sim_table_names[[i]]," pairwise ",
                                  sim_tables_type[[i]], 
-                                 " table of the new job was not created - missing file.")
+                                 " table of the new job was not created - missing file:",new_sim_table_path,".")
     } else {
       test_sim_matches <- compare_tables(fixed_table_path=fixed_sim_table_path, 
                                    new_table_path=new_sim_table_path,
@@ -399,7 +399,8 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                                paste0(new_job_name, mn_tables_suffix[[i]]))
     if (!file.exists(new_mn_path)) {
       test_mn <- paste0("The ", mn_table_names[[i]],
-                        " of the new job was not created - missing file.")
+                        " of the new job was not created - missing file:",
+                        new_mn_path,".")
     } else {
       test_mn <- compare_tables(fixed_table_path=fixed_mn_path, 
                                   new_table_path=new_mn_path,
@@ -537,9 +538,13 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                                  paste0("molecular_networking_statistics_", 
                                         new_job_name, "_", 
                                         mn_reports_suffix[[i]],".csv"))
-    if (!file.exists(new_report_path)) {
+    if (!file.exists(fixed_report_path)) {
+      # if the fixed report table does not exists, this result is not expected
+      test_report_stats <- FALSE
+    } else if (!file.exists(new_report_path)) {
       test_report_stats <- paste("The ", mn_reports_names[[i]],
-                         " molecular networking report table of the new job was not created - missing file.")
+                         " molecular networking report table of the new job was not created - missing file: ",
+                         new_report_path,".")
     } else {
       test_report_stats <- compare_tables(fixed_table_path=fixed_report_path, 
                                   new_table_path=new_report_path,
@@ -551,7 +556,9 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
     return(test_report_stats)
   })
   names(test_mn_reports) <- mn_reports_names
-
+  if (any(unlist(test_mn_reports) == FALSE)) {
+    test_mn_reports <- test_mn_reports[test_mn_reports != FALSE]
+  }
   ## Reduce all the tests results and print the error messages with the differences if any, 
   # using the tag ERROR if any mismatch was found
   # test_count_tables : contains list of 3 results for "clustering","clean","merge"
