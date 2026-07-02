@@ -1621,12 +1621,13 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
 }
 
 // call the equality test consistency for a job from the run or join_jobs commands
-function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_result_path, sim_w_cutoff="06", topk=15,
-                             maxComponentSize=200,minMachedPeaks=6, gnps_library_search_tool="", tremolo_exec="TRUE",
+function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_result_path, sim_w_cutoff="06",
+                             topk=15, maxComponentSize=200,minMachedPeaks=6,
+                             gnps_library_search_tool="", tremolo_exec="TRUE",
                              verbose=0)
 {
-    const start_test = process.hrtime.bigint();
-    let testing_outs = '*** Testing equality consistency of job '+ job_name + ' *** \n';
+    //const start_test = process.hrtime.bigint();
+    let testing_outs = '\n*** Testing equality consistency of job '+ job_name + ' *** \n';
     console.log(testing_outs)
     let resExec = shell.exec('Rscript '+__dirname+'/test/test_run_command_equality_consistency.R  '+output_path_test+' '+
         fixed_result_path+' '+new_result_path+' '+sim_w_cutoff+' '+topk+' '+maxComponentSize+' '+minMachedPeaks+' "'+
@@ -1639,7 +1640,7 @@ function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_
         console.log(error_msg);
     } else {
 
-        let done_msg = '\nDONE - EQUALITY OK! '+printTimeElapsed_bigint(start_test, process.hrtime.bigint())+"\n";
+        let done_msg = 'DONE - EQUALITY OK! \n'; //+printTimeElapsed_bigint(start_test, process.hrtime.bigint())+"\n";
         console.log(done_msg);
         testing_outs += '\n'+resExec.stdout+'\n\n'+resExec.stderr + done_msg + '\n';
 
@@ -4423,6 +4424,8 @@ program
     .action(function(options) {
         const start_test = process.hrtime.bigint();
         var np3_js_call = 'node '+ __dirname +'/np3_workflow.js';
+        // create var to store any error in the test cases
+        let test_errors = []
 
         // parse output_path and create test subfolder if necessary
         var output_path = __dirname
@@ -4437,9 +4440,10 @@ program
             shell.cp(__dirname+"/test/L754_bacs/mzxml/*", output_path+"/test/L754_bacs/mzxml/");
         }
         var unit_test_res = ['@@@@@ UNIT TEST NP3 Shifted cosine @@@@@\n'];
-        var test_res = ['@@@@@ TEST 1 @@@@@\n','@@@@@ TEST 2 @@@@@\n','@@@@@ TEST 3 @@@@@\n','@@@@@ TEST 4 @@@@@\n','@@@@@ TEST 5 @@@@@',
-            '@@@@@ TEST 6 @@@@@','@@@@@ TEST 7 @@@@@','@@@@@ TEST 8 @@@@@','@@@@@ TEST 9 @@@@@',
-            '@@@@@ TEST 10 @@@@@', '@@@@@ TEST 11 @@@@@', '@@@@@ TEST 12 @@@@@', '@@@@@ TEST 13 @@@@@'];
+        var test_res = ['@@@@@ TEST 1 @@@@@\n','@@@@@ TEST 2 @@@@@\n','@@@@@ TEST 3 @@@@@\n','@@@@@ TEST 4 @@@@@\n',
+            '@@@@@ TEST 5 @@@@@\n', '@@@@@ TEST 6 @@@@@\n','@@@@@ TEST 7 @@@@@\n','@@@@@ TEST 8 @@@@@\n',
+            '@@@@@ TEST 9 @@@@@\n', '@@@@@ TEST 10 @@@@@\n', '@@@@@ TEST 11 @@@@@\n', '@@@@@ TEST 12 @@@@@\n',
+            '@@@@@ TEST 13 @@@@@\n'];
         var resExec;
 
         // start with the unit tests
@@ -4454,6 +4458,7 @@ program
             console.log(resExec.stderr);
             unit_test_res[0] = unit_test_res[0] + '\n\nEXEC ERROR';
             console.log('ERROR\n');
+            test_errors.push("UNIT TEST - NP3 Shifted Cosine");
         } else {
             unit_test_res[0] = unit_test_res[0] + resExec.stdout;
             console.log('DONE!\n');
@@ -4478,6 +4483,7 @@ program
                 console.log(resExec.stderr);
                 test_res[0] = test_res[0] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 1 - Exec");
             } else {
                 test_res[0] = test_res[0] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
@@ -4501,6 +4507,7 @@ program
                 test_res[0] = test_res[0] + '\n\ngnps_result - Molecular Networking - EXEC ERROR';
                 gnps_result_mn = "ERROR";
                 console.log('ERROR\n');
+                test_errors.push("Test 1.1 - Exec");
             } else {
                 gnps_result_mn = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
@@ -4522,6 +4529,7 @@ program
                 test_res[0] = test_res[0] + '\n\ngnps_result - Library Search - EXEC ERROR';
                 gnps_result_ls = "ERROR";
                 console.log('ERROR\n');
+                test_errors.push("Test 1.2 - Exec");
             } else {
                 gnps_result_ls = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
@@ -4546,17 +4554,21 @@ program
                 test_res[0] = test_res[0] + '\n\ngnps_library_search - EXEC ERROR';
                 console.log('ERROR\n');
                 gnps_result_np3 = "ERROR"
+                test_errors.push("Test 1.3 - Exec");
             } else {
                 gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[0] = test_res[0] + callTestRunEquality(job_name="L754_bacs_all",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_all',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_all',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="gnps",
                     tremolo_exec=options.tremolo)
+                if (test_res[0].includes("ERROR")) {
+                    test_errors.push("Test 1 and 1.3 - Equality Test");
+                }
             }
             // compare its results with the online result for equality in the field expected to be equal
             // which is after *** Joining the GNPS library indentification results to the NP3 count files ***
@@ -4590,6 +4602,7 @@ program
                 console.log(resExec.stderr);
                 test_res[0] = test_res[0] + '\n\npca_plot - PCA with clean - EXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 1.4 - Exec");
             } else {
                 console.log('DONE!\n');
             }
@@ -4614,17 +4627,21 @@ program
                 console.log(resExec.stderr);
                 test_res[1] = test_res[1] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 2 - Exec");
             } else {
                 test_res[1] = test_res[1] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[1] = test_res[1] + callTestRunEquality(job_name="L754_bacs_multi_collection_11",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_multi_collection_11',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_multi_collection_11',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
+                if (test_res[1].includes("ERROR")) {
+                    test_errors.push("Test 2 - Equality Test");
+                }
             }
             //console.log("\n\n");
         }
@@ -4650,17 +4667,21 @@ program
                 console.log(resExec.stderr);
                 test_res[2] = test_res[2] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 3 - Exec");
             } else {
                 test_res[2] = test_res[2] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[2] = test_res[2] + callTestRunEquality(job_name="L754_bacs_one_collection",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_one_collection',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_one_collection',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
+                if (test_res[2].includes("ERROR")) {
+                    test_errors.push("Test 3 - Equality Test");
+                }
             }
             //console.log("\n\n");
         }
@@ -4683,17 +4704,21 @@ program
                 console.log(resExec.stderr);
                 test_res[3] = test_res[3] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 4 - Exec");
             } else {
                 test_res[3] = test_res[3] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[3] = test_res[3] + callTestRunEquality(job_name="L754_bacs_blanks",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
+                if (test_res[3].includes("ERROR")) {
+                    test_errors.push("Test 4 - Equality Test");
+                }
             }
             //console.log("\n\n");
         }
@@ -4714,6 +4739,7 @@ program
                 console.log(resExec.stderr);
                 test_res[4] = test_res[4] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 5 - Exec");
             } else {
                 test_res[4] = test_res[4] + '\n\nDone! :)';
                 console.log('DONE!\n');
@@ -4746,6 +4772,7 @@ program
                 console.log(resExec.stderr);
                 test_res[5] = test_res[5] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 6 - Exec");
             } else {
                 test_res[5] = test_res[5] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
@@ -4768,6 +4795,7 @@ program
                 console.log(resExec.stderr);
                 test_res[6] = test_res[6] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 7 - Exec");
             } else {
                 test_res[6] = test_res[6] + '\n\nDONE :)';
                 console.log('DONE!\n');
@@ -4796,6 +4824,7 @@ program
                 console.log(resExec.stderr);
                 test_res[7] = test_res[7] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 8 - Clean Exec");
             } else {
                 test_res[7] = test_res[7] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
@@ -4812,6 +4841,7 @@ program
                 console.log(resExec.stderr);
                 test_res[7] = test_res[7] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 8 - Annotate_protonated Exec");
             } else {
                 test_res[7] = test_res[7] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
@@ -4833,6 +4863,7 @@ program
                 console.log(resExec.stderr);
                 test_res[8] = test_res[8] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 9 - Exec");
             } else {
                 test_res[8] = test_res[8] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
@@ -4853,19 +4884,22 @@ program
                 console.log(resExec.stderr);
                 test_res[9] = test_res[9] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 10 - Exec");
             } else {
                 test_res[9] = test_res[9] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[9] = test_res[9] + callTestRunEquality(job_name="L754_bacs_blanks_one_sample",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks_one_sample',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample',
                     sim_w_cutoff="09", topk=5,maxComponentSize=200,
                     minMachedPeaks=1, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
+                if (test_res[9].includes("ERROR")) {
+                    test_errors.push("Test 10 - Equality Test");
+                }
             }
-            console.log("\n\n");
         }
 
         // # test metadata with all samples in one data collection batch and one blank
@@ -4888,19 +4922,22 @@ program
                 console.log(resExec.stderr);
                 test_res[10] = test_res[10] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 11 - Exec");
             } else {
                 test_res[10] = test_res[10] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[10] = test_res[10] + callTestRunEquality(job_name="L754_bacs_another_collection_diff",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_another_collection_diff',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_another_collection_diff',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
+                if (test_res[10].includes("ERROR")) {
+                    test_errors.push("Test 11 - Equality Test");
+                }
             }
-            //console.log("\n\n");
         }
 
         // test join_jobs command joining one_collections with another_collection, with and without noise cutoff
@@ -4921,17 +4958,21 @@ program
                 console.log(resExec.stderr);
                 test_res[11] = test_res[11] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 12 - Exec");
             } else {
                 test_res[11] = test_res[11] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[11] = test_res[11] + callTestRunEquality(job_name="L754_bacs_join_collections",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_join_collections',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_join_collections',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="gnps_new",
                     tremolo_exec=options.tremolo)
+                if (test_res[11].includes("ERROR")) {
+                    test_errors.push("Test 12 - Equality Test");
+                }
             }
 
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections_noise');
@@ -4948,19 +4989,23 @@ program
                 // in case of error show all the emmited msgs
                 console.log(resExec.stdout);
                 console.log(resExec.stderr);
-                test_res[11] = test_res[11] + '\n\nTEST 12.1\n\nEXEC ERROR';
+                test_res[11] = test_res[11] + '\n\n@@@@@ TEST 12.1 @@@@@\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 12.1 - Exec");
             } else {
-                test_res[11] = test_res[11] + "\n\nTEST 12.1\n\n" + resExec.stdout.split('*** TESTING ***\n\n')[1];
+                test_res[11] = test_res[11] + "\n\n@@@@@ TEST 12.1 @@@@@\n\n" + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
                 test_res[11] = test_res[11] + callTestRunEquality(job_name="L754_bacs_join_collections_noise",
-                    output_path_test=output_path+'/test/equality_test/',
+                    output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_join_collections_noise',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_join_collections_noise',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
+                if (test_res[11].includes("ERROR")) {
+                    test_errors.push("Test 12.1 - Equality Test");
+                }
             }
         }
 
@@ -4981,6 +5026,7 @@ program
                 console.log(resExec.stderr);
                 test_res[12] = test_res[12] + '\n\nEXEC ERROR';
                 console.log('ERROR\n');
+                test_errors.push("Test 13 - Exec");
             } else {
                 test_res[12] = test_res[12] + '\n\nDone! :)';
                 console.log('DONE!\n');
@@ -4989,15 +5035,27 @@ program
         }
 
         console.log("-------------------------------------------------------\n");
-        console.log("--------------------TEST RESULTS-----------------------\n");
+        console.log("------------------- TEST RESULTS ----------------------\n");
         console.log("-------------------------------------------------------\n\n");
 
         unit_test_res.forEach(function (res) {
             console.log(res+ "\n");
         });
-        test_res.forEach(function (res) {
+        test_res.slice(options.skip).forEach(function (res) {
             console.log(res+ "\n");
         });
+
+        console.log("-------------------------------------------------------\n");
+        console.log("------------------- TEST SUMMARY ----------------------\n");
+        console.log("-------------------------------------------------------\n\n");
+
+        if (test_errors.length > 0) {
+            console.log("A total of ",test_errors.length," errors were detected in the test cases. :(\n ",
+                "Check the test results above and the test cases outputs on top of them.")
+            console.log("The following tests raised an error: ", test_errors.join(","), ".\n")
+        } else {
+            console.log("All test cases were successful! No detected errors, you are good to go! :)\n")
+        }
 
         console.log("\n-------------------------------------------------------\n");
         console.log(printTimeElapsed_bigint(start_test, process.hrtime.bigint()));
