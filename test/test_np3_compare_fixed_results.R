@@ -22,7 +22,7 @@ script_path <- function() {
   }
 }
 Rcpp::sourceCpp(file.path(script_path(), '../src/read_mgf_peak_list_R.cpp'))
-
+source(file.path(script_path(), "../src/read_metadata_table.R"))
 
 ## args
 output_path_test <- "/tmp/np3_ms_workflow/"
@@ -137,8 +137,9 @@ compare_mgfs <- function(fixed_mgf_path, new_mgf_path,
   test_mgf_header_tables_equal <- all.equal(fixed_mgf_header, new_mgf_header)
   if (length(test_mgf_header_tables_equal) > 1 || test_mgf_header_tables_equal != TRUE)
   {
-    test_mgf_header_tables_equal <- c(paste("Differences in the MGF header fixed table (x) and the new table (y) of", table_type),
-                           test_mgf_header_tables_equal)
+    test_mgf_header_tables_equal <- c(paste("Differences in the MGF header fixed table (x) and the new table (y) of", 
+                                            mgf_type),
+                                      test_mgf_header_tables_equal)
     # creates df with differences present in fixed_table and missing/diff in new_table, using all columns
     table_diff <- anti_join(fixed_mgf_header, new_mgf_header) 
     # computes number of different rows
@@ -202,7 +203,8 @@ compare_mgfs <- function(fixed_mgf_path, new_mgf_path,
                                             ")", collapse=";"))
     }
   } else {
-    test_mgf_peaks <- paste("No ions header match in the MGFs ", table_type, ". MGFs peaks list comparison aborted.")
+    test_mgf_peaks <- paste("No ions header match in the MGFs ", mgf_type,
+                            ". MGFs peaks list comparison aborted.")
   }
   
   if (test_mgf_header_tables_equal == TRUE && test_mgf_peaks == TRUE) {
@@ -610,40 +612,121 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
 }
 
 
-# TODO make separate comparison for pre process result based in the 
+# make separate comparison for pre process result based in the 
 # pre processed MGFs and MS1 tables
-compare_two_np3_preprocess_results <- function(fixed_result_path, 
-                                               new_result_path, 
-                                               output_path_test,
-                                               metadata_path) 
+# compare the pre processed MGFs of all sample codes present in the fixed metadata
+# and also compare the tables created in the pre process:"MS1_no_MS2", "MS1_with_MS2", "log_MS2_no_MS1_fake_peaks"
+## Where job_name is the name of the job from which this pre process is from;
+# metadata_fixed_path is the path to the fixed metadata used to compare the pre process results;
+# fixed_pp_result_path is the path to a fixed result of a np3 pre process job to be used as reference;
+# new_pp_result_path is the path to a new result of the same np3 pre process job to be checked for consistency;
+# output_path_test is the path to the output_path from the test command parameter. 
+# This directory path concatenated with the sub folders '/test/compare_np3_fixed_results/' is where
+# the difference tables will be stored, if any;
+## Results print at the screen the number of correct tests and subtests by groups
+# if any mismatch is found, also print the number of failures and the
+# error messages and detected differences by groups
+compare_two_np3_preprocess_results <- function(job_name,
+                                               metadata_fixed_path,
+                                               fixed_pp_result_path, 
+                                               new_pp_result_path, 
+                                               output_path_test) 
 {
-  
-  # TODO for each pre processed mgf present in the metadata, 
+  cat("* Testing the equality of the new NP3 pre process results against the fixed results *\n")
+  # creates the output dir to store the test results if not present yet
+  output_path_test_diff <- file.path(output_path_test, "/test/compare_np3_fixed_results/")
+  # for each pre processed mgf present in the metadata, 
   # compare the fixed with the new result
+  metadata_fixed <- readMetadataTable(metadata_fixed_path)
   
-  # compare final MGFs by reading them and checking for equality in the 
+  # compare the pre processed MGFs by reading them and checking for equality in the 
   # header fields and the fragmented peaks list
-  mgfs_type <- c("clustering", "clean")
-  mgfs_suffix <- c("all", "clean")
+  mgfs_type <- c("pre_process")
+  mgfs_sample_code_prefix <- metadata_fixed$SAMPLE_CODE
   
-  # exec comparison for each MGF file
-  test_mgfs <- lapply(seq_along(mgfs_type), function(i) {
-    fixed_mgf_path <- file.path(fixed_result_path, "outs", job_name, 
-                                "mgf", paste0(job_name, "_", mgfs_suffix[[i]],".mgf"))
-    new_mgf_path <- file.path(new_result_path, "outs", new_job_name, 
-                              "mgf", paste0(new_job_name, "_", mgfs_suffix[[i]],".mgf"))
+  # exec comparison for each pp MGF file
+  test_pp_mgfs <- lapply(seq_along(mgfs_sample_code_prefix), function(i) {
+    fixed_mgf_path <- file.path(fixed_pp_result_path,  
+                                paste0(mgfs_sample_code_prefix[[i]], "_peak_info.mgf"))
+    new_mgf_path <- file.path(new_pp_result_path, 
+                              paste0(mgfs_sample_code_prefix[[i]], "_peak_info.mgf"))
     if (!file.exists(new_mgf_path)) {
-      test_mgfs_ <- paste("The ", mgfs_type[[i]],
-                          " MGF file of the new job was not created - missing file.")
+      test_mgfs_ <- paste("The ", mgfs_type,
+                          " MGF file of sample code ",
+                          mgfs_sample_code_prefix[[i]],
+                          " of the new job was not created - missing file:", 
+                          new_mgf_path,".")
     } else {
       test_mgfs_ <- compare_mgfs(fixed_mgf_path=fixed_mgf_path, 
                                  new_mgf_path=new_mgf_path, 
-                                 mgf_type=mgfs_type[[i]], job_name=job_name, 
+                                 mgf_type=paste0(mgfs_type,"_",mgfs_sample_code_prefix[[i]]), 
+                                 job_name=job_name, 
                                  output_path_test_diff=output_path_test_diff)
     }
     return(test_mgfs_)
   })
-  names(test_mgfs) <- paste0("mgf_",mgfs_type)
+  names(test_pp_mgfs) <- paste0("mgf_",mgfs_type,"_",mgfs_sample_code_prefix)
   
+  # compare the pre process MS1 table lists and MS2 no match log table
+  ms1_tables_filenames <- c("MS1_list_no_MS2.csv", "MS1_list_with_MS2.csv",
+                            "log_MS2_no_MS1peak_match.csv")
+  ms1_tables_names <- c("MS1_no_MS2", "MS1_with_MS2", "MS2_no_MS1_fake_peaks")
+  # exec comparison for each pre process table
+  test_pp_tables <- lapply(seq_along(ms1_tables_names), function(i) {
+    fixed_pp_table_path <- file.path(fixed_pp_result_path, 
+                                     ms1_tables_filenames[[i]])
+    new_pp_table_path <- file.path(new_pp_result_path, 
+                                   ms1_tables_filenames[[i]])
+    if (!file.exists(new_pp_table_path)) {
+      test_pp_table <- paste("The ", ms1_tables_names[[i]],
+                             " pre processing table of the new job was not created - missing file: ",
+                             new_pp_table_path,".")
+    } else {
+      test_pp_table <- compare_tables(fixed_table_path=fixed_pp_table_path, 
+                                          new_table_path=new_pp_table_path,
+                                          table_type=paste0("pp_table_",
+                                                            ms1_tables_names[[i]]), 
+                                          job_name=job_name, 
+                                          output_path_test_diff=output_path_test_diff)
+    }
+    return(test_pp_table)
+  })
+  names(test_pp_tables) <- paste0("pre_process_table_",ms1_tables_names)
+  
+  ## Reduce all the tests results and print the error messages with the differences if any, 
+  # using the tag ERROR if any mismatch was found
+  # test_pp_mgfs : contains list of n results, where n is the number of rows in the fixed metadata
+  # MS1_tables : contains list of 3 results for MS1_no_MS2 and MS1_w_MS2 and log_MS2_no_MS1
+  list_tests <- list(Pre_process_mgfs = test_pp_mgfs, 
+                     Pre_process_tables=test_pp_tables)
+  number_tests <- length(list_tests)
+  number_subtests <- sum(sapply(list_tests, length))
+  # check the correct groups of tests and all subtests
+  correct_tests <- sapply(list_tests, function (x) all(unlist(x) == TRUE))
+  correct_subtests <- unlist(sapply(list_tests, function (x) (unlist(x) == TRUE)))
+  cat("\nCorrect equality tests by groups = ", 
+      sum(correct_tests),"/",number_tests)
+  cat("\nCorrect equality subtests within groups = ", 
+      sum(correct_subtests),"/",number_subtests)
+  
+  if (sum(correct_tests) == number_tests) {
+    cat("\nDone! :)\n")
+  } else {
+    cat("\n\nTotal tests failures:", sum(!correct_tests), ":(",
+        "\nTotal subtests failures:", sum(!correct_subtests), ":(\n",
+        "\nThe following ERRORS were detected from mismatching results:\n")
+    
+    for (i in which(!correct_tests)) {
+      cat("\n- Error in the *",names(list_tests[i]), "* group, check the detected mismatches:\n")
+      if (length(list_tests[[i]]) > 1) {
+        failed_subtests <- which(unlist(list_tests[[i]]) != TRUE)
+        for (j in failed_subtests) {
+          cat("    - Difference in the subgroup *", names(list_tests[[i]][j]), "* =", list_tests[[i]][[j]], "\n")
+        }
+      } else {
+        cat("    - Difference =", list_tests[[i]][[1]], "\n")
+      }
+    }
+  }
 }
 
