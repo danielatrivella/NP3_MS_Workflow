@@ -35,14 +35,24 @@ if (length(args) < 7) {
   {
     parallel_cores <- as.numeric(args[[8]])
     if (parallel_cores < 1) {
-      warning("Invalid parallel_cores value (", parallel_cores, 
+      cat("Invalid parallel_cores value (", parallel_cores, 
               "). The number of cores to be used for parallel processing must be at least 2 ",
-              "or 1 for disabling parallelization. The number of cores was set to 1 by default.")
+              "or 1 for disabling parallelization. The number of cores was set to 1 by default.\n")
+      warning("Invalid parallel_cores parameter value.")
       parallel_cores <- 1    
     } else if (parallel_cores > 1 && !require(parallel)) {
-      warning("Parallel library is not available, disabling parallelization. ",
-              "The number of cores was set to 1 by default.")
+      cat("Parallel library is not available, disabling parallelization. ",
+              "The number of cores was set to 1 by default.\n")
+      warning("Invalid parallel_cores parameter value.")
       parallel_cores <- 1 
+    } else if (parallel_cores > 1 && !is.na(detectCores(logical = FALSE)) && parallel_cores >= detectCores(logical = FALSE)) {
+      cat("The number of paralell_cores =",parallel_cores,
+              " is greater or equal than the number of physical cores =",detectCores(logical = FALSE),
+              " in your machine. This is not recommended,",
+              "the number of parallel clusters will be limited by the number of physical cores minus two =",
+              detectCores(logical = FALSE)-2, ".\n")
+      warning("Invalid parallel_cores parameter value.")
+      parallel_cores <- detectCores(logical = FALSE)-2
     }
   }
 }
@@ -95,6 +105,24 @@ compareSpectraNormDotProductSample <- function(i, peaks_sample_B, ints_sample_B,
        round(np3_cos_matches_list[[2]]))
 }
 
+compareSpectraNormDotProductSample_j <- function(i)
+{
+  np3_cos_matches_list <- normDotProductShiftList(peaks_A = ms2_sample$MZS[[i]], 
+                                                  ints_A = ms2_sample$INTS[[i]], 
+                                                  mz_A = ms2_sample$PREC_MZ[[i]],
+                                                  peaks_B = ms2_sample_j$MZS,
+                                                  ints_B = ms2_sample_j$INTS, 
+                                                  mzs_B = ms2_sample_j$PREC_MZ,
+                                                  bin_size = bin_size,
+                                                  max_shift = max_shift)
+  list(round(np3_cos_matches_list[[1]], 3),
+       round(np3_cos_matches_list[[2]]))
+}
+
+
+cat("Number of parallel cores to use in the pairwise comparisons:",parallel_cores,"\n")
+
+
 # if a file was passed, read the mgf from the clean step
 # else if a directory was passed, parse the mgfs from the clustering step
 if (file.exists(path_mgf_dir) && !dir.exists(path_mgf_dir) && grepl(".mgf$",path_mgf_dir)) {
@@ -127,9 +155,10 @@ if (!dir.exists(output_path))
 }
 if (!is.logical(trim_mz) || is.na(trim_mz))
 {
-  warning("Invalid trim_mz parameter, it must be a logical indicating if ",
+  cat("Invalid trim_mz parameter, it must be a logical indicating if ",
           "the spectra fragmentation should be trimmed by the precursor mass. ",
-          "Trim mz set to TRUE by default.", call. = FALSE)
+          "Trim mz set to TRUE by default.\n")
+  warning("Invalid trim_mz parameter", call. = FALSE)
   trim_mz <- TRUE
 }
 if (trim_mz) {
@@ -152,17 +181,17 @@ if (!is.na(scale_factor) || !is.null(scale_factor))
   scale_factor <- as.numeric(scale_factor[[1]])
   if (scale_factor < 0)
   {
-    warning("Invalid scale factor provided, it must be a numeric value greater or equal to 0: \n", 
+    cat("Invalid scale factor provided, it must be a numeric value greater or equal to 0: \n", 
             "  - 0 : ln natural logarithm of the intensities\n",
             "  - 1 : no scale\n",
             "  - x : x > 0 pow of the intensities to x. (e.g. x = 0.5 square root)\n",
-            "Factor 0.5 (sqrt) will be selected by default.", call. = FALSE)
+            "Factor 0.5 (sqrt) will be selected by default.\n")
+    warning("Invalid scale factor parameter.", call. = FALSE)
     scale_factor <- 0.5
   }
 } else {
   scale_factor <- 1 # no scale
 }
-
 
 # start pairwise comparison between the mgf samples
 total_spectra <- 0
@@ -273,10 +302,14 @@ for (i in seq_along(path_mgf)) {
       if (parallel_cores > 1 && require(parallel) && n_scans > 1)
       {
         # use existing cluster
+        # call wrapper to the compareSpectraNormDotProductSample and export the ms2_sample_j as a global var instead of repeatedly passing it to the parallel cores
+        clusterExport(cl, c("ms2_sample_j"), envir=environment()) 
         comp_sample_sim_matches <- parSapply(cl, scan_index, 
-                                             compareSpectraNormDotProductSample, 
-                                             ms2_sample_j$MZS, ms2_sample_j$INTS,
-                                             ms2_sample_j$PREC_MZ)
+                                             compareSpectraNormDotProductSample_j)
+        # comp_sample_sim_matches <- parSapply(cl, scan_index,
+        #                                     compareSpectraNormDotProductSample,
+        #                                     ms2_sample_j$MZS, ms2_sample_j$INTS,
+        #                                     ms2_sample_j$PREC_MZ)
       } else {
         # sequential pairwise comparisions
         comp_sample_sim_matches <- sapply(scan_index, compareSpectraNormDotProductSample, 
