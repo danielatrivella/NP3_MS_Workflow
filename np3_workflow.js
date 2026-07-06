@@ -1627,7 +1627,7 @@ function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_
                              verbose=0)
 {
     //const start_test = process.hrtime.bigint();
-    let testing_outs = '\n*** Testing equality consistency of job '+ job_name + ' *** \n';
+    let testing_outs = '\n*** Testing equality consistency of job '+ job_name + ' *** \n\n';
     console.log(testing_outs)
     let resExec = shell.exec('Rscript '+__dirname+'/test/test_run_command_equality_consistency.R  '+output_path_test+' '+
         fixed_result_path+' '+new_result_path+' '+sim_w_cutoff+' '+topk+' '+maxComponentSize+' '+minMachedPeaks+' "'+
@@ -1635,11 +1635,35 @@ function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_
     // check for ERROR tag in the output
     if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
         console.log('\nSTDOUT:\n'+resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\n')
-        let error_msg = '\nERROR - DIFFERENCE in the new job result \n';
+        let error_msg = 'ERROR - DIFFERENCE in the new job result \n';
         testing_outs += error_msg;
         console.log(error_msg);
     } else {
+        let done_msg = 'DONE - EQUALITY OK! \n'; //+printTimeElapsed_bigint(start_test, process.hrtime.bigint())+"\n";
+        console.log(done_msg);
+        testing_outs += '\n'+resExec.stdout+'\n\n'+resExec.stderr + done_msg + '\n';
 
+    }
+    return(testing_outs);
+}
+
+// call the equality test consistency for a job from the pre_process command
+function callTestPreProcessEquality(job_name, output_path_test, fixed_result_path, new_result_path,
+                                    metadata_fixed_path, verbose=0)
+{
+    //const start_test = process.hrtime.bigint();
+    let testing_outs = '\n*** Testing equality consistency of pre process job '+ job_name + ' *** \n';
+    console.log(testing_outs)
+    let resExec = shell.exec('Rscript '+__dirname+'/test/test_pp_command_equality_consistency.R  '+job_name+' '+
+        metadata_fixed_path+' '+fixed_result_path+' '+new_result_path+' '+output_path_test,
+        {async:false, silent:(verbose === 0)});
+    // check for ERROR tag in the output
+    if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+        console.log('\nSTDOUT:\n'+resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\n')
+        let error_msg = 'ERROR - DIFFERENCE in the new pre process job result \n';
+        testing_outs += error_msg;
+        console.log(error_msg);
+    } else {
         let done_msg = 'DONE - EQUALITY OK! \n'; //+printTimeElapsed_bigint(start_test, process.hrtime.bigint())+"\n";
         console.log(done_msg);
         testing_outs += '\n'+resExec.stdout+'\n\n'+resExec.stderr + done_msg + '\n';
@@ -2681,7 +2705,7 @@ program
         'and possibly joined. Used in the clustering job and\n\t\t\t\t\t' +
         'in the library identifications (Step 6)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
-        'to be used in the pre-processing step if ran\n\t\t\t\t\t', parseFloat, 5)
+        'to be used in the pre-processing step if processed_data_overwrite is TRUE\n\t\t\t\t\t', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
         'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
     .option('-s, --similarity [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
@@ -4487,6 +4511,18 @@ program
             } else {
                 test_res[0] = test_res[0] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                if (options.pre_process == "TRUE") {
+                    // run equality comparison in the pre process obtained result
+                    test_res[0] = test_res[0] + callTestPreProcessEquality(job_name="L754_bacs_all",
+                        output_path_test=output_path+'/test/equality_test_result/',
+                        fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/preprocess/processed_data_all/',
+                        new_result_path=output_path+'/test/L754_bacs/mzxml/processed_data/',
+                        metadata_fixed_path=__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv',
+                        verbose=0)
+                    if (test_res[0].includes("ERROR")) {
+                        test_errors.push("Test 1 - Pre Process Equality Test");
+                    }
+                }
             }
             //console.log("\n\n");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4558,15 +4594,16 @@ program
             } else {
                 gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
-                // run equality comparison in the obtained result
-                test_res[0] = test_res[0] + callTestRunEquality(job_name="L754_bacs_all",
+                // run equality comparison in the obtained result, attribute to a var and than concate in the test res and test for error (independently of the pp testing result)
+                let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_all",
                     output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_all',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_all',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="gnps",
-                    tremolo_exec=options.tremolo)
-                if (test_res[0].includes("ERROR")) {
+                    tremolo_exec=options.tremolo);
+                test_res[0] = test_res[0] + test_equality_run_res;
+                if (test_equality_run_res.includes("ERROR")) {
                     test_errors.push("Test 1 and 1.3 - Equality Test");
                 }
             }
@@ -4638,7 +4675,7 @@ program
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_multi_collection_11',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo)
+                    tremolo_exec=options.tremolo);
                 if (test_res[1].includes("ERROR")) {
                     test_errors.push("Test 2 - Equality Test");
                 }
@@ -4671,15 +4708,28 @@ program
             } else {
                 test_res[2] = test_res[2] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                if (options.pre_process == "TRUE") {
+                    // run equality comparison in the pre process obtained result
+                    test_res[2] = test_res[2] + callTestPreProcessEquality(job_name="L754_bacs_one_collection",
+                        output_path_test=output_path+'/test/equality_test_result/',
+                        fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/preprocess/processed_data_one_collection/',
+                        new_result_path=output_path+'/test/L754_bacs/mzxml/processed_data_one_collection/',
+                        metadata_fixed_path=__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_collection.csv',
+                        verbose=0);
+                    if (test_res[2].includes("ERROR")) {
+                        test_errors.push("Test 3 - Pre Process Equality Test");
+                    }
+                }
                 // run equality comparison in the obtained result
-                test_res[2] = test_res[2] + callTestRunEquality(job_name="L754_bacs_one_collection",
+                let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_one_collection",
                     output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_one_collection',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_one_collection',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo)
-                if (test_res[2].includes("ERROR")) {
+                    tremolo_exec=options.tremolo);
+                test_res[2] = test_res[2] + test_equality_run_res;
+                if (test_equality_run_res.includes("ERROR")) {
                     test_errors.push("Test 3 - Equality Test");
                 }
             }
@@ -4708,15 +4758,28 @@ program
             } else {
                 test_res[3] = test_res[3] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                if (options.pre_process == "TRUE") {
+                    // run equality comparison in the pre process obtained result
+                    test_res[3] = test_res[3] + callTestPreProcessEquality(job_name="L754_bacs_blanks",
+                        output_path_test=output_path+'/test/equality_test_result/',
+                        fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/preprocess/processed_data_blanks/',
+                        new_result_path=output_path+'/test/L754_bacs/mzxml/processed_data_blanks/',
+                        metadata_fixed_path=__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_blanks.csv',
+                        verbose=0);
+                    if (test_res[3].includes("ERROR")) {
+                        test_errors.push("Test 4 - Pre Process Equality Test");
+                    }
+                }
                 // run equality comparison in the obtained result
-                test_res[3] = test_res[3] + callTestRunEquality(job_name="L754_bacs_blanks",
+                let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_blanks",
                     output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo)
-                if (test_res[3].includes("ERROR")) {
+                    tremolo_exec=options.tremolo);
+                test_res[3] = test_res[3] + test_equality_run_res;
+                if (test_equality_run_res.includes("ERROR")) {
                     test_errors.push("Test 4 - Equality Test");
                 }
             }
@@ -4743,7 +4806,19 @@ program
             } else {
                 test_res[4] = test_res[4] + '\n\nDone! :)';
                 console.log('DONE!\n');
-                // TODO test pre process equality here
+                // test pre process equality here
+                if (options.pre_process == "TRUE") {
+                    // run equality comparison in the pre process obtained result
+                    test_res[4] = test_res[4] + callTestPreProcessEquality(job_name="L754_bacs_blanks_one_sample",
+                        output_path_test=output_path+'/test/equality_test_result/',
+                        fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/preprocess/processed_data_blanks_one_sample/',
+                        new_result_path=output_path+'/test/L754_bacs/mzxml/processed_data_blanks_one_sample/',
+                        metadata_fixed_path=__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_one_sample.csv',
+                        verbose=0);
+                    if (test_res[4].includes("ERROR")) {
+                        test_errors.push("Test 5 - Pre Process Equality Test");
+                    }
+                }
             }
             //console.log("\n\n");
         } else if (options.skip <= 5) {
@@ -4895,7 +4970,7 @@ program
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample',
                     sim_w_cutoff="09", topk=5,maxComponentSize=200,
                     minMachedPeaks=1, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo)
+                    tremolo_exec=options.tremolo);
                 if (test_res[9].includes("ERROR")) {
                     test_errors.push("Test 10 - Equality Test");
                 }
@@ -4926,15 +5001,28 @@ program
             } else {
                 test_res[10] = test_res[10] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
+                if (options.pre_process == "TRUE") {
+                    // run equality comparison in the pre process obtained result
+                    test_res[10] = test_res[10] + callTestPreProcessEquality(job_name="L754_bacs_another_collection_diff",
+                        output_path_test=output_path+'/test/equality_test_result/',
+                        fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/preprocess/processed_data_another_collection/',
+                        new_result_path=output_path+'/test/L754_bacs/mzxml/processed_data_another_collection/',
+                        metadata_fixed_path=__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_another_collection_diff.csv',
+                        verbose=0);
+                    if (test_res[10].includes("ERROR")) {
+                        test_errors.push("Test 11 - Pre Process Equality Test");
+                    }
+                }
                 // run equality comparison in the obtained result
-                test_res[10] = test_res[10] + callTestRunEquality(job_name="L754_bacs_another_collection_diff",
+                let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_another_collection_diff",
                     output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_another_collection_diff',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_another_collection_diff',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo)
-                if (test_res[10].includes("ERROR")) {
+                    tremolo_exec=options.tremolo);
+                test_res[10] = test_res[10] + test_equality_run_res;
+                if (test_equality_run_res.includes("ERROR")) {
                     test_errors.push("Test 11 - Equality Test");
                 }
             }
@@ -5050,11 +5138,11 @@ program
         console.log("-------------------------------------------------------\n\n");
 
         if (test_errors.length > 0) {
-            console.log("A total of ",test_errors.length," errors were detected in the test cases. :(\n ",
-                "Check the test results above and the test cases outputs on top of them.")
-            console.log("The following tests raised an error: ", test_errors.join(","), ".\n")
+            console.log("A total of ",test_errors.length," errors were detected in the test cases. :(\n\n",
+                "Check the test results above and the test cases outputs on top of them.\n");
+            console.log("The following tests raised an error: ", test_errors.join(", "), ".\n");
         } else {
-            console.log("All test cases were successful! No detected errors, you are good to go! :)\n")
+            console.log("All test cases were successful! No detected errors, you are good to go! :)\n");
         }
 
         console.log("\n-------------------------------------------------------\n");
