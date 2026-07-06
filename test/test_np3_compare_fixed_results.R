@@ -1,9 +1,9 @@
 ##
-# functions to execute equality tests for the NP3 results from the run and pre process commands
+# functions to execute equality tests for the NP3 results from the run, join_jobs and pre process commands
 # - compare new results with fixed results - check the consistency in the steps
 # - print any mismatching result detected and their differences by groups:
-# - Run command groups: Count_tables,MGFs,Similarity_matches_tables,Molecular_network_tables,Tremolo_identifications,GNPS_identifications,Quantification_report,Chemical_reports,Molecular_networking_reports"
-# - Pre process command groups: TODO pre processed MGFs, MS1 tables
+#   - tested groups in the Run and join_jobs command: Count_tables,MGFs,Similarity_matches_tables,Molecular_network_tables,Tremolo_identifications,GNPS_identifications,Quantification_report,Chemical_reports,Molecular_networking_reports"
+#   - tested groups in the Pre process command: pre processed MGFs, MS1 tables
 ##
 
 suppressPackageStartupMessages(library(dplyr))
@@ -612,7 +612,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
 }
 
 
-# make separate comparison for pre process result based in the 
+# make a comparison for pre process command result between a fixed and a new job based on the 
 # pre processed MGFs and MS1 tables
 # compare the pre processed MGFs of all sample codes present in the fixed metadata
 # and also compare the tables created in the pre process:"MS1_no_MS2", "MS1_with_MS2", "log_MS2_no_MS1_fake_peaks"
