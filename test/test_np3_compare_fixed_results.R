@@ -142,18 +142,24 @@ compare_mgfs <- function(fixed_mgf_path, new_mgf_path,
                                       test_mgf_header_tables_equal)
     # creates df with differences present in fixed_table and missing/diff in new_table, using all columns
     table_diff <- anti_join(fixed_mgf_header, new_mgf_header) 
-    # computes number of different rows
-    test_mgf_header_tables_equal <- c(test_mgf_header_tables_equal, 
-                           paste0("Rows in x but not in y (by=all): ", 
-                                  nrow(table_diff)))
+    
     # store difference table if there is different rows/cells
     if (nrow(table_diff) > 0) {
+      # computes number of different rows
+      test_mgf_header_tables_equal <- c(test_mgf_header_tables_equal, 
+                                        paste0("Rows in x but not in y (by=all): ", 
+                                               nrow(table_diff)))
+      # store the diff table to the output test path
       table_diff_out_path <- file.path(output_path_test_diff, 
                                        paste0(job_name, "_mgf_header_", mgf_type,"_diff.csv"))
       test_mgf_header_tables_equal <- c(test_mgf_header_tables_equal, 
                              paste0("Difference MGF header table (cells present in the fixed table and absent in the new table) stored at: ", 
                                     table_diff_out_path))
       write_csv(table_diff, path=table_diff_out_path)
+    }
+    if (length(test_mgf_header_tables_equal) > 1) {
+      # concatenate the error messages
+      test_mgf_header_tables_equal <- paste0(test_mgf_header_tables_equal, collapse = "\n")
     }
     # extract the row names index of the scans with a common header
     idx_common_headers <- row.names(fixed_mgf_header[!(fixed_mgf_header$scans %in% table_diff$scans),])
