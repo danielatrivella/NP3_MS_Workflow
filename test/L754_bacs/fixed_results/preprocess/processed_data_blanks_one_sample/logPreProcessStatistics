@@ -1,0 +1,18 @@
+
+* Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *
+
+  SAMPLE_CODE rate_MS2_no_MS1_mz rate_MS2_no_MS1_rt
+1      MEOH_1                0.5                3.2
+
+==========
+ 
+- Variables Description
+   - rate_MS2_no_MS1_mz 	: Percentage of MS2 spectra without a MS1 m/z range correspondence (%)
+   - rate_MS2_no_MS1_rt 	: Percentage of MS2 spectra without a MS1 retention time range correspondence (%)
+ 
+==========
+
+* Computing the peak width of the MS1 list with MS2 and removing blanks *
+
+- Removed a total of 128 MS1 peaks (100.0%) of blank m/zs from the list
+* There is no MS1 peak in the MS1 list with MS2 from a not blank sample - pre process parameters suggestion aborted *
