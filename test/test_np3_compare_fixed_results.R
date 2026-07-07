@@ -141,7 +141,7 @@ compare_mgfs <- function(fixed_mgf_path, new_mgf_path,
                                             mgf_type),
                                       test_mgf_header_tables_equal)
     # creates df with differences present in fixed_table and missing/diff in new_table, using all columns
-    table_diff <- anti_join(fixed_mgf_header, new_mgf_header) 
+    table_diff <- suppressMessages(anti_join(fixed_mgf_header, new_mgf_header))
     
     # store difference table if there is different rows/cells
     if (nrow(table_diff) > 0) {
@@ -487,7 +487,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                                 new_table_path=new_quant_stats_path,
                                 table_type="quantification_report_statistics", 
                                 job_name=job_name, 
-                                output_path_test_diff=output_path_test_diff, sep="\t")
+                                output_path_test_diff=output_path_test_diff)
   }
   
   # test chemical reports
@@ -641,6 +641,11 @@ compare_two_np3_preprocess_results <- function(job_name,
   cat("* Testing the equality of the new NP3 pre process results against the fixed results *\n")
   # creates the output dir to store the test results if not present yet
   output_path_test_diff <- file.path(output_path_test, "/test/compare_np3_fixed_results/")
+  if (!dir.exists(output_path_test_diff)) {
+    dir.create(output_path_test_diff, recursive = TRUE)
+  }
+  output_path_test_diff <- normalizePath(output_path_test_diff)
+  
   # for each pre processed mgf present in the metadata, 
   # compare the fixed with the new result
   metadata_fixed <- readMetadataTable(metadata_fixed_path)
