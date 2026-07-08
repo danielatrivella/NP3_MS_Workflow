@@ -1779,7 +1779,7 @@ The GNPS2 Library Search workflow was adapted and integrated to the $NP^{3}$ MS 
 
 Three search tools from GNPS2 are used here for the local identifications: gnps_indexed (current default in GNPS2), gnps and gnps_new. The following filters that are applied in GNPS2 Library Search workflow were also adapted to use the offline annotations enrichment and the top1 selection was adapted to resolve ties in the MQScore by using the number of matched peaks and the library quality string of the retrieved matches (different from GNPS2 online which only uses the MQScore).
 
-The ALL_GNPS_NO_PROPOGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from 90388 unique molecules which counts the unique SMILES present in the annotations. Additional disk space is necessary to store this library offline, around 4Gbs are used.
+The ALL_GNPS_NO_PROPOGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from which 862848 (90%) spectra have a valid SMILES from 90253 unique molecules, which counts the unique SMILES present in the annotations. Additional disk space is necessary to store this library offline, around 4Gbs are used.
 
 The GNPS2 data and the codes adapted and modified from GNPS2 are located in: 'src/GNPS_LibrarySearch'; The enriched annotations are located in:
 
