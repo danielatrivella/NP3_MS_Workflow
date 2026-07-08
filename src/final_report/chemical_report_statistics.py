@@ -10,6 +10,7 @@ from tremolo_UNPD_curate_identification import superclass_groupings_names # list
 
 total_unpd_unique_SMILES = 183962  # total unique SMILES in UNPD
 total_gnps_unique_SMILES = 90253 # total unique SMILES in GNPS from April 2026
+gnps_update_date = "April 2026"
 
 # clean_table_file must contain the clean count table with peak area quantification
 def plot_superclass_samples_distribution(metadata_file, clean_table_file, output_path,
@@ -320,7 +321,8 @@ def compute_chemical_report_statistics(clean_table_file, output_path):
 def compute_chemical_identification_report_GNPS_result(clean_table_file, output_path):
 	total_superclass_npclassifier = 94  # from the superclass_groupings dictionary in tremolo_UNPD_curate_identification
 	total_superclass_npclassifier_grouping = 10
-	total_gnps_fixo = total_gnps_unique_SMILES  # total unique SMILES in GNPS from October 2025
+	total_gnps_fixo = total_gnps_unique_SMILES  # total unique SMILES in GNPS
+	gnps_date = gnps_update_date # updated date from which the total_gnps_unique_SMILES was computed
 	total_unpd_fixo = total_unpd_unique_SMILES  # total unique Smiles in UNPD
 	clean_table_file = Path(clean_table_file)
 	output_path = Path(output_path)
@@ -408,7 +410,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			gnps_statistics['Value'].append(
 				f"{number_unique_gnps_curated} ({number_unique_gnps_curated / total_gnps_fixo * 100:.1f}%)")
 			gnps_statistics['Description'].append(
-				"Total number of unique GNPS identifications from "+mz_types+" m/zs that passed the curation (unique gnps_Smiles with gnps_category != 'out') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (unique gnps_Smiles for gnps_category != 'out' over " + str(
+				"Total number of unique GNPS identifications from "+mz_types+" m/zs that passed the curation (unique gnps_Smiles with gnps_category != 'out') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique gnps_Smiles for gnps_category != 'out' over " + str(
 					total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 		if best_origin_exists:
 			# skip one empty row
@@ -442,7 +444,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_unpd_gnps_curated} ({number_unique_unpd_gnps_curated/(total_gnps_fixo+total_unpd_fixo)*100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of unique UNPD and GNPS identifications that passed the best origin curation (unique best_origin_SMILES with best_origin_SMILES != '') - unique identified molecules and their percentage over the total number of unique SMILES in GNPS from Oct 2025 plus UNPD ("+str(total_gnps_fixo)+"+"+str(total_unpd_fixo)+" compounds for GNPS and UNPD total unique SMILES) - the best origin GNPS and UNPD coverage by [M+H]+.")
+				"Total number of unique UNPD and GNPS identifications that passed the best origin curation (unique best_origin_SMILES with best_origin_SMILES != '') - unique identified molecules and their percentage over the total number of unique SMILES in GNPS from "+gnps_date+" plus UNPD ("+str(total_gnps_fixo)+"+"+str(total_unpd_fixo)+" compounds for GNPS and UNPD total unique SMILES) - the best origin GNPS and UNPD coverage by [M+H]+.")
 			# unique curated identifications for unpd and gnps separated
 			number_unique_unpd_curated = clean_data.best_origin_SMILES[
 				(clean_data.curated_identification_best_origin == "UNPD")].unique().size
@@ -458,7 +460,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_gnps_curated} ({number_unique_gnps_curated / total_gnps_fixo * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of unique GNPS identifications selected as best origin in the curation (unique best_origin_SMILES with curated_identification_best_origin == 'GNPS') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (" + str(
+				"Total number of unique GNPS identifications selected as best origin in the curation (unique best_origin_SMILES with curated_identification_best_origin == 'GNPS') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (" + str(
 				total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 		# skip one empty row
 		gnps_statistics['Statistics'].append("")
@@ -480,7 +482,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 		gnps_statistics['Value'].append(
 			f"{number_unique_gnps_all} ({number_unique_gnps_all / total_gnps_fixo * 100:.1f}%)")
 		gnps_statistics['Description'].append(
-			"Total number of unique GNPS identifications from all "+mz_types+" m/zs (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (" + str(
+			"Total number of unique GNPS identifications from all "+mz_types+" m/zs (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (" + str(
 				total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 		if best_origin_exists:
 			# skip one empty row
@@ -499,7 +501,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_gnps_all} ({number_unique_gnps_all / total_gnps_fixo * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of unique GNPS identifications from "+mz_types+" m/zs among all results (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (" + str(
+				"Total number of unique GNPS identifications from "+mz_types+" m/zs among all results (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (" + str(
 					total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 			# identification statistics for all unpd identifications
 			number_identified_unpd_all = (~clean_data.tremolo_SMILES_best.isna()).sum()
@@ -574,7 +576,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				gnps_statistics['Value'].append(
 					f"{number_protonated_unique_identification_gnps} ({number_protonated_unique_identification_gnps / total_gnps_fixo * 100:.1f}%)")
 				gnps_statistics['Description'].append(
-					"The number of unique and curated identifications in GNPS for the "+mz_types+" [M+H]+ m/zs and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (unique gnps_Smiles not NA for gnps_category != 'out' over " + str(
+					"The number of unique and curated identifications in GNPS for the "+mz_types+" [M+H]+ m/zs and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique gnps_Smiles not NA for gnps_category != 'out' over " + str(
 						total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage by [M+H]+.")
 				if 'gnps_curated_superclass' in clean_data.columns:
 					# use curated superclass, remove NA and None
@@ -626,7 +628,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			gnps_statistics['Value'].append(
 				f"{number_unique_gnps_all} ({number_unique_gnps_all / total_gnps_fixo * 100:.1f}%)")
 			gnps_statistics['Description'].append(
-				"Total number of unique GNPS identifications from all "+mz_types+" [M+H]+ m/zs (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (unique gnps_Smiles that are not NA over " + str(
+				"Total number of unique GNPS identifications from all "+mz_types+" [M+H]+ m/zs (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique gnps_Smiles that are not NA over " + str(
 					total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 			# chemistry diversity for NP based on superclass annotation, from the all annotated and clean data
 			if gnps_curated:
@@ -696,7 +698,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				unpd_gnps_statistics['Value'].append(
 					f"{number_protonated_unique_identification_gnps_best} ({number_protonated_unique_identification_gnps_best / total_gnps_fixo * 100:.1f}%)")
 				unpd_gnps_statistics['Description'].append(
-					"The number of unique and curated identifications in GNPS selected as the best origin for the "+mz_types+" [M+H]+ m/zs and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (unique best_origin_SMILES for curated_identification_best_origin == 'GNPS' over "+str(total_gnps_fixo)+" compounds for GNPS total unique SMILES) - the best GNPS coverage by [M+H]+.")
+					"The number of unique and curated identifications in GNPS selected as the best origin for the "+mz_types+" [M+H]+ m/zs and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique best_origin_SMILES for curated_identification_best_origin == 'GNPS' over "+str(total_gnps_fixo)+" compounds for GNPS total unique SMILES) - the best GNPS coverage by [M+H]+.")
 				# UNPD coverage
 				unpd_gnps_statistics['Statistics'].append(
 					"Number of unique best curated identifications of the [M+H]+ m/zs and their UNPD coverage")
@@ -752,7 +754,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				unpd_gnps_statistics['Value'].append(
 					f"{number_unique_gnps_all} ({number_unique_gnps_all / total_gnps_fixo * 100:.1f}%)")
 				unpd_gnps_statistics['Description'].append(
-					"Total number of unique GNPS identifications from all "+mz_types+" [M+H]+ m/zs (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from Oct 2025 (unique gnps_Smiles that are not NA over " + str(
+					"Total number of unique GNPS identifications from all "+mz_types+" [M+H]+ m/zs (unique gnps_Smiles that are not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique gnps_Smiles that are not NA over " + str(
 						total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 				# chemical diversity GNPS all
 				if gnps_curated:
