@@ -44,64 +44,6 @@ def _prep_library_dict(library_summary_df):
     return library_dict
 
 
-def _enrich_gnps_annotation(output_result_dict):
-    spectrum_id = output_result_dict["SpectrumID"]
-
-    gnps_library_spectrum = _get_gnps_library_spectrum(spectrum_id)
-
-    if gnps_library_spectrum is None:
-        return output_result_dict
-
-    output_result_dict["Compound_Name"] = (gnps_library_spectrum["annotations"][0]["Compound_Name"].replace("\t", ""))
-    output_result_dict["Ion_Source"] = (gnps_library_spectrum["annotations"][0]["Ion_Source"].replace("\t", ""))
-    output_result_dict["Instrument"] = (gnps_library_spectrum["annotations"][0]["Instrument"].replace("\t", ""))
-    output_result_dict["Compound_Source"] = (gnps_library_spectrum["annotations"][0]["Compound_Source"].replace("\t", ""))
-    output_result_dict["PI"] = (gnps_library_spectrum["annotations"][0]["PI"].replace("\t", ""))
-    output_result_dict["Data_Collector"] = (gnps_library_spectrum["annotations"][0]["Data_Collector"].replace("\t", ""))
-    output_result_dict["Adduct"] = (gnps_library_spectrum["annotations"][0]["Adduct"].replace("\t", ""))
-    output_result_dict["Precursor_MZ"] = (gnps_library_spectrum["annotations"][0]["Precursor_MZ"].replace("\t", ""))
-    output_result_dict["ExactMass"] = (gnps_library_spectrum["annotations"][0]["ExactMass"].replace("\t", ""))
-    output_result_dict["Charge"] = (gnps_library_spectrum["annotations"][0]["Charge"].replace("\t", ""))
-    output_result_dict["CAS_Number"] = (gnps_library_spectrum["annotations"][0]["CAS_Number"].replace("\t", ""))
-    output_result_dict["Pubmed_ID"] = (gnps_library_spectrum["annotations"][0]["Pubmed_ID"].replace("\t", ""))
-    output_result_dict["Smiles"] = (gnps_library_spectrum["annotations"][0]["Smiles"].replace("\t", ""))
-    output_result_dict["INCHI"] = (gnps_library_spectrum["annotations"][0]["INCHI"].replace("\t", ""))
-    output_result_dict["INCHI_AUX"] = (gnps_library_spectrum["annotations"][0]["INCHI_AUX"].replace("\t", ""))
-    output_result_dict["Library_Class"] = (gnps_library_spectrum["annotations"][0]["Library_Class"].replace("\t", ""))
-    output_result_dict["IonMode"] = (gnps_library_spectrum["annotations"][0]["Ion_Mode"].replace("\t", ""))
-
-    output_result_dict["Organism"] = (gnps_library_spectrum["spectruminfo"]["library_membership"])
-    output_result_dict["LibMZ"] = (gnps_library_spectrum["annotations"][0]["Precursor_MZ"])
-
-    if gnps_library_spectrum["annotations"][0]["Library_Class"] == "1":
-        output_result_dict["UpdateWorkflowName"] = ("UPDATE-SINGLE-ANNOTATED-GOLD")
-        output_result_dict["LibraryQualityString"] = ("Gold")
-    elif gnps_library_spectrum["annotations"][0]["Library_Class"] == "2":
-        output_result_dict["UpdateWorkflowName"] = ("UPDATE-SINGLE-ANNOTATED-SILVER")
-        output_result_dict["LibraryQualityString"] = ("Silver")
-    elif gnps_library_spectrum["annotations"][0]["Library_Class"] == "3":
-        output_result_dict["UpdateWorkflowName"] = ("UPDATE-SINGLE-ANNOTATED-BRONZE")
-        output_result_dict["LibraryQualityString"] = ("Bronze")
-    elif gnps_library_spectrum["annotations"][0]["Library_Class"] == "4":
-        output_result_dict["UpdateWorkflowName"] = ("UPDATE-SINGLE-ANNOTATED-BRONZE")
-        output_result_dict["LibraryQualityString"] = ("Insilico")
-    elif gnps_library_spectrum["annotations"][0]["Library_Class"] == "5":
-        output_result_dict["UpdateWorkflowName"] = ("UPDATE-SINGLE-ANNOTATED-BRONZE")
-        output_result_dict["LibraryQualityString"] = ("Insilico")
-    elif gnps_library_spectrum["annotations"][0]["Library_Class"] == "10":
-        output_result_dict["UpdateWorkflowName"] = ("UPDATE-SINGLE-ANNOTATED-BRONZE")
-        output_result_dict["LibraryQualityString"] = ("Challenge")
-    else:
-        print("Invalid Library Class", gnps_library_spectrum["annotations"][0]["Library_Class"])
-
-
-    tag_list = [ (tag["tag_desc"] + "[" + tag["tag_type"] + "]") for tag in gnps_library_spectrum["spectrum_tags"]]
-    tag_string = "||".join(tag_list).replace("\t", "")
-
-    output_result_dict["tags"] = (tag_string)
-
-    return output_result_dict
-
 def _enrich_librarysummary_annotations(output_result_dict, library_dict=None):
     spectrum_id = output_result_dict["SpectrumID"]
 
@@ -156,105 +98,6 @@ def _enrich_librarysummary_annotations(output_result_dict, library_dict=None):
 
     return output_result_dict
 
-
-# Here we will enrich the smiles
-def _enrich_annotations(output_result_dict):
-    # Calculating inchi
-    if len(output_result_dict["Smiles"]) > 5 and len(output_result_dict["INCHI"]) < 5:
-        try:
-            inchi_url = "https://structure.gnps2.org/inchi?smiles={}".format(urllib.parse.quote_plus(output_result_dict["Smiles"]), 
-                                urllib.parse.quote_plus(output_result_dict["INCHI"]))
-            r = requests.get(inchi_url)
-            r.raise_for_status()
-            output_result_dict["INCHI"] = r.text
-        except:
-            output_result_dict["INCHI"] = "N/A"
-    
-    # Calculating smiles
-    if len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) > 5:
-        try:
-            smiles_url = "https://structure.gnps2.org/smiles?inchi={}".format(urllib.parse.quote_plus(output_result_dict["INCHI"]), 
-                                urllib.parse.quote_plus(output_result_dict["Smiles"]))
-            r = requests.get(smiles_url)
-            r.raise_for_status()
-            output_result_dict["Smiles"] = r.text
-        except:
-            output_result_dict["Smiles"] = "N/A"
-
-    # Calculating molecular formula
-    if len(output_result_dict["Smiles"]) > 5:
-        try:
-            formula_url = "https://structure.gnps2.org/formula?smiles={}".format(output_result_dict["Smiles"])
-            r = requests.get(formula_url)
-            r.raise_for_status()
-            output_result_dict["molecular_formula"] = r.text
-        except:
-            output_result_dict["molecular_formula"] = "N/A"
-    else:
-        output_result_dict["molecular_formula"] = "N/A"
-        
-    # Calculating inchi key
-    if len(output_result_dict["Smiles"]) < 5 and len(output_result_dict["INCHI"]) < 5:
-        output_result_dict["InChIKey"] = "N/A"
-        output_result_dict["InChIKey-Planar"] = "N/A"
-    else:
-        try:
-            inchikey_url = "https://structure.gnps2.org/inchikey?smiles={}&inchi={}".format(urllib.parse.quote_plus(output_result_dict["Smiles"]), 
-                                urllib.parse.quote_plus(output_result_dict["INCHI"]))
-            r = requests.get(inchikey_url)
-            r.raise_for_status()
-            output_result_dict["InChIKey"] = r.text
-            output_result_dict["InChIKey-Planar"] = r.text.split("-")[0]
-        except:
-            output_result_dict["InChIKey"] = "N/A"
-            output_result_dict["InChIKey-Planar"] = "N/A"
-
-    # Getting Classyfire
-    if len(output_result_dict["InChIKey"]) > 5:
-        try:
-            classyfire_url = "https://classyfire.gnps2.org/entities/{}.json".format(output_result_dict["InChIKey"])
-            r = requests.get(classyfire_url, timeout=0.5)
-            r.raise_for_status()
-            classification_json = r.json()
-            output_result_dict["superclass"] = classification_json["superclass"]["name"]
-            output_result_dict["class"] = classification_json["class"]["name"]
-            output_result_dict["subclass"] = classification_json["subclass"]["name"]
-        except:
-            output_result_dict["superclass"] = "N/A"
-            output_result_dict["class"] = "N/A"
-            output_result_dict["subclass"] = "N/A"
-    else:
-        output_result_dict["superclass"] = "N/A"
-        output_result_dict["class"] = "N/A"
-        output_result_dict["subclass"] = "N/A"
-
-    # Getting NP Classifier
-    if len(output_result_dict["Smiles"]) > 5:
-        try:
-            npclassifier_url = "https://npclassifier.gnps2.org/classify?smiles={}".format(output_result_dict["Smiles"])
-            r = requests.get(npclassifier_url, timeout=10)
-            r.raise_for_status()
-            classification_json = r.json()
-
-            output_result_dict["npclassifier_superclass"] = "|".join(classification_json["superclass_results"])
-            output_result_dict["npclassifier_class"] = "|".join(classification_json["class_results"])
-            output_result_dict["npclassifier_pathway"] = "|".join(classification_json["pathway_results"])
-        except:
-            output_result_dict["npclassifier_superclass"] = "N/A"
-            output_result_dict["npclassifier_class"] = "N/A"
-            output_result_dict["npclassifier_pathway"] = "N/A"
-    else:
-        output_result_dict["npclassifier_superclass"] = "N/A"
-        output_result_dict["npclassifier_class"] = "N/A"
-        output_result_dict["npclassifier_pathway"] = "N/A"
-
-    # Adding a USI
-    try:
-        output_result_dict["library_usi"] = "mzspec:GNPS:GNPS-LIBRARY:{}".format(output_result_dict["SpectrumID"])
-    except:
-        output_result_dict["library_usi"] = "No USI"
-
-    return output_result_dict
 
 def enrich_output(input_filename, output_filename, 
                     topk=None, 
@@ -333,18 +176,7 @@ def enrich_output(input_filename, output_filename,
         # Here we are going to do the enrichment
         # always with forceoffline, online enrichment is disabled in the np3 flow
         output_result_dict = _enrich_librarysummary_annotations(output_result_dict, library_dict=library_dict)
-        #else:
-        #    if "CCMSLIB" in str(spectrum_id):
-        #        output_result_dict = _enrich_gnps_annotation(output_result_dict)
-        #    else:
-        #        # checking if in library summary
-        #        if library_summary_df is not None:
-        #            output_result_dict = _enrich_librarysummary_annotations(output_result_dict, library_dict=library_dict)
-            # Doing further enrichment
-        #    try:
-        #        output_result_dict = _enrich_annotations(output_result_dict)
-        #    except:
-        #        pass
+        
         output_list.append(output_result_dict)
 
     # Here we can filter based upon the structure criteria
