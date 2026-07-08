@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from tremolo_UNPD_curate_identification import superclass_groupings_names # list of superclass groupings names
 
 total_unpd_unique_SMILES = 183962  # total unique SMILES in UNPD
-total_gnps_unique_SMILES = 90388 # total unique SMILES in GNPS from April 2026
+total_gnps_unique_SMILES = 90253 # total unique SMILES in GNPS from April 2026
 
 # clean_table_file must contain the clean count table with peak area quantification
 def plot_superclass_samples_distribution(metadata_file, clean_table_file, output_path,
