@@ -1634,7 +1634,7 @@ function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_
         gnps_library_search_tool+'" '+tremolo_exec, {async:false, silent:(verbose === 0)});
     // check for ERROR tag in the output
     if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
-        console.log('\nSTDOUT:\n'+resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\n')
+        console.log('STDOUT:\n'+resExec.stdout + '\nSTDERR:\n' + resExec.stderr + '\n')
         let error_msg = 'ERROR - DIFFERENCE in the new job result \n';
         testing_outs += error_msg;
         console.log(error_msg);
@@ -5084,14 +5084,15 @@ program
                 test_res[11] = test_res[11] + "\n\n@@@@@ TEST 12.1 @@@@@\n\n" + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result
-                test_res[11] = test_res[11] + callTestRunEquality(job_name="L754_bacs_join_collections_noise",
+                let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_join_collections_noise",
                     output_path_test=output_path+'/test/equality_test_result/',
                     fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_join_collections_noise',
                     new_result_path=output_path+'/test/L754_bacs/L754_bacs_join_collections_noise',
                     sim_w_cutoff="06", topk=15,maxComponentSize=200,
                     minMachedPeaks=6, gnps_library_search_tool="",
                     tremolo_exec=options.tremolo)
-                if (test_res[11].includes("ERROR")) {
+                test_res[11] = test_res[11] + test_equality_run_res
+                if (test_equality_run_res.includes("ERROR")) {
                     test_errors.push("Test 12.1 - Equality Test");
                 }
             }
