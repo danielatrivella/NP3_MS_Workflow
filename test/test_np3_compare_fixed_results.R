@@ -319,7 +319,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
   names(test_count_tables) <- count_table_names
   # remove any missing data from the fixed result, which had test result = FALSE
   if (any(unlist(test_count_tables) == FALSE)) {
-    test_count_tables <- test_count_tables[test_count_tables != FALSE]
+    test_count_tables <- test_count_tables[unlist(test_count_tables) != FALSE]
   }
   
   ## Compare MGFs ##
@@ -565,7 +565,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
   })
   names(test_mn_reports) <- mn_reports_names
   if (any(unlist(test_mn_reports) == FALSE)) {
-    test_mn_reports <- test_mn_reports[test_mn_reports != FALSE]
+    test_mn_reports <- test_mn_reports[unlist(test_mn_reports) != FALSE]
   }
   ## Reduce all the tests results and print the error messages with the differences if any, 
   # using the tag ERROR if any mismatch was found
@@ -588,6 +588,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                      Molecular_networking_reports=test_mn_reports)
   number_tests <- length(list_tests)
   number_subtests <- sum(sapply(list_tests, length))
+  #print(list_tests)
   # check the correct groups of tests and all subtests
   correct_tests <- sapply(list_tests, function (x) all(unlist(x) == TRUE))
   correct_subtests <- unlist(sapply(list_tests, function (x) (unlist(x) == TRUE)))
@@ -596,7 +597,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
   cat("\nCorrect equality subtests within groups = ", 
       sum(correct_subtests),"/",number_subtests)
   
-  if (sum(correct_tests) == number_tests) {
+  if (sum(correct_tests) == number_tests && sum(correct_subtests) == number_subtests) {
     cat("\nDone! :)\n")
   } else {
     cat("\n\nTotal tests failures:", sum(!correct_tests), ":(",
