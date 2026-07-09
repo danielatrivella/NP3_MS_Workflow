@@ -54,7 +54,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_one_collection/MEOH_1_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 4 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 26 
-DONE for sample MEOH_1 in 7.69 secs !
+DONE for sample MEOH_1 in 7.56 secs !
 (1/4)
 
 * Extracting peak info of sample DMSO_18 *
@@ -65,7 +65,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_one_collection/DMSO_18_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 6 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 0 
-DONE for sample DMSO_18 in 4.29 secs !
+DONE for sample DMSO_18 in 4.21 secs !
 (2/4)
 
 * Extracting peak info of sample YEME_EXT *
@@ -76,7 +76,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_one_collection/YEME_EXT_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 2 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 0 
-DONE for sample YEME_EXT in 5.29 secs !
+DONE for sample YEME_EXT in 5.21 secs !
 (3/4)
 
 * Extracting peak info of sample L754_00 *
@@ -87,21 +87,21 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_one_collection/L754_00_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 4 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 0 
-DONE for sample L754_00 in 5 secs !
+DONE for sample L754_00 in 5.21 secs !
 (4/4)
 
-** Done extracting peak info of data collection batch 1 in 24.97 secs **
+** Done extracting peak info of data collection batch 1 in 24.83 secs **
 
 *** Starting samples alignment of data collection batch 1 ***
 
-DONE! Time elapsed 1.33 secs 
+DONE! Time elapsed 1.04 secs 
 
 DONE pre processing and aligning all samples by data collection batch!
  Total number of MS2 spectra processed: 1948 
-Time elapsed 26.92 secs 
+Time elapsed 26.49 secs 
 DONE! Time elapsed 0.01 secs 
 
-Extracted peak info and aligned samples of L754_bacs_one_collection in 26.93 secs 
+Extracted peak info and aligned samples of L754_bacs_one_collection in 26.51 secs 
 
 
 * Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *
@@ -353,5 +353,5 @@ The user must take the following relations into account when choosing the parame
 DONE! Time Elapsed: 0.04min
 
 ======
-Finish Step 2 Time Elapsed: 0.63min
+Finish Step 2 Time Elapsed: 0.62min
 ======

@@ -2,23 +2,23 @@
 *** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** 
 
 
-DONE! Time Elapsed: 2.20min
+DONE! Time Elapsed: 2.19min
 
    * Retrieving the GNPS2 library annotations of the identified spectra *
-  0%|          | 0/13 [00:00<?, ?it/s]100%|██████████| 13/13 [00:00<00:00, 46169.31it/s]
+  0%|          | 0/13 [00:00<?, ?it/s]100%|██████████| 13/13 [00:00<00:00, 46964.64it/s]
 
 DONE!
 
    * Filtering the top 1 result from the GNPS2 library search *
 
-DONE! Time Elapsed: 2.80min
+DONE! Time Elapsed: 2.76min
 
 
 *** Joining the GNPS identification to the NP3 counts tables ***
 
 *** Joining the GNPS library indentification results to the NP3 count files ***
 
-  * Done joining a total of 5 GNPS identifications from 5 unique identifications to 5 consensus spectra in 0.1 secs *
+  * Done joining a total of 5 GNPS identifications from 5 unique identifications to 5 consensus spectra in 0.09 secs *
 
   * Spectra identification rate (with blanks) = 20 %
 

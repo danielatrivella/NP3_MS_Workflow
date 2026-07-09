@@ -6,7 +6,7 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 9 symbolic clusters in 0.15 secs *
+  * Done creating 9 symbolic clusters in 0.14 secs *
 
   ** Computing Peak Area by Sample ** 
 
@@ -17,7 +17,7 @@ Registered S3 methods overwritten by 'tibble':
   format.tbl pillar
   print.tbl  pillar
 
-DONE! Time Elapsed: 0.09min
+DONE! Time Elapsed: 0.08min
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
 

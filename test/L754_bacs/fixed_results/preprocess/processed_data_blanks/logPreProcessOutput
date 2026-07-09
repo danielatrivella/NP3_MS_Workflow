@@ -54,7 +54,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_blanks/MEOH_1_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 4 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 26 
-DONE for sample MEOH_1 in 7.69 secs !
+DONE for sample MEOH_1 in 7.6 secs !
 (1/3)
 
 * Extracting peak info of sample DMSO_1 *
@@ -65,10 +65,10 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_blanks/DMSO_1_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 0 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 0 
-DONE for sample DMSO_1 in 3.39 secs !
+DONE for sample DMSO_1 in 3.33 secs !
 (2/3)
 
-** Done extracting peak info of data collection batch 1 in 12.56 secs **
+** Done extracting peak info of data collection batch 1 in 12.4 secs **
 
 *** Starting processing samples of data collection batch 2 ***
 
@@ -81,14 +81,14 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_blanks/DMSO_19_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 6 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 14 
-DONE for sample DMSO_19 in 3.47 secs !
+DONE for sample DMSO_19 in 3.41 secs !
 (3/3)
 
-** Done extracting peak info of data collection batch 2 in 4.35 secs **
+** Done extracting peak info of data collection batch 2 in 4.27 secs **
 
 DONE pre processing all samples!
 Total number of MS2 spectra processed: 1111 
-Time elapsed 17.2 secs 
+Time elapsed 16.96 secs 
 
 
 * Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *

@@ -57,11 +57,11 @@ Number of MS2 spectra without a MS1 peak retention time width correspondence: 26
 DONE for sample MEOH_1 in 7.6 secs !
 (1/1)
 
-** Done extracting peak info of data collection batch 1 in 8.7 secs **
+** Done extracting peak info of data collection batch 1 in 8.46 secs **
 
 DONE pre processing all samples!
 Total number of MS2 spectra processed: 806 
-Time elapsed 9.02 secs 
+Time elapsed 8.75 secs 
 
 
 * Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *
@@ -83,8 +83,8 @@ Time elapsed 9.02 secs
 - Removed a total of 128 MS1 peaks (100.0%) of blank m/zs from the list
 * There is no MS1 peak in the MS1 list with MS2 from a not blank sample - pre process parameters suggestion aborted *
 
-DONE! Time Elapsed: 0.03min
+DONE! Time Elapsed: 0.02min
 
 ======
-Finish Step 2 Time Elapsed: 0.37min
+Finish Step 2 Time Elapsed: 0.31min
 ======

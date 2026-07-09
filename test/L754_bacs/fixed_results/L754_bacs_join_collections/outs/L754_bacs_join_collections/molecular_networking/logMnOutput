@@ -4,7 +4,7 @@ Loading package readr, dplyr, dlls...
   * Creating the Molecular Networking of Similarities with 25 nodes *
         |                         |
         |=========================|
-    * Done creating the molecular network of similarities in 0.1 secs *
+    * Done creating the molecular network of similarities in 0.11 secs *
 
 
 DONE!
@@ -81,5 +81,5 @@ DONE!
 
 DONE! 
 ======
-Finish Step 10 Time Elapsed: 0.15min
+Finish Step 10 Time Elapsed: 0.11min
 ======

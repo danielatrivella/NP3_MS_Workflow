@@ -23,11 +23,11 @@ Loading packages Rcpp, readr, dplyr, stringr...
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
   |                          |
   |==========================|
-  * Done annotating clusters in 0.47 secs *
+  * Done annotating clusters in 0.44 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **
-  * Done in 0.13 secs *
+  * Done in 0.1 secs *
 
 
 ** Annotation summary by type **
@@ -63,7 +63,7 @@ Number of isolated nodes:  174
 Number of protonated_representative nodes (with isolated nodes): 181
 
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min
 
 ======
 Finish Step 7 Time Elapsed: 0.18min
@@ -127,7 +127,7 @@ Warning messages:
 2: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
   the standard deviation is zero
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
 
@@ -187,4 +187,4 @@ Warning messages:
 2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
   the standard deviation is zero
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min

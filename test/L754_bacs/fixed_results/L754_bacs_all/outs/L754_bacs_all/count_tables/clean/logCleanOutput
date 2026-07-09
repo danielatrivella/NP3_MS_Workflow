@@ -1,16 +1,17 @@
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 Loading package dplyr and Rcpp functions...
+Number of parallel cores to use in the pairwise comparisons: 4 
 
   * Comparing L754_bacs_all result spectra pairwise *
         |       |
         |=======|
-    * Done making 29161 pairwise comparisions in 40.31 secs *
+    * Done making 29161 pairwise comparisions in 33.33 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.82min
+Finish pairwise comparison Time Elapsed: 0.68min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -25,27 +26,27 @@ NOISE cutoff : disabled
       * Step 0 *
   |                          |
   |==========================|
-        * Joined 13 similar clusters in 0.11 secs *
+        * Joined 13 similar clusters in 0.12 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
-          * Done aggregating similarity table in 0.09 secs *
+          * Done aggregating similarity table in 0.1 secs *
 
       * Step 1 *
   |                          |
   |==========================|
-        * Joined 2 similar clusters in 0.23 secs *
+        * Joined 2 similar clusters in 0.2 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
-          * Done aggregating similarity table in 0.03 secs *
+          * Done aggregating similarity table in 0.04 secs *
 
       * Step 2 *
   |                          |
   |==========================|
         * Joined 0 similar clusters in 0.06 secs *
 
-  * Done reducing 15 similar clusters in 0.76 secs *
+  * Done reducing 15 similar clusters in 0.75 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -67,14 +68,11 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.9 secs *
+    * Done in 0.66 secs *
 
 
-Warning message:
-In normalizePath(file_MGF) :
-  path[1]="/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/mgf/L754_bacs_all_clean.mgf": No such file or directory
 
-DONE! Time Elapsed: 0.27min
+DONE! Time Elapsed: 0.24min
 
 *** Analysing the count of spectra  *** 
 
@@ -104,19 +102,20 @@ Mean number of consensus spectra by m/z:
 DONE!
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 Loading package dplyr and Rcpp functions...
+Number of parallel cores to use in the pairwise comparisons: 4 
 
   * Comparing L754_bacs_all_clean result spectra pairwise *
         | |
         |=|
-    * Done making 25651 pairwise comparisions in 4.52 secs *
+    * Done making 25651 pairwise comparisions in 5.07 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.24min
+Finish pairwise comparison Time Elapsed: 0.22min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.52min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.46min (without the clustered spectra comparison time) 
 ======

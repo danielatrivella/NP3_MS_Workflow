@@ -54,7 +54,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/DMSO_19_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 6 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 14 
-DONE for sample DMSO_19 in 3.98 secs !
+DONE for sample DMSO_19 in 3.92 secs !
 (1/5)
 
 * Extracting peak info of sample L754_EDTA50_00 *
@@ -65,7 +65,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_00_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 6 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 6 
-DONE for sample L754_EDTA50_00 in 4.89 secs !
+DONE for sample L754_EDTA50_00 in 4.82 secs !
 (2/5)
 
 * Extracting peak info of sample L754_EDTA50_01 *
@@ -76,7 +76,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_01_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 8 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 3 
-DONE for sample L754_EDTA50_01 in 3.61 secs !
+DONE for sample L754_EDTA50_01 in 3.55 secs !
 (3/5)
 
 * Extracting peak info of sample L754_EDTA50_02 *
@@ -87,7 +87,7 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_02_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 8 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 4 
-DONE for sample L754_EDTA50_02 in 5.46 secs !
+DONE for sample L754_EDTA50_02 in 5.4 secs !
 (4/5)
 
 * Extracting peak info of sample L754_EDTA50_03 *
@@ -98,21 +98,21 @@ Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxm
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml/processed_data_another_collection/L754_EDTA50_03_peak_info.mgf  ............ OK!
 Number of MS2 spectra without a MS1 peak m/z range correspondence: 7 
 Number of MS2 spectra without a MS1 peak retention time width correspondence: 8 
-DONE for sample L754_EDTA50_03 in 6.24 secs !
+DONE for sample L754_EDTA50_03 in 6 secs !
 (5/5)
 
-** Done extracting peak info of data collection batch 1 in 27.46 secs **
+** Done extracting peak info of data collection batch 1 in 26.92 secs **
 
 *** Starting samples alignment of data collection batch 1 ***
 
-DONE! Time elapsed 1.12 secs 
+DONE! Time elapsed 1.02 secs 
 
 DONE pre processing and aligning all samples by data collection batch!
  Total number of MS2 spectra processed: 1885 
-Time elapsed 29.21 secs 
+Time elapsed 28.56 secs 
 DONE! Time elapsed 0.01 secs 
 
-Extracted peak info and aligned samples of L754_bacs_another_collection_diff in 29.22 secs 
+Extracted peak info and aligned samples of L754_bacs_another_collection_diff in 28.56 secs 
 
 
 * Pre-processing - Statistics of the percentage of MS2 spectra without a MS1 peak correspondence *
@@ -365,5 +365,5 @@ The user must take the following relations into account when choosing the parame
 DONE! Time Elapsed: 0.04min
 
 ======
-Finish Step 2 Time Elapsed: 0.67min
+Finish Step 2 Time Elapsed: 0.66min
 ======
