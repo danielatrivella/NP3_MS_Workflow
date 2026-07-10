@@ -4963,17 +4963,6 @@ program
             } else {
                 test_res[9] = test_res[9] + resExec.stdout.split('*** TESTING ***\n\n')[1];
                 console.log('DONE!\n');
-                // run equality comparison in the obtained result
-                test_res[9] = test_res[9] + callTestRunEquality(job_name="L754_bacs_blanks_one_sample",
-                    output_path_test=output_path+'/test/equality_test_result/',
-                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks_one_sample',
-                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample',
-                    sim_w_cutoff="09", topk=5,maxComponentSize=200,
-                    minMachedPeaks=1, gnps_library_search_tool="",
-                    tremolo_exec=options.tremolo);
-                if (test_res[9].includes("ERROR")) {
-                    test_errors.push("Test 10 - Equality Test");
-                }
             }
         }
 
@@ -5119,6 +5108,17 @@ program
             } else {
                 test_res[12] = test_res[12] + '\n\nDone! :)';
                 console.log('DONE!\n');
+                // run equality comparison in the obtained result, do not check the gnps reports bacause they are not created for the separated cmd
+                test_res[12] = test_res[12] + callTestRunEquality(job_name="L754_bacs_blanks_one_sample",
+                    output_path_test=output_path+'/test/equality_test_result/',
+                    fixed_result_path=__dirname+'/test/L754_bacs/fixed_results/L754_bacs_blanks_one_sample',
+                    new_result_path=output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample',
+                    sim_w_cutoff="09", topk=5,maxComponentSize=200,
+                    minMachedPeaks=1, gnps_library_search_tool="",
+                    tremolo_exec=options.tremolo);
+                if (test_res[12].includes("ERROR")) {
+                    test_errors.push("Test 5-10 and 13 - Equality Test");
+                }
             }
             //console.log("\n\n");
         }
