@@ -2,4 +2,8 @@ output_name: L754_bacs_blanks_one_sample
 
 cmd: 
 
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js mn -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample -w 0.9 -k 5 -b 10 -v 13 --min_matched_peaks 1output_name: L754_bacs_blanks_one_sample
+
+cmd: 
+
 /home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js mn -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample -w 0.9 -k 5 -b 10 -v 13 --min_matched_peaks 1

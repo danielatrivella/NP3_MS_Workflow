@@ -16,18 +16,18 @@ Loading packages Rcpp, readr, dplyr, stringr...
 
 ** Getting list of fragmented peaks and data collection batches by cluster **
 
-  * Done in 0.04 secs *
+  * Done in 0.02 secs *
 
 
 ** Annotating variant spectra that are in concurrent MS1 peaks **
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
   |                          |
   |==========================|
-  * Done annotating clusters in 0.36 secs *
+  * Done annotating clusters in 0.18 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **
-  * Done in 0.17 secs *
+  * Done in 0.09 secs *
 
 
 ** Annotation summary by type **
@@ -63,10 +63,10 @@ Number of isolated nodes:  49
 Number of protonated_representative nodes (with isolated nodes): 53
 
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 7 Time Elapsed: 0.18min
+Finish Step 7 Time Elapsed: 0.17min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
@@ -109,7 +109,7 @@ No VALID bioactivity score column was present in the metadata CSV file. To run t
 
 Where <name> is a unique identifier for each bioactivity score or correlation group that the user might want to add. 
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
 
