@@ -4458,7 +4458,7 @@ program
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@@ Output Path Setup @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-            console.log("  - Copying the test dataset mzxml folder and files to the output_path\n");
+            console.log("  - Copying the test dataset mzxml folder and files to the output_path: "+output_path+"/test/L754_bacs/mzxml/ \n");
             // create the test subfolder and copy the mzxml directory
             shell.mkdir("-p", output_path+"/test/L754_bacs/mzxml");
             shell.cp(__dirname+"/test/L754_bacs/mzxml/*", output_path+"/test/L754_bacs/mzxml/");
