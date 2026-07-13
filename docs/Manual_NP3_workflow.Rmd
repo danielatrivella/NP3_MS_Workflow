@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.4.1
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.4.2
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
   - Luiz F. G. Alves^\*^
   - Rafael de Felicio^\*^
   - Daniela B. B. Trivella^\*^
   - Guilherme P. Telles^\†^
-date: June, 2026 
+date: July, 2026 
 output:
   pdf_document: default
   html_document:
@@ -2010,9 +2010,9 @@ Example to execute the MS² spectra viewer application:
 
 ## 4.17. Command *test*
  
-Run the $NP^{3}$ MS Workflow test suit. I consists of some use cases to test the workflow consistency in all steps. It can also be used to test if the installation was successful. 
+Run the $NP^{3}$ MS Workflow test suit. It consists of some use cases to test the workflow consistency in all steps and to guarantee reproducibility. It can also be used to test if the installation was successful.
 
-It may take a long time; 30 minutes is expected. This option is intended for debugging purposes, and is not a part of the analysis workflow.
+It may take a long time; more than 30 minutes is expected. This option is intended for programming debugging purposes, and is not part of the analysis workflow. After any modification in the $NP^{3}$ code, this command should be executed.
  
 Options for the command *test*:
  
