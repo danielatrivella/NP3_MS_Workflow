@@ -11,6 +11,7 @@
   - (1.4.2) Added extra test cases to compare the consistency of the NP³ results. Equality tests are performed at the end of each saved test case to guarantee reproducibility and correctness of the steps. The results of the NP³ test cases were stored in the fixed_results folder to serve this testing.
       - Added a summary of the test cases in the test command, counting the errors and storing their types to show at the end - improved debugging.
       - Changed the ordering of the components in the IVAMN output to make it reproducible, the components with the largest size are written first. And the edges are also sorted by the source node ID in numerical ordering.
+      - Added a validation routine of the SMILES retrieved from GNPS2 Library Search in the enrichment process during the **setup** command. The **setup** must be executed again for this modification to take effect.
   - (1.4.1) Bug fix in the pre processing step, when reusing a previous pre processed result (partial pre processing). Now the MS1_no_MS2 table is correctly incremented and cleaned in further processing. The pre process statistics is also working now for a partial pre processing.
       - Added an error counting in the run and join_jobs commands, printing the detected errors by step at the end.
   - (1.4.0) Added experimental identification against GNPS2 libraries offline! The **setup** command must be executed again for changes to make effect and the conda environment was updated.
