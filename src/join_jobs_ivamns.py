@@ -45,7 +45,7 @@ def remove_not_valid_ann_from_ivamn(ivamn, not_valid_ann, cosine_cutoff=0.0):
 # for each original job being joined, read its IVAMN and map its msclusterID to the joined msclusterID
 # then concatenate the IVAMNS and merge duplicated edges
 # output_path: path to the current output dir inside the outs dir named with the output_name
-def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=3000, noise_cutoff=False):
+def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=3000, noise_cutoff=0):
 	output_path = Path(output_path)
 	if not output_path.exists() or not output_path.is_dir():
 		sys.exit("ERROR. The provided output path directory '"+output_path.as_posix()+"' does not exists.")
@@ -63,9 +63,9 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 	clean_counts.sort_values(by=['msclusterID'], inplace=True, ignore_index=True)
 	# compute a noise cutoff as the minimum basePeakInt after union if noise cutoff is enabled
 	# use the min basePeakInt in the final clean table as the basePeakInt cutoff
-	if noise_cutoff:
-		basePeakInt_noise_cutoff = clean_counts.basePeakInt.min()
-		print("  - Noise cut-off was enabled and set to ", str(basePeakInt_noise_cutoff))
+	if noise_cutoff > 0:
+		basePeakInt_noise_cutoff = noise_cutoff
+		print("  - Noise cut-off is enabled and equal =", str(basePeakInt_noise_cutoff))
 	else:  # noise cutoff is disabled
 		basePeakInt_noise_cutoff = 0
 	
@@ -127,7 +127,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 			# if this is not the final integration step
 			# remove msclusterIDs with basePeakInt below the cutoff if enabled
 			# and then map the msclusterID_job to the new joinedJobs msclusterID
-			if noise_cutoff:
+			if basePeakInt_noise_cutoff > 0:
 				job_clean_path = Path(metadata_join.JOB_PATH[i], "count_tables", "clean",
 				                      metadata_join.JOBNAME[i] + "_peak_area_clean_ann.csv")
 				if not job_clean_path.exists() or not job_clean_path.is_file():
@@ -187,7 +187,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 			# use the ivamn attribute table with the original msclusterIDs as index to map the source and target IDs to
 			# # the msclusterID_new in the joined jobs
 			# first remove the edges between not valid nodes
-			if noise_cutoff:
+			if basePeakInt_noise_cutoff > 0:
 				# filter ivamn net edges between valid msclusterIDs
 				job_ivamn = job_ivamn.loc[(job_ivamn.msclusterID_source.isin(valid_msclusterIDs) &
 				                           job_ivamn.msclusterID_target.isin(valid_msclusterIDs)), :]
@@ -452,7 +452,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 
 if __name__ == "__main__":
 	max_chunk = 3000
-	noise_cutoff = False
+	noise_cutoff = 0
 	if len(sys.argv) > 3:
 		# print(sys.argv)
 		output_path = sys.argv[1]
@@ -461,7 +461,7 @@ if __name__ == "__main__":
 		if len(sys.argv) > 4:
 			max_chunk = int(sys.argv[4])
 			if len(sys.argv) > 5:
-				noise_cutoff = bool(float(sys.argv[5]))
+				noise_cutoff = float(sys.argv[5])
 	else:
 		print("Error: One argument must be supplied to join the original IVAMNs of jobs being joined inside the join_jobs command flow:\n",
 		      " 1 - output_path: Path to the final output directory of the job currently being joined, ",
@@ -471,9 +471,9 @@ if __name__ == "__main__":
 		      "it must contain the results of the jobs being joined in a folder named with the jobname as defined in the metadata_join;\n",
 		      " 4 - max_chunk: Maximum number of rows of the pairwise similarity table to be loaded and ",
 		      "processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000);\n",
-		      " 5 - noise_cutoff: A boolean True or False indicating if the noise cutoff was enable in cleaning, if yes ",
-		      "remove spectra from original samples with a basePeakInt < minimum basePeakInt in the final joined clean table; ",
-		      "otherwise do nothing (default: False).\n")
+		      " 5 - noise_cutoff: The minimum absolute value of base peak int to keep a MS2 spectra. ",
+		      "Remove spectra from original samples with a basePeakInt < minimum from basePeakInt in the final joined clean table and the provided noise_cutoff; ",
+		      "otherwise do nothing (default: 0).\n")
 		sys.exit(1)
 	# call join jobs IVAMNs
 	join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk, noise_cutoff)
