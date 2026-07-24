@@ -483,11 +483,11 @@ The $NP^{3}$ MS Workflow final reports are organized in three groups of reports:
 The *quantification* report is located inside the quantification_report subfolder and contains:
 - A table with the final quantification of clean consensus spectra, with statistics of the total number of m/z in blank and bed samples, global spectral identification rate against UNPD-tremolo, average number of putative isomers, number of isotope ions and number of fragmented clusters.
 
-The *chemical* report is located inside the chemical_report subfolder and contains: TODO
+The *chemical* report is located inside the chemical_report subfolder and contains: 
 - A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation. If the GNPS2 library search is enable or when gnps_result is executed, another two similar tables are created with the spectral identification and putative novelty against the GNPS libraries and also against the best origin identification GNPSxUNPD after and before the curation.
 - A folder named chemical_space_identifications with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
 - Another folder named chemical_space_mzs with the chemical space plot of the m/z, retention time and their quantification information.
-- An image with the distribution of the superclass groupings among the not blank samples.
+- A plot with the distribution of the superclass grouping among the not blank and not bed samples. This plot is computed using the percentage of occurrence of each superclass in the final library annotated m/z.
 
 The identification curation is detailed in section 4.6.2 *tremolo*.
 
@@ -555,20 +555,20 @@ Options for the command *pre_process*:
 -  *\-p, \-\-ppm_tolerance* [x]       :     the maximal tolerated m/z deviation in consecutive MS1 scans in parts per million (ppm) for the initial ROI definition of the R::xcms::centWave algorithm. Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
 -  *\-a, \-\-ion_mode* [x]              :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = [M+H]+ or 2' = [M-H]- (default: 1)
 -  *\-e, \-\-peak_width* [X,Y]      :       two numeric separated by comma ',' without spaces and using decimal point equals dot '.', containing the expected approximate peak width in chromatographic space. Given as a range (min, max) in seconds. The mean value will be used to simulate the width of the fake peaks (see Details section bellow) (default: 2,10)
--  *\-s, \-\-snthresh* [x]                 a numeric defining the signal to noise ratio cutoff. (default: 0)
--  *\-f, \-\-pre_filter* [k,I]             two numeric separated by comma ',' without spaces and with decimal point equals dot '.' specifying the prefilter step for the first analysis step (ROI detection) of the R::xcms::centWave algorithm. Mass traces are only retained if they contain at least k peaks with intensity >= I. (default: 1,750)
--  *\-r, \-\-noise* [x]                    a numeric allowing to set a minimum intensity required for centroids to be considered in the first analysis step (centroids with intensity < noise are omitted from ROI detection). (default: 500)
--  *\-c, \-\-mz_center_fun* [name]         Name of the function to calculate the m/z center of the chromatographic peak. Allowed are: "wMean": intensity weighted mean of the peak's m/z values, "mean": mean of the peak's m/z values, "apex": use the m/z value at the peak apex, "wMeanApex3": intensity weighted mean of the m/z value at the peak apex and the m/z values left and right of it and "meanApex3": mean of the m/z value of the peak apex and the m/z values left and right of it. (default: wMeanApex3)
--  *\-u, \-\-integrate_method* [x]         Integration method for the XCMS CentWave algorithm. For integrate = 1 peak limits are found through descent on the mexican hat filtered data, for integrate = 2 the descent is done on the real data. The latter method is more accurate but prone to noise, while the former is more robust, but less exact. (default: 2)
--  *\-g, \-\-fit_gauss* [x]                a logical "TRUE" or "FALSE" indicating whether or not a Gaussian should be fitted to each peak. Decreases performance. (default: FALSE)
+-  *\-s, \-\-snthresh* [x]  :           a numeric defining the signal to noise ratio cutoff. (default: 0)
+-  *\-f, \-\-pre_filter* [k,I]  :       two numeric separated by comma ',' without spaces and with decimal point equals dot '.' specifying the prefilter step for the first analysis step (ROI detection) of the R::xcms::centWave algorithm. Mass traces are only retained if they contain at least k peaks with intensity >= I. (default: 1,750)
+-  *\-r, \-\-noise* [x]  :  a numeric allowing to set a minimum intensity required for centroids to be considered in the first analysis step (centroids with intensity < noise are omitted from ROI detection). (default: 500)
+-  *\-c, \-\-mz_center_fun* [name]  :   Name of the function to calculate the m/z center of the chromatographic peak. Allowed are: "wMean": intensity weighted mean of the peak's m/z values, "mean": mean of the peak's m/z values, "apex": use the m/z value at the peak apex, "wMeanApex3": intensity weighted mean of the m/z value at the peak apex and the m/z values left and right of it and "meanApex3": mean of the m/z value of the peak apex and the m/z values left and right of it. (default: wMeanApex3)
+-  *\-u, \-\-integrate_method* [x]  :   Integration method for the XCMS CentWave algorithm. For integrate = 1 peak limits are found through descent on the mexican hat filtered data, for integrate = 2 the descent is done on the real data. The latter method is more accurate but prone to noise, while the former is more robust, but less exact. (default: 2)
+-  *\-g, \-\-fit_gauss* [x]  :          a logical "TRUE" or "FALSE" indicating whether or not a Gaussian should be fitted to each peak. Decreases performance. (default: FALSE)
 -  *\-j, \-\-max_samples_batch_align* [x]  The maximum number of not blank samples to be selected in the metadata sequence for the batch alignment. Due to memory issues this value should not exceed 15 samples to avoid crashing the script. If x == 0 disable the alignment. (default: 5)
--  *\-i, \-\-min_fraction* [x]             a numeric defining the minimum fraction of samples in at least one sample group in which the peaks have to be present to be considered as a peak group (feature). Used in the alignment process to define hook peaks. (default: 0.3)
--  *\-w, \-\-bw* [x]                       a numeric defining the bandwidth (standard deviation of the smoothing kernel) to be used. This option is passed to the density method used in the alignment process. (default: 2)
--  *\-b, \-\-bin_size* [x]                 a numeric defining the size of the overlapping slices in mz dimension. This option is passed to the density method used in the alignment process. (default: 0.05)
--  *\-x, \-\-max_features* [x]             a numeric with the maximum number of peak groups to be identified in a single mz slice. This option is passed to the density method used in the alignment process. (default: 100)
+-  *\-i, \-\-min_fraction* [x]  :       a numeric defining the minimum fraction of samples in at least one sample group in which the peaks have to be present to be considered as a peak group (feature). Used in the alignment process to define hook peaks. (default: 0.3)
+-  *\-w, \-\-bw* [x]  :     a numeric defining the bandwidth (standard deviation of the smoothing kernel) to be used. This option is passed to the density method used in the alignment process. (default: 2)
+-  *\-b, \-\-bin_size* [x]  :           a numeric defining the size of the overlapping slices in mz dimension. This option is passed to the density method used in the alignment process. (default: 0.05)
+-  *\-x, \-\-max_features* [x]  :       a numeric with the maximum number of peak groups to be identified in a single mz slice. This option is passed to the density method used in the alignment process. (default: 100)
 -  *\-q, \-\-processed_data_overwrite* [x]  A logical "TRUE" or "FALSE" indicating if the pre-processed data present in the processed_data_name folder should be overwritten and pre-processed again in case it already exists. Otherwise a previous result may be used for a partial pre processing. (default: "FALSE")
  
--  *\-v, \-\-verbose* [x]                  for values x>0 show the script output information (default: 0)
+-  *\-v, \-\-verbose* [x]  :            for values x>0 show the script output information (default: 0)
 -  *\-h, \-\-help*                         output usage information
  
 ##### 4.3.1. *pre_process* Results
@@ -1690,9 +1690,9 @@ Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to ident
 
 Options for the command *gnps_library_search*:
 
-- *\-g, \-\-input\_mgf\_file* \<path\>        path to the input MGF file with the MS/MS spectra data
+- *\-g, \-\-input\_mgf\_file* \<path\> : path to the input MGF file with the MS/MS spectra data
                                      to be searched and identified
-- *\-o, \-\-output\_path* <path>           if the input is a NP3 result, the path to the final NP3
+- *\-o, \-\-output\_path* <path> : if the input is a NP3 result, the path to the final NP3
                                      output data folder, inside the outs directory of the
                                      clustering result folder. It should contain the
                                      identifications folder, if not it will be created and
@@ -1700,56 +1700,56 @@ Options for the command *gnps_library_search*:
                                      NP3 result, this should be a chosen result folder. The
                                      job name (output_name) will be extracted from here
                                      (basename).
-- *\-z, \-\-mz\_tolerance* [x]             the tolerance for parent mass search in Daltons,
+- *\-z, \-\-mz\_tolerance* [x]  :       the tolerance for parent mass search in Daltons,
                                      depending on the instrument and data accuracy. (default:
                                      0.025)
-- *\-f, \-\-fragment\_tolerance* [x]       the tolerance in Daltons for fragment peaks. Used for
+- *\-f, \-\-fragment\_tolerance* [x]  :     the tolerance in Daltons for fragment peaks. Used for
                                      comparing the mass of the peaks during the search.
                                      (default: 0.05)
-- *\-i, \-\-search\_tool* [x]              the GNPS2 search tool to be used in the library
+- *\-i, \-\-search\_tool* [x]  :        the GNPS2 search tool to be used in the library
                                      searching against the ALL_GNPS_NO_PROPOGATED. One of
                                      "gnps_indexed", "gnps", "gnps_new" or "" (disabled). The
                                      similarity function is hardcoded to be the cosine and
                                      the peak transformation function is the square root.
                                      (default: "gnps_indexed")
-- *\-s, \-\-search\_min\_cosine* [x]        the similarity threshold that determines if two spectra
+- *\-s, \-\-search\_min\_cosine* [x]  :  the similarity threshold that determines if two spectra
                                      are a match. The minimum cosine for a search match.
                                      Values greater or equal than 0.7 will retrieve more
                                      accurate results. (default: 0.7)
-- *-p \-\-search\_min\_matched\_peaks* [x]  The minimum number of common peaks that the searched
+- *-p \-\-search\_min\_matched\_peaks* [x] : The minimum number of common peaks that the searched
                                      spectra must share with a library spectrum to be
                                      considered as a match. (default: 6)
-- *\-k, \-\-top\_k* [x]                    defines the maximal number of results returned by the
+- *\-k, \-\-top\_k* [x]  :  defines the maximal number of results returned by the
                                      GNPS Search Tool for each input spectrum. Additionally,
                                      the top 1 result is always computed at the end of the
                                      search. (default: 5)
-- *\-r, \-\-trim\_mz* [x]                  Filter precursor peaks and peaks around precursor m/z.A logical "TRUE" or "FALSE" indicating if the spectra fragmented 
+- *\-r, \-\-trim\_mz* [x]  :      Filter precursor peaks and peaks around precursor m/z.A logical "TRUE" or "FALSE" indicating if the spectra fragmented 
   					peaks around the precursor m/z +-20 Da should be deleted 
   					before the search comparisons. If "TRUE" this removes the 
   					residual precursor ion, which is frequently observed in MS/MS 
   					spectra acquired on qTOFs. (default: "TRUE")
-- *\-w, \-\-window\_filter* [x]            If "TRUE", for each peak, it will check a window around
+- *\-w, \-\-window\_filter* [x]  :      If "TRUE", for each peak, it will check a window around
                                      that peak, if it is not one of the top peaks in terms of
                                      intensity in that window, it will be filtered out. This
                                      will speed up the search and reduce the effect of noise.
                                      (default: "TRUE")
-- *\-\-analog\_search* [x]                If "TRUE", also search for analog spectra. This allows
+- *\-\-analog\_search* [x]  :    If "TRUE", also search for analog spectra. This allows
                                      as a match the spectra with different precursor mass and
                                      similar fragmentation pattern.  (default: "FALSE")
-- *\-\-analog\_max\_shift* [x]             Maximum difference between precursor m/zs that will be
+- *\-\-analog\_max\_shift* [x]  :       Maximum difference between precursor m/zs that will be
                                      used in the search when analog_search is enabled. Only
                                      used when search_tool is "gnps_new". (default: 400)
-- *\-l, \-\-parallel\_threads* [x]         the number of threads to be used for parallel processing
+- *\-l, \-\-parallel\_threads* [x]  :   the number of threads to be used for parallel processing
                                      in the search when search_tool is gnps_indexed. For
                                      parallelization set x >= 1 (default: 8)
-- *\-c, \-\-count\_file\_path* [path]       Path to any of the count tables (peak_area or spectra)
+- *\-c, \-\-count\_file\_path* [path]   :    Path to any of the count tables (peak_area or spectra)
                                      resulting from the NP3 clustering or clean steps (which
                                      matches with the input_mgf_file used). If the peak_area
                                      is informed and the spectra table file exists in the
                                      same path (or the opposite), it will merge the GNPS
                                      results to both files. Ignore if this is not a NP3
                                      result (leave as empty string). (default: "")
-- *\-m, \-\-metadata* [file]              path to the metadata table CSV file of the NP3 job. This is necessary to plot the distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).
+- *\-m, \-\-metadata* [file]  :  path to the metadata table CSV file of the NP3 job. This is necessary to plot the distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).
    (default: "")
    
 ##### 4.12.1. *gnps_library_search* Results
@@ -1933,9 +1933,9 @@ Runs the R interactive script to extract chromatogram(s) from raw MS1 data files
  
 Options for the command *chr*:
  
-- *\-n, \-\-data_name* [name]  the data collection name. Used for verbosity (default: -)
-- *\-b, \-\-metadata* \<file\>  path to the metadata table CSV file
-- *\-d, \-\-raw_data_path* \<path\>    path to the folder containing the input LC-MS/MS raw spectra data in mzXML, mzData and mzML format
+- *\-n, \-\-data_name* [name] : the data collection name. Used for verbosity (default: -)
+- *\-b, \-\-metadata* \<file\>  : path to the metadata table CSV file
+- *\-d, \-\-raw_data_path* \<path\>   : path to the folder containing the input LC-MS/MS raw spectra data in mzXML, mzData and mzML format
 <!-- - \-w, \-\-chr_view [X]           the chromatogram view determining what need to be plotted and how. Allowed values for X are: 'batch' \- plot all samples chromatograms aggregated by data collection batch as specified in the 'batch_metadata', 'individual' \- plot each chromatogram individually, 'all' \- plot all chromatograms together, or samples codes separated by comma, as specified in the 'SAMPLE_CODE' column of the 'batch_metadata' file, to be plotted together \- e.g., 'sample1,sample2,sample4' will plot the chromatogram of these 3 samples in a single image (default: batch) -->
 <!-- - \-f, \-\-aggregation_fun [X]    a character defining the function to be used for intensity value aggregation along the mz dimension. Allowed values for X are: 'sum' (TIC), 'max' (BPC), 'min' and 'mean' (default: sum) -->
 <!-- - \-y, \-\-output_type [X]        a character defining the file type used to save the chromatogram(s) plot. Allowed values are 'png', 'jpeg', 'tiff' and 'bmp' (default: png) -->
@@ -2008,7 +2008,116 @@ Example to execute the MS² spectra viewer application:
   $ node np3_workflow.js spectra_viewer --port 8080
 ```
 
-## 4.17. Command *test*
+
+## 4.17. Command *post_dd_analysis*
+
+This command perform a post processing analysis of a NP3 result for drug discovery research. This post drug discovery analysis consists of creating five different visualizations and two data tables. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a curated library annotation) and the novelty across samples (with redundant and/or exclusive m/z). The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution and/or only the protonated m/z.
+
+Options for the command *post_dd_analysis*:
+
+- *\-c, \-\-clean\_counts\_path* \<path\> : Path to the clean counts table file with peak area of the NP3 job to be post analysed, the same of the
+                                                metadata. The prefix of its filename will be used to name the output files.
+- *\-m, \-\-metadata\_path* \<path\> : Path to the metadata file of the same NP3 job to be post analysed, with its set of samples. It may contain
+                                                the complete metadata or just a selection of the original samples, which will be used to filter the final
+                                                plots and tables by sample. This filtering does not affect the metrics computations, its only for
+                                                visualization purposes. The metadata filename will be used to name the output files.
+- *\-o, \-\-output\_path* \<path\> : Path to the output directory where the plots and tables of the post analysis will be stored. If the
+                                                output\_path does not exists, it will be created. If it already exists, the created plots and tables with the
+                                                same name will be overwritten.
+- *\-k, \-\-topk* [value]  :   The number of samples to be selected and filtered in the plots with the top count of exclusive and not
+                                                annotated m/z \- top novelty samples. If None or 0, disable filtering. This filtering does not affect the
+                                                metrics computations, its only for visualization purposes. (default: "None")
+- *\-p, \-\-use\_protonated* [value]  :      True of False defining if only the putative [M+H] m/z should be used in the output tables and plots (filter
+                                                the table with protonated\_representative == 1). This will affect the metrics computation. (default: "False")
+- *\-\-rm\_blanks* [value]  :  True or False to allow removing blank samples and m/z from the metrics computation. (default: "True")
+- *\-\-rm\_beds* [value]  :    True or False to allow removing culture media samples and m/z from the metrics computation. (default: "True")
+- *\-\-rm\_controls* [value]  :       True or False to allow removing control samples and m/z from the metrics computation. (default: "False")
+- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best result from UNPD and GNPS). (default: "best_origin_curated_superclass_grouping")
+- *\-\-donutplots\_title\_size* [value]  :   The title size of the donut plots. (default: "16")
+- *\-\-donutplots\_text\_size* [value]  :    The axis and legend text sizes of the donut plots. (default: "14")
+ *\-\-donutplot\_libAnnotations\_colors* [value]   :  The list of colors separated by comma for the library annotation distribution donut plot. Three colors are
+                                                expected for 'GNPS', 'UNPD' and 'not\_annotated' categories. Or None to use the default coloring of
+                                                matplotlib. (default: "#ff8b00,#6372b4,#c6c6c6")
+- *\-\-donutplot\_mzs\_distr\_colors* [value]  :    The list of colors separated by comma for the m/z occurrence distribution donut plot. Two colors are expected
+                                                for 'Exclusive' and 'Redundant' categories. Or None to use the default coloring of matplotlib. (default:
+                                                "#0072c3,#42be65")
+- *\-\-mzs\_barplot\_figsize* [value]  :     The x,y figure size of the m/z occurrence distribution in a stacked bar plot by sample. Two integer values
+                                                separated by comma. (default: "18,8")
+- *\-\-mzs\_barplot\_label\_size* [value]  :  The axis label size of the m/z occurrence distribution in a stacked bar plot by sample. (default: "13")
+- *\-\-mzs\_barplot\_title\_size* [value]  :  The title size of the m/z occurrence distribution in a stacked bar plot by sample. (default: "20")
+- *\-\-mzs\_barplot\_legend\_bbox* [value]  :       The x,y anchoring coordinates relative to the plot area of the m/z occurrence distribution in a stacked bar plot by sample. Two float values separated by comma. (0, 0) is the bottom\-left corner of the plot. (1, 1) is the top\-right corner of the plot. Values smaller than 0 or greater than 1 will place the legend completely
+                                                outside the plot area. (default: "0.5,\-0.2")
+- *\-\-mzs\_barplot\_legend\_fontsize* [value]  :   The legend font size of the m/z occurrence distribution in a stacked bar plot by sample. (default: "17")
+- *\-\-mzs\_barplot\_legend\_ncol* [value]  :       The number of columns to display the legends of the m/z occurrence distribution in a stacked bar plot by
+                                                sample. (default: "4")
+- *\-\-mzs\_barplot\_colors* [value]      :            The list of colors of the m/z occurrence distribution in a stacked bar plot by sample. Four colors are expected for 'exclusive not annotated', 'exclusive annotated', 'redundant not annotated' and 'redundant annotated' m/z categories. If None, use the default matplotlib coloring. (default:"#0072c3,#FF8C00,#42be65,#FDDA0D")
+- *\-\-superclass\_barplot\_figsize* [value]     :     The x,y figure size of the superclass distribution in a stacked bar plot by sample. Two integer values
+                                                separated by comma. (default: "20,10")
+- *\-\-superclass\_barplot\_label\_size* [value]   : The axis label size of the superclass distribution in a stacked bar plot by sample. (default: "16")
+- *\-\-superclass\_barplot\_title\_size* [value]   : The title size of the superclass distribution in a stacked bar plot by sample. (default: "20")
+- *\-\-superclass\_barplot\_legend\_bbox* [value]  : The x,y anchoring coordinates relative to the plot area of the superclass distribution in a stacked bar plot
+                                                by sample. Two float values separated by comma. (0, 0) is the bottom\-left corner of the plot. (1, 1) is the
+                                                top\-right corner of the plot. Values smaller than 0 or greater than 1 will place the legend completely
+                                                outside the plot area. (default: "0.5,\-0.15")
+- *\-\-superclass\_barplot\_legend\_fontsize* [value] : The legend font size and title size of the superclass distribution in a stacked bar plot by sample. (default:
+                                                "15")
+- *\-\-superclass\_barplot\_legend\_ncol* [value]  : The number of columns to display the legends of the superclass distribution in a stacked bar plot by sample.
+                                                (default: "4")
+- *\-h, \-\-help* : output usage information
+
+
+
+   
+##### 4.17.1. *post_dd_analysis* Results
+
+Five visualizations are created in the output_path directory: 
+
+(1) the samples composition in terms of the desired superclass grouping distribution across the final m/z by samples in a barplot; 
+(2) the m/z library identification novelty in a donut plot with the total count of curated library annotations; 
+(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; 
+(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;
+(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. 
+ 
+ And two CSV tables are created with the count of m/z novelty by sample and the count of superclass grouping by sample.
+ 
+All the output plots and tables are named with a prefix equal the output_name (extracted from the clean table) concatenated with the metadata filename. The provided superclass\_grouping\_column parameter value is also used for naming plot (1).
+
+##### 4.17.2. *post_dd_analysis* Examples
+
+Example to execute the post processing drug discovery analysis from $NP^{3}$ MS Workflow:
+
+```{r, eval=F} 
+   $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv 
+--clean_counts_path /path/to/np3/result/outs/count_tables/clean/clean_count_peak_area.csv 
+--output_path "/path/to/the/output/directory/"
+```
+
+Example to create the analysis plots with the top 5 novelty samples and only [M+H]+ m/z:
+
+```{r, eval=F} 
+   $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv 
+--clean_counts_path /path/to/np3/result/outs/count_tables/clean/clean_count_peak_area.csv 
+--output_path /path/to/the/output/directory/ --topk 5 -p True
+```
+
+##### 4.17.3. *post_dd_analysis* Details
+
+The provided metadata table may be used to filter the final plots and display only a subset of the original samples. This will not modify the metrics, only the visualization of the data is modified. This may be useful for middle to big datasets with more than 50 samples, for which the complete view is not clear.
+
+The top k may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not annotated m/z - are selected for the final plots. The novelty here is measured as a m/z that is not present in any library search and the samples that have a list of m/z that were not detected in other samples - which are exclusive to this sample.
+
+This post processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4) and (5) of the results, it calculates the following metrics by sample:
+
+  - number of exclusive m/z (only appear in one sample);
+  - number of redundant m/z (appear in more than one sample)
+  - number of annotated m/z (received a curated library annotation from GNPS or UNPD)
+
+The plot (1) is created by computing the provided superclass grouping distribution by sample. For this, the groups present in the column provided in the parameter superclass\_grouping\_column are counted by sample by checking the presence of their respective m/z in the valid samples, grouping their occurrence by the superclass groups and summing their counts by sample, any missing group will receive a value equals to zero. This will result in the percentage of detected m/z by annotated superclass group in the superclass\_grouping\_column for each sample.
+
+There are different parameters to personalize the final plots with different text sizing and legend organization and position, the users may change the default values according to their needs.
+
+
+## 4.18. Command *test*
  
 Run the $NP^{3}$ MS Workflow test suit. It consists of some use cases to test the workflow consistency in all steps and to guarantee reproducibility. It can also be used to test if the installation was successful.
 
@@ -2024,12 +2133,13 @@ Options for the command *test*:
                          the output_path/test directory. Default value to empty string "", which outputs
                          to the $NP^{3}$ test folder. (default: "")
 - *\-h, \-\-help*              output usage information
+
  
-##### 4.17.1. *test* Results:
+##### 4.18.1. *test* Results:
  
 The results of the $NP^{3}$ jobs used in the tests. They are stored inside the test/L754_bacs folder of the repository by default, or in the output_path/test/L754_bacs. The metadata table files present in the test/L754_bacs folder are used in the testing cases and should not be modified.
  
-##### 4.17.2. *test* Examples:
+##### 4.18.2. *test* Examples:
  
 Example to execute the test suit from $NP^{3}$ MS Workflow:
 
