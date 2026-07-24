@@ -36,9 +36,9 @@ scale_factor <- 0.5
 table_limit_size <- 3000  # set max number of rows to process in a chunck
 mz_rt_digits <- 4  # number of digits to round the mzConsensus and the retention times
 ion_mode <- "+" # + or -
-# A positive numeric value to scale the interquartile range (IQR) of the 
+# BFLAG_cutoff_factor is A positive numeric value to scale the interquartile range (IQR) of the 
 # blank spectra basePeakInt distribution and allow spectra with a basePeakInt
-# value below this distribution median plus IQR*bflag_cutoff to be joined with 
+# value below this distribution median plus IQR*BFLAG_cutoff_factor to be joined with 
 # a blank spectrum without relying on the similarity value.
 # Or FALSE to disable it.
 # The IQR is the range between the 1st quartile (25th quantile) and the 3rd 
@@ -49,7 +49,7 @@ ion_mode <- "+" # + or -
 # relying only on the similarity cutoff. This is a turn around to the fact that 
 # blank spectra have low quality spectra and thus can not fully rely on the similarity values.
 BFLAG_cutoff_factor <- 1.5 
-NOISE_cutoff_factor <- FALSE
+NOISE_cutoff <- 0 # the absolute base peak intesity minimum value that a spectra must have to be kept for cleaning
 
 RMSE <- function(x, y) {
   x <- as.numeric(x)
@@ -72,7 +72,7 @@ if (length(args) < 3) {
        " 8 - The scale factor to be used to aggregated the peaks of joined clusters;\n",
        " 9 - The ionization mode, one of -1 or 1 (default to 1);\n",
        " 10 - The bflag_cutoff a positive numeric or FALSE to disable it. If positive numeric, allow to join the spectra with a low basePeakInt (<= median + bflag_cutoff*IQR) with a blank spectra without relying on the similarity value;\n",
-       " 10 - The NOISE_cutoff a positive numeric or FALSE to disable it. If positive numeric, allow to remove the spectra with a low basePeakInt  (<= median + NOISE_cutoff*IQR);\n",
+       " 10 - The NOISE_cutoff an absolute positive numeric or 0 to disable it. If positive numeric, allow to remove the spectra with a low basePeakInt  (basePeakInt < NOISE_cutoff) before the clean step;\n",
        " 11 - The maximum number of spectra (rows) to be processed at a time.",
        call.=FALSE)
 } else {
@@ -184,17 +184,13 @@ if (length(args) < 3) {
       BFLAG_cutoff_factor <- as.logical(args[[10]]) 
     }
     
-    NOISE_cutoff_factor <- args[[11]]  # check if it is FALSE
-    if (NOISE_cutoff_factor != "FALSE") { 
-      # check if it is numeric
-      NOISE_cutoff_factor <- as.numeric(args[[11]]) 
-      if (is.na(NOISE_cutoff_factor) || NOISE_cutoff_factor < 0)
-        stop("The NOISE_flag arg must be a positive numeric value or FALSE to disable it. ",
-             "If positive numeric value, indicates that the features with low basePeakInt should be removed.",  
-             call. = FALSE)
-    } else {
-      NOISE_cutoff_factor <- as.logical(args[[11]]) 
-    }
+    NOISE_cutoff <- as.numeric(args[[11]])   # convert to absolute value
+    # check if it is numeric
+    if (is.na(NOISE_cutoff) || NOISE_cutoff < 0)
+      stop("The NOISE_cutoff arg must be a positive numeric value or 0 to disable it. ",
+           "If positive numeric value, the features with a low basePeakInt < NOISE_cutoff will be removed before the clean step.",  
+           call. = FALSE)
+  
     
     table_limit_size <- as.numeric(args[[12]])
     if (table_limit_size < 100) {
@@ -468,45 +464,32 @@ if ('BLANKS_TOTAL' %in% names(ms_spectra_count)) {
 if (!blanks_flag) {
   BFLAG_cutoff_factor <- FALSE
   BFLAG_cutoff <- -1
-  # NOISE_cutoff <- -1
   cat("\nBFLAG cutoff : disabled\n")
-  # cat("\nNOISE cutoff : disabled\n")
 } 
-if (BFLAG_cutoff_factor != FALSE || NOISE_cutoff_factor != FALSE) {
+if (BFLAG_cutoff_factor != FALSE) {
   # compute the summary of the basePeakInt distribution for blank mzs if any, or using the complete distribution
   if (blanks_flag) {
     summary_basePeakInt <- summary(ms_spectra_count$basePeakInt[ms_spectra_count$BLANKS_TOTAL > 0])
   } else {
     summary_basePeakInt <- summary(ms_spectra_count$basePeakInt)
   }
-  if (BFLAG_cutoff_factor == FALSE) {
-    # if there is no blank, variable BFLAG_cutoff is already defined;
-    # then do not print the bflag disabled message again
-    if (!exists('BFLAG_cutoff')) {
-      BFLAG_cutoff <- -1
-      cat("\nBFLAG cutoff : disabled\n")
-    }
-  } else {
-    # BFLAG_cutoff is a numeric value, compute the cutoff as the basePeakInt median + bflag_cutoff_factor*(q75-q25) of the blank mzs
-    BFLAG_cutoff <- summary_basePeakInt[['Median']] + BFLAG_cutoff_factor*(summary_basePeakInt[['3rd Qu.']]-summary_basePeakInt[['1st Qu.']]) 
-    cat("\nBFLAG cutoff : basePeakInt median +",BFLAG_cutoff_factor,"* (q75-q25) =", BFLAG_cutoff,"\n")
-  }
-  if (NOISE_cutoff_factor == FALSE) {
-    NOISE_cutoff <- -1
-    cat("\nNOISE cutoff : disabled\n")
-  } else {
-    # NOISE_cutoff is a numeric value, compute the cutoff as the basePeakInt median + NOISE_cutoff_factor*(q75-q25) of the blank mzs
-    NOISE_cutoff <- summary_basePeakInt[['Median']] + NOISE_cutoff_factor*(summary_basePeakInt[['3rd Qu.']]-summary_basePeakInt[['1st Qu.']]) 
-    cat("\nNOISE cutoff : basePeakInt median +",NOISE_cutoff_factor,"* (q75-q25) =", NOISE_cutoff,"\n")
-  }
+  
+  # BFLAG_cutoff is a numeric value, compute the cutoff as the basePeakInt median + bflag_cutoff_factor*(q75-q25) of the blank mzs
+  BFLAG_cutoff <- summary_basePeakInt[['Median']] + BFLAG_cutoff_factor*(summary_basePeakInt[['3rd Qu.']]-summary_basePeakInt[['1st Qu.']]) 
+  cat("\nBFLAG cutoff : basePeakInt median +",BFLAG_cutoff_factor,"* (q75-q25) =", BFLAG_cutoff,"\n")
+  
   remove(summary_basePeakInt)
 } else {
   if (!exists('BFLAG_cutoff')) {
     BFLAG_cutoff <- -1
     cat("\nBFLAG cutoff : disabled\n")
   }
-  NOISE_cutoff <- -1
+}
+
+if (NOISE_cutoff == 0) {
   cat("\nNOISE cutoff : disabled\n")
+} else {
+  cat("\nNOISE cutoff : ", NOISE_cutoff,"\n")
 }
 
 not_count_columns <- which(!(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))) 
@@ -526,15 +509,12 @@ if (any(is.na(order_table))) {
 }
 ms_spectra_count <- ms_spectra_count[order_table,]
 
-# apply the noise cutoff filter before the clean step if the number of rows is
-# greater than 15k, what can cause a slow processing
-# apply the Noise cutoff filter based on the basePeakInt <= noisy_cutoff
-if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff) && 
-    nrow(ms_spectra_count) > 15000) {
-  cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <=",
+# apply the noise cutoff filter before the clean step 
+# based on the basePeakInt < noise_cutoff
+if (NOISE_cutoff > 0 && any(ms_spectra_count$basePeakInt < NOISE_cutoff)) {
+  cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <",
       NOISE_cutoff,"**\n")
-  spectra_to_keep <- (ms_spectra_count$basePeakInt > NOISE_cutoff)
-  # ms_area_count <- ms_area_count[spectra_to_keep,]
+  spectra_to_keep <- (ms_spectra_count$basePeakInt >= NOISE_cutoff)
   ms_spectra_count <- ms_spectra_count[spectra_to_keep,]
   # also remove the spectra from the similarity table
   # consider the first column which have the scans numbers
@@ -949,69 +929,6 @@ rm(peak_areas_base_peak_int)
 # compute max area and the mean precursor intensity of the final clusters
 ms_area_count$maxArea <- ms_spectra_count$maxArea <- apply(ms_area_count[,count_columns], 1, max)
 ms_area_count$meanInt <- ms_spectra_count$meanInt <- ms_area_count$sumInts / ms_area_count$numSpectra
-
-#stop("Check sim aggMax!!")
-
-# apply the Noise cutoff filter based on the basePeakInt <= noisy_cutoff
-if (NOISE_cutoff >= 0 && any(ms_spectra_count$basePeakInt <= NOISE_cutoff)) {
-  order_table <- match(scans_order[-1], ms_spectra_count$msclusterID)
-  if (any(is.na(order_table))) {
-    stop("Wrong matching between the pairwise similarity table and the provided count table. Something went wrong in the pairwise similarity table computation.")
-  }
-  ms_spectra_count <- ms_spectra_count[order_table,]
-  ms_area_count <- ms_area_count[order_table,]
-  cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <=",
-      NOISE_cutoff,"**\n")
-  spectra_to_keep <- (ms_spectra_count$basePeakInt > NOISE_cutoff)
-  ms_area_count <- ms_area_count[spectra_to_keep,]
-  ms_spectra_count <- ms_spectra_count[spectra_to_keep,]
-  # also remove the spectra from the similarity table
-  # consider the first column which have the scans numbers
-  spectra_to_keep <- c(TRUE, spectra_to_keep)
-  col_types <- rep("d", length(spectra_to_keep))
-  col_types[!spectra_to_keep] <- "-"
-  col_types[1] <- 'c'
-  col_types <- paste0(col_types, collapse = "") 
-  # read pairwise sim limited by the max chunk size and write it again removing
-  # the columns and the rows of the removed spectra
-  rows_read <- 0
-  # when the number of rows read is equal the spectra_to_keep length, finish the 
-  # process - the header is also counted
-  while (rows_read < length(spectra_to_keep)) {
-    pairwise_sim <- read_csv(file.path(output_path, 
-                                       "molecular_networking/similarity_tables", 
-                                       paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                             n_max = table_limit_size, skip = rows_read, 
-                             col_names = F, col_types = col_types)
-    nrow_pariwise_sim <- nrow(pairwise_sim)
-    pairwise_sim <- pairwise_sim[spectra_to_keep[(rows_read+1):min(rows_read+table_limit_size,length(spectra_to_keep))],]
-    rows_read <- rows_read + nrow_pariwise_sim
-    write_csv(pairwise_sim, 
-              path = file.path(output_path, 
-                               "molecular_networking/similarity_tables", 
-                               paste0("similarity_table_", output_name, "_tmp.csv")),
-              col_names = FALSE, append = TRUE)
-    
-  }
-  # copy tmp similarity table to the final aggMax with the removed spectra similarities
-  file.copy(from = file.path(output_path,
-                             "molecular_networking/similarity_tables",
-                             paste0("similarity_table_", output_name, "_tmp.csv")), 
-            to = file.path(output_path,
-                           "molecular_networking/similarity_tables",
-                           paste0("similarity_table_", output_name, "_aggMax.csv")),
-            overwrite = TRUE)
-  unlink(file.path(output_path,
-                   "molecular_networking/similarity_tables",
-                   paste0("similarity_table_", output_name, "_tmp.csv")),
-         force = TRUE)
-  # recompute col_types - remove columns with col_types equals '-'
-  col_types <- gsub(pattern = '-', replacement = '', x = col_types)
-  # order in the columns and lines: skip header[1] and add -1 to avoid first column
-  scans_order <- scans_order[spectra_to_keep]
-  cat("\n  * Done removing", sum(!spectra_to_keep), "noise spectra  *\n\n")
-  remove(spectra_to_keep, pairwise_sim, rows_read, nrow_pariwise_sim)
-}
 
 cat("\n  ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **\n")
 
