@@ -4,10 +4,14 @@
 
 - - - - 
 
-# Current Version 1.4.2
+# Current Version 1.5.0
 
 - NEW features:
 
+  - (1.5.0) A new command called **post_dd_analysis** was added to the np3 workflow! The *noise_cutoff* was changed to receive an absolute value.
+      - The command post_dd_analysis is a post process that creates some visualization analysis for drug discovery research.
+      - Changed the superclass grouping plot from the final chemistry report to match the new plot being created in the post processing drug discovery analysis; now this plotting correctly removes blanks and beds from the counts computation and uses the occurrence of each group in the final library annotated m/z instead of their peak area abundance by sample for the percentage distribution computation. 
+      - The noise_cutoff is now the absolute value of the minimum base peak int (without normalization) that a MS2 must have to be kept after the clustering of Step 3, otherwise it is removed before the clean step.
   - (1.4.2) Added extra test cases to compare the consistency of the NP³ results. Equality tests are performed at the end of each saved test case to guarantee reproducibility and correctness of the steps. The results of the NP³ test cases were stored in the fixed_results folder to serve this testing.
       - Added a summary of the test cases in the test command, counting the errors and storing their types to show at the end - improved debugging.
       - Changed the ordering of the components in the IVAMN output to make it reproducible, the components with the largest size are written first. And the edges are also sorted by the source node ID in numerical ordering.
@@ -18,13 +22,6 @@
       - A new command was implemented, called **gnps_library_search**, which is capable of executing the GNPS2 Library Search workflow with some minor adaptations and full integration with the NP³ results and reports.
       - The ALL\_GNPS\_NO\_PROPOGATED library (all LC data present in GNPS2) is retrieved locally (**setup** command) and its annotations were previous enriched on April 2026 (no internet connection is needed).
       - This routine was also automated in the **run** command as step 6.1, which automatically identifies the result against GNPS2 experimental data.
-  - (1.3.2) Bug fix in the **join_jobs** command in Step 7 when integrating the IVAMNs from the original jobs. Some invalid annotations of the joined IVAMN were being kept with an empty string in the annotation type, leading to errors in the following steps or further joins.
-  - (1.3.1) The command **gnps_result** had its behaviour modified to only accept identifications from the clean MGF to join to the clean table (which also works for the join_jobs results). The older behavior could lead to wrong joins when using a join\_jobs result. For identifications from GNPS2, only the top 1 result is used. The GNPS identifications result of the test suite were updated.
-      - In the chemical report, the PCA plot for the UNPDxGNPS data now uses the default style and labels naming. In the chemical statistics table, added the number of [M+H]⁺ with beds included, which is equal to the number of nodes of the SSMN protonated.
-  - (1.3.0) A new command called **pca_plot** was implemented to create a PCA using the NP³ reference chemical space (UNPD+DrugBank+Allosteric datasets). The NP³ and other external tables may be used to create a new PCA in the NP³ chemical space.
-      - Now the PCA creation in the final reports procedure removes any blanks or beds before plotting; and also creates a PCA plot with only the putative protonated m/z.
-      - Bug fix in the join_jobs command, Step 7 to join IVAMNs (fixed the removal of invalid connections). 
-      - In the **test** command, added a new output_path parameter to allow running and storing the NP³ test results in a different folder (not in the repository folder).
 
 - - - -
 
@@ -376,6 +373,17 @@ The *join_jobs* command may be useful for processing growing libraries, which wi
 - **chr** [options] :        This command runs an interactive prompt to extract chromatogram(s) from raw MS1 data files (mzXML, mzData and mzML) and to save to PNG image files. Depending on the provided parameters this can be a total ion chromatogram (TIC - default), a base peak chromatogram (BPC) or an extracted ion chromatogram (XIC) extracted from each sample/file.
 
 - **spectra_viewer** [options] : (for Unix OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
+
+- **post_dd_analysis** [options]  :  This command perform a post processing analysis of a NP3 result for drug discovery research. This post drug discovery analysis consists of creating five different visualizations and two data tables. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a curated library annotation) and the novelty across samples (with redundant and/or exclusive m/z). The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution and/or only the protonated m/z.
+    - *\-c, \-\-clean\_counts\_path* \<path\> : Path to the clean counts table file with peak area of the NP3 job to be post analysed, the same of the
+                                                metadata. The prefix of its filename will be used to name the output files.
+    - *\-m, \-\-metadata\_path* \<path\> : Path to the metadata file of the same NP3 job to be post analysed, with its set of samples. It may contain
+                                                the complete metadata or just a selection of the original samples, which will be used to filter the final
+                                                plots and tables by sample. This filtering does not affect the metrics computations, its only for
+                                                visualization purposes. The metadata filename will be used to name the output files.
+    - *\-o, \-\-output\_path* \<path\> : Path to the output directory where the plots and tables of the post analysis will be stored. If the
+                                                output\_path does not exists, it will be created. If it already exists, the created plots and tables with the
+                                                same name will be overwritten.
 
 - **test** [options]      :       This command runs some use cases to test the NP³ MS workflow consistency in all steps. This option is intended for debugging purposes, and is not a part of the analysis workflow.
 
