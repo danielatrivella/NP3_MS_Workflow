@@ -88,7 +88,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
                            superclass_barplot_figsize=(20, 10), superclass_barplot_label_size=16,
                            superclass_barplot_title_size=20, superclass_barplot_legend_bbox=(0.5, -0.25),
                            superclass_barplot_legend_fontsize=15, superclass_barplot_legend_ncol=4):
-	print("* Post Processing Drug Discovery analysis for NP3 results *\n")
+	print("* Drug Discovery Analysis of NP3 results *\n")
 	# check the paths
 	clean_counts_path = Path(clean_counts_path)
 	metadata_path = Path(metadata_path)
@@ -269,14 +269,20 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	clean_samples_by_superclass_grouping = present_mzs_by_sample.groupby(clean_counts_df.best_origin_curated_superclass_grouping).sum().T
 	if samples_to_use != area_cols:
 		clean_samples_by_superclass_grouping = clean_samples_by_superclass_grouping.loc[samples_to_use, :]
+	superclass_grouping_columns = list(superclass_colors.keys())
+	# add any missing superclass group
+	missing_groups = clean_samples_by_superclass_grouping.columns.symmetric_difference(
+		superclass_grouping_columns).values
+	if len(missing_groups) > 0:
+		clean_samples_by_superclass_grouping[missing_groups] = 0
+	# filter and order by topk and superclass list
+	clean_samples_by_superclass_grouping.index = clean_samples_by_superclass_grouping.index.str.replace(
+		'_area', '')
+	clean_samples_by_superclass_grouping_topk = clean_samples_by_superclass_grouping.loc[selected_samples_topk, superclass_grouping_columns]
 	# save table
-	clean_samples_by_superclass_grouping.index = clean_samples_by_superclass_grouping.index.str.replace('_area', '')
-	clean_samples_by_superclass_grouping.to_csv(Path(output_path, output_name+"_samples_composition_superclass_grouping_count_by_sample.csv"),
+	clean_samples_by_superclass_grouping_topk.to_csv(Path(output_path, output_name+"_samples_composition_superclass_grouping_count_by_sample.csv"),
 	                                            index_label='SAMPLE_CODE')
-	
-	# filter and order by topk and selected class, removing not annotated
-	selected_samples_topk=[sample_code.replace("_area", "") for sample_code in selected_samples_topk]
-	clean_samples_by_superclass_grouping_topk = clean_samples_by_superclass_grouping.loc[selected_samples_topk,list(superclass_colors.keys())]
+	# normalize the superclass grouping distribution and plot
 	clean_samples_by_superclass_grouping_topk_norm = clean_samples_by_superclass_grouping_topk.div(clean_samples_by_superclass_grouping_topk.sum(axis=1), axis=0)*100
 	plot_stacked_bar_pandas_df(Path(output_path,output_name+"_samples_composition_superclass_grouping_dist_top_"+str(topk)+"_samples_novelty.png"),
 	                           clean_samples_by_superclass_grouping_topk_norm,
@@ -288,6 +294,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	                           legend_bbox_to_anchor=superclass_barplot_legend_bbox,
 	                           legend_fontsize=superclass_barplot_legend_fontsize,
 	                           legend_ncol=superclass_barplot_legend_ncol)
+
 
 # convert string to list of text string, parse None values as well
 def str2tlist(l):
@@ -301,6 +308,12 @@ def str2flist(l):
 # parse string to boolean
 def str2bool(v):
 	return v.lower() in ('true', '1', 't')
+# parse string to int with None
+def str2int(v):
+	if v == "None" or v is None:
+		return None
+	else:
+		return int(v)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(
@@ -313,10 +326,10 @@ if __name__ == "__main__":
 	                    help="Path to the metadata file of the same NP3 job to be post analysed, it may contain the complete metadata or just a selection of the original samples, which will be used to filter the final plots and tables by sample. This filtering does not affect the metrics computations, its only for visualization purposes. The prefix of this filename will be used to name the output files.")
 	
 	parser.add_argument("--output_path", type=str, required=True,
-	                    help="Path to the output directory where the plots and tables of the post analysis will be stored. If the output_path does not exists, it will be created. If it already exists, the created plots and tables will be overwritten.")
+	                    help="Path to the output directory where the plots and tables of the post analysis will be stored. If the output_path does not exists, it will be created. If it already exists, the created plots and tables with the same name will be overwritten.")
 	# major filtering parms
-	parser.add_argument("--topk", default=None, type=int,
-	                    help="The number of samples to be selected and filtered in the plots with the top values of exclusive and not annotated m/z - top novelty samples. If None, disable filtering. This filtering does not affect the metrics computations, its only for visualization purposes.")
+	parser.add_argument("--topk", default=None, type=str2int,
+	                    help="The number of samples to be selected and filtered in the plots with the top count of exclusive and not annotated m/z - top novelty samples. If None or 0, disable filtering. This filtering does not affect the metrics computations, its only for visualization purposes.")
 	parser.add_argument("--rm_blanks", default=True, type=str2bool,
 	                    help="True or False to allow removing blank samples and m/z from the metrics computation.")
 	parser.add_argument("--rm_beds", default=True, type=str2bool,
