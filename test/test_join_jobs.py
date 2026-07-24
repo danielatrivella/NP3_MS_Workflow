@@ -1,5 +1,5 @@
 # read original clean tables and final joined clean table
-# check if all msclusterID from orignal jobs are present in the joinedJobID column of the final joined job
+# check if all msclusterID from original jobs are present in the joinedJobID column of the final joined job
 
 import pandas as pd
 import os, sys
@@ -9,7 +9,7 @@ import numpy as np
 # use the original jobs metadata to retrieve the original clean tables, check one job at a time
 # and accumulate errors
 # check if all original sample codes are present in the final clean table
-# check if msclusterIDs and m/zs are maintained (for spectra with basePeakInt above the current min when noise_cutoff was used)
+# check if msclusterIDs and m/zs are maintained (for spectra with basePeakInt above the current min when noise_cutoff was informed)
 # check if multicharge and isotope ions are maintained
 def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
     if not os.path.isdir(output_path):
@@ -24,8 +24,10 @@ def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
                  clean_counts_path + "' does not exists.")
     clean_counts = pd.read_csv(clean_counts_path, low_memory=False)
 
-    if noise_cutoff:
-        min_basePeakInt = clean_counts.basePeakInt.min()
+    if noise_cutoff >= 0:
+        min_basePeakInt = noise_cutoff
+    else:
+        min_basePeakInt = 0
 
     # read the default original joined jobs metadata, from it extract the Job name, code and path
     original_jobs_metadata_path = os.path.join(output_path, "../..", "original_jobs_METADATA_JOIN.csv")
@@ -53,7 +55,7 @@ def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
                                        usecols=['msclusterID', 'mzConsensus', 'rtMean', 'rtMin', 'rtMax',
                                                 'multicharge_ion', 'isotope_ion', 'basePeakInt'])
         # remove here the msclusterID with low basePeakInt when noise_cutoff is enabled
-        if noise_cutoff:
+        if min_basePeakInt > 0:
             job_clean_counts = job_clean_counts.loc[job_clean_counts.basePeakInt >= min_basePeakInt,:]
             # if no spectra is left, skip to next sample
             if job_clean_counts.shape[0] == 0:
@@ -137,16 +139,16 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         # print(sys.argv)
         output_path = sys.argv[1]
-        noise_cutoff = bool(float(sys.argv[2]))
+        noise_cutoff = float(sys.argv[2])
         if len(sys.argv) > 3:
             mz_tol = float(sys.argv[3])
     else:
         print("Error: Two arguments must be supplied to check the final joined jobs consistency within the original jobs ids and sample codes:\n",
               " 1 - output_path: Path to the final output directory of the joined job, ",
               "named with the output_name inside the 'outs' directory;\n",
-              " 2 - noise_cutoff: a boolean True or False indicating if the noise_cutoff was used in the np3 join_jobs processing "
-              "and thus spectra with a low basePeakInt (values smaller the current minimum basePeakInt) should be "
-              "ignored from the original jobs being checked (spectra that were probable removed by the noise cutoff).\n"
+              " 2 - noise_cutoff: the absolute value of the noise cutoff used in the join job. "
+              "Spectra with a low basePeakInt smaller than this value should be "
+              "ignored from the original jobs being checked (spectra that were removed by the noise cutoff).\n"
               " 3 - mz_tolerance: the tolerance in Daltons to assume two precursor masses the same (default: 0.025).")
         sys.exit(1)
     # call check joined job
