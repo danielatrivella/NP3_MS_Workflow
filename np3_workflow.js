@@ -1622,7 +1622,7 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
 
 // call the post process drug discovery analysis script
 function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path, topk, rm_blanks, rm_beds, rm_controls,
-                                   use_protonated, donutplots_title_size, donutplots_text_size,
+                                   use_protonated, superclass_grouping_column, donutplots_title_size, donutplots_text_size,
                                    donutplot_libAnnotations_colors, donutplot_mzs_distr_colors, mzs_barplot_figsize,
                                    mzs_barplot_label_size, mzs_barplot_title_size, mzs_barplot_legend_bbox,
                                    mzs_barplot_legend_fontsize, mzs_barplot_legend_ncol, mzs_barplot_colors,
@@ -1635,7 +1635,7 @@ function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path
     var resExec = shell.exec(python3()+' '+__dirname+'/src/post_process_analysis/drug_discovery_post_analysis.py ' +
         '--metadata_path '+metadata_path+' --clean_counts_path '+clean_counts_path+' --output_path '+ output_path +
         ' --topk '+topk+' --rm_blanks '+rm_blanks+' --rm_beds '+rm_beds+' --rm_controls '+rm_controls+' --use_protonated '+
-        use_protonated+' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
+        use_protonated+' --superclass_grouping_column '+superclass_grouping_column+' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
         ' --donutplot_libAnnotations_colors "'+donutplot_libAnnotations_colors+'" --donutplot_mzs_distr_colors "'+
         donutplot_mzs_distr_colors+'" --mzs_barplot_figsize '+mzs_barplot_figsize+' --mzs_barplot_label_size '+
         mzs_barplot_label_size+' --mzs_barplot_title_size '+mzs_barplot_title_size+' --mzs_barplot_legend_bbox '+
@@ -4479,13 +4479,15 @@ program
         'The visualization focus on the superclass grouping distribution, the novelty of the m/z ' +
         '(with or without a curated library annotation) and ' +
         'the novelty across samples (with redundant and/or exclusive m/z). ' +
-        'The analysis may be filtered to show only the top novelty samples distribution and/or only the protonated m/z.\n\n')
-    .option('-c, --clean_counts_path <path>', 'Path to the clean counts table file of the NP3 job to be ' +
-        'post analysed, the same of the metadata. The prefix of this filename will be used to name the output files.')
+        'The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution '+
+        'and/or only the protonated m/z.\n\n')
+    .option('-c, --clean_counts_path <path>', 'Path to the clean counts table file with peak area of the NP3 job to be ' +
+        'post analysed, the same of the metadata. The prefix of its filename will be used to name the output files.')
     .option('-m, --metadata_path <path>', 'Path to the metadata file of the same NP3 job to be post ' +
-        'analysed, it may contain the complete metadata or just a selection of the original samples, which will be used ' +
-        'to filter the final plots and tables by sample. This filtering does not affect the metrics computations, ' +
-        'its only for visualization purposes. The prefix of this filename will be used to name the output files.')
+        'analysed, with its set of samples. It may contain the complete metadata or just a selection of the original '+
+        'samples, which will be used to filter the final plots and tables by sample. '+
+        'This filtering does not affect the metrics computations, ' +
+        'its only for visualization purposes. The metadata filename will be used to name the output files.')
     .option('-o, --output_path <path>', 'Path to the output directory where the plots and tables of the ' +
         'post analysis will be stored. If the output_path does not exists, it will be created. If it already exists, ' +
         'the created plots and tables with the same name will be overwritten.')
@@ -4501,6 +4503,9 @@ program
         'the metrics computation.', "True")
     .option('--rm_controls [value]', 'True or False to allow removing control samples and m/z from the ' +
         'metrics computation.', "False")
+    .option('--superclass_grouping_column [value]', 'The name of the column in the provided clean table that should be '+
+        'used to get the superclass grouping values of the m/z. The best origin curated library identification result '+
+        'is used by default (best result from UNPD and GNPS).', "best_origin_curated_superclass_grouping")
     .option('--donutplots_title_size [value]', 'The title size of the donut plots.', "16")
     .option('--donutplots_text_size [value]', 'The axis and legend text sizes of the donut plots.', "14")
     .option('--donutplot_libAnnotations_colors [value]', 'The list of colors separated by comma for the library ' +
@@ -4559,7 +4564,7 @@ program
         const start_post_dd_analysis = process.hrtime.bigint();
 
         callPostProcessDDAnalysis(options.metadata_path, options.clean_counts_path, options.output_path, options.topk,
-            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated,
+            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated, options.superclass_grouping_column,
             options.donutplots_title_size, options.donutplots_text_size, options.donutplot_libAnnotations_colors,
             options.donutplot_mzs_distr_colors, options.mzs_barplot_figsize, options.mzs_barplot_label_size,
             options.mzs_barplot_title_size, options.mzs_barplot_legend_bbox, options.mzs_barplot_legend_fontsize,
@@ -4802,6 +4807,27 @@ program
                 test_res[0] = test_res[0] + '\n\npca_plot - PCA with clean - EXEC ERROR';
                 console.log('ERROR\n');
                 test_errors.push("Test 1.4 - Exec");
+            } else {
+                console.log('DONE!\n');
+            }
+
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@ Test 1.5 - L754_bacs_all - post_dd_analysis @@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            resExec = shell.exec(np3_js_call+' post_dd_analysis ' +
+                '-m '+output_path+'/test/L754_bacs/L754_bacs_all/marine_bacteria_library_L754_metadata.csv ' +
+                '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/final_reports/post_dd_analysis/ ' +
+                '--superclass_barplot_legend_bbox 0.5,-0.5 --superclass_barplot_figsize 15,12 --superclass_barplot_legend_ncol 3',
+                {async:false, silent:true});
+
+            if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
+                // in case of error show all the emitted msgs
+                console.log(resExec.stdout);
+                console.log(resExec.stderr);
+                test_res[0] = test_res[0] + '\n\npost_dd_analysis - EXEC ERROR';
+                console.log('ERROR\n');
+                test_errors.push("Test 1.5 - Exec");
             } else {
                 console.log('DONE!\n');
             }
