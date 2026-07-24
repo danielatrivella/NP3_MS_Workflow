@@ -58,11 +58,8 @@ function parseBFLAGcutoff(val) {
 }
 
 function parseNOISEcutoff(val) {
-    val = toupper(val);
-    if (val === "FALSE") {
-        return val;
-    }
-    var val_float = parseFloat(val);
+    let val_float = parseFloat(val);
+
     if (isNaN(val_float) || val_float < 0.0) {
         console.error('\nERROR. Wrong noise_cutoff parameter value. It should be a positive numeric value.');
         process.exit(1);
@@ -779,12 +776,9 @@ function callJoinJobsAnnotations(parms, output_path)
         'spectra representatives in the joined IVAMN *** \n';
     console.log(step_name);
     const start_ann = process.hrtime.bigint();
-    var noise_cutoff = 1;
-    if (parms.noise_cutoff === "FALSE") {
-        noise_cutoff = 0;
-    }
+
     var resExec = shell.exec(python3()+' '+__dirname+'/src/join_jobs_ivamns.py '+output_path+' '+parms.metadata_join+' '+
-        parms.jobs_data_path+' '+parms.max_chunk_spectra+' '+noise_cutoff, {async:false, silent:(parms.verbose === 0)});
+        parms.jobs_data_path+' '+parms.max_chunk_spectra+' '+parms.noise_cutoff, {async:false, silent:(parms.verbose === 0)});
 
     if (resExec.code) {
         if (parms.verbose === 0) {
@@ -1401,14 +1395,10 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
 {
     output_name = basename(output_path);
     var res_all = "*** checkJoinJobsConsistency of job "+output_name+" ***\n\n";
-    var noise_cutoff = 1;
-    if (noise_cutoff_parm === "FALSE") {
-        noise_cutoff = 0;
-    }
 
     // check joined jobs consistency
     console.log('\n*** Testing the consistency of the clean counts for the joined job '+output_name+' ***\n');
-    resExec = shell.exec(python3()+' '+__dirname+'/test/test_join_jobs.py ' + output_path+' '+noise_cutoff+' '+mz_tol,
+    resExec = shell.exec(python3()+' '+__dirname+'/test/test_join_jobs.py ' + output_path+' '+noise_cutoff_parm+' '+mz_tol,
         {async: false, silent: false});
     if (resExec.code) {
         console.log('\nERROR');
@@ -1743,7 +1733,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.4.2',  '--version')
+    .version('1.5.0',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -2125,18 +2115,12 @@ program
         'similarity cutoff. This is a turn around to the fact that blank spectra\n\t\t\t\t\t' +
         'have low quality spectra and thus can not fully rely on the similarity values.',
         parseBFLAGcutoff, 1.5)
-    .option('--noise_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
-        'of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt\n\t\t\t\t\t' +
-        'value below this distribution median plus IQR*noise_cutoff after the clean Step 5.\n\t\t\t\t\t' +
-        'Or FALSE to disable it.\n\t\t\t\t\t' +
-        'The IQR is the range between the 1st quartile (25th quantile) and the\n\t\t\t\t\t' +
-        '3rd quartile (75th quantile) of the distribution. \n\t\t\t\t\t' +
-        'When no blank sample is present in the metadata, the full distribution is used. \n\t\t\t\t\t' +
-        'This cutoff will affect the spectra with with a low\n\t\t\t\t\t' +
-        'basePeakInt value that probably are noise features. \n\t\t\t\t\t' +
-        'If the clustering Step 3 results in more than 25000 spectra, \n\t\t\t\t\t' +
-        'the noise cutoff will be applied before the clean Step 5 to prevent a long processing time',
-        parseNOISEcutoff, "FALSE")
+    .option('--noise_cutoff [x]', 'A positive numeric value defining the minimum base peak intensity absolute value \n\t\t\t\t\t' +
+        'that a MS2 spectra must have to be kept after the clustering of Step 3. \n\t\t\t\t\t' +
+        'The MS2 spectra with a basePeakInt smaller than this value will be removed before clean Step 5.\n\t\t\t\t\t' +
+        ' The default value is zero (disabled). Large values in this parameter may result in the loss of minority \n\t\t\t\t\t'+
+        'compounds together with noise spectra.',
+        parseNOISEcutoff, 0)
     .option('-u, --rules [x]', ' path to the CSV file following the NP3 rules table format with the\n\t\t\t\t\t' +
         'accepted ionization modification rules for detecting adducts,\n\t\t\t\t\t' +
         'multiple charge, dimers/trimers and their combination with\n\t\t\t\t\t' +
@@ -3022,18 +3006,12 @@ program
         'similarity cutoff. This is a turn around to the fact that blank spectra\n\t\t\t\t\t' +
         'have low quality spectra and thus can not fully rely on the similarity values.',
         parseBFLAGcutoff, 1.5)
-    .option('--noise_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
-        'of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt\n\t\t\t\t\t' +
-        'value below this distribution median plus IQR*noise_cutoff after the clean Step 5.\n\t\t\t\t\t' +
-        'Or FALSE to disable it.\n\t\t\t\t\t' +
-        'The IQR is the range between the 1st quartile (25th quantile) and the\n\t\t\t\t\t' +
-        '3rd quartile (75th quantile) of the distribution. \n\t\t\t\t\t' +
-        'When no blank sample is present in the metadata, the full distribution is used. \n\t\t\t\t\t' +
-        'This cutoff will affect the spectra with with a low\n\t\t\t\t\t' +
-        'basePeakInt value that probably are noise features. \n\t\t\t\t\t' +
-        'If the clustering Step 3 resulted in more than 25000 spectra, \n\t\t\t\t\t' +
-        'the noise cutoff will be applied before the clean Step 5 to prevent a long processing time',
-        parseNOISEcutoff, "FALSE")
+    .option('--noise_cutoff [x]', 'A positive numeric value defining the minimum base peak intensity absolute value \n\t\t\t\t\t' +
+        'that a MS2 spectra must have to be kept after the clustering of Step 3. \n\t\t\t\t\t' +
+        'The MS2 spectra with a basePeakInt smaller than this value will be removed before clean Step 5.\n\t\t\t\t\t' +
+        ' The default value is zero (disabled). Large values in this parameter may result in the loss of minority \n\t\t\t\t\t'+
+        'compounds together with noise spectra.',
+        parseNOISEcutoff, 0)
     .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules ' +
         'for detecting adducts, multiple charge and dimers/trimers variants, and their combination ' +
         'with neutral losses (Step 7)',__dirname+"/rules/np3_modifications.csv")
@@ -3718,18 +3696,12 @@ program
         'similarity cutoff. This is a turn around to the fact that blank spectra\n\t\t\t\t\t' +
         'have low quality spectra and thus can not fully rely on the similarity values.',
         parseBFLAGcutoff, 1.5)
-    .option('--noise_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
-        'of the blank spectra basePeakInt distribution from the clustering Step 3 result and to remove the spectra with a basePeakInt\n\t\t\t\t\t' +
-        'value below this distribution median plus IQR*noise_cutoff after the clean Step 5.\n\t\t\t\t\t' +
-        'Or FALSE to disable it.\n\t\t\t\t\t' +
-        'The IQR is the range between the 1st quartile (25th quantile) and the\n\t\t\t\t\t' +
-        '3rd quartile (75th quantile) of the distribution. \n\t\t\t\t\t' +
-        'When no blank sample is present in the metadata, the full distribution is used. \n\t\t\t\t\t' +
-        'This cutoff will affect the spectra with with a low\n\t\t\t\t\t' +
-        'basePeakInt value that probably are noise features. \n\t\t\t\t\t' +
-        'If the clustering Step 3 resulted in more than 25000 spectra, \n\t\t\t\t\t' +
-        'the noise cutoff will be applied before the clean Step 5 to prevent a long processing time',
-        parseNOISEcutoff, "FALSE")
+    .option('--noise_cutoff [x]', 'A positive numeric value defining the minimum base peak intensity absolute value \n\t\t\t\t\t' +
+        'that a MS2 spectra must have to be kept after the clustering of Step 3. \n\t\t\t\t\t' +
+        'The MS2 spectra with a basePeakInt smaller than this value will be removed before clean Step 5.\n\t\t\t\t\t' +
+        ' The default value is zero (disabled). Large values in this parameter may result in the loss of minority \n\t\t\t\t\t'+
+        'compounds together with noise spectra.',
+        parseNOISEcutoff, 0)
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Step 3).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln) of the\n\t\t\t\t\t' +
@@ -4666,7 +4638,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata.csv ' +
                 '-d '+output_path+'/test/L754_bacs/mzxml -o '+output_path+'/test/L754_bacs ' +
                 '-j '+options.tremolo+' -v 10 -q '+options.pre_process+' -l 4 '+
-                '--noise_cutoff FALSE --gnps_search_tool ""',
+                '--noise_cutoff 0 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4844,7 +4816,7 @@ program
             resExec=shell.exec(np3_js_call+' run -n L754_bacs_multi_collection_11 ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv ' +
                 '-d '+output_path+'/test/L754_bacs/mzxml -o '+output_path+'/test/L754_bacs/ -j '+options.tremolo+' -v 11 ' +
-                '--noise_cutoff 2 --gnps_search_tool ""',
+                '--noise_cutoff 500 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -4884,7 +4856,7 @@ program
                 '-d '+output_path+'/test/L754_bacs/mzxml ' +
                 '-o '+output_path+'/test/L754_bacs/ -y processed_data_one_collection -j '+options.tremolo+' -b 200 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
-                ' --bflag_cutoff 1.5 --noise_cutoff 1.5 -i spec2vec --gnps_search_tool "" -l 1',
+                ' --bflag_cutoff 1.5 --noise_cutoff 500 -i spec2vec --gnps_search_tool "" -l 1',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -5158,15 +5130,15 @@ program
         // only with samples different from the one_collection set
         if (options.skip <= 11) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_another_collection_diff');
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 11 - L754_bacs_another_collection_diff - run @@@@@");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' run -n L754_bacs_another_collection_diff ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_metadata_another_collection_diff.csv ' +
                 '-d '+output_path+'/test/L754_bacs/mzxml ' +
                 '-o '+output_path+'/test/L754_bacs/ -y processed_data_another_collection -j '+options.tremolo+' -b 100 ' +
                 '-v 11 -t 5,10 -q '+options.pre_process+
-                ' --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool ""',
+                ' --bflag_cutoff 1.5 --noise_cutoff 1000 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
@@ -5208,9 +5180,9 @@ program
         // test join_jobs command joining one_collections with another_collection, with and without noise cutoff
         if (options.skip <= 12) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections');
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 12 - L754_bacs_join_collections - join_jobs @@@@@");
-            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+            console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' join_jobs -n L754_bacs_join_collections ' +
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
                 '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
@@ -5248,7 +5220,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
                 '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
                 '-o '+output_path+'/test/L754_bacs/ -j '+options.tremolo +
-                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool ""',
+                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1000 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
