@@ -79,7 +79,9 @@ def plot_stacked_bar_pandas_df(stackedbarplot_filepath, df, title, xlabel, ylabe
 # # mzs_barplot_legend_bbox Sets the anchoring coordinates relative to the plot area. (0, 0) is the bottom-left corner of the plot. (1, 1) is the top-right corner of the plot. Values smaller than 0 or greater than 1 will place the legend completely outside the plot area.
 # # mzs_barplot_colors colors for each sample or None to use default coloring
 def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk = None, rm_blanks = True,
-                           rm_beds = True, rm_controls = True, use_protonated=False, donutplots_title_size=16,
+                           rm_beds = True, rm_controls = True, use_protonated=False,
+                           superclass_grouping_column = "best_origin_curated_superclass_grouping",
+                           donutplots_title_size=16,
                            donutplots_text_size=14, donutplot_libAnnotations_colors=['#ff8b00', '#6372b4', "#c6c6c6"],
 						   donutplot_mzs_distr_colors=["#0072c3", "#42be65"],
                            mzs_barplot_figsize=(18, 8), mzs_barplot_label_size=13, mzs_barplot_title_size=20,
@@ -174,7 +176,15 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	area_cols = [col for col in clean_counts_df.columns
 	             if col.endswith('_area') and
 	             not col in metadata_df.SAMPLE_CODE.values[(metadata_df.SAMPLE_TYPE.isin(sample_type_rm))]+"_area"]
-	
+	if len(samples_to_use) == 0:
+		sys.exit(
+			"ERROR: The provided metadata does not have any valid sample after removing the samples of the following types: " +
+			','.join(sample_type_rm)+". Post processing drug discovery analysis aborted.")
+	if len(area_cols) == 0:
+		sys.exit("ERROR: The provided clean table does not have any peak area quantification column of the valid samples. "+
+		         "No column ending with '_area' was detected for the valid samples: "+','.join(samples_to_use)+
+		         ". Post processing drug discovery analysis aborted.")
+		
 	# create a column to store the m/z with an identification annotation
 	clean_counts_df["annotated"] = False
 	clean_counts_df.loc[clean_counts_df.curated_identification_best_origin.isin(["GNPS", "UNPD"]), "annotated"] = True
@@ -266,25 +276,25 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	
 	print("- Computing the superclass grouping distribution of the m/z by sample and creating a plot.")
 	# sum the occurrence of each superclass grouping by sample, transpose samples to rows and superclasses to columns
-	clean_samples_by_superclass_grouping = present_mzs_by_sample.groupby(clean_counts_df.best_origin_curated_superclass_grouping).sum().T
+	clean_samples_by_superclass_grouping = present_mzs_by_sample.groupby(clean_counts_df[superclass_grouping_column]).sum().T
 	if samples_to_use != area_cols:
 		clean_samples_by_superclass_grouping = clean_samples_by_superclass_grouping.loc[samples_to_use, :]
-	superclass_grouping_columns = list(superclass_colors.keys())
+	superclass_grouping_names = list(superclass_colors.keys())
 	# add any missing superclass group
 	missing_groups = clean_samples_by_superclass_grouping.columns.symmetric_difference(
-		superclass_grouping_columns).values
+		superclass_grouping_names).values
 	if len(missing_groups) > 0:
 		clean_samples_by_superclass_grouping[missing_groups] = 0
 	# filter and order by topk and superclass list
 	clean_samples_by_superclass_grouping.index = clean_samples_by_superclass_grouping.index.str.replace(
 		'_area', '')
-	clean_samples_by_superclass_grouping_topk = clean_samples_by_superclass_grouping.loc[selected_samples_topk, superclass_grouping_columns]
+	clean_samples_by_superclass_grouping_topk = clean_samples_by_superclass_grouping.loc[selected_samples_topk, superclass_grouping_names]
 	# save table
-	clean_samples_by_superclass_grouping_topk.to_csv(Path(output_path, output_name+"_samples_composition_superclass_grouping_count_by_sample.csv"),
+	clean_samples_by_superclass_grouping_topk.to_csv(Path(output_path, output_name+"_samples_composition_"+superclass_grouping_column+"_count_by_sample.csv"),
 	                                            index_label='SAMPLE_CODE')
 	# normalize the superclass grouping distribution and plot
 	clean_samples_by_superclass_grouping_topk_norm = clean_samples_by_superclass_grouping_topk.div(clean_samples_by_superclass_grouping_topk.sum(axis=1), axis=0)*100
-	plot_stacked_bar_pandas_df(Path(output_path,output_name+"_samples_composition_superclass_grouping_dist_top_"+str(topk)+"_samples_novelty.png"),
+	plot_stacked_bar_pandas_df(Path(output_path,output_name+"_samples_composition_"+superclass_grouping_column+"_dist_top_"+str(topk)+"_samples_novelty.png"),
 	                           clean_samples_by_superclass_grouping_topk_norm,
 	                           title='Samples Composition by Superclass Grouping of the Top '+str(topk)+' Novelty Samples (normalized by sample)',
 	                           xlabel='Samples', ylabel='Percentage of detected '+mzs_selected+'m/z',
@@ -338,6 +348,8 @@ if __name__ == "__main__":
 	                    help="True or False to allow removing control samples and m/z from the metrics computation.")
 	parser.add_argument("--use_protonated", default=False, type=str2bool,
 	                    help="True of False defining if only the putative [M+H] m/z should be used in the output tables and plots (filter the table with protonated_representative == 1). This will affect the metrics computation.")
+	parser.add_argument("--superclass_grouping_column", default="best_origin_curated_superclass_grouping", type=str,
+	                    help="The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best result from UNPD and GNPS).")
 	# plots parms
 	parser.add_argument("--donutplots_title_size", default=16, type=int,
 	                    help="The title size of the donut plots.")
@@ -381,6 +393,7 @@ if __name__ == "__main__":
 	                       rm_blanks=args.rm_blanks,
 	                       rm_beds=args.rm_beds, rm_controls=args.rm_controls,
 	                       use_protonated=args.use_protonated,
+	                       superclass_grouping_column=args.superclass_grouping_column,
 	                       donutplots_title_size=args.donutplots_title_size,
 	                       donutplots_text_size=args.donutplots_text_size,
                            donutplot_libAnnotations_colors=args.donutplot_libAnnotations_colors,
