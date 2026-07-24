@@ -1620,6 +1620,44 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
     return resExec.code
 }
 
+// call the post process drug discovery analysis script
+function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path, topk, rm_blanks, rm_beds, rm_controls,
+                                   use_protonated, donutplots_title_size, donutplots_text_size,
+                                   donutplot_libAnnotations_colors, donutplot_mzs_distr_colors, mzs_barplot_figsize,
+                                   mzs_barplot_label_size, mzs_barplot_title_size, mzs_barplot_legend_bbox,
+                                   mzs_barplot_legend_fontsize, mzs_barplot_legend_ncol, mzs_barplot_colors,
+                                   superclass_barplot_figsize, superclass_barplot_label_size,
+                                   superclass_barplot_title_size, superclass_barplot_legend_bbox,
+                                   superclass_barplot_legend_fontsize, superclass_barplot_legend_ncol, verbose=1)
+{
+    var step_name = '*** Post Process for Drug Discovery Analysis of a NP3 result *** \n';
+    console.log(step_name);
+    var resExec = shell.exec(python3()+' '+__dirname+'/src/post_process_analysis/drug_discovery_post_analysis.py ' +
+        '--metadata_path '+metadata_path+' --clean_counts_path '+clean_counts_path+' --output_path '+ output_path +
+        ' --topk '+topk+' --rm_blanks '+rm_blanks+' --rm_beds '+rm_beds+' --rm_controls '+rm_controls+' --use_protonated '+
+        use_protonated+' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
+        ' --donutplot_libAnnotations_colors "'+donutplot_libAnnotations_colors+'" --donutplot_mzs_distr_colors "'+
+        donutplot_mzs_distr_colors+'" --mzs_barplot_figsize '+mzs_barplot_figsize+' --mzs_barplot_label_size '+
+        mzs_barplot_label_size+' --mzs_barplot_title_size '+mzs_barplot_title_size+' --mzs_barplot_legend_bbox '+
+        mzs_barplot_legend_bbox+' --mzs_barplot_legend_fontsize '+mzs_barplot_legend_fontsize+' --mzs_barplot_legend_ncol '+
+        mzs_barplot_legend_ncol+' --mzs_barplot_colors "'+mzs_barplot_colors+'" --superclass_barplot_figsize '+
+        superclass_barplot_figsize+' --superclass_barplot_label_size '+superclass_barplot_label_size+
+        ' --superclass_barplot_title_size '+superclass_barplot_title_size+' --superclass_barplot_legend_bbox '+
+        superclass_barplot_legend_bbox+' --superclass_barplot_legend_fontsize '+superclass_barplot_legend_fontsize+
+        ' --superclass_barplot_legend_ncol '+superclass_barplot_legend_ncol, {async:false, silent: (verbose <= 0)});
+    if (resExec.code) {
+        if (verbose <= 0) {
+            console.log(resExec.stdout);
+            console.log(resExec.stderr);
+        }
+        console.log('\nERROR');
+    } else {
+        console.log('\nDONE!\n');
+    }
+
+    return resExec.code
+}
+
 // call the equality test consistency for a job from the run or join_jobs commands
 function callTestRunEquality(job_name, output_path_test, fixed_result_path, new_result_path, sim_w_cutoff="06",
                              topk=15, maxComponentSize=200,minMachedPeaks=6,
@@ -4434,10 +4472,134 @@ program
         console.log('  $ spectra_viewer -p 8080');
     });
 
+program
+    .command('post_dd_analysis')
+    .description('This command perform a post processing analysis of a NP3 result for drug discovery research. ' +
+        'This post drug discovery analysis consists of creating five different visualizations and two data tables. ' +
+        'The visualization focus on the superclass grouping distribution, the novelty of the m/z ' +
+        '(with or without a curated library annotation) and ' +
+        'the novelty across samples (with redundant and/or exclusive m/z). ' +
+        'The analysis may be filtered to show only the top novelty samples distribution and/or only the protonated m/z.\n\n')
+    .option('-c, --clean_counts_path <path>', 'Path to the clean counts table file of the NP3 job to be ' +
+        'post analysed, the same of the metadata. The prefix of this filename will be used to name the output files.')
+    .option('-m, --metadata_path <path>', 'Path to the metadata file of the same NP3 job to be post ' +
+        'analysed, it may contain the complete metadata or just a selection of the original samples, which will be used ' +
+        'to filter the final plots and tables by sample. This filtering does not affect the metrics computations, ' +
+        'its only for visualization purposes. The prefix of this filename will be used to name the output files.')
+    .option('-o, --output_path <path>', 'Path to the output directory where the plots and tables of the ' +
+        'post analysis will be stored. If the output_path does not exists, it will be created. If it already exists, ' +
+        'the created plots and tables with the same name will be overwritten.')
+    .option('-k, --topk [value]', 'The number of samples to be selected and filtered in the plots with ' +
+        'the top count of exclusive and not annotated m/z - top novelty samples. If None or 0, disable filtering. ' +
+        'This filtering does not affect the metrics computations, its only for visualization purposes.', "None")
+    .option('-p, --use_protonated [value]', 'True of False defining if only the putative [M+H] m/z ' +
+        'should be used in the output tables and plots (filter the table with protonated_representative == 1). ' +
+        'This will affect the metrics computation.', "False")
+    .option('--rm_blanks [value]', 'True or False to allow removing blank samples and m/z from the ' +
+        'metrics computation.', "True")
+    .option('--rm_beds [value]', 'True or False to allow removing culture media samples and m/z from ' +
+        'the metrics computation.', "True")
+    .option('--rm_controls [value]', 'True or False to allow removing control samples and m/z from the ' +
+        'metrics computation.', "False")
+    .option('--donutplots_title_size [value]', 'The title size of the donut plots.', "16")
+    .option('--donutplots_text_size [value]', 'The axis and legend text sizes of the donut plots.', "14")
+    .option('--donutplot_libAnnotations_colors [value]', 'The list of colors separated by comma for the library ' +
+        'annotation distribution donut plot. Three colors are expected for \'GNPS\', \'UNPD\' and \'not_annotated\' ' +
+        'categories. Or None to use the default coloring of matplotlib.', "#ff8b00,#6372b4,#c6c6c6")
+    .option('--donutplot_mzs_distr_colors [value]', 'The list of colors separated by comma for the m/z occurrence ' +
+        'distribution donut plot. Two colors are expected for \'Exclusive\' and \'Redundant\' categories. ' +
+        'Or None to use the default coloring of matplotlib.', "#0072c3,#42be65")
+    .option('--mzs_barplot_figsize [value]', 'The x,y figure size of the m/z occurrence distribution in a stacked bar ' +
+        'plot by sample. Two integer values separated by comma.', "18,8")
+    .option('--mzs_barplot_label_size [value]', 'The axis label size of the m/z occurrence distribution in a stacked ' +
+        'bar plot by sample.', "13")
+    .option('--mzs_barplot_title_size [value]', 'The title size of the m/z occurrence distribution in a stacked bar ' +
+        'plot by sample.', "20")
+    .option('--mzs_barplot_legend_bbox [value]', 'The x,y anchoring coordinates relative to the plot area of the m/z ' +
+        'occurrence distribution in a stacked bar plot by sample. Two float values separated by comma. (0, 0) is the ' +
+        'bottom-left corner of the plot. (1, 1) is the top-right corner of the plot. Values smaller than 0 or greater ' +
+        'than 1 will place the legend completely outside the plot area.', "0.5,-0.2")
+    .option('--mzs_barplot_legend_fontsize [value]', 'The legend font size of the m/z occurrence distribution in a ' +
+        'stacked bar plot by sample.', "17")
+    .option('--mzs_barplot_legend_ncol [value]', 'The number of columns to display the legends of the m/z occurrence ' +
+        'distribution in a stacked bar plot by sample.', "4")
+    .option('--mzs_barplot_colors [value]', 'The list of colors of the m/z occurrence distribution in a stacked bar ' +
+        'plot by sample. Four colors are expected for \'exclusive not annotated\', \'exclusive annotated\', ' +
+        '\'redundant not annotated\' and \'redundant annotated\' m/z categories. ' +
+        'If None, use the default matplotlib coloring.', "#0072c3,#FF8C00,#42be65,#FDDA0D")
+    .option('--superclass_barplot_figsize [value]', 'The x,y figure size of the superclass distribution in a stacked ' +
+        'bar plot by sample. Two integer values separated by comma.', "20,10")
+    .option('--superclass_barplot_label_size [value]', 'The axis label size of the superclass distribution in a ' +
+        'stacked bar plot by sample.', "16")
+    .option('--superclass_barplot_title_size [value]', 'The title size of the superclass distribution in a ' +
+        'stacked bar plot by sample.', "20")
+    .option('--superclass_barplot_legend_bbox [value]', 'The x,y anchoring coordinates relative to the plot area of ' +
+        'the superclass distribution in a stacked bar plot by sample. Two float values separated by comma. ' +
+        '(0, 0) is the bottom-left corner of the plot. (1, 1) is the top-right corner of the plot. ' +
+        'Values smaller than 0 or greater than 1 will place the legend completely outside the plot area.', "0.5,-0.15")
+    .option('--superclass_barplot_legend_fontsize [value]', 'The legend font size and title size of the superclass ' +
+        'distribution in a stacked bar plot by sample.', "15")
+    .option('--superclass_barplot_legend_ncol [value]', 'The number of columns to display the legends of the ' +
+        'superclass distribution in a stacked bar plot by sample.', "4")
+
+    .action(function(options) {
+        if (typeof options.clean_counts_path === 'undefined') {
+            console.error('\nMissing the mandatory \'clean_counts_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.metadata_path === 'undefined') {
+            console.error('\nMissing the mandatory \'metadata_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+        if (typeof options.output_path === 'undefined') {
+            console.error('\nMissing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
+            process.exit(1);
+        }
+
+        const start_post_dd_analysis = process.hrtime.bigint();
+
+        callPostProcessDDAnalysis(options.metadata_path, options.clean_counts_path, options.output_path, options.topk,
+            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated,
+            options.donutplots_title_size, options.donutplots_text_size, options.donutplot_libAnnotations_colors,
+            options.donutplot_mzs_distr_colors, options.mzs_barplot_figsize, options.mzs_barplot_label_size,
+            options.mzs_barplot_title_size, options.mzs_barplot_legend_bbox, options.mzs_barplot_legend_fontsize,
+            options.mzs_barplot_legend_ncol, options.mzs_barplot_colors, options.superclass_barplot_figsize,
+            options.superclass_barplot_label_size, options.superclass_barplot_title_size,
+            options.superclass_barplot_legend_bbox, options.superclass_barplot_legend_fontsize,
+            options.superclass_barplot_legend_ncol, verbose=1)
+
+        console.log("Done Post Process Drug Discovery Analysis in "+
+            printTimeElapsed_bigint(start_post_dd_analysis, process.hrtime.bigint()));
+    })
+    .on('--help', function() {
+        console.log('');
+        console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
+        console.log('');
+        console.log('RESULTS:');
+        console.log('');
+        console.log('Five visualizations are created in the output_path directory: '+
+            '\n(1) the samples composition in terms of the curated superclass grouping distribution across the final m/z by samples in a barplot; ' +
+            '\n(2) the m/z library identification novelty in a donut plot with the total count of curated library annotations; ' +
+            '\n(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; ' +
+            '\n(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;'+
+            '\n(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. \n ' +
+            '\n And two CSV tables are created with the count of m/z novelty by sample and the count of superclass grouping by sample.\n'+
+            'All the output plots and tables are named with a prefix equal the output_name (extracted from the clean table) concatenated with the metadata filename.\n');
+        console.log('');
+        console.log('EXAMPLES:');
+        console.log('');
+        console.log('  $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv ' +
+            '--clean_counts_path /path/to/the/np3/result/outs/count_tables/clean/clean_count_peak_area.csv ' +
+            '--output_path "/path/to/the/output/directory/"');
+        console.log('\nCreate the analysis plots with the top 5 novelty samples and only [M+H]+ m/z:\n');
+        console.log('  $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv ' +
+            '--clean_counts_path /path/to/the/np3/result/outs/count_tables/clean/clean_count_peak_area.csv ' +
+            '--output_path "/path/to/the/output/directory/" --topk 5 -p True');
+    });
 
 program
     .command('test')
-    .description('This command runs some use cases to test the $NP^{3}$ MS workflow consistency in all steps. ' +
+    .description('This command runs some use cases to test the NP3 MS workflow consistency in all steps. ' +
         'This option is intended for debugging purposes, and is not a part of the analysis workflow.\n\n')
     .option('-p, --pre_process [x]', '\'TRUE\' or \'FALSE\' to test the pre process step.', toupper, "FALSE")
     .option('-t, --tremolo [x]', '\'TRUE\' or \'FALSE\' to test the tremolo step. If on Windows OS this should be FALSE.', toupper, "TRUE")
