@@ -42,7 +42,13 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 	metadata["SAMPLE_TYPE"] = metadata.SAMPLE_TYPE.str.lower()
 	# if there is a curated identification and any not blank sample, proceed for plotting
 	if superclass_grouping_name in clean_data.columns and (~metadata.SAMPLE_TYPE.isin(["blank","bed"])).any():
-		print("  - Creating the samples composition by superclass grouping distribution of not blank m/z \n")
+		print("  - Creating the samples composition by superclass grouping distribution of not blank or bed m/z \n")
+		# remove blank and beds if any:
+		if "BLANKS_TOTAL" in clean_data.columns:
+			clean_data = clean_data.loc[clean_data.BLANKS_TOTAL == 0, :]
+		if "BEDS_TOTAL" in clean_data.columns:
+			clean_data = clean_data.loc[clean_data.BEDS_TOTAL == 0, :]
+		
 		# get the columns names containing the count of spectra by peak area without blanks or bed
 		samples_area_name = metadata.SAMPLE_CODE[~metadata.SAMPLE_TYPE.isin(["blank","bed"])].values
 		if clean_table_file.name.find("peak_area") > 0:
