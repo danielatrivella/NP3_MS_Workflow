@@ -57,8 +57,8 @@ compare_tables <- function(fixed_table_path, new_table_path,
                            anti_join_by = NULL, sep=",") {
   if (sep == ",") {
     # interpret as csv
-    fixed_table <- suppressMessages(read_csv(fixed_table_path, guess_max = 5000))
-    new_table <- suppressMessages(read_csv(new_table_path, guess_max = 5000))
+    fixed_table <- suppressMessages(read_csv(fixed_table_path, col_types = cols(.default = "c"), guess_max = 5000))
+    new_table <- suppressMessages(read_csv(new_table_path, , col_types = cols(.default = "c"), guess_max = 5000))
   } else if (sep == "\t") {
     # interpret as tsv
     fixed_table <- suppressMessages(read_tsv(fixed_table_path, guess_max = 5000))
