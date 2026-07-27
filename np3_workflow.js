@@ -5177,7 +5177,7 @@ program
             }
         }
 
-        // test join_jobs command joining one_collections with another_collection, with and without noise cutoff
+        // test join_jobs command joining one_collections with another_collection, without noise in the join and with noise
         if (options.skip <= 12) {
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -5212,6 +5212,7 @@ program
                 }
             }
 
+            // the noise cutoff here is smaller than one of the noises used in the original job of test 11 - test consistency in this cases
             shell.rm('-rf', output_path+'/test/L754_bacs/L754_bacs_join_collections_noise');
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             console.log("@@@@@ Test 12.1 - L754_bacs_join_collections_noise - join_jobs with noise cutoff @@@@@");
@@ -5220,7 +5221,7 @@ program
                 '-m '+__dirname+'/test/L754_bacs/marine_bacteria_library_L754_join_collections.csv ' +
                 '-y '+output_path+'/test/L754_bacs/mzxml ' + '-d ' + output_path+'/test/L754_bacs/ '+
                 '-o '+output_path+'/test/L754_bacs/ -j '+options.tremolo +
-                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 1000 --gnps_search_tool ""',
+                ' -v 11 -t 5,10 --bflag_cutoff 1.5 --noise_cutoff 500 --gnps_search_tool ""',
                 {async:false, silent:true});
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
                 // in case of error show all the emmited msgs
