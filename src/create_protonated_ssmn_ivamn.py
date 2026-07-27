@@ -51,11 +51,17 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
 
     # 1. remove blanks from IVAMN using the blank_expansion,
     # remove the blank nodes ancestors without considering the edges direction
-    print("\t1. Remove blanks from IVAMN using the blank_expansion")
-    if 'BLANKS_TOTAL' in pd.read_csv(clean_table_file, nrows=1).columns:
+    print("\t1. Remove blanks from IVAMN using the blank_expansion=",blank_expansion)
+    cols_clean_table = pd.read_csv(clean_table_file, nrows=1).columns
+    if 'BLANKS_TOTAL' in cols_clean_table:
         # read the clean table
-        clean_table = pd.read_csv(clean_table_file,
-                                  usecols=["msclusterID", "BLANKS_TOTAL", "protonated_representative"])
+        if ('BEDS_TOTAL' in cols_clean_table):
+            clean_table = pd.read_csv(clean_table_file,
+                                      usecols=["msclusterID", "BLANKS_TOTAL", "BEDS_TOTAL", "protonated_representative"])
+        else:
+            clean_table = pd.read_csv(clean_table_file,
+                                      usecols=["msclusterID", "BLANKS_TOTAL", "protonated_representative"])
+        # get the blank nodes
         blank_nodes_id = clean_table.loc[clean_table["BLANKS_TOTAL"] > 0, "msclusterID"].values
         uivamn = ivamn.to_undirected()
         nodes_to_remove = list(blank_nodes_id)
@@ -76,8 +82,17 @@ def create_protonated_SSMN_IVAMN(ivamn_file, ssmn_file, clean_table_file, blank_
         clean_table = clean_table.loc[np.isin(clean_table.msclusterID.values, np.array(ivamn.nodes())), :]
     else:
         # read the clean table
-        clean_table = pd.read_csv(clean_table_file,
-                                  usecols=["msclusterID", "protonated_representative"])
+        if ('BEDS_TOTAL' in cols_clean_table):
+            clean_table = pd.read_csv(clean_table_file,
+                                      usecols=["msclusterID", "BEDS_TOTAL", "protonated_representative"])
+        else:
+            clean_table = pd.read_csv(clean_table_file,
+                                      usecols=["msclusterID", "protonated_representative"])
+    # remove any m/z of the culture media from the IVAMN and the clean table before proceeding
+    if 'BEDS_TOTAL' in clean_table.columns:
+        nodes_to_remove = clean_table.loc[clean_table.BEDS_TOTAL > 0, "msclusterID"]
+        ivamn.remove_nodes_from(nodes_to_remove)
+        clean_table = clean_table.loc[clean_table.BEDS_TOTAL == 0, :]
 
     # 2. Select the [M+H]+ ions in the remaining IVAMN
     print("\t2. Select the [M+H]+ ions in the remaining IVAMN")
@@ -135,7 +150,7 @@ if __name__ == "__main__":
         max_component_size = int(sys.argv[6])
         min_matched_peaks = int(sys.argv[7])
     else:
-        print("Error: Eight arguments must be supplied to created the SSMN [M+H]+ filtered and the IVAMN [M+H]+ networks:\n",
+        print("Error: Eight arguments must be supplied to created the SSMN [M+H]+ filtered and the IVAMN [M+H]+ networks (without blanks and beds):\n",
             " 1 - ivamn_file: Path to the molecular networking of annotations network IVAMN file (.selfloop);\n",
             " 2 - ssmn_file: Path to the complete molecular networking of similarity SSMN file (.selfloop), before "
             "filters - if the filtered SSMN is informed the resulting [M+H]+ network may be more fragmented;\n",
