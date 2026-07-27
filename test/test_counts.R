@@ -16,6 +16,7 @@ script_path <- function() {
 cat("Loading packages readr...\n")
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
+library(stringr)
 Rcpp::sourceCpp(file.path(script_path(),
                           '../src/read_mgf_peak_list_R.cpp'))
 source(file.path(script_path(),"../src/read_metadata_table.R"))
@@ -106,9 +107,9 @@ if (!isTRUE(all.equal(unlist(ms_spectra_count[,c("mzConsensus", "rtMean", "rtMin
                                                             "numSpectra", "peakIds", "scans", "peaksInt", "peaksList")])))
 }
 
-# removed not used columns
+# remove not used columns
 ms_spectra_count <- ms_spectra_count[, !(startsWith(names(ms_spectra_count), "tremolo_") | 
-                                         endsWith(names(ms_spectra_count), "_metfrag"))]
+                                         startsWith(names(ms_spectra_count), "gnps_"))]
 ms_spectra_count <- bind_cols(ms_spectra_count,  
                               ms_area_count[,endsWith(names(ms_area_count), "_area")])
 rm(ms_area_count)
@@ -150,7 +151,35 @@ scans_peakIds <- Reduce(rbind, (lapply(seq_len(nrow(ms_spectra_count)), function
   list(scans = scans, peakIds = peakIds)
 })))
 
-min_basePeakInt <- min(ms_spectra_count$basePeakInt)
+# set the samples noise cutoff as the minimum basePeak in the clustering table
+metadata$noise_cutoff <- min(ms_spectra_count$basePeakInt)
+# for join_jobs, extract the noise cutoff used in the original jobs and fix the max cutoff
+if ("joinedJobsID" %in% names(ms_spectra_count)) {
+  metadata_jobs <- readMetadataTableJoinJobs(file.path(dirname(path_metadata),
+                                                       "original_jobs_METADATA_JOIN.csv"))
+  # get cutoff
+  metadata_jobs$noise_cutoff <- sapply(metadata_jobs$JOB_PATH, function(job_path) {
+    log_run_parms <- file.path(job_path, "../../logRunParms")
+    if (file.exists(log_run_parms)) {
+      file_lines <- readLines(log_run_parms)
+      cmd_line <- grep("--noise_cutoff ([0-9]+)", file_lines, value=T, perl=T)
+      if (length(cmd_line) > 0 )
+      {
+        job_run_noise <- as.numeric(str_extract(cmd_line, "(?<=--noise_cutoff )[0-9]+"))
+        return(max(metadata$noise_cutoff[[1]],job_run_noise))
+      } else {
+        return(metadata$noise_cutoff[[1]])
+      }
+    } else {
+      return(metadata$noise_cutoff[[1]])
+    }
+  })
+  # match original samples job code and get original cutoff value, retrieve the 
+  # max value between the current noise cutoff and the original one
+  metadata$noise_cutoff <- metadata_jobs$noise_cutoff[match(metadata$JOB_CODE, 
+                                                            metadata_jobs$JOB_CODE)]
+}
+
 real_headers_total <- tibble(msclusterId = 0,
                              mz_w = 0,
                              rt_w = 0,
@@ -161,6 +190,8 @@ real_headers_total <- tibble(msclusterId = 0,
 # scan header is consistent for each msclusterId - i = which(ms_spectra_count$msclusterID == 193)
 wrong_scans <- lapply(seq_along(metadata$SAMPLE_CODE), function(j)
 {
+  min_basePeakInt <- metadata$noise_cutoff[[j]]
+  # set current sample code and original sample code
   x <- y <-  metadata$SAMPLE_CODE[[j]]
   if ("SAMPLE_CODE_ORIGINAL" %in% names(metadata)) {
     y <- metadata$SAMPLE_CODE_ORIGINAL[[j]]
@@ -294,4 +325,3 @@ if (n_inconsistency == 0) {
   cat("ERROR! A total of", n_inconsistency, "inconsistencies were found. :(\n")
 }
 
-#TODO Write test script for groups method.
