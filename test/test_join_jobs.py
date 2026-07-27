@@ -4,10 +4,12 @@
 import pandas as pd
 import os, sys
 import numpy as np
+import subprocess, re
 
-# check the final joined job present in the provides output_path folder, inside the outs dir
+# check the final joined job result present in the provided output_path folder, which must be inside the outs dir
 # use the original jobs metadata to retrieve the original clean tables, check one job at a time
 # and accumulate errors
+# where the noise_cutoff is the value used in the join_jobs job
 # check if all original sample codes are present in the final clean table
 # check if msclusterIDs and m/zs are maintained (for spectra with basePeakInt above the current min when noise_cutoff was informed)
 # check if multicharge and isotope ions are maintained
@@ -43,6 +45,17 @@ def check_joined_jobs(output_path, noise_cutoff, mz_tolerance=0.025):
     for i in range(jobs_metadata.shape[0]):
         job_code = jobs_metadata.JOB_CODE[i]
         print("    - Checking the msclusterIDs, m/z's, multicharge and isotope ions of job code " + job_code)
+        # extract the noise cutoff value used in this job, if any
+        job_run_parms_noise = subprocess.run(["awk", "/\-\-noise_cutoff/",
+                                         os.path.join(jobs_metadata.JOB_PATH[i], "../../logRunParms")],
+                                        capture_output=True, text=True).stdout
+        job_noise_cutoff = 0
+        if job_run_parms_noise != '':
+            check_noise = re.search("--noise_cutoff ([0-9]+)", job_run_parms_noise)
+            if check_noise is not None:
+                job_noise_cutoff = float(check_noise.group(1))
+        min_basePeakInt = max(job_noise_cutoff, min_basePeakInt)
+            
         # read the clean table
         job_clean_path = os.path.join(jobs_metadata.JOB_PATH[i], "count_tables", "clean",
                                           jobs_metadata.JOBNAME[i] + "_peak_area_clean_ann.csv")
