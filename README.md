@@ -8,10 +8,10 @@
 
 - NEW features:
 
-  - (1.5.0) A new command called **post_dd_analysis** was added to the np3 workflow! The *noise_cutoff* was changed to receive an absolute value.
-      - The command post_dd_analysis is a post process that creates some visualization analysis for drug discovery research.
-      - Changed the superclass grouping plot from the final chemistry report to match the new plot being created in the post processing drug discovery analysis; now this plotting correctly removes blanks and beds from the counts computation and uses the occurrence of each group in the final library annotated m/z instead of their peak area abundance by sample for the percentage distribution computation. 
-      - The noise_cutoff is now the absolute value of the minimum base peak int (without normalization) that a MS2 must have to be kept after the clustering of Step 3, otherwise it is removed before the clean step.
+  - (1.5.0) A new command called **post_dd_analysis** was added to the NP³ MS Workflow! The *noise_cutoff* was changed to receive an absolute value.
+      - The command post_dd_analysis is a post-process that creates some visualization analysis for drug discovery research.
+      - Changed the superclass grouping plot from the final chemistry report to match the new plot being created in the post-processing drug discovery analysis; now this plotting correctly removes blanks and beds from the counts computation; and uses the occurrence of the final library annotated m/z in each group instead of their peak area abundance by sample for the percentage distribution computation. 
+      - The **noise_cutoff** is now the absolute value of the minimum base peak int (without normalization) that a MS2 must have to be kept after the clustering of Step 3, otherwise it is removed before the clean step 5.
   - (1.4.2) Added extra test cases to compare the consistency of the NP³ results. Equality tests are performed at the end of each saved test case to guarantee reproducibility and correctness of the steps. The results of the NP³ test cases were stored in the fixed_results folder to serve this testing.
       - Added a summary of the test cases in the test command, counting the errors and storing their types to show at the end - improved debugging.
       - Changed the ordering of the components in the IVAMN output to make it reproducible, the components with the largest size are written first. And the edges are also sorted by the source node ID in numerical ordering.
@@ -374,7 +374,7 @@ The *join_jobs* command may be useful for processing growing libraries, which wi
 
 - **spectra_viewer** [options] : (for Unix OS only) This command runs an interactive Web App to visualize and compare MS2 spectra. It receives as input a MGF file or a peak list. It is also possible to manipulate, filter, calculate similarity of the spectra and save PNG or SVG plots.
 
-- **post_dd_analysis** [options]  :  This command perform a post processing analysis of a NP3 result for drug discovery research. This post drug discovery analysis consists of creating five different visualizations and two data tables. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a curated library annotation) and the novelty across samples (with redundant and/or exclusive m/z). The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution and/or only the protonated m/z.
+- **post_dd_analysis** [options]  :  This command perform a post-processing analysis of a NP3 result for drug discovery research. Five different visualizations and two data tables are created. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a library annotation) and the novelty across samples (with redundant and/or exclusive m/z). The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution and/or only the protonated m/z.
     - *\-c, \-\-clean\_counts\_path* \<path\> : Path to the clean counts table file with peak area of the NP3 job to be post analysed, the same of the
                                                 metadata. The prefix of its filename will be used to name the output files.
     - *\-m, \-\-metadata\_path* \<path\> : Path to the metadata file of the same NP3 job to be post analysed, with its set of samples. It may contain
