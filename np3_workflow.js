@@ -1610,7 +1610,7 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
     return resExec.code
 }
 
-// call the post process drug discovery analysis script
+// call the post-process drug discovery analysis script
 function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path, topk, rm_blanks, rm_beds, rm_controls,
                                    use_protonated, superclass_grouping_column, donutplots_title_size, donutplots_text_size,
                                    donutplot_libAnnotations_colors, donutplot_mzs_distr_colors, mzs_barplot_figsize,
@@ -1620,7 +1620,7 @@ function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path
                                    superclass_barplot_title_size, superclass_barplot_legend_bbox,
                                    superclass_barplot_legend_fontsize, superclass_barplot_legend_ncol, verbose=1)
 {
-    var step_name = '*** Post Process for Drug Discovery Analysis of a NP3 result *** \n';
+    var step_name = '*** Post-process for Drug Discovery Analysis of a NP3 result *** \n';
     console.log(step_name);
     var resExec = shell.exec(python3()+' '+__dirname+'/src/post_process_analysis/drug_discovery_post_analysis.py ' +
         '--metadata_path '+metadata_path+' --clean_counts_path '+clean_counts_path+' --output_path '+ output_path +
@@ -4446,10 +4446,10 @@ program
 
 program
     .command('post_dd_analysis')
-    .description('This command perform a post processing analysis of a NP3 result for drug discovery research. ' +
-        'This post drug discovery analysis consists of creating five different visualizations and two data tables. ' +
+    .description('This command perform a post-processing analysis of a NP3 result for drug discovery research. ' +
+        'Five different visualizations and two data tables are created. ' +
         'The visualization focus on the superclass grouping distribution, the novelty of the m/z ' +
-        '(with or without a curated library annotation) and ' +
+        '(with or without a library annotation) and ' +
         'the novelty across samples (with redundant and/or exclusive m/z). ' +
         'The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution '+
         'and/or only the protonated m/z.\n\n')
@@ -4477,7 +4477,7 @@ program
         'metrics computation.', "False")
     .option('--superclass_grouping_column [value]', 'The name of the column in the provided clean table that should be '+
         'used to get the superclass grouping values of the m/z. The best origin curated library identification result '+
-        'is used by default (best result from UNPD and GNPS).', "best_origin_curated_superclass_grouping")
+        'is used by default (best annotated result from UNPD and GNPS).', "best_origin_curated_superclass_grouping")
     .option('--donutplots_title_size [value]', 'The title size of the donut plots.', "16")
     .option('--donutplots_text_size [value]', 'The axis and legend text sizes of the donut plots.', "14")
     .option('--donutplot_libAnnotations_colors [value]', 'The list of colors separated by comma for the library ' +
@@ -4545,7 +4545,7 @@ program
             options.superclass_barplot_legend_bbox, options.superclass_barplot_legend_fontsize,
             options.superclass_barplot_legend_ncol, verbose=1)
 
-        console.log("Done Post Process Drug Discovery Analysis in "+
+        console.log("Done Post-process Drug Discovery Analysis in "+
             printTimeElapsed_bigint(start_post_dd_analysis, process.hrtime.bigint()));
     })
     .on('--help', function() {
