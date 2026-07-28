@@ -464,6 +464,19 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
                                    new_table_path=new_gnps_path,
                                    table_type="gnps_identifications", 
                                    job_name=job_name, 
+                                   anti_join_by = c("SpectrumID","#Scan#","LibraryName", 
+                                                    "MQScore","SharedPeaks","MassDiff",
+                                                    "SpecMZ","SpecCharge","NumberHits",	
+                                                    "Compound_Name","Ion_Source","Instrument",
+                                                    "LibMZ","Adduct","Smiles","LibScan","INCHI",
+                                                    "INCHI_AUX","Library_Class","IonMode","PI",
+                                                    "Data_Collector","Precursor_MZ","ExactMass",
+                                                    "CAS_Number","Pubmed_ID","Organism",
+                                                    "Compound_Source","UpdateWorkflowName",
+                                                    "LibraryQualityString","molecular_formula",
+                                                    "InChIKey","InChIKey-Planar","superclass",
+                                                    "class","subclass","npclassifier_superclass",
+                                                    "npclassifier_class","npclassifier_pathway"),
                                    output_path_test_diff=output_path_test_diff, sep="\t")
     }
   } else {
