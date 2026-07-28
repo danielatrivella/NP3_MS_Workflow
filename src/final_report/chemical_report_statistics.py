@@ -100,7 +100,7 @@ def plot_superclass_samples_distribution(metadata_file, clean_table_file, output
 				xlabel='Samples', ylabel='Percentage of detected ' + mzs_selected + 'm/z',
 				colors=list(superclass_colors.values()),
 				figsize=(20, 10), label_size=16,
-				title_size=20,
+				title_size=20, legend_title="Superclass Grouping",
 				legend_bbox_to_anchor=(0.5, -0.35),
 				legend_fontsize=15,
 				legend_ncol=4)
