@@ -23,7 +23,7 @@ Loading packages Rcpp, readr, dplyr, stringr...
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
   |                          |
   |==========================|
-  * Done annotating clusters in 0.44 secs *
+  * Done annotating clusters in 0.43 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **

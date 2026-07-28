@@ -1,0 +1,6 @@
+SAMPLE_CODE,total_annotated,exclusive_annotated,redundant_annotated,total_not_annotated,exclusive_not_annotated,redundant_not_annotated,total
+L754_00,11,4,7,9,6,3,20
+L754_EDTA50_00,13,5,8,6,4,2,19
+L754_EDTA50_01,1,0,1,2,1,1,3
+L754_EDTA50_02,16,5,11,14,9,5,30
+L754_EDTA50_03,22,9,13,21,17,4,43

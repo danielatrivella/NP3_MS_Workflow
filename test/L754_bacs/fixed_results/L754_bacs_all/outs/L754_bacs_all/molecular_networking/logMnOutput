@@ -4,7 +4,7 @@ Loading package readr, dplyr, dlls...
   * Creating the Molecular Networking of Similarities with 227 nodes *
         |                               |
         |===============================|
-    * Done creating the molecular network of similarities in 0.26 secs *
+    * Done creating the molecular network of similarities in 0.24 secs *
 
 
 DONE!
@@ -35,7 +35,7 @@ DONE!
 
 *** Creating the [M+H]+ networks without blanks - protonated SSMN and IVAMN *** 
   * Creating the IVAMN [M+H]+ network *
-	1. Remove blanks from IVAMN using the blank_expansion
+	1. Remove blanks from IVAMN using the blank_expansion= 0
 	2. Select the [M+H]+ ions in the remaining IVAMN
 
     Done for IVAMN [M+H]+!
@@ -44,24 +44,24 @@ DONE!
 
     Name: IVAMN [M+H]+
     Type: DiGraph
-    Number of nodes: 115
-    Number of edges: 115
+    Number of nodes: 78
+    Number of edges: 78
     Average in degree:   1.0000
     Average out degree:   1.0000
-    Number of components: 115
-    Number of isolated nodes:  115 
+    Number of components: 78
+    Number of isolated nodes:  78 
 
   * Creating the SSMN [M+H]+ network *
 	3. Use the nodes from IVAMN [M+H]+ to filter the SSMN
 	4. Filter the SSMN [M+H]+ using the top_k, max_component size and min_matched_peaks
   Filter min_matched_peaks 6 fragment ions
-  Starting Number of Edges 281
-  After Min Matched Peak  155
+  Starting Number of Edges 160
+  After Min Matched Peak  65
   Filter Top_K 15 neighbors
-  Starting Number of Edges 155
-  After Top K Mutual 155
-  After 2 rounds of Component Pruning 155
-  Added 33 selfloop edges
+  Starting Number of Edges 65
+  After Top K Mutual 65
+  After 2 rounds of Component Pruning 65
+  Added 30 selfloop edges
 
     Done for SSMN [M+H]+ filtered!
 
@@ -69,11 +69,11 @@ DONE!
 
     Name: SSMN [M+H]+ filtered
     Type: Graph
-    Number of nodes: 115
-    Number of edges: 188
-    Average degree:   3.2696
-    Number of components: 48
-    Number of isolated nodes:  33 
+    Number of nodes: 78
+    Number of edges: 95
+    Average degree:   2.4359
+    Number of components: 38
+    Number of isolated nodes:  30 
 
 
 
@@ -81,5 +81,5 @@ DONE!
 
 DONE! 
 ======
-Finish Step 10 Time Elapsed: 0.12min
+Finish Step 10 Time Elapsed: 0.11min
 ======
