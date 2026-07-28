@@ -96,14 +96,14 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	metadata_path = Path(metadata_path)
 	output_path = Path(output_path)
 	if not clean_counts_path.exists() or not clean_counts_path.is_file():
-		sys.exit("The provided path to the clean data file does not exists. Post processing drug discovery analysis aborted.")
+		sys.exit("The provided path to the clean data file does not exists. Post-processing drug discovery analysis aborted.")
 	if not metadata_path.exists() or not metadata_path.is_file():
-		sys.exit("The provided path to the metadata table file does not exists. Post processing drug discovery analysis aborted.")
+		sys.exit("The provided path to the metadata table file does not exists. Post-processing drug discovery analysis aborted.")
 	if not output_path.exists() or not output_path.is_dir():
 		print("The provided output path directory does not exists. It will be created:", output_path)
 		output_path.mkdir(exist_ok=True, parents=True)
 		if not output_path.exists() or not output_path.is_dir():
-			sys.exit("The provided output path could not be created and does not exists. Post processing drug discovery analysis aborted.")
+			sys.exit("The provided output path could not be created and does not exists. Post-processing drug discovery analysis aborted.")
 	
 	# extract the output name from the clean table and concatenate it with the metadata name
 	output_name = clean_counts_path.name.replace("_peak_area_clean_ann.csv", "")
@@ -152,7 +152,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 		print("  - The m/z appearing in the following sample types were removed by the filters: ",
 		      ','.join(sample_type_rm))
 	if clean_counts_df.shape[0] == 0:
-		sys.exit("ERROR: No remaining m/z after the filters. Post processing drug discovery analysis aborted.")
+		sys.exit("ERROR: No remaining m/z after the filters. Post-processing drug discovery analysis aborted.")
 	
 	mzs_selected = "" # all mzs
 	if use_protonated:
@@ -164,7 +164,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 			mzs_selected = "[M+H]+ "  # protonated
 			output_name = output_name+"_protonated"
 			if clean_counts_df.shape[0] == 0:
-				sys.exit("ERROR: No protonated m/z present. Post processing drug discovery analysis aborted.")
+				sys.exit("ERROR: No protonated m/z present. Post-processing drug discovery analysis aborted.")
 		else:
 			print("- The protonated_representative column is not present in the provided clean table, not filtering the protonated m/z.")
 	
@@ -179,11 +179,11 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	if len(samples_to_use) == 0:
 		sys.exit(
 			"ERROR: The provided metadata does not have any valid sample after removing the samples of the following types: " +
-			','.join(sample_type_rm)+". Post processing drug discovery analysis aborted.")
+			','.join(sample_type_rm)+". Post-processing drug discovery analysis aborted.")
 	if len(area_cols) == 0:
 		sys.exit("ERROR: The provided clean table does not have any peak area quantification column of the valid samples. "+
 		         "No column ending with '_area' was detected for the valid samples: "+','.join(samples_to_use)+
-		         ". Post processing drug discovery analysis aborted.")
+		         ". Post-processing drug discovery analysis aborted.")
 		
 	# create a column to store the m/z with an identification annotation
 	clean_counts_df["annotated"] = False
@@ -234,7 +234,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	print("- Computing the m/z distribution occurrence by sample and creating some plots:\n  "+
 	      "- number of exclusive m/z (only appear in one sample);\n  "+
 	      "- number of redundant m/z (appear in more than one sample)\n  "+
-	      "- number of annotated m/z (received a curated library annotation from GNPS or UNPD).")
+	      "- number of annotated m/z (received a library identification annotation from GNPS or UNPD).")
 	# join the not annotated and the annotated m/z counts by sample
 	# df_final_1
 	mzs_count_by_sample = pd.concat([mzs_count_by_sample_annotated, mzs_count_by_sample_not_annotated], axis=1)
@@ -255,7 +255,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	# plot exclusive and redundant m/z by sample
 	plot_stacked_bar_pandas_df(Path(output_path,output_name+"_mz_distribution_top_"+str(topk)+"_samples_novelty.png"),
 	                           mzs_count_by_sample_norm_topk,
-	                           title='Exclusive and Redundant '+mzs_selected+'m/z Distribution with Library Annotation for the Top '+str(topk)+' Novelty Samples',
+	                           title='Exclusive and Redundant '+mzs_selected+'m/z and Library Annotation Distribution for the Top '+str(topk)+' Novelty Samples',
 	                           xlabel='Samples', ylabel='Percentage of detected '+mzs_selected+'m/z',
 	                           figsize=mzs_barplot_figsize, label_size=mzs_barplot_label_size, title_size=mzs_barplot_title_size,
 	                           legend_bbox_to_anchor=mzs_barplot_legend_bbox, legend_fontsize=mzs_barplot_legend_fontsize,
@@ -276,34 +276,39 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	
 	print("- Computing the superclass grouping distribution of the m/z by sample and creating a plot.")
 	# sum the occurrence of each superclass grouping by sample, transpose samples to rows and superclasses to columns
-	clean_samples_by_superclass_grouping = present_mzs_by_sample.groupby(clean_counts_df[superclass_grouping_column]).sum().T
-	if samples_to_use != area_cols:
-		clean_samples_by_superclass_grouping = clean_samples_by_superclass_grouping.loc[samples_to_use, :]
-	superclass_grouping_names = list(superclass_colors.keys())
-	# add any missing superclass group
-	missing_groups = clean_samples_by_superclass_grouping.columns.symmetric_difference(
-		superclass_grouping_names).values
-	if len(missing_groups) > 0:
-		clean_samples_by_superclass_grouping[missing_groups] = 0
-	# filter and order by topk and superclass list
-	clean_samples_by_superclass_grouping.index = clean_samples_by_superclass_grouping.index.str.replace(
-		'_area', '')
-	clean_samples_by_superclass_grouping_topk = clean_samples_by_superclass_grouping.loc[selected_samples_topk, superclass_grouping_names]
-	# save table
-	clean_samples_by_superclass_grouping_topk.to_csv(Path(output_path, output_name+"_samples_composition_"+superclass_grouping_column+"_count_by_sample.csv"),
-	                                            index_label='SAMPLE_CODE')
-	# normalize the superclass grouping distribution and plot
-	clean_samples_by_superclass_grouping_topk_norm = clean_samples_by_superclass_grouping_topk.div(clean_samples_by_superclass_grouping_topk.sum(axis=1), axis=0)*100
-	plot_stacked_bar_pandas_df(Path(output_path,output_name+"_samples_composition_"+superclass_grouping_column+"_dist_top_"+str(topk)+"_samples_novelty.png"),
-	                           clean_samples_by_superclass_grouping_topk_norm,
-	                           title='Samples Composition by Superclass Grouping of the Top '+str(topk)+' Novelty Samples (normalized by sample)',
-	                           xlabel='Samples', ylabel='Percentage of detected '+mzs_selected+'m/z',
-	                           colors=list(superclass_colors.values()),
-	                           figsize=superclass_barplot_figsize, label_size=superclass_barplot_label_size,
-	                           title_size=superclass_barplot_title_size, legend_title="Superclass Grouping",
-	                           legend_bbox_to_anchor=superclass_barplot_legend_bbox,
-	                           legend_fontsize=superclass_barplot_legend_fontsize,
-	                           legend_ncol=superclass_barplot_legend_ncol)
+	if superclass_grouping_column in clean_counts_df.columns:
+		clean_samples_by_superclass_grouping = present_mzs_by_sample.groupby(clean_counts_df[superclass_grouping_column]).sum().T
+		if samples_to_use != area_cols:
+			clean_samples_by_superclass_grouping = clean_samples_by_superclass_grouping.loc[samples_to_use, :]
+		superclass_grouping_names = list(superclass_colors.keys())
+		# add any missing superclass group
+		missing_groups = clean_samples_by_superclass_grouping.columns.symmetric_difference(
+			superclass_grouping_names).values
+		if len(missing_groups) > 0:
+			clean_samples_by_superclass_grouping[missing_groups] = 0
+		# filter and order by topk and superclass list
+		clean_samples_by_superclass_grouping.index = clean_samples_by_superclass_grouping.index.str.replace(
+			'_area', '')
+		clean_samples_by_superclass_grouping_topk = clean_samples_by_superclass_grouping.loc[selected_samples_topk, superclass_grouping_names]
+		# save table
+		clean_samples_by_superclass_grouping_topk.to_csv(Path(output_path, output_name+"_samples_composition_"+superclass_grouping_column+"_count_by_sample.csv"),
+		                                            index_label='SAMPLE_CODE')
+		# normalize the superclass grouping distribution and plot
+		clean_samples_by_superclass_grouping_topk_norm = clean_samples_by_superclass_grouping_topk.div(clean_samples_by_superclass_grouping_topk.sum(axis=1), axis=0)*100
+		plot_stacked_bar_pandas_df(Path(output_path,output_name+"_samples_composition_"+superclass_grouping_column+"_dist_top_"+str(topk)+"_samples_novelty.png"),
+		                           clean_samples_by_superclass_grouping_topk_norm,
+		                           title='Samples Composition by Superclass Grouping of the Top '+str(topk)+' Novelty Samples (normalized by sample)',
+		                           xlabel='Samples', ylabel='Percentage of detected '+mzs_selected+'m/z',
+		                           colors=list(superclass_colors.values()),
+		                           figsize=superclass_barplot_figsize, label_size=superclass_barplot_label_size,
+		                           title_size=superclass_barplot_title_size, legend_title="Superclass Grouping",
+		                           legend_bbox_to_anchor=superclass_barplot_legend_bbox,
+		                           legend_fontsize=superclass_barplot_legend_fontsize,
+		                           legend_ncol=superclass_barplot_legend_ncol)
+	else:
+		sys.exit("ERROR: The provided superclass_grouping_column ('"+superclass_grouping_column+
+		         "') does not exists in the provided clean table. "+
+		         "The superclass grouping distribution could not be created. Post-processing drug discovery analysis aborted.")
 
 
 # convert string to list of text string, parse None values as well
