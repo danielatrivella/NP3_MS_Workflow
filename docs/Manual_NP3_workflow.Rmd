@@ -1,6 +1,6 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.4.2
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.5.0
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
   - Luiz F. G. Alves^\*^
@@ -2011,7 +2011,10 @@ Example to execute the MS² spectra viewer application:
 
 ## 4.17. Command *post_dd_analysis*
 
-This command perform a post processing analysis of a NP3 result for drug discovery research. This post drug discovery analysis consists of creating five different visualizations and two data tables. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a curated library annotation) and the novelty across samples (with redundant and/or exclusive m/z). The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution and/or only the protonated m/z.
+This command perform a post-processing analysis of a NP3 result for drug discovery research. Five different visualizations and two data tables are created. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a library annotation) and the novelty across samples (with redundant and/or exclusive m/z). 
+
+The analysis may be filtered to show only a subset of the samples (using the provided *metadata* table) or the top novelty samples distribution (*topk* parameter) and/or only the protonated m/z (*use\_protonated* parameter).
+
 
 Options for the command *post_dd_analysis*:
 
@@ -2032,7 +2035,7 @@ Options for the command *post_dd_analysis*:
 - *\-\-rm\_blanks* [value]  :  True or False to allow removing blank samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_beds* [value]  :    True or False to allow removing culture media samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_controls* [value]  :       True or False to allow removing control samples and m/z from the metrics computation. (default: "False")
-- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best result from UNPD and GNPS). (default: "best_origin_curated_superclass_grouping")
+- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best annotated result from UNPD and GNPS). (default: "best_origin_curated_superclass_grouping")
 - *\-\-donutplots\_title\_size* [value]  :   The title size of the donut plots. (default: "16")
 - *\-\-donutplots\_text\_size* [value]  :    The axis and legend text sizes of the donut plots. (default: "14")
  *\-\-donutplot\_libAnnotations\_colors* [value]   :  The list of colors separated by comma for the library annotation distribution donut plot. Three colors are
@@ -2084,7 +2087,7 @@ All the output plots and tables are named with a prefix equal the output_name (e
 
 ##### 4.17.2. *post_dd_analysis* Examples
 
-Example to execute the post processing drug discovery analysis from $NP^{3}$ MS Workflow:
+Example to execute the post-processing drug discovery analysis from $NP^{3}$ MS Workflow:
 
 ```{r, eval=F} 
    $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv 
@@ -2104,13 +2107,13 @@ Example to create the analysis plots with the top 5 novelty samples and only [M+
 
 The provided metadata table may be used to filter the final plots and display only a subset of the original samples. This will not modify the metrics, only the visualization of the data is modified. This may be useful for middle to big datasets with more than 50 samples, for which the complete view is not clear.
 
-The top k may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not annotated m/z - are selected for the final plots. The novelty here is measured as a m/z that is not present in any library search and the samples that have a list of m/z that were not detected in other samples - which are exclusive to this sample.
+The top k may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not library annotated m/z - are selected for the final plots. The samples novelty here is measured by the amount of m/z that were not present/identified in any library search - not annotated - and the amount of m/z that were not detected in other samples - which are exclusive to a respective sample.
 
-This post processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4) and (5) of the results, it calculates the following metrics by sample:
+This post-processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4) and (5) of the results, it calculates the following metrics by sample:
 
   - number of exclusive m/z (only appear in one sample);
   - number of redundant m/z (appear in more than one sample)
-  - number of annotated m/z (received a curated library annotation from GNPS or UNPD)
+  - number of annotated m/z (received a library identification annotation from GNPS or UNPD)
 
 The plot (1) is created by computing the provided superclass grouping distribution by sample. For this, the groups present in the column provided in the parameter superclass\_grouping\_column are counted by sample by checking the presence of their respective m/z in the valid samples, grouping their occurrence by the superclass groups and summing their counts by sample, any missing group will receive a value equals to zero. This will result in the percentage of detected m/z by annotated superclass group in the superclass\_grouping\_column for each sample.
 
