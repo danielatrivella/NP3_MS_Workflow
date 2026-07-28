@@ -1,17 +1,21 @@
 
 Total number of consensus spectra:
-3
+146
 
 Total number of consensus spectra NOT blank:
-0
+79
 
 Number of consensus spectra by size (number of clustered spectra):
-  6  13 
-"2" "1" 
+   1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16 
+ "6" "12" "17"  "7" "10" "12"  "9"  "7"  "1"  "3"  "5"  "5"  "4"  "4"  "3"  "2" 
+  17   18   19   20   22   24   25   28   29   30   32   33   41   44   49   50 
+ "5"  "1"  "1"  "2"  "1"  "2"  "3"  "2"  "1"  "1"  "1"  "2"  "1"  "1"  "1"  "1" 
+  52   53   57   60   63   65   66   70   82  107  121  139 
+ "1"  "1"  "1"  "1"  "1"  "1"  "1"  "1"  "2"  "1"  "1"  "1" 
 
 Total number of processed spectra from the raw MS/MS data:
-25
+2410
 Number of unique m/z rounded in digit 2:
-3
+142
 Mean number of consensus spectra by m/z: 
-1
+1.028

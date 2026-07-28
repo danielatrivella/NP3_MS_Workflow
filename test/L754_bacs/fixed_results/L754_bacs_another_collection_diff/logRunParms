@@ -1,9 +1,9 @@
-NP3 MS Workflow - version 1.4.1
+NP3 MS Workflow - version 1.5.0
 
 output_name: L754_bacs_another_collection_diff
 
 cmd: 
 
-/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js run -n L754_bacs_another_collection_diff -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_another_collection_diff.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -y processed_data_another_collection -j TRUE -b 100 -v 11 -t 5,10 -q FALSE --bflag_cutoff 1.5 --noise_cutoff 1.5 --gnps_search_tool 
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js run -n L754_bacs_another_collection_diff -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_another_collection_diff.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -y processed_data_another_collection -j TRUE -b 100 -v 11 -t 5,10 -q FALSE --bflag_cutoff 1.5 --noise_cutoff 1000 --gnps_search_tool 
 
-RUN Time Elapsed: 2.87min
+RUN Time Elapsed: 2.52min

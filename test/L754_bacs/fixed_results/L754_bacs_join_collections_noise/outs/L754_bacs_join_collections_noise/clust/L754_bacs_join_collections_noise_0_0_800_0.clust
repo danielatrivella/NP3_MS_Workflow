@@ -1,3 +1,3 @@
 jobName, clustId, clustSize, rtMean, mzConsensus, chargeConsensus, rtMin, rtMax,precursorInt,peptideStrConsensus,datasetIdx, fileIndex, scanNumber, peakArea, peakId, rt, mz, simToConsensus, pValue, charge, peptideStr
-L754_bacs_join_collections_noise_0_0,25,2,589.227234,846.438171,1,587.689331,592.109680,341914.000000,,0,0,155,0.000000,fake_,589.227,846.438,1.00,0,1
-L754_bacs_join_collections_noise_0_0,25,2,589.227234,846.438171,1,587.689331,592.109680,341914.000000,,0,1,101,0.000000,fake_,594.52,846.44,1.00,0,1
+L754_bacs_join_collections_noise_0_0,146,2,589.227234,846.438171,1,587.689331,592.109680,341914.000000,,0,0,155,0.000000,fake_,589.227,846.438,1.00,0,1
+L754_bacs_join_collections_noise_0_0,146,2,589.227234,846.438171,1,587.689331,592.109680,341914.000000,,0,1,101,0.000000,fake_,594.52,846.44,1.00,0,1

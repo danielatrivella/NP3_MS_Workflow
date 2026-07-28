@@ -1,4 +1,13 @@
 Statistics,Value,Description
 Network Name,L754_bacs_join_collections_noise_ivamn_protonated,The network file name
-Number of nodes,0,"The number of nodes in the network, the network size."
-Number of edges,0,The number of edges in the network.
+Number of nodes,41,"The number of nodes in the network, the network size."
+Number of edges,41,The number of edges in the network.
+Number of isolated nodes,39 (95.1%),The number of isolated nodes (or selfloops) present in the network and its percentage overall. 
+Average in-degree,1.00,"The average in-degree of the nodes in the network, directed. The in-degree of a node is equal to the number of adjacent incoming connections (incoming edges) it have."
+Average out-degree,1.00,"The average out-degree of the nodes in the network, directed. The out-degree of a node is equal to the number of adjacent outgoing connections (outgoing edges) it have."
+Average degree,2.00,"The average degree of the nodes in the network, undirected. The degree of a node is equal to the number of adjacent connections (edges) it have.  Nodes with high degrees often serve as central points or 'hubs' in a network."
+Number of weakly connected components,40 (1),"The number of components present in the network, and the number of not isolated components between parenthesis (components with size >= 2 nodes). Isolated nodes count as one isolated component. For direct network this is the weakly connected components."
+Global clustering coefficient ,0.00,"The clustering coefficient measures the degree to which nodes in a graph tend to cluster together, it measures the tendency of a node’s neighbors to be interconnected. The global coefficient is measured for the entire network, using the transitivity computation - the fraction of all possible triangles (nodes A, B and C are interconnected) present in the network."
+Average clustering coefficient ,0.00,"The network average clustering coefficient measures how likely nodes in a network are to form clusters by assessing the density of triangles. A high average clustering coefficient indicates that a network's nodes have a strong tendency to form tightly-knit local groups, triangles. The network average clustering coefficient has a value range from 0 to 1. A value of 1 indicates that all possible triangles are present, meaning a highly clustered or 'clique-like' network, while a value of 0 suggests a very sparse or unclustered network with no triangles. For a single node, the local clustering coefficient measures the density of connections among its neighbors. It is calculated as the ratio of the actual number of edges between the node's neighbors to the total number of possible edges between them."
+Number of components of size 1,39 (97.5%),"The number of components of size equal 1 nodes present in the network, and their percentage over the total number of components in the network. "
+Number of components of size 2,1 (2.5%),"The number of components of size equal 2 nodes present in the network, and their percentage over the total number of components in the network. "

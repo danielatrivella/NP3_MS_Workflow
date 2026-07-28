@@ -6,18 +6,18 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 4 symbolic clusters in 0.11 secs *
+  * Done creating 9 symbolic clusters in 0.13 secs *
 
   ** Computing Peak Area by Sample ** 
 
-  * Done in 0.12 secs *
+  * Done in 0.14 secs *
 
 Registered S3 methods overwritten by 'tibble':
   method     from  
   format.tbl pillar
   print.tbl  pillar
 
-DONE! Time Elapsed: 0.12min
+DONE! Time Elapsed: 0.08min
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
 
@@ -124,9 +124,18 @@ DONE!
 
 *** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_another_collection_diff_spectra_merged_ann.csv *** 
 
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+3: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+4: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
 
 DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 8 Time Elapsed: 0.15min
+Finish Step 8 Time Elapsed: 0.12min
 ======

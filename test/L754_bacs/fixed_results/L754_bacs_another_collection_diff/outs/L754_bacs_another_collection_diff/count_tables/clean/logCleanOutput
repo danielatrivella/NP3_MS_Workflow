@@ -1,16 +1,17 @@
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 Loading package dplyr and Rcpp functions...
+Number of parallel cores to use in the pairwise comparisons: 2 
 
   * Comparing L754_bacs_another_collection_diff result spectra pairwise *
         |       |
         |=======|
-    * Done making 5050 pairwise comparisions in 24.37 secs *
+    * Done making 5050 pairwise comparisions in 20.64 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.55min
+Finish pairwise comparison Time Elapsed: 0.48min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -18,33 +19,29 @@ Loading packages Rcpp, readr, dplyr, CPP functions...
 
 BFLAG cutoff : basePeakInt median + 1.5 * (q75-q25) = 8492.5 
 
-NOISE cutoff : basePeakInt median + 1.5 * (q75-q25) = 8492.5 
+NOISE cutoff :  1000 
+
+  ** Applying the noise cutoff and removing all spectra with a basePeakInt value < 1000 **
+
+  * Done removing 41 noise spectra  *
+
 
 ** Cleanning counts, removing redudancies and aggregating data **
 
       * Step 0 *
   |                          |
   |==========================|
-        * Joined 1 similar clusters in 0.04 secs *
-          * Aggregating similarity table with the joined Ids *
-            |  |
-            |==|
-          * Done aggregating similarity table in 0.07 secs *
+        * Joined 0 similar clusters in 0.01 secs *
 
       * Step 1 *
   |                          |
   |==========================|
-        * Joined 0 similar clusters in 0.07 secs *
+        * Joined 0 similar clusters in 0.04 secs *
 
-  * Done reducing 1 similar clusters in 0.39 secs *
+  * Done reducing 0 similar clusters in 0.26 secs *
 
 
   ** Computing Peak Area by Sample ** 
-
-
-  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <= 8492.5 **
-
-  * Done removing 89 noise spectra  *
 
 
   ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **
@@ -54,7 +51,7 @@ NOISE cutoff : basePeakInt median + 1.5 * (q75-q25) = 8492.5
   ** Saving the clean MGF file **
 
 Creating MGF /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/L754_bacs_another_collection_diff/mgf/L754_bacs_another_collection_diff_clean.mgf !
-  |                                                                              |                                                                      |   0%  |                                                                              |======                                                                |   9%  |                                                                              |=============                                                         |  18%  |                                                                              |===================                                                   |  27%  |                                                                              |=========================                                             |  36%  |                                                                              |================================                                      |  45%  |                                                                              |======================================                                |  55%  |                                                                              |=============================================                         |  64%  |                                                                              |===================================================                   |  73%  |                                                                              |=========================================================             |  82%  |                                                                              |================================================================      |  91%  |                                                                              |======================================================================| 100%
+  |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   5%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=============                                                         |  18%  |                                                                              |==============                                                        |  20%  |                                                                              |===============                                                       |  22%  |                                                                              |================                                                      |  23%  |                                                                              |==================                                                    |  25%  |                                                                              |===================                                                   |  27%  |                                                                              |====================                                                  |  28%  |                                                                              |=====================                                                 |  30%  |                                                                              |======================                                                |  32%  |                                                                              |=======================                                               |  33%  |                                                                              |========================                                              |  35%  |                                                                              |==========================                                            |  37%  |                                                                              |===========================                                           |  38%  |                                                                              |============================                                          |  40%  |                                                                              |=============================                                         |  42%  |                                                                              |==============================                                        |  43%  |                                                                              |================================                                      |  45%  |                                                                              |=================================                                     |  47%  |                                                                              |==================================                                    |  48%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================                                  |  52%  |                                                                              |=====================================                                 |  53%  |                                                                              |======================================                                |  55%  |                                                                              |========================================                              |  57%  |                                                                              |=========================================                             |  58%  |                                                                              |==========================================                            |  60%  |                                                                              |===========================================                           |  62%  |                                                                              |============================================                          |  63%  |                                                                              |==============================================                        |  65%  |                                                                              |===============================================                       |  67%  |                                                                              |================================================                      |  68%  |                                                                              |=================================================                     |  70%  |                                                                              |==================================================                    |  72%  |                                                                              |===================================================                   |  73%  |                                                                              |====================================================                  |  75%  |                                                                              |======================================================                |  77%  |                                                                              |=======================================================               |  78%  |                                                                              |========================================================              |  80%  |                                                                              |=========================================================             |  82%  |                                                                              |==========================================================            |  83%  |                                                                              |============================================================          |  85%  |                                                                              |=============================================================         |  87%  |                                                                              |==============================================================        |  88%  |                                                                              |===============================================================       |  90%  |                                                                              |================================================================      |  92%  |                                                                              |=================================================================     |  93%  |                                                                              |==================================================================    |  95%  |                                                                              |====================================================================  |  97%  |                                                                              |===================================================================== |  98%  |                                                                              |======================================================================| 100%
 Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/L754_bacs_another_collection_diff/mgf/L754_bacs_another_collection_diff_clean.mgf  ........... OK!
 
   - Computing the number of fragmented cluster in the clean table
@@ -63,50 +60,50 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.27 secs *
+    * Done in 0.3 secs *
 
 
-Warning message:
-In normalizePath(file_MGF) :
-  path[1]="/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs//L754_bacs_another_collection_diff/outs/L754_bacs_another_collection_diff/mgf/L754_bacs_another_collection_diff_clean.mgf": No such file or directory
 
-DONE! Time Elapsed: 0.26min
+DONE! Time Elapsed: 0.23min
 
 *** Analysing the count of spectra  *** 
 
 Total number of consensus spectra:
-11
+60
 
 Total number of consensus spectra NOT blank:
-9
+53
 
 Number of consensus spectra by size (number of clustered spectra):
-  1   5  15  16  33  34  57  63  70  97 
-"2" "1" "1" "1" "1" "1" "1" "1" "1" "1" 
+  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  20  23  25  26 
+"3" "3" "6" "3" "3" "4" "2" "3" "2" "3" "2" "1" "2" "1" "1" "2" "1" "1" "2" "1" 
+ 27  31  33  34  40  47  57  63  70  97 
+"1" "2" "2" "2" "1" "1" "1" "2" "1" "1" 
 
 Total number of processed spectra from the raw MS/MS data:
-392
+1064
 Number of unique m/z rounded in digit 2:
-11
+56
 Mean number of consensus spectra by m/z: 
-1
+1.071
 
 DONE!
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 Loading package dplyr and Rcpp functions...
+Number of parallel cores to use in the pairwise comparisons: 2 
 
   * Comparing L754_bacs_another_collection_diff_clean result spectra pairwise *
         | |
         |=|
-    * Done making 55 pairwise comparisions in 4.13 secs *
+    * Done making 1770 pairwise comparisions in 4.35 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.24min
+Finish pairwise comparison Time Elapsed: 0.21min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.50min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.44min (without the clustered spectra comparison time) 
 ======

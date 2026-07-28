@@ -6,11 +6,11 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 1 symbolic clusters in 0.1 secs *
+  * Done creating 4 symbolic clusters in 0.13 secs *
 
   ** Computing Peak Area by Sample ** 
 
-  * Done in 0.17 secs *
+  * Done in 0.23 secs *
 
 Registered S3 methods overwritten by 'tibble':
   method     from  
@@ -75,8 +75,8 @@ Warning messages:
 2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
   the standard deviation is zero
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 8 Time Elapsed: 0.12min
+Finish Step 8 Time Elapsed: 0.11min
 ======

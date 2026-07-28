@@ -1,6 +1,6 @@
 *** Step 7 - Joining the Annotations of ionization variants in the Original Jobs of the clean counts table, creating the joined molecular network of annotations (IVAMN) and Assigning the putative [M+H]+ spectra representatives in the joined IVAMN *** 
 * Joining the previous IVAMNs of the Joined Jobs * 
-  - Noise cut-off was enabled and set to  39105
+  - Noise cut-off is enabled and equal = 500.0
     - Mapping and reducing the IVAMN of job code L754_bacs_1
     - Mapping and reducing the IVAMN of job code L754_bacs_2
     - Integrating and reducing the mapped IVAMNs for current joined job L754_bacs_join_collections_noise
@@ -15,25 +15,33 @@
 
 Name: 
 Type: DiGraph
-Number of nodes: 3
-Number of edges: 0
-Average in degree:   0.0000
-Average out degree:   0.0000
-Number of components: 3
-Number of isolated nodes:  3
-Number of protonated_representative nodes (with isolated nodes): 3
-Number of protonated_representative nodes (with isolated nodes) after merge with old protonated that have in-degree > 0: 3
+Number of nodes: 146
+Number of edges: 34
+Average in degree:   0.2329
+Average out degree:   0.2329
+Number of components: 117
+Number of isolated nodes:  99
+Number of protonated_representative nodes (with isolated nodes): 112
+Number of protonated_representative nodes (with isolated nodes) after merge with old protonated that have in-degree > 0: 114
 
 
 DONE!
 *** Step 7 - Parse and format the resulting annotations in the joined IVAMN by ionization variants to columns in the clean counts table *** 
 Loading packages Rcpp, readr, dplyr, stringr...
 
+** Annotation summary by type **
+  *  adducts  =  19 
+  *  isotopes  =  0 
+  *  dimers  =  14 
+  *  multiCharges  =  0 
+  *  fragments  =  6 
 
-DONE! Time Elapsed: 0.18min
+
+
+DONE! Time Elapsed: 0.15min
 
 ======
-Finish Step 7 Time Elapsed: 0.19min
+Finish Step 7 Time Elapsed: 0.16min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
@@ -92,11 +100,6 @@ Warning messages:
   the standard deviation is zero
 2: In cor(t(select(count_samples, c("L754_EDTA50_00_area", "L754_EDTA50_01_area",  :
   the standard deviation is zero
-Warning messages:
-1: In max(count_samples[count_samples[, j] != "CTE", j], na.rm = TRUE) :
-  no non-missing arguments to max; returning -Inf
-2: In max(count_samples[count_samples[, j] != "CTE", j], na.rm = TRUE) :
-  no non-missing arguments to max; returning -Inf
 
 DONE! Time Elapsed: 0.01min
 
@@ -156,10 +159,5 @@ Warning messages:
   the standard deviation is zero
 2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
   the standard deviation is zero
-Warning messages:
-1: In max(count_samples[count_samples[, j] != "CTE", j], na.rm = TRUE) :
-  no non-missing arguments to max; returning -Inf
-2: In max(count_samples[count_samples[, j] != "CTE", j], na.rm = TRUE) :
-  no non-missing arguments to max; returning -Inf
 
 DONE! Time Elapsed: 0.01min

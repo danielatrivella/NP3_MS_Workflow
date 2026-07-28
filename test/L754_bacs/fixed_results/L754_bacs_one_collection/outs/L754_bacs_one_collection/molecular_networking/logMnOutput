@@ -1,33 +1,33 @@
 *** Step 10 - Creating the Spectra Similarity Molecular Network (SSMN) *** 
 Loading package readr, dplyr, dlls...
 
-  * Creating the Molecular Networking of Similarities with 21 nodes *
-        |                     |
-        |=====================|
-    * Done creating the molecular network of similarities in 0.1 secs *
+  * Creating the Molecular Networking of Similarities with 111 nodes *
+        |                               |
+        |===============================|
+    * Done creating the molecular network of similarities in 0.14 secs *
 
 
 DONE!
 
 *** Filtering the SSMN - minimum matched peaks, top k neighbours and max component size  *** 
   Filter min_matched_peaks 6 fragment ions
-  Starting Number of Edges 16
-  After Min Matched Peak  14
+  Starting Number of Edges 156
+  After Min Matched Peak  130
   Filter Top_K 15 neighbors
-  Starting Number of Edges 14
-  After Top K Mutual 14
-  After 2 rounds of Component Pruning 14
-  Added 4 selfloop edges
+  Starting Number of Edges 130
+  After Top K Mutual 130
+  After 2 rounds of Component Pruning 130
+  Added 11 selfloop edges
 
   * Network SSMN filtered info *
 
     Name: SSMN filtered
     Type: Graph
-    Number of nodes: 21
-    Number of edges: 18
-    Average degree:   1.7143
-    Number of components: 15
-    Number of isolated nodes:  11 
+    Number of nodes: 111
+    Number of edges: 141
+    Average degree:   2.5405
+    Number of components: 63
+    Number of isolated nodes:  48 
 
 
 
@@ -35,7 +35,7 @@ DONE!
 
 *** Creating the [M+H]+ networks without blanks - protonated SSMN and IVAMN *** 
   * Creating the IVAMN [M+H]+ network *
-	1. Remove blanks from IVAMN using the blank_expansion
+	1. Remove blanks from IVAMN using the blank_expansion= 0
 	2. Select the [M+H]+ ions in the remaining IVAMN
 
     Done for IVAMN [M+H]+!
@@ -44,12 +44,12 @@ DONE!
 
     Name: IVAMN [M+H]+
     Type: DiGraph
-    Number of nodes: 2
-    Number of edges: 2
+    Number of nodes: 8
+    Number of edges: 8
     Average in degree:   1.0000
     Average out degree:   1.0000
-    Number of components: 2
-    Number of isolated nodes:  2 
+    Number of components: 8
+    Number of isolated nodes:  8 
 
   * Creating the SSMN [M+H]+ network *
 	3. Use the nodes from IVAMN [M+H]+ to filter the SSMN
@@ -61,7 +61,7 @@ DONE!
   Starting Number of Edges 0
   After Top K Mutual 0
   After 2 rounds of Component Pruning 0
-  Added 2 selfloop edges
+  Added 8 selfloop edges
 
     Done for SSMN [M+H]+ filtered!
 
@@ -69,11 +69,11 @@ DONE!
 
     Name: SSMN [M+H]+ filtered
     Type: Graph
-    Number of nodes: 2
-    Number of edges: 2
+    Number of nodes: 8
+    Number of edges: 8
     Average degree:   2.0000
-    Number of components: 2
-    Number of isolated nodes:  2 
+    Number of components: 8
+    Number of isolated nodes:  8 
 
 
 
@@ -81,5 +81,5 @@ DONE!
 
 DONE! 
 ======
-Finish Step 10 Time Elapsed: 0.13min
+Finish Step 10 Time Elapsed: 0.11min
 ======

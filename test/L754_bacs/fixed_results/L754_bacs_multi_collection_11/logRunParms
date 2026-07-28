@@ -1,9 +1,9 @@
-NP3 MS Workflow - version 1.4.1
+NP3 MS Workflow - version 1.5.0
 
 output_name: L754_bacs_multi_collection_11
 
 cmd: 
 
-/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js run -n L754_bacs_multi_collection_11 -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -j TRUE -v 11 --noise_cutoff 2 --gnps_search_tool 
+/home/crisfbazz/Documents/ccp4-9/bin/node /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/np3_workflow.js run -n L754_bacs_multi_collection_11 -m /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/marine_bacteria_library_L754_metadata_multi_collection_11.csv -d /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/mzxml -o /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_bacs/ -j TRUE -v 11 --noise_cutoff 500 --gnps_search_tool 
 
-RUN Time Elapsed: 3.17min
+RUN Time Elapsed: 2.75min

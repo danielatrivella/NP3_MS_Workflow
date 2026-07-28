@@ -14,14 +14,14 @@
 
 Name: 
 Type: DiGraph
-Number of nodes: 25
-Number of edges: 12
-Average in degree:   0.4800
-Average out degree:   0.4800
-Number of components: 16
-Number of isolated nodes:  9
-Number of protonated_representative nodes (with isolated nodes): 16
-Number of protonated_representative nodes (with isolated nodes) after merge with old protonated that have in-degree > 0: 16
+Number of nodes: 146
+Number of edges: 34
+Average in degree:   0.2329
+Average out degree:   0.2329
+Number of components: 117
+Number of isolated nodes:  99
+Number of protonated_representative nodes (with isolated nodes): 112
+Number of protonated_representative nodes (with isolated nodes) after merge with old protonated that have in-degree > 0: 114
 
 
 DONE!
@@ -29,18 +29,18 @@ DONE!
 Loading packages Rcpp, readr, dplyr, stringr...
 
 ** Annotation summary by type **
-  *  adducts  =  6 
+  *  adducts  =  19 
   *  isotopes  =  0 
-  *  dimers  =  7 
+  *  dimers  =  14 
   *  multiCharges  =  0 
-  *  fragments  =  2 
+  *  fragments  =  6 
 
 
 
 DONE! Time Elapsed: 0.15min
 
 ======
-Finish Step 7 Time Elapsed: 0.16min
+Finish Step 7 Time Elapsed: 0.17min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 

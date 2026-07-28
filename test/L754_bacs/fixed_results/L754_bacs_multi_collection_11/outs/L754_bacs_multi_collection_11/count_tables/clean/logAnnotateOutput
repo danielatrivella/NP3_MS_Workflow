@@ -16,26 +16,26 @@ Loading packages Rcpp, readr, dplyr, stringr...
 
 ** Getting list of fragmented peaks and data collection batches by cluster **
 
-  * Done in 0.02 secs *
+  * Done in 0.05 secs *
 
 
 ** Annotating variant spectra that are in concurrent MS1 peaks **
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
   |                          |
   |==========================|
-  * Done annotating clusters in 0.09 secs *
+  * Done annotating clusters in 0.32 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **
-  * Done in 0.08 secs *
+  * Done in 0.09 secs *
 
 
 ** Annotation summary by type **
-  *  adducts  =  5 
+  *  adducts  =  11 
   *  isotopes  =  0 
-  *  dimers  =  10 
+  *  dimers  =  14 
   *  multiCharges  =  0 
-  *  fragments  =  1 
+  *  fragments  =  4 
 
 
 Warning message:
@@ -54,19 +54,19 @@ DONE!
 
 Name: 
 Type: DiGraph
-Number of nodes: 32
-Number of edges: 15
-Average in degree:   0.4688
-Average out degree:   0.4688
-Number of components: 21
-Number of isolated nodes:  14
-Number of protonated_representative nodes (with isolated nodes): 21
+Number of nodes: 177
+Number of edges: 26
+Average in degree:   0.1469
+Average out degree:   0.1469
+Number of components: 156
+Number of isolated nodes:  141
+Number of protonated_representative nodes (with isolated nodes): 142
 
 
 DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 7 Time Elapsed: 0.21min
+Finish Step 7 Time Elapsed: 0.18min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 

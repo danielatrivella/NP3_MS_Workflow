@@ -16,26 +16,26 @@ Loading packages Rcpp, readr, dplyr, stringr...
 
 ** Getting list of fragmented peaks and data collection batches by cluster **
 
-  * Done in 0 secs *
+  * Done in 0.02 secs *
 
 
 ** Annotating variant spectra that are in concurrent MS1 peaks **
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
-  |           |
-  |===========|
-  * Done annotating clusters in 0.05 secs *
+  |                          |
+  |==========================|
+  * Done annotating clusters in 0.12 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **
-  * Done in 0.07 secs *
+  * Done in 0.08 secs *
 
 
 ** Annotation summary by type **
-  *  adducts  =  3 
+  *  adducts  =  9 
   *  isotopes  =  0 
   *  dimers  =  3 
   *  multiCharges  =  0 
-  *  fragments  =  2 
+  *  fragments  =  5 
 
 
 Warning message:
@@ -54,19 +54,19 @@ DONE!
 
 Name: 
 Type: DiGraph
-Number of nodes: 11
-Number of edges: 6
-Average in degree:   0.5455
-Average out degree:   0.5455
-Number of components: 7
-Number of isolated nodes:  4
-Number of protonated_representative nodes (with isolated nodes): 7
+Number of nodes: 60
+Number of edges: 13
+Average in degree:   0.2167
+Average out degree:   0.2167
+Number of components: 50
+Number of isolated nodes:  42
+Number of protonated_representative nodes (with isolated nodes): 50
 
 
 DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 7 Time Elapsed: 0.20min
+Finish Step 7 Time Elapsed: 0.19min
 ======
 
 *** Step 9 - Creating the quantification groupings based on the metadata information *** 
@@ -174,5 +174,14 @@ DONE!
 
 *** Step 9 - Computing the correlation between the counts table and the samples bioactivity from L754_bacs_another_collection_diff_spectra_clean_ann.csv *** 
 
+Warning messages:
+1: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+2: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+3: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
+4: In cor(t(select(count_samples, c("L754_EDTA50_00_spectra", "L754_EDTA50_01_spectra",  :
+  the standard deviation is zero
 
 DONE! Time Elapsed: 0.01min

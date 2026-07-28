@@ -1,6 +1,26 @@
 "gnps_SpectrumID","Type","gnps_Compound_Name","gnps_Smiles"
+"CCMSLIB00000211965","GNPS","ReSpect:PM018191 Tryptophan M+H","C1=CC=C2C(=C1)C(=CN2)C[C@@H](C(=O)O)N"
+"CCMSLIB00000211965","GNPS","ReSpect:PM018191 Tryptophan M+H","C1=CC=C2C(=C1)C(=CN2)C[C@@H](C(=O)O)N"
+"CCMSLIB00012440740","GNPS","5654-86-4 [M+H]+","CC(C)CC1NC(=O)C2CCCN2C1=O"
+"CCMSLIB00012440378","GNPS","Cyclo-Ile-Pro-diketopiperazine [M+H]+","CCC(C)C1NC(=O)C2CCCN2C1=O"
+"CCMSLIB00012440378","GNPS","Cyclo-Ile-Pro-diketopiperazine [M+H]+","CCC(C)C1NC(=O)C2CCCN2C1=O"
 "CCMSLIB00013938980","GNPS","Dodine","CCCCCCCCCCCCNC(N)=N"
+"CCMSLIB00012349259","GNPS","Cyclo(his-pro) [M+H]+","O=C1N[C@@H](Cc2cnc[nH]2)C(=O)N2CCC[C@@H]12"
+"CCMSLIB00000007132","GNPS","cyclo(L-Phe-D-Pro) M+H",NA
+"CCMSLIB00000850450","GNPS","NCGC00384639-01_C14H16N2O3_Pyrrolo[1,2-a]pyrazine-1,4-dione, hexahydro-3-[(4-hydroxyphenyl)methyl]- M+H","OC1=CC=C(CC2NC(=O)C3CCCN3C2=O)C=C1"
+"CCMSLIB00003135204","GNPS","Spectral Match to 9-Octadecenamide, (Z)- from NIST14 M+H","CCCCCCCC/C=C\CCCCCCCC(=O)N"
 "CCMSLIB00016264840","GNPS","Octadecanamide [CCS=194.519] [M+H]+","CCCCCCCCCCCCCCCCCC(N)=O"
 "CCMSLIB00005435779","GNPS","Ethylenediaminetetraacetic acid EDTA M+H","C(CN(CC(=O)O)CC(=O)O)N(CC(=O)O)CC(=O)O"
+"CCMSLIB00012176428","GNPS","Sucrose M+H-H2O","C([C@@H]1[C@H]([C@@H]([C@H]([C@H](O1)O[C@]2([C@H]([C@@H]([C@H](O2)CO)O)O)CO)O)O)O)O"
+"CCMSLIB00006679930","GNPS","MALTOSE M+NH4","C([C@@H]1[C@H]([C@@H]([C@H]([C@H](O1)O[C@@H]2[C@@H](CO)O[C@H]([C@@H]([C@H]2O)O)O)O)O)O)O"
+"CCMSLIB00013940447","GNPS","Bis(2-ethylhexyl)phthalate_CE30 M+H","CCCCC(CC)COC(=O)C1=C(C=CC=C1)C(=O)OCC(CC)CCCC"
 "CCMSLIB00000853386","GNPS","NCGC00385123-01_C22H30O6_7b,9-Dihydroxy-3-(hydroxymethyl)-1,1,6,8-tetramethyl-5-oxo-1,1a,1b,4,4a,5,7a,7b,8,9-decahydro-9aH-cyclopropa[3,4]benzo[1,2-e]azulen-9a-yl acetate M+ACN+H","CC1C(O)C2(OC(C)=O)C(C3\C=C(CO)/CC4C(\C=C(C)/C4=O)C13O)C2(C)C"
-"CCMSLIB00012349259","GNPS","Cyclo(his-pro) [M+H]+","O=C1N[C@@H](Cc2cnc[nH]2)C(=O)N2CCC[C@@H]12"
+"CCMSLIB00003135012","GNPS","Spectral Match to Propanoic acid, 3,3'-thiobis-, didodecyl ester from NIST14 M+H","CCCCCCCCCCCCOC(=O)CCSCCC(=O)OCCCCCCCCCCCC"
+"CCMSLIB00003135049","GNPS","Spectral Match to Didodecyl 3,3'-thiodipropionate oxide from NIST14 M+H",NA
+"CCMSLIB00005436264","GNPS","Contaminants septum vial Thermo C4000-53 and C4000-54 serie M+H",NA
+"CCMSLIB00000577784","GNPS","SCH-378199_47738_dereplictor_pv_6.19652e-13 M+2H","[H]OC(=O)C([H])([H])C([H])([H])C1([H])N(C(=O)C([H])(N([H])C(=O)C2([H])N(C(=O)C([H])(N([H])C(=O)C([H])(N(C(=O)C([H])(N(C(=O)C([H])([H])N([H])C(=O)C3([H])N(C(=O)C([H])(N([H])C(=O)C([H])(OC1=O)C([H])(C([H])([H])[H])C([H])([H])C([H])([H])[H])C([H])([H])C1=C([H])C([H])=C([H])C([H])=C1[H])C([H])([H])C([H])([H])C3([H])[H])C([H])([H])[H])C([H])(C([H])([H])[H])C([H])([H])[H])C([H])([H])[H])C([H])([H])C([H])([H])C(=O)O[H])C([H])(C([H])([H])[H])C([H])([H])C([H])([H])[H])C([H])([H])C([H])([H])C2([H])[H])C([H])(C([H])([H])[H])C([H])([H])[H])C([H])([H])[H]"
+"CCMSLIB00004679264","GNPS","val-leu-pro-val-pro-gln M+H","N1(C(=O)[C@@H](NC(=O)[C@H]2N(C(=O)[C@@H](NC(=O)[C@@H](N)C(C)C)CC(C)C)CCC2)C(C)C)C(C(=O)N[C@H](C(=O)O)CCC(=O)N)CCC1"
+"CCMSLIB00006121034","GNPS","L-Kynurenine - 40.0 eV M+H","c1ccc(c(c1)C(=O)C[C@@H](C(=O)O)N)N"
+"CCMSLIB00000007040","GNPS","cyclo(L-Leu-L-4-hydroxy-Pro) M+H",NA
+"CCMSLIB00000007118","GNPS","cyclo(Phe-4-hydroxy-Pro) M+H",NA
+"CCMSLIB00005883825","GNPS","GUANOSINE - 70.0 eV M+H","NC1=NC2=C(N=CN2[C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)C(=O)N1"

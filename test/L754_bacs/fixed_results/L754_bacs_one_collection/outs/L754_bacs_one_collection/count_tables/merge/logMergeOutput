@@ -6,11 +6,11 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 1 symbolic clusters in 0.1 secs *
+  * Done creating 5 symbolic clusters in 0.11 secs *
 
   ** Computing Peak Area by Sample ** 
 
-  * Done in 0.12 secs *
+  * Done in 0.15 secs *
 
 Registered S3 methods overwritten by 'tibble':
   method     from  
@@ -73,8 +73,8 @@ The bioactivity scores of the 'BIOACTIVITY_FAKE2' column only contains zero valu
 Warning message:
 Correlation group COR_TEST_PEAK do not have more than one sample selected and thus will be skipped. 
 
-DONE! Time Elapsed: 0.02min
+DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 8 Time Elapsed: 0.13min
+Finish Step 8 Time Elapsed: 0.11min
 ======

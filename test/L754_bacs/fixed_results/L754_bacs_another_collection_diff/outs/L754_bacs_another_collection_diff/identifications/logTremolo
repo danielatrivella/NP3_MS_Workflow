@@ -1,13 +1,13 @@
 EXISTING_LIBRARY_MGF = /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p01.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p02.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p03.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p04.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p05.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p06.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p07.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p08.mgf /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf
 NODECOUNT = 1
 NODEIDX = 0
-RESULTS_DIR = /tmp/ISDB_tremolo_NP3_jd3fkez0//Data/results/Results_tremolo_L754_bacs_another_collection_diff.out
+RESULTS_DIR = /tmp/ISDB_tremolo_NP3_0ooqi4xd//Data/results/Results_tremolo_L754_bacs_another_collection_diff.out
 SCORE_THRESHOLD = 0.2
 SEARCHABUNDANCE = 0
 SLGFLOADMODE = 1
 TOP_K_RESULTS = 10
 search_decoy = 0
-searchspectra = /tmp/ISDB_tremolo_NP3_jd3fkez0//Data/results/spectra_mgf_L754_bacs_another_collection_diff.pklbin
+searchspectra = /tmp/ISDB_tremolo_NP3_0ooqi4xd//Data/results/spectra_mgf_L754_bacs_another_collection_diff.pklbin
 tolerance.PM_tolerance = 0.025
 LOADING TARGET MGF
 
@@ -37,7 +37,7 @@ LOADING TARGET MGF
 
 LOADED	/home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/src/ISDB_tremolo_NP3/Data/dbs/UNPD_ISDB_R_p09.mgf	 as an annotated mgf file
 Loading Search Spectra
-LOADED Search	/tmp/ISDB_tremolo_NP3_jd3fkez0//Data/results/spectra_mgf_L754_bacs_another_collection_diff.pklbin	 as a pklbin file
+LOADED Search	/tmp/ISDB_tremolo_NP3_0ooqi4xd//Data/results/spectra_mgf_L754_bacs_another_collection_diff.pklbin	 as a pklbin file
 Invoke
 170602
 After Creating Annotation Ends: 170602
@@ -54,12 +54,12 @@ After Spectra Simplicity: 170602
 Done Creating Library
 =============================================
 SEARCH
-11
+60
 DONE!
 
 
  Treating the SMILES list: treated 213177 compounds
- Treating the result file /tmp/ISDB_tremolo_NP3_jd3fkez0//Data/results/Results_tremolo_L754_bacs_another_collection_diff.out
+ Treating the result file /tmp/ISDB_tremolo_NP3_0ooqi4xd//Data/results/Results_tremolo_L754_bacs_another_collection_diff.out
 
 Converting tremolo result to CSV
 DONE!
@@ -76,5 +76,5 @@ DONE!
 Tremolo search ended!
 
 ======
-Finish Step 6 Time Elapsed: 0.31min
+Finish Step 6 Time Elapsed: 0.29min
 ======
