@@ -445,14 +445,14 @@ A directory inside the *output_path* named with the *output_name* containing:
     - A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as '\<step_name\>_(spectra|peak_area).csv'.
     - Another subfolder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined)
     - A third subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files
-    - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output. 
+    - A text file named 'logClusteringOutput' with the NP3_MSCluster log output. 
  
 The clustering steps results folders are named as 'B\_\<DATA\_COLLECTION_BATCH\>\_\<X\>' where *DATA\_COLLECTION\_BATCH* is the data collection batch number in the metadata file of each group of samples and *X* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
  
 The final integration step result is located inside the 'outs' directory in a folder named with the *output_name*. This folder contains the final quantification and is where the user will find the final results. It also contains the following data:
  
 - Inside the 'count_tables' folder two subfolders named "clean" and "merge" containing CSV tables with the counts from Steps 6, 7, 8 and 9, and the base peak intensity distribution plot of the clustering counts in a PNG image file;
-- The 'identifications' folder with the tremolo identification results;
+- The 'identifications' folder with the tremolo and gnps library identification results;
 - The 'molecular_networking' folder containing: 
     - One subfolder named "similarity_tables" with the pairwise similarity tables (Step 5);
     - Five molecular networks edge files (Steps 7 and 10): 
@@ -727,7 +727,7 @@ A directory inside the *output_path* named with the *output_name* containing:
     - A subfolder named 'count_tables' with the Step 4 quantifications in CSV tables named as '<step_name>_(spectra|peak_area).csv'.
     - A subfolder named 'clust' with the cluster's membership files (which SCANS or msclusterID were joined)
     - A subfolder named 'mgf' with the resulting clusters consensus spectra in MGF files
-    - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output. 
+    - A text file named 'logClusteringOutput' with the NP3_MSCluster log output. 
  
 The clustering steps results folders are named as 'B\_\<DATA\_COLLECTION\_BATCH\>\_\<X\>' where *DATA\_COLLECTION\_BATCH\* is the data collection batch number in the metadata file of each group of samples and *X* is 0 if it is the result of a *data clustering step* or 1 if it is the result of a *blank clustering step*. The *data collection batch integration step* results are stored in folders named as 'B_\<DATA_COLLECTION_BATCH\>'.
  
@@ -1217,7 +1217,7 @@ If more than one annotation of a same type is present for a given spectra, they 
  
 ##### 4.7.4. *annotate_protonated* Ionization Variant Annotation Molecular Network (IVAMN) and Protonated Assignment Algorithm Details
  
-After the annotation algorithm the ionization variant annotation molecular network (IVAMN) is created based on the detected chemical annotations. The nodes of this network are the clean consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+). 
+After the variants annotation algorithm the ionization variant annotation molecular network (IVAMN) is created based on the detected chemical annotations. The nodes of this network are the clean consensus spectra and the links of this network connects two consensus spectra that have a chemical annotation. The links have a direction, pointing from the consensus spectra considered as an ion variant to the consensus spectra considered as a putative [M+H]+ candidate in the respective annotation (e.g., [M+Na]+ -> [M+H]+). 
  
 The IVAMN .selfloop file have the following columns, comma separated:
  
@@ -1357,9 +1357,9 @@ Fake example to execute the Biocorrelation command:
  
 ## 4.10. Step 10: Command *mn* (Molecular Networking)
  
-Creates a spectra similarity molecular network (SSMN) which connects spectra based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched peaks, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered SSMN contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes. At the end, a [M+H]+ analysis is executed if IVAMN is present, and results in the protonated IVAMN and protonated SSMN filtered. 
+Creates a spectra similarity molecular network (SSMN) which connects spectra based on the pairwise spectra similarity value above the given similarity cut-off. Then, a filter is applied on this network to remove links between spectra that have less peaks in common than the minimum number of matched peaks, to limit the number of neighbors of each node (number of links) to the top K most similar ones and to limit the size of the components to a maximum number of nodes. The final filtered SSMN contains components that represent the most analogous spectra, possible connecting spectra from similar chemical classes. At the end, a [M+H]+ analysis is executed if the IVAMN is present, and results in the protonated IVAMN and protonated SSMN filtered. 
  
-The nodes of the SSMN are the set of clean consensus spectra and the links of this network connects the spectra that have a similarity value above the *similarity_mn* cutoff and that passed the filters. The annotations from Step 7 are also included in the SSMN as labels when present.
+The nodes of the SSMN are the set of clean consensus spectra and the links of this network connects the spectra that have a similarity value above the *similarity_mn* cutoff and that passed the filters. The variants annotations from Step 7 are also included in the SSMN as labels when present.
  
 Options for the command *mn*:
  
@@ -1410,7 +1410,7 @@ Fake example to execute the Molecular Network of spectra similarity command:
  
 ##### 4.10.3. *mn* Details
  
-The molecular networks are a great way to visualize the table counts results. The resulting .selfloops edges files can be opened in graph visualization tools, such as Cytoscape [19] and Gephi [20]. Then the count tables can also be loaded to the networks to add the other nodes information present in these tables, by matching their msclusterIDs.
+The molecular networks are a great way to visualize the clustering results. The resulting .selfloops edges files can be opened in graph visualization tools, such as Cytoscape [19] and Gephi [20]. Then the count tables can also be loaded to the networks to add the other nodes information present in these tables, by matching their msclusterIDs.
  
 The creation of the spectra similarity molecular network (SSMN) is based on the pairwise similarity comparison of the clean consensus spectra using the shifted cosine similarity score or spec2vec scores (see Step 5 details), ranging from 0 (totally dissimilar) to 1 (completely identical). The nodes of the SSMN are the clean consensus spectra and the links of this network connect two consensus spectra that have a similarity score greater or equal to the provided cosine similarity cut-off (default to 0.6 is used). 
  
@@ -1431,14 +1431,16 @@ The SSMN .selfloop files have the following columns, comma separated:
  
 The SSMN is an undirected graph. The source and the target nodes could be shifted, their order do not matter but the source node has always a smaller msclusterID than the target node due to the implemented algorithm.
 
-At the end, a [M+H]+ analysis is executed if IVAMN is present, and results in the protonated networks. It creates de SSMN [M+H]+ filtered and the IVAMN [M+H]+ networks without blanks. 
-It uses as input the complete SSMN and the IVAMN networks, the IVAMN attribute table (protonated information) and the clean table. 
+At the end, a [M+H]+ analysis is executed if IVAMN is present, and results in the protonated networks. It creates de SSMN [M+H]+ filtered and the IVAMN [M+H]+ networks without blanks and without culture media m/z - which appear in a blank or bed sample.
+
+It uses as input the complete SSMN, the IVAMN, the IVAMN attribute table (protonated information) and the clean table. 
 It works as follow: 
 
-1. In IVAMN the blank nodes are removed together with its neighbours and ancestors (or successors, ignores the links direction) if argument blank_expansion != 0, else only remove the blank nodes;
-2. Then the [M+H]+ are selected in the IVAMN with no blanks, resulting in the IVAMN [M+H]+ network;
-3. The nodes from IVAMN [M+H]+ are used to select the final nodes from the SSMN, resulting in the SSMN [M+H]+ network;
-4. Finally, the SSMN [M+H]+ is filtered using the min_matched_peaks, top_k and max_component size arguments, resulting in the SSMN [M+H]+ filtered.
+1. In the IVAMN, the blank nodes (BLANKS_TOTAL > 0) are removed together with its neighbors and ancestors (or successors, ignore the links direction) if argument blank_expansion > 0, else only remove the blank nodes (default behavior);
+1. Next, the bed nodes (BEDS_TOTAL > 0) are removed from the IVAMN;
+2. Then, the [M+H]+ (protonated_representative == 1) are selected in the remaining IVAMN, resulting in the **IVAMN [M+H]+ network**;
+3. And the nodes from IVAMN [M+H]+ are used to select the final nodes from the complete SSMN, resulting in the SSMN [M+H]+ network;
+4. Finally, the SSMN [M+H]+ is filtered using the min_matched_peaks, top_k and max_component size arguments, resulting in the **SSMN [M+H]+ filtered**.
 
 ## 4.11. Command *join_jobs* 
 
@@ -1448,7 +1450,7 @@ It works as follow:
   
   The *join_jobs* command may be useful for processing growing libraries, which will have new datasets being included from time to time and need to keep integrating new results without loosing previous reference IDs from the results; or for processing very large jobs, which may be divided into smaller jobs and then joined by chunks with a smaller memory footprint (divide and conquer strategy). 
   
-  This command performs (3) the clustering of all the clean data from the provided jobs together and (4) keep as reference the msclusterID from the first appearing job in the provided metadata_join; (5) then it proceeds the workflow to the clean step and assign the final msclusterID using the reference IDs plus new entries, and compares the final joined clean consensus spectra pairwise; (6) next it identifies the final clean consensus spectra against the UNPD using Tremolo; (7) updates the jobs ionization annotations with the final joined clean consensus spectra and merge the jobs IVAMNS, recomputes the [M+H]+ and keeps some of the previous protonated representatives; (9) it computes the biocorrelation and groupings using the original samples metadata of all original jobs concatenated; and finally, (10) computes the spectra similarity molecular networking (SSMN) with the final joined result.
+  This command performs (3) the clustering of all the clean data from the provided jobs together and (4) keep as reference the msclusterID from the first appearing job in the provided metadata_join; (5) then it proceeds the workflow to the clean step and assign the final msclusterID using the reference IDs plus new entries, and compares the final joined clean consensus spectra pairwise; (6) next it identifies the final clean consensus spectra against the UNPD using Tremolo; (7) updates the jobs ionization annotations with the final joined clean consensus spectra and merge the jobs IVAMNS, recomputes the [M+H]+ and keeps the previous protonated representatives that remain valid; (9) it computes the biocorrelation and groupings using the original samples metadata of all original jobs concatenated; and finally, (10) computes the spectra similarity molecular networking (SSMN) with the final joined result and the corresponding protonated networks.
   
   The *join_jobs* can be used to join the results from multiple original jobs and 
 also from previous joined jobs with a new original or joined job. There is no limit for
@@ -1604,7 +1606,7 @@ A directory inside the *output_path* named with the *output_name* containing:
   - A third sub folder named 'mgf' with the resulting clean consensus spectra in MGF files.
   - A fourth sub folder named 'identifications' with the tremolo identification results in a csv table.
   - A fifth sub folder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.
-  - A text file named 'logNP3MSClusterOutput' with the NP3_MSCluster log output.
+  - A text file named 'logClusteringOutput' with the NP3_MSCluster log output.
 
 ##### 4.11.2. *join_jobs* Examples
 
