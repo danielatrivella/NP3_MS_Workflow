@@ -75,10 +75,11 @@ script_path <- function() {
 Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
 Rcpp::sourceCpp(file.path(script_path(), 'dot_product_list.cpp'))
 
+
 compareSpectraNormDotProductRow <- function(i)
 {
-  # retrieve a list with cosine and the matched peaks separated
-  # return list with cosine row and the matched peaks row
+  # gets the list of valid cosine >= 0.1, their number of matched peaks, and their idx in [(i+1):n_scans]
+  # the cosine is already rounded in 3 decimal places
   np3_cos_matches_list <- normDotProductShiftList(peaks_A = ms2_sample$MZS[[i]], 
                                                   ints_A = ms2_sample$INTS[[i]], 
                                                   mz_A = ms2_sample$PREC_MZ[[i]],
@@ -87,12 +88,28 @@ compareSpectraNormDotProductRow <- function(i)
                                                   mzs_B = ms2_sample$PREC_MZ[(i+1):n_scans],
                                                   bin_size = bin_size,
                                                   max_shift = max_shift)
-  list(c(rep(NA, i-1), 1, round(np3_cos_matches_list[[1]], 3)),
-       c(rep(NA, i-1), length(ms2_sample$MZS[[i]]), round(np3_cos_matches_list[[2]])))
+  names(np3_cos_matches_list) <- c("similarity_value", "num_matched_peaks","idx_target")
+  
+  # if at least one valid sim, also set source msclusterID - equals SCANS -, 
+  # convert the target idx to their msclusterID and return as list of lists
+  # otherwise return NULL
+  if (length(np3_cos_matches_list$idx_target) > 0) {
+    np3_cos_matches_list$msclusterID_source <- ms2_sample$SCANS[[i]]
+    # fix the valid idx to be equal = idx + i
+    np3_cos_matches_list$idx_target <- np3_cos_matches_list$idx_target + i
+    np3_cos_matches_list$msclusterID_target <- ms2_sample$SCANS[np3_cos_matches_list$idx_target] 
+    np3_cos_matches_list$idx_target <- NULL
+    return(np3_cos_matches_list)
+  } else {
+    return(NULL)
+  }
 }
 
-compareSpectraNormDotProductSample <- function(i, peaks_sample_B, ints_sample_B, mzs_sample_B)
+# call the normDotProductShifList for spec[[i]] and all spec in sample_B list
+compareSpectraNormDotProductSample <- function(i, peaks_sample_B, ints_sample_B, mzs_sample_B, scans_sample_B)
 {
+  # gets the list of valid cosine >= 0.1, their number of matched peaks, and their idx in sample_B
+  # the cosine is already rounded in 3 deciaml places
   np3_cos_matches_list <- normDotProductShiftList(peaks_A = ms2_sample$MZS[[i]], 
                                                   ints_A = ms2_sample$INTS[[i]], 
                                                   mz_A = ms2_sample$PREC_MZ[[i]],
@@ -101,12 +118,25 @@ compareSpectraNormDotProductSample <- function(i, peaks_sample_B, ints_sample_B,
                                                   mzs_B = mzs_sample_B,
                                                   bin_size = bin_size,
                                                   max_shift = max_shift)
-  list(round(np3_cos_matches_list[[1]], 3),
-       round(np3_cos_matches_list[[2]]))
+  names(np3_cos_matches_list) <- c("similarity_value", "num_matched_peaks","idx_target")
+  # if at least one valid sim, also set source msclusterID - equals SCANS -, 
+  # convert the target idx to their msclusterID and return as list of lists
+  # otherwise return NULL
+  if (length(np3_cos_matches_list$idx_target) > 0) {
+    np3_cos_matches_list$msclusterID_source <- ms2_sample$SCANS[[i]]
+    np3_cos_matches_list$msclusterID_target <- scans_sample_B[np3_cos_matches_list$idx_target] 
+    np3_cos_matches_list$idx_target <- NULL
+    return(np3_cos_matches_list)
+  } else {
+    return(NULL)
+  }
 }
 
+# call the normDotProductShifList for spec[[i]] and all spec in ms2_sample_j list
 compareSpectraNormDotProductSample_j <- function(i)
 {
+  # gets the list of valid cosine >= 0.1, their number of matched peaks, and their idx in ms2_sample_j
+  # the cosine is already rounded in 3 deciaml places
   np3_cos_matches_list <- normDotProductShiftList(peaks_A = ms2_sample$MZS[[i]], 
                                                   ints_A = ms2_sample$INTS[[i]], 
                                                   mz_A = ms2_sample$PREC_MZ[[i]],
@@ -115,8 +145,19 @@ compareSpectraNormDotProductSample_j <- function(i)
                                                   mzs_B = ms2_sample_j$PREC_MZ,
                                                   bin_size = bin_size,
                                                   max_shift = max_shift)
-  list(round(np3_cos_matches_list[[1]], 3),
-       round(np3_cos_matches_list[[2]]))
+  names(np3_cos_matches_list) <- c("similarity_value", "num_matched_peaks","idx_target")
+  # if at least one valid sim, also set source msclusterID - equals SCANS -, 
+  # convert the target idx to their msclusterID and return as list of lists
+  # otherwise return NULL
+  if (length(np3_cos_matches_list$idx_target) > 0) {
+    np3_cos_matches_list$msclusterID_source <- ms2_sample$SCANS[[i]]
+    np3_cos_matches_list$msclusterID_target <- ms2_sample_j$SCANS[np3_cos_matches_list$idx_target] 
+    np3_cos_matches_list$idx_target <- NULL
+    return(np3_cos_matches_list)
+  } else {
+    return(NULL)
+  }
+  return(np3_cos_matches_list)
 }
 
 
@@ -235,46 +276,32 @@ for (i in seq_along(path_mgf)) {
                                           "dot_product_list.cpp")))})
     # parallel pairwise comparisions
     # separate matched peaks from cosine and save in different tables
-    comp_row_sim_matches <- parSapply(cl, 1:(n_scans-1), 
-                                      compareSpectraNormDotProductRow)
+    comp_row_sim_matches <- purrr::map_dfr(parLapply(cl, 1:(n_scans-1), 
+                                      compareSpectraNormDotProductRow), as_tibble)
     # save cosine values
-    write.table(bind_cols(comp_row_sim_matches[1,], list(c(rep(NA,n_scans-1), 1.000))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE, na = "")
-    # save matches, with the num of spectra in the diagonal
-    write.table(bind_cols(comp_row_sim_matches[2,], 
-                          list(c(rep(NA,n_scans-1), length(ms2_sample$MZS[[n_scans]])))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE, na = "")
+    readr::write_csv(x=comp_row_sim_matches[,c("msclusterID_source", "msclusterID_target", "similarity_value", "num_matched_peaks")],
+              path = file.path(output_path,
+                               paste0("similarity_table_", data_name, ".csv")),
+              col_names = (i==1))
     rm(comp_row_sim_matches)
     #stopCluster(cl)
   } else if (n_scans > 1) {
     # sequential pairwise comparisions
-    comp_row_sim_matches <- sapply(1:(n_scans-1), compareSpectraNormDotProductRow)
+    comp_row_sim_matches <- purrr::map_dfr(lapply(1:(n_scans-1), 
+                                                  compareSpectraNormDotProductRow), 
+                                           as_tibble)
+    # TODO eval use of data.table lib -> rbindlist(list_of_lists)
     # save cosine values
-    write.table(bind_cols(comp_row_sim_matches[1,], list(c(rep(NA,n_scans-1), 1.000))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE, na = "")
-    # save matches, with the num of spectra in the diagonal
-    write.table(bind_cols(comp_row_sim_matches[2,], 
-                          list(c(rep(NA,n_scans-1), length(ms2_sample$MZS[[n_scans]])))), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE, na = "")
+    readr::write_csv(x=comp_row_sim_matches[,c("msclusterID_source", "msclusterID_target", "similarity_value", "num_matched_peaks")],
+              path = file.path(output_path,
+                               paste0("similarity_table_", data_name, ".csv")),
+              col_names = (i==1))
     rm(comp_row_sim_matches)
   } else {
-    # only one scan, save identical cosine and matches equals the number of peaks
-    write.table(c(1.00), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE, na = "")
-    write.table(c(length(ms2_sample$MZS[[n_scans]])), 
-                file = file.path(output_path, 
-                                 paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE, na = "")
+    # only one scan, save empty sim table
+    readr::write_csv(x=data_frame(msclusterID_source=numeric(0), msclusterID_target=numeric(0), similarity_value=numeric(0), num_matched_peaks=numeric(0)),
+              path = file.path(output_path,
+                               paste0("similarity_table_", data_name, ".csv")))
   }
   
   if (i < n_mgf)
@@ -304,39 +331,22 @@ for (i in seq_along(path_mgf)) {
         # use existing cluster
         # call wrapper to the compareSpectraNormDotProductSample and export the ms2_sample_j as a global var instead of repeatedly passing it to the parallel cores
         clusterExport(cl, c("ms2_sample_j"), envir=environment()) 
-        comp_sample_sim_matches <- parSapply(cl, scan_index, 
-                                             compareSpectraNormDotProductSample_j)
-        # comp_sample_sim_matches <- parSapply(cl, scan_index,
-        #                                     compareSpectraNormDotProductSample,
-        #                                     ms2_sample_j$MZS, ms2_sample_j$INTS,
-        #                                     ms2_sample_j$PREC_MZ)
+        comp_sample_sim_matches <- purrr::map_dfr(parLapply(cl, scan_index, 
+                                             compareSpectraNormDotProductSample_j),
+                                             as_tibble)
       } else {
-        # sequential pairwise comparisions
-        comp_sample_sim_matches <- sapply(scan_index, compareSpectraNormDotProductSample, 
+        # sequential pairwise comparisons
+        comp_sample_sim_matches <- purrr::map_dfr(lapply(scan_index, compareSpectraNormDotProductSample, 
                                           ms2_sample_j$MZS, ms2_sample_j$INTS,
-                                          ms2_sample_j$PREC_MZ)
+                                          ms2_sample_j$PREC_MZ, ms2_sample_j$SCANS),
+                                          as_tibble)
       }
-      # separate matched peaks from cosine and save in different tables
-      if (n_scans_j == 1) #transpose result if only one member
-      {
-        write.table(t(comp_sample_sim_matches[1,]), 
-                    file = file.path(output_path, 
-                                     paste0("similarity_table_", data_name, "_tmp.csv")), 
-                    sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE, na = "")
-        write.table(t(comp_sample_sim_matches[2,]), 
-                    file = file.path(output_path, 
-                                     paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                    sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE, na = "")
-     } else {
-        write.table(comp_sample_sim_matches[1,], 
-                    file = file.path(output_path, 
-                                     paste0("similarity_table_", data_name, "_tmp.csv")), 
-                    sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE, na = "")
-       write.table(comp_sample_sim_matches[2,], 
-                   file = file.path(output_path, 
-                                    paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                   sep = ",", append = TRUE, row.names = FALSE, col.names = FALSE, na = "")
-     }
+      
+      # save new sim and matches appending to the created sim table
+      readr::write_csv(x=comp_sample_sim_matches[,c("msclusterID_source", "msclusterID_target", "similarity_value", "num_matched_peaks")],
+                path = file.path(output_path,
+                                 paste0("similarity_table_", data_name, ".csv")),
+                append=TRUE, col_names = FALSE)
       rm(comp_sample_sim_matches)
     }
     rm(ms2_sample_j)
@@ -345,77 +355,10 @@ for (i in seq_along(path_mgf)) {
   if (parallel_cores > 1 && require(parallel) && n_scans > 1)
     stopCluster(cl)
   
-  sim_table_tmp <- read.csv(file.path(output_path, 
-                                      paste0("similarity_table_", data_name, "_tmp.csv")), 
-                            header = FALSE, stringsAsFactors = FALSE)
-  
-  if (i > 1)
-  {
-    sim_table_tmp <- rbind(matrix(NA, 
-                                  nrow = total_spectra-nrow(sim_table_tmp), 
-                                  ncol = ncol(sim_table_tmp)), 
-                           sim_table_tmp)
-    
-    write.table(t(sim_table_tmp), file.path(output_path, 
-                                            paste0("similarity_table_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",", na = "")
-  } else {
-    # add heading i = 1 and row.names
-    write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
-                           ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
-                  file = file.path(output_path, paste0("similarity_table_", data_name, ".csv")), 
-                  sep = ",", row.names = FALSE, col.names = FALSE)
-    write.table(t(sim_table_tmp), file.path(output_path, 
-                                            paste0("similarity_table_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",", na = "")
-  }
-  rm(sim_table_tmp)
-  
-  # write final number of matches
-  sim_table_matches_tmp <- read.csv(file.path(output_path, 
-                                      paste0("similarity_table_matches_", data_name, "_tmp.csv")), 
-                            header = FALSE, stringsAsFactors = FALSE)
-  
-  if (i > 1)
-  {
-    sim_table_matches_tmp <- rbind(matrix(NA, 
-                                  nrow = total_spectra-nrow(sim_table_matches_tmp), 
-                                  ncol = ncol(sim_table_matches_tmp)), 
-                                  sim_table_matches_tmp)
-    
-    write.table(t(sim_table_matches_tmp), file.path(output_path, 
-                                            paste0("similarity_table_matches_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",", na = "")
-  } else {
-    # add heading i = 1 and row.names
-    write.table(t(c(paste0("parameters sim pairwise - scale_factor:", scale_factor, 
-                           ";bin_size:", bin_size, ";trim_mz:", trim_mz,";max_shift:",max_shift), scans_num)),
-                file = file.path(output_path, paste0("similarity_table_matches_", data_name, ".csv")), 
-                sep = ",", row.names = FALSE, col.names = FALSE)
-    write.table(t(sim_table_matches_tmp), file.path(output_path, 
-                                            paste0("similarity_table_matches_", data_name, ".csv")),
-                row.names = ms2_sample$SCANS, col.names = FALSE, append = TRUE, sep = ",", na = "")
-  }
-  rm(ms2_sample, sim_table_matches_tmp)
+  rm(ms2_sample)
 }
 
 cat("|\n")
 tf <- Sys.time()
 cat("    * Done making", ((total_spectra*total_spectra - total_spectra)/2),
         "pairwise comparisions in", round(tf-ti, 2), units(tf-ti), "*\n")
-# remove tmp sim table and matches table
-unlink(file.path(output_path,
-                 paste0("similarity_table_", data_name, "_tmp.csv")))
-unlink(file.path(output_path,
-                 paste0("similarity_table_matches_", data_name, "_tmp.csv")))
-
-#  cat("\n  * Making the pairwise similarity table symmetric *\n")
-#  ti <- Sys.time()
-#  sim_pairwise <- read.csv(file.path(output_path, paste0("similarity_table_", data_name, ".csv")),
-#                           header = FALSE, stringsAsFactors = FALSE)
-#  sim_pairwise[lower.tri(sim_pairwise)] <- t(sim_pairwise)[lower.tri(sim_pairwise)]
-#  write.table(sim_pairwise, file.path(output_path,
-#                                      paste0("similarity_table_", data_name, ".csv")),
-#            row.names = FALSE, col.names = FALSE, sep = ",")
-#  tf <- Sys.time()
-#  cat("    * Done in ", round(tf-ti, 2), " ", units(tf-ti), " *\n")
