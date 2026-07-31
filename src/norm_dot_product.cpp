@@ -112,11 +112,13 @@ double normDotProductTrim(std::vector<double> peaks_A, std::vector<double> ints_
   return (top_sum / sqrt(sum_ints_A * sum_ints_B));
 }
 
-// Match exactly peak masses first and for the remaining try to match with shifted peak masses
+// shifted cosine function
+// Matches exactly equal peak masses first and for the remaining try to match with shifted peak masses
 // mzShift: the exact mz difference between the precursor mass of the spectra A and B 
 //   (not the absolute, because needs to guarantee that spectra A have a bigger precursor mass); 
-//   recommended range is between 12 and 100, outside this range set it to 0
-// return a vector with two values: the shifted cosine value and the number of common/matched peaks
+//   recommended range is between 12 and 200, outside this range set it to 0
+// return a vector with two values: 
+// (0) the shifted cosine value rounded to 3 decimal places and (1) the number of common/matched peaks
 // [[Rcpp::export]]
 std::vector<double> normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints_A,
                       std::vector<double> peaks_B, std::vector<double> ints_B,
@@ -256,12 +258,12 @@ std::vector<double> normDotProductShift(std::vector<double> peaks_A, std::vector
   // The multipliers to maintain the norm would cancel each other here 
   // eliminating the need to compute it
   if (top_sum > 0.0) {
-    out_cos_matches.push_back(top_sum / sqrt(sum_ints_A * sum_ints_B));
+    /// round similarity value to 3 decimal places
+    out_cos_matches.push_back(std::round((top_sum / sqrt(sum_ints_A * sum_ints_B)) * 1000.0) / 1000.0);
   } else {
     out_cos_matches.push_back(top_sum);
   }
   out_cos_matches.push_back(matched_peaks);
   return out_cos_matches;
-  // }
 }
 
