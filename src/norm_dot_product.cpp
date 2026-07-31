@@ -112,10 +112,11 @@ double normDotProductTrim(std::vector<double> peaks_A, std::vector<double> ints_
   return (top_sum / sqrt(sum_ints_A * sum_ints_B));
 }
 
-// TODO return #commom peaks 
-
 // Match exactly peak masses first and for the remaining try to match with shifted peak masses
-// mzShift: the exact mz difference beteween the precursor mass of the spectra A and B (not the absolute, because needs to garantee that spectra A have a bigger precursor mass); recommended range is between 12 and 100, outside this range set it to 0
+// mzShift: the exact mz difference between the precursor mass of the spectra A and B 
+//   (not the absolute, because needs to guarantee that spectra A have a bigger precursor mass); 
+//   recommended range is between 12 and 100, outside this range set it to 0
+// return a vector with two values: the shifted cosine value and the number of common/matched peaks
 // [[Rcpp::export]]
 std::vector<double> normDotProductShift(std::vector<double> peaks_A, std::vector<double> ints_A,
                       std::vector<double> peaks_B, std::vector<double> ints_B,
@@ -249,12 +250,9 @@ std::vector<double> normDotProductShift(std::vector<double> peaks_A, std::vector
     //Rcout << "idxB_nomatch" << idxB_nomatch[i] << "\n";
     sum_ints_B += ints_B[idxB_nomatch[i]] * ints_B[idxB_nomatch[i]];
   }
-  // TODO return cosine and matched peaks
+  // return cosine and matched peaks
   std::vector<double> out_cos_matches;
-  // if less than minimum number of matched peaks, set the similarity to 0.0 -> can remove false positive matches
-  // if (matched_peaks < min_matched_peaks) {
-  //   return 0.0;
-  // } else {
+ 
   // The multipliers to maintain the norm would cancel each other here 
   // eliminating the need to compute it
   if (top_sum > 0.0) {
@@ -267,55 +265,3 @@ std::vector<double> normDotProductShift(std::vector<double> peaks_A, std::vector
   // }
 }
 
-
-// NOT doing it anymore Trim by the minimum maximum peak and by the maximum minimum peak of both specs, 
-// maintaining the total norm with no need to computation (the final equation would simplify them)
-// trim both peaks by the smallest one compared to the right side and then
-// use this one as mask range to the other
-// no need to fix the total sum to keep the norm
-// trim upper masses
-// if (peaks_A[n_A-1] > peaks_B[n_B-1] + bin_size + mzShift) {
-//   // trim A upper
-//   for (i = n_A-2; i >= 0; i--) {
-//     if (peaks_A[i] < peaks_B[n_B-1] + bin_size + mzShift) {
-//       break;
-//     } 
-//   }
-//   peaks_A.erase(peaks_A.begin()+i+1, peaks_A.begin()+n_A);
-//   ints_A.erase(ints_A.begin()+i+1, ints_A.begin()+n_A);
-//   n_A = peaks_A.size();
-//   
-//   // trim A lower
-//   if (n_A > 0 && peaks_A[0] < peaks_B[0] - bin_size - mzShift) {
-//     for (i = 1; i < n_A; i++) {
-//       if (peaks_A[i] > peaks_B[0]  - bin_size - mzShift) {
-//         break;
-//       }
-//     }
-//     peaks_A.erase(peaks_A.begin(), peaks_A.begin()+i);
-//     ints_A.erase(ints_A.begin(), ints_A.begin()+i);
-//     n_A = peaks_A.size();
-//   }
-// } else if (peaks_B[n_B-1] > peaks_A[n_A-1] + bin_size + mzShift){
-//   // trim B upper
-//   for (i = n_B-2; i >= 0; i--) {
-//     if (peaks_B[i] < peaks_A[n_A-1] + bin_size + mzShift) {
-//       break;
-//     } 
-//   }
-//   peaks_B.erase(peaks_B.begin()+i+1, peaks_B.begin()+n_B);
-//   ints_B.erase(ints_B.begin()+i+1, ints_B.begin()+n_B);
-//   n_B = peaks_B.size();
-//   
-//   // trim B lower
-//   if (n_B > 0 && peaks_B[0] < peaks_A[0] - bin_size - mzShift) {
-//     for (i = 1; i < n_B; i++) {
-//       if (peaks_B[i] > peaks_A[0]  - bin_size - mzShift) {
-//         break;
-//       }
-//     }
-//     peaks_B.erase(peaks_B.begin(), peaks_B.begin()+i);
-//     ints_B.erase(ints_B.begin(), ints_B.begin()+i);
-//     n_B = peaks_B.size();
-//   }
-// }
