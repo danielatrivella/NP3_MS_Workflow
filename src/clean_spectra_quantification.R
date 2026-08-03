@@ -854,7 +854,10 @@ repeat
     joined_ids_step <- ms_spectra_count$msclusterID[numJoins_idx]
     write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
                                                  paste0(output_name, "_spectra_clean.csv")))
-    rm(ms_spectra_count, numJoins_idx)
+    # do not removed the spectra count table if this is the final clustering round/step
+    if (step_join < 10) {
+      rm(ms_spectra_count, numJoins_idx)
+    }
     
     aggregate_sim_table(joined_ids, scans_order, joined_idx, col_types, 
                         nscans, sim_file, table_limit_size)
