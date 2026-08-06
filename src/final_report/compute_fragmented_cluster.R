@@ -11,8 +11,11 @@ RMSE <- function(x, y) {
 # assigned as follow:
 # 0 for a not fragmented cluster m/z; 1 or greater for a m/z that have these number of fragmented clusters;
 # and -1 for a m/z signalized as a fragmented cluster
-compute_fragmented_clusters <- function(clean_count_table, rt_tol=2, mz_tol=0.025) {
-  cat("\n  - Computing the number of fragmented cluster in the clean table\n")
+# where putative_origin indicates if the column with the msclusterID of the m/z 
+# assigned as the putative origin cluster of the detected fragmented clusters should be returned
+# if FALSE only returns the vector with the putative fragmented clusters assigned as described above
+compute_fragmented_clusters <- function(clean_count_table, rt_tol=2, mz_tol=0.025, putative_origin = FALSE, table_type="Step 5 clean") {
+  cat("\n  - Computing the number of fragmented cluster in the",table_type,"table\n")
     
   if ('BLANKS_TOTAL' %in% names(clean_count_table)) {
     blanks_flag <- TRUE
@@ -20,6 +23,7 @@ compute_fragmented_clusters <- function(clean_count_table, rt_tol=2, mz_tol=0.02
     blanks_flag <- FALSE
   }
   clean_count_table$fragmented_clusters <- 0
+  clean_count_table$origin_cluster <- NA
   clean_count_table$idx <- 1:nrow(clean_count_table)
   
   for (i in seq_len(nrow(clean_count_table))) {
@@ -37,9 +41,9 @@ compute_fragmented_clusters <- function(clean_count_table, rt_tol=2, mz_tol=0.02
                                        (cluster$rtMean >= clean_count_table$rtMin - rt_tol &
                                           cluster$rtMean <= clean_count_table$rtMax + rt_tol)),] 
     # if not bflag check peak center and boundaries deviation, remove peaks not aligned
-    # the spectra peak center deviation is <= rt_tol or peak boundaries deviation <= 2*rt_tol
+    # the spectra peak center deviation is <= 4*rt_tol or peak boundaries deviation <= 2*rt_tol
     if (!blanks_flag || !cluster$BFLAG) {
-      cluster_peak <- cluster_peak[abs(cluster$rtMean-cluster_peak$rtMean) <= rt_tol |
+      cluster_peak <- cluster_peak[abs(cluster$rtMean-cluster_peak$rtMean) <= 4*rt_tol |
                                      apply(cluster_peak[,c("rtMin", "rtMax")], 1,
                                            function(x,y)  RMSE(x, y),
                                            y = c(cluster$rtMin, cluster$rtMax)) <= 2*rt_tol,]
@@ -49,11 +53,13 @@ compute_fragmented_clusters <- function(clean_count_table, rt_tol=2, mz_tol=0.02
     {
       # assign the spectra with the bigger base peak intensity as the principal and the others as fragmented clusters
       j <- which.max(cluster_peak$basePeakInt)
-      #cat("msclusterID ", cluster_peak$msclusterID[[j]], " have fragmented clusters.\n")
+      origin_ID <- cluster_peak$msclusterID[[j]]
+      #cat("msclusterID ", origin_ID, " have fragmented clusters.\n")
       clean_count_table$fragmented_clusters[cluster_peak$idx[[j]]] <- nrow(cluster_peak) - 1
+      clean_count_table$origin_cluster[cluster_peak$idx[[j]]] <- origin_ID
       cluster_peak <- cluster_peak[-j,]
       clean_count_table$fragmented_clusters[cluster_peak$idx] <- -1
-      
+      clean_count_table$origin_cluster[cluster_peak$idx] <- origin_ID
     }
   }
   
@@ -66,8 +72,17 @@ compute_fragmented_clusters <- function(clean_count_table, rt_tol=2, mz_tol=0.02
       number_fragmented_clusters, "(",round(100*number_fragmented_clusters/nrow(clean_count_table),2), "% ) \n")
   
   # return the resulting fragmented clusters column to be added to the clean tables
-  clean_count_table$idx <- NULL
-  return(clean_count_table$fragmented_clusters)
+  if (putative_origin) {
+    return(clean_count_table[,c("fragmented_clusters","origin_cluster")])
+  } else {
+    return(clean_count_table$fragmented_clusters)
+  }
   #write_csv(clean_count_table, sub(".csv","_fragmentedClusters.csv", count_table_path))
 }
 
+# TODO make this function with data.table - benchmark time gain
+# TODO make this function for only a selection of m/zs (the ones with a join (modified ones))
+
+# TODO try clustering the origin cluster with the fragmented clusters, than 
+# if more than 1 fragmented cluster remaining, 
+# also try to cluster them between each other
