@@ -7,23 +7,35 @@ using namespace Rcpp;
 
 // creates the disjoint sets from a list of pairs to be clustered
 class DisjointSet {
-  std::vector<int> parent;
-  std::vector<int> rank;
-  
   public:
-    DisjointSet(int n) {
-      parent.resize(n);
-      rank.resize(n, 0);
-      std::iota(parent.begin(), parent.end(), 0);
-    }
+    std::vector<int> parent;
+    std::vector<int> rank;
   
-  int find(int i) {
-    if (parent[i] == i)
-      return i;
-    return parent[i] = find(parent[i]); // Path compression
+  DisjointSet(int n) {
+    // Reserve memory all at once to prevent reallocations
+    parent.resize(n);
+    rank.resize(n, 0);
+    std::iota(parent.begin(), parent.end(), 0);
   }
   
-  void unite(int i, int j) {
+  // Inline find operation with path compression for raw performance
+  inline int find(int i) {
+    int root = i;
+    while (root != parent[root]) {
+      root = parent[root];
+    }
+    // Path compression loop (iterative to avoid recursion stack overhead)
+    int curr = i;
+    while (curr != root) {
+      int nxt = parent[curr];
+      parent[curr] = root;
+      curr = nxt;
+    }
+    return root;
+  }
+  
+  // Inline union operation by rank
+  inline void unite(int i, int j) {
     int root_i = find(i);
     int root_j = find(j);
     if (root_i != root_j) {
@@ -47,38 +59,57 @@ class DisjointSet {
 //' @param to_nodes std::vector<int> of ending nodes for pairs.
 //' @return A std::vector<int> where each element is a disjoint cluster and contains the node IDs of that cluster.
 //' @export
+
 // [[Rcpp::export]]
-std::vector<std::vector<int>> get_clusters_from_pairs(int total_nodes, std::vector<int> from_nodes, std::vector<int> to_nodes) {
+std::vector<std::vector<int>> get_clusters_from_pairs(int total_nodes, 
+                                                     std::vector<int> from_nodes, 
+                                                     std::vector<int> to_nodes) 
+{
   DisjointSet dsu(total_nodes);
   
-  // Process edges/pairs
+  // 1. Process edges quickly using raw pointers for speed
   int num_edges = from_nodes.size();
-  for (int i = 0; i < num_edges; i++) {
+  
+  if (num_edges < to_nodes.size()) {
+    Rcpp::stop("The provided list of node pairs do not have equal length. Missing nodes in the to_nodes list."
+                 " Aborting clustering pairs to disjoint sets.");
+  }
+  
+  for (int i = 0; i < num_edges; ++i) {
     if (from_nodes[i] >= total_nodes || to_nodes[i] >= total_nodes) {
       Rcpp::stop("The provided list of node pairs contain a node number greater "
-        "than the total number of nodes - outside the provided valid range. "
-        " Aborting clustering pairs to disjoint sets.");
+                   "than the total number of nodes - outside the provided valid range. "
+                   " Aborting clustering pairs to disjoint sets.");
     }
     dsu.unite(from_nodes[i], to_nodes[i]);
   }
   
-  // Group nodes by their root representative
-  std::unordered_map<int, std::vector<int>> clusters_map;
-  for (int i = 0; i < total_nodes; i++) {
+  // 2. Linear time grouping
+  int unique_clusters_count = 0;
+  
+  // Map the actual DSU root to a contiguous cluster index (0, 1, 2...)
+  std::vector<int> root_to_cluster_idx(total_nodes, -1);
+  // extract the final list of clusters
+  std::vector<std::vector<int>> out_list(total_nodes);
+  
+  for (int i = 0; i < total_nodes; ++i) {
     int root = dsu.find(i);
-    clusters_map[root].push_back(i);
+    if (root_to_cluster_idx[root] == -1) {
+      root_to_cluster_idx[root] = unique_clusters_count++;
+    }
+    out_list[root_to_cluster_idx[root]].push_back(i);
   }
   
-  // extract the final list of clusters
-  std::vector<std::vector<int>> out_list;
-
-  for (auto it = clusters_map.begin(); it != clusters_map.end(); it++) {
-    int root = it->first;
-    const std::vector<int>& nodes = it->second;
-
-    std::vector<int> cluster_nodes(nodes.begin(), nodes.end());
-    out_list.push_back(cluster_nodes);
-  }
+  out_list.resize(unique_clusters_count);
   
   return out_list;
 }
+
+
+// Rcpp::sourceCpp(file.path("src/disjoint_set_union_find_R.cpp"))
+// total_nodes=24
+// from = rep(c(0,1,2,3),5)
+// to = seq(4, 23)
+// from = rep(seq(0, 49),50)
+// to = seq(0, 2499)
+// total_nodes=2500
