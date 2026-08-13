@@ -849,52 +849,38 @@ repeat
     new_clusters_size <- new_clusters_size[new_clusters_size > 1]
     for (j in seq_along(new_clusters_members))
     {
-      num_joins <- num_joins + new_clusters_size[j]
+      # update number of joins, remove the representative mz that will be kept
+      num_joins <- num_joins + new_clusters_size[j] - 1
       new_cluster_j_members <- new_clusters_members[[j]]
       # get the new cluster members pos in the count table
       new_cluster_j_count_idx <- match(new_cluster_j_members, ms_spectra_count$msclusterID)
       # merge counts based on spectra counts
       new_cluster_j <- lapply(names(cluster_peak), merge_counts, cluster_peak[cluster_peak$msclusterID %in% new_cluster_j_members,])
-      # TODO continue here
-      # TODO get lower msclusterID idx to receive the new cluster - be the cluster representative
+      # get representative cluster ID - which for now is the lower msclusterID idx
       # TODO in the future, change this to be the one with the biggest basePeakInt, after checking for equality consistency using the smaller idx first
-      #ms_spectra_count[j,] <- cluster
+      new_cluster_j_representative_ID <- new_cluster_j[[1]]
+      new_cluster_j_representative_idx <- match(new_cluster_j_representative_ID, ms_spectra_count$msclusterID)
+      ms_spectra_count[new_cluster_j_representative_idx,]
+      # replace representative cluster with the new cluster counts
+      ms_spectra_count[new_cluster_j_representative_idx,] <- new_cluster_j
+      # remove merged mz rows from the count tables, keeping the representative mz row
+      new_cluster_j_count_idx <- new_cluster_j_count_idx[new_cluster_j_count_idx != new_cluster_j_representative_idx]
+      ms_spectra_count <- ms_spectra_count[-new_cluster_j_count_idx,] 
+      # TODO continue here
+      num_joins_last_step <- num_joins_last_step[-new_cluster_j_count_idx]
+      total_num_join_clusters <- total_num_join_clusters[-new_cluster_j_count_idx]
+  
     }
     
-    # TODO add a check based on the final number of rows in the ms_spectra_count and the number of joins, this must match
-    
-    # TODO continue here
-    num_joins <- num_joins + nrow(cluster_peak) - 1
-    
-    # get the cluster_peak members pos in the count table
-    i_count <- match(cluster_peak$msclusterID, ms_spectra_count$msclusterID)
-    
-    # merge counts based on spectra counts
-    cluster <- lapply(names(cluster_peak), merge_counts, cluster_peak)
-    ms_spectra_count[i,] <- cluster
-    
-    # remove merged row from count tables
-    i_count <- i_count[i_count != i] # remove the cluster pos from the cluster_peak members
-    ms_spectra_count <- ms_spectra_count[-i_count,] 
-    
-    num_joins_last_step <- num_joins_last_step[-i_count]
-    total_num_join_clusters <- total_num_join_clusters[-i_count]
-    
-    # update assigned scans of joined cluster
-    assigned_scans[assigned_scans %in% cluster_peak$msclusterID] <- cluster[[1]]
-    
-    nscans <- nscans - nrow(cluster_peak) + 1 # remove scans that were merged from the total count
-    if (n_progress > 0 && progress_joins[n_progress] > nscans) # rm from progress the joined scans
-    {
-      cat("=")
-      progress_joins <- progress_joins[-n_progress]
-      n_progress <- n_progress - 1
+    # add a check based on the final number of rows in the ms_spectra_count 
+    # and the original number of scans minus the number of joins, this must match
+    if ((nscans - num_joins) != nrow(ms_spectra_count)) {
+      stop("ERROR: wrong number of joins compared to the current size of the count table being clean.")
     }
-    
-    # decrement number of rows preceding the current that were removed - prevent skipping rows
-    i <- i + 1 - sum(i_count < i)
   }
   cat("|\n")
+  
+  #TODO continue from here
   rm(pairwise_sim)
   
   # reset number of joins by m/z with the joined clusters of last step 
