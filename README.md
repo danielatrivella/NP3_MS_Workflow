@@ -4,10 +4,11 @@
 
 - - - - 
 
-# Current Version 1.5.0
+# Current Version 1.5.1
 
 - NEW features:
 
+  - (1.5.1) Bug fix in the join_jobs Step 7 when joining the IVAMNs. When the noise cutoff is applied the filtered IVAMN must reset its index to prevent matching errors in the next filters.
   - (1.5.0) A new command called **post_dd_analysis** was added to the NP³ MS Workflow! The *noise_cutoff* was changed to receive an absolute value.
       - The command post_dd_analysis is a post-process that creates some visualization analysis for drug discovery research.
       - Changed the superclass grouping plot from the final chemistry report to match the new plot being created in the post-processing drug discovery analysis; now this plotting correctly removes blanks and beds from the counts computation (it was not removing them as expected - bug); and uses the occurrence of the final library annotated m/z in each group instead of their peak area abundance by sample for the percentage distribution computation. 
