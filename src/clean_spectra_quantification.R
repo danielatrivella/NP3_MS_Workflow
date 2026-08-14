@@ -38,10 +38,10 @@ options(digits=10) # increase precision
 options(readr.show_progress = FALSE)
 
 # default args values
-mz_tol <- 0.05
+mz_tol <- 0.025
 sim_tol <- 0.55 # sim to join
 rt_tol <- 2
-bin_size <- 0.025
+bin_size <- 0.05
 blank_depth <- 3
 scale_factor <- 0.5
 table_limit_size <- 3000  # set max number of rows to process in a chunck
@@ -389,6 +389,7 @@ merge_counts <- function(col_name, x)
 {
   switch(col_name,
          msclusterID = min(as.numeric(x$msclusterID)),
+         origin_cluster = as.numeric(x$msclusterID[[1]]),
          numJoins =  sum(x$numJoins) + nrow(x) - 1,
          mzConsensus=,rtMean=
            round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits),
@@ -459,10 +460,33 @@ awk_cmd_filter_sim_table_msclusterIDs <- function(list_msclusterIDs_filter,
                                                collapse = "|"), ")$'")
   # Build the awk arguments
   # -F, tells awk it is a CSV file
-  # $1 !~ pat ensures column 1 does not match the list
-  # $2 !~ pat ensures column 2 does not match the list
+  # $1 ~ pat ensures column 1 matches the list
+  # $2 ~ pat ensures column 2 matches the list
   awk_cmd <- paste("awk -F,","-v", paste0("pat_keep=", regex_pattern_keep),
     "'NR == 1 || (($1 ~ pat_keep) && ($2 ~ pat_keep))'",sim_file)
+  return(awk_cmd)
+}
+
+# TODO aggregate the sim table using awk
+# format a awk command to read the rows of a given similarity table CSV in sim_file
+# that contains data from one of the msclusterID in the list_msclusterIDs_filter
+# and replace the matched ids with the given representative ID
+awk_cmd_sim_table_aggregate_msclusterIDs <- function(list_msclusterIDs_filter, 
+                                                  representative_msclusterID,
+                                                  sim_file) {
+  # concate the IDs to be filtered using pipe in a regex format
+  regex_pattern_keep <- paste0("'^(", paste(list_msclusterIDs_filter, 
+                                            collapse = "|"), ")$'")
+  # Build the awk arguments
+  # -F, tells awk it is a CSV file
+  # $1 ~ pat ensures column 1 matches the list
+  # $2 ~ pat ensures column 2 matches the list
+  # TODO use if below
+  # awk '{if ($1 == "apple") $1 = "fruit"; if ($2 == "apple") $2 = "fruit"} 1' input.txt
+
+  awk_cmd <- paste("awk -F,","-v", paste0("pat_keep=", regex_pattern_keep),
+                   "'NR == 1 || (($1 ~ pat_keep) || ($2 ~ pat_keep)) { $2 = "+representative_msclusterID+" } 1'",
+                   sim_file)
   return(awk_cmd)
 }
 
@@ -627,10 +651,12 @@ if (NOISE_cutoff > 0 && any(ms_spectra_count$basePeakInt < NOISE_cutoff)) {
 if (nscans != nrow(ms_spectra_count)) {
   stop("Wrong pairwise similarity table. It is not compatible with the provided count table.")
 }
-# store the scan number of the spectra after the clean step joins
-assigned_scans <- scans_order 
+# # store the scan number of the spectra after the clean step joins
+# assigned_scans <- scans_order 
 
 # compute the number of fragmented clusters in the clustering counts
+ms_spectra_count$fragmented_clusters <- NULL
+ms_spectra_count$origin_clusters <- NULL
 ms_spectra_count <- bind_cols(ms_spectra_count, compute_fragmented_clusters(ms_spectra_count, 
                                                    rt_tol, mz_tol, 
                                                    putative_origin=TRUE, 
@@ -650,6 +676,9 @@ if (blanks_flag) {
 num_joins_total <- 0
 # stores the number of joins by step and the total number of joins by cluster
 num_joins_last_step <- total_num_join_clusters <- ms_spectra_count$numJoins
+# TODO check if needs to repeat the clean round or separate by blank and not blank
+# TODO provavelmente um for unico para todos os fragmented clusters eh suficiente, não precisar voltar nisso de novo
+# o objetivo eh remover esses fragmented cluster e pronto, sem distinção
 
 repeat
 {
@@ -658,6 +687,7 @@ repeat
   num_joins <- 0
   
   # if this is the first step after step 0, read count table clean
+  
   if (step_join == 0)
   {
     msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0 &
@@ -668,16 +698,6 @@ repeat
     if (blanks_flag) {
       msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0 &
                                        ms_spectra_count$BLANKS_TOTAL == 0]
-      if (num_joins_total > 0) {
-        # started with step 0, then if there was at least one joining and
-        # num_joins_total > 0 -> read count tables from last step
-        # otherwise continue to use the clustering table in step 1
-        ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
-                                                                paste0(output_name,"_spectra_clean.csv")),
-                                                      guess_max = 5000,
-                                                      col_types = cols(.default="?", 
-                                                                       msclusterID="i")))
-      }
     } else {
       msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0]
     }
@@ -705,7 +725,7 @@ repeat
   cat(paste0("  |", paste0(rep(" ", n_progress), collapse = ""), "|\n  |", collapse = ""))
   
   #i <- 1
-  # TODO this should iterate directly in the fragmented clusters and than the one with numJoins>0
+  # TODO this should iterate directly in the fragmented clusters and than the ones with numJoins>0
   # TODO msclusterID_to_search is the list of msclusterID and not their idx, because the idx changes
   for (scan_num in msclusterID_to_search) 
   {
@@ -719,20 +739,19 @@ repeat
     
     # get next cluster scan number and cluster info
     cluster <- ms_spectra_count[i,]
-    #scan_num <- cluster[[1]]
     
     # after step 1 only check clusters that changed - that were joined
-    if (step_join > 1 && cluster$numJoins == 0) 
-    { 
-      cat("no joins for scan: ", scan_num, "\n")
-      next()
-    } else if (step_join == 0 && cluster$BLANKS_TOTAL == 0) 
-    {
-      # if step_join == 0 and cluster not blank, go to next
-      # only join blank clusters in step 0
-      cat("not blank clust in scan: ", scan_num, "\n")
-      next()
-    }
+    # if (step_join > 1 && cluster$numJoins == 0) 
+    # { 
+    #   cat("no joins for scan: ", scan_num, "\n")
+    #   next()
+    # } else if (step_join == 0 && cluster$BLANKS_TOTAL == 0) 
+    # {
+    #   # if step_join == 0 and cluster not blank, go to next
+    #   # only join blank clusters in step 0
+    #   cat("not blank clust in scan: ", scan_num, "\n")
+    #   next()
+    # }
     
     # get the cluster peak from the fragmented clusters origin,
     # this includes the current cluster row
@@ -789,35 +808,52 @@ repeat
                                                            cluster_peak$msclusterID))
       if (nrow(pairs_mz_matching_samples) > 0) 
       {
-        # pairs_mz_matching_samples contains all mz pairs that appear in at least one common sample
-        # from pairs_mz_matching_samples, check if those mz pairs have matching peakIds, 
-        # in the matching samples
-        pairs_mz_matching_samples$samples_names <- mapply(function(a, b) {
-            # Find column indices where both Row A and Row B are equal to 1
-            sub("_spectra$", "", 
-                names(which(matrix_cluster_peak_samples_count[a, ] > 1 & 
-                              matrix_cluster_peak_samples_count[b, ] > 1)))
-          }, match(pairs_mz_matching_samples$mz_ID_from, cluster_peak$msclusterID), 
-          match(pairs_mz_matching_samples$mz_ID_to, cluster_peak$msclusterID), 
-          SIMPLIFY = FALSE)
-        # create customized grepl to check if the pairs of mz sharing a sampel also share a peakID, removing fake ids
-        pairs_mz_matching_samples$valid_pairs <- apply(pairs_mz_matching_samples, 1, function(x) {
-          peakIds_from <- cluster_peak[cluster_peak$msclusterID == x[[1]], "peakIds"][[1]]
-          peakIds_to <- cluster_peak[cluster_peak$msclusterID == x[[2]], "peakIds"][[1]]
-          pattern_matching_samples <- paste0(paste0("(", "[[:alnum:]]+_", x[[3]][[1]],")"),collapse="|")
-          peakIds_matches_from <- stri_extract_all_regex(peakIds_from, pattern_matching_samples)
-          peakIds_matches_to <- stri_extract_all_regex(peakIds_to, pattern_matching_samples)
-          return(!all(is.na(match(peakIds_matches_from, peakIds_matches_to))))
-        })
+        # first check if the mz pairs are already in the join list, 
+        # and skip the ones that will already be joined
+        matching_pair_idx_join <- match(pairs_mz_matching_samples$mz_ID_from, join_from_msclusterIDs)
+        if (any(!is.na(matching_pair_from))) {
+          matching_pair_idx_samples <- which(!is.na(matching_pair_idx_join))
+          matching_pair_idx_join <- matching_pair_idx_join[!is.na(matching_pair_idx_join)]
+          not_new_matching_pair_samples <- sapply(seq_along(matching_pair_idx_join), function(j) {
+            pairs_mz_matching_samples$mz_ID_to[matching_pair_idx_samples[j]] == join_to_msclusterIDs[matching_pair_idx_join[j]]
+          })
+          pairs_mz_matching_samples <- pairs_mz_matching_samples[!not_new_matching_pair_samples,]
+        }
+        if (nrow(pairs_mz_matching_samples) > 0) 
+        {
         
-        if (any(pairs_mz_matching_samples$valid_pairs)) {
-          # concat the valid pairs of fragmented cluster with matching samples
-          # to the sim_cluster_peak
-          join_from_msclusterIDs <- c(join_from_msclusterIDs,
-                                      pairs_mz_matching_samples$mz_ID_from[pairs_mz_matching_samples$valid_pairs])
-          join_to_msclusterIDs <- c(join_to_msclusterIDs, 
-                                    pairs_mz_matching_samples$mz_ID_to[pairs_mz_matching_samples$valid_pairs])
-        } 
+          # pairs_mz_matching_samples contains all mz pairs that appear in at least one common sample
+          # from pairs_mz_matching_samples, check if those mz pairs have matching peakIds, 
+          # in the matching samples
+          pairs_mz_matching_samples$samples_names <- mapply(function(a, b) {
+              # Find column indices where both Row A and Row B are equal to 1
+              sub("_spectra$", "", 
+                  names(which(matrix_cluster_peak_samples_count[a, ] > 1 & 
+                                matrix_cluster_peak_samples_count[b, ] > 1)))
+            }, match(pairs_mz_matching_samples$mz_ID_from, cluster_peak$msclusterID), 
+            match(pairs_mz_matching_samples$mz_ID_to, cluster_peak$msclusterID), 
+            SIMPLIFY = FALSE)
+          # create customized grepl to check if the pairs of mz sharing a sampel also share a peakID, removing fake ids
+          pairs_mz_matching_samples$valid_pairs <- apply(pairs_mz_matching_samples, 1, function(x) {
+            if (length(x[[3]]) == 0)
+              return(FALSE)
+            peakIds_from <- cluster_peak[cluster_peak$msclusterID == x[[1]], "peakIds"][[1]]
+            peakIds_to <- cluster_peak[cluster_peak$msclusterID == x[[2]], "peakIds"][[1]]
+            pattern_matching_samples <- paste0(paste0("(", "[[:alnum:]]+_", x[[3]][[1]],")"),collapse="|")
+            peakIds_matches_from <- stri_extract_all_regex(peakIds_from, pattern_matching_samples)
+            peakIds_matches_to <- stri_extract_all_regex(peakIds_to, pattern_matching_samples)
+            return(!all(is.na(match(peakIds_matches_from, peakIds_matches_to))))
+          })
+          
+          if (any(pairs_mz_matching_samples$valid_pairs)) {
+            # concat the valid pairs of fragmented cluster with matching samples
+            # to the sim_cluster_peak
+            join_from_msclusterIDs <- c(join_from_msclusterIDs,
+                                        pairs_mz_matching_samples$mz_ID_from[pairs_mz_matching_samples$valid_pairs])
+            join_to_msclusterIDs <- c(join_to_msclusterIDs, 
+                                      pairs_mz_matching_samples$mz_ID_to[pairs_mz_matching_samples$valid_pairs])
+          } 
+        }
       }
       
       # finally compute the clusters from all mz pairs, and for the ones
@@ -860,16 +896,14 @@ repeat
       # TODO in the future, change this to be the one with the biggest basePeakInt, after checking for equality consistency using the smaller idx first
       new_cluster_j_representative_ID <- new_cluster_j[[1]]
       new_cluster_j_representative_idx <- match(new_cluster_j_representative_ID, ms_spectra_count$msclusterID)
-      ms_spectra_count[new_cluster_j_representative_idx,]
       # replace representative cluster with the new cluster counts
       ms_spectra_count[new_cluster_j_representative_idx,] <- new_cluster_j
       # remove merged mz rows from the count tables, keeping the representative mz row
       new_cluster_j_count_idx <- new_cluster_j_count_idx[new_cluster_j_count_idx != new_cluster_j_representative_idx]
       ms_spectra_count <- ms_spectra_count[-new_cluster_j_count_idx,] 
-      # TODO continue here
+      # removed merged mz rows from the count of joins 
       num_joins_last_step <- num_joins_last_step[-new_cluster_j_count_idx]
       total_num_join_clusters <- total_num_join_clusters[-new_cluster_j_count_idx]
-  
     }
     
     # add a check based on the final number of rows in the ms_spectra_count 
@@ -880,8 +914,6 @@ repeat
   }
   cat("|\n")
   
-  #TODO continue from here
-  rm(pairwise_sim)
   
   # reset number of joins by m/z with the joined clusters of last step 
   ms_spectra_count$numJoins <- ms_spectra_count$numJoins - num_joins_last_step
@@ -899,30 +931,31 @@ repeat
   if (num_joins > 0)
   {
     cat("          * Aggregating similarity table with the joined Ids *\n")
-    # aggregate the sim table row and cols, get the duplicated ids (to be removed) 
-    # and match the joined ids with their position
-    joined_idx <- duplicated(assigned_scans)
-    numJoins_idx <- (ms_spectra_count$numJoins > 0)
-    joined_ids <- lapply(ms_spectra_count$joinedIDs[numJoins_idx], 
-                         function(x) {
-                           last_joined_scans <- match(as.numeric(strsplit(x, split = ";")[[1]]), scans_order)
-                           last_joined_scans <- last_joined_scans[!is.na(last_joined_scans)] # remove NA introduced due to already joined scans from last step
-                           last_joined_scans})
-    names(joined_ids) <- match(ms_spectra_count$msclusterID[numJoins_idx],
-                               scans_order)
+    # aggregate the sim table rows for the joined_ids, 
+    # keep only the rows involving the representative mz ID (which had joins in this step - which changed)
+    mz_with_joins_idx <- (ms_spectra_count$numJoins > 0)
+    joined_ids <- ms_spectra_count$joinedIDs[mz_with_joins_idx]
+    # joined_ids <- lapply(ms_spectra_count$joinedIDs[mz_with_joins_idx], 
+    #                      function(x) {
+    #                        last_joined_scans <- match(as.numeric(strsplit(x, split = ";")[[1]]), scans_order)
+    #                        last_joined_scans <- last_joined_scans[!is.na(last_joined_scans)] # remove NA introduced due to already joined scans from last step
+    #                        last_joined_scans})
+    names(joined_ids) <- ms_spectra_count$msclusterID[mz_with_joins_idx]
     
     # free memory space before next step and the sim table aggregation
-    joined_ids_step <- ms_spectra_count$msclusterID[numJoins_idx]
-    write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
-                                                 paste0(output_name, "_spectra_clean.csv")))
-    rm(ms_spectra_count, numJoins_idx)
+    #joined_ids_step <- ms_spectra_count$msclusterID[mz_with_joins_idx]
+    #write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
+    #                                             paste0(output_name, "_spectra_clean.csv")))
+    #rm(ms_spectra_count, mz_with_joins_idx)
     
+    #TODO continue from here
+    # use awk_cmd_sim_table_aggregate_msclusterIDs
     aggregate_sim_table(joined_ids, scans_order, joined_idx, col_types, 
                         nscans, sim_file, table_limit_size)
     
     # remove duplicated from assigned scans and from scans_order
-    scans_order <- scans_order[!joined_idx]
-    assigned_scans <- assigned_scans[!joined_idx]
+    #scans_order <- scans_order[!joined_idx]
+    #assigned_scans <- assigned_scans[!joined_idx]
     t1 <- Sys.time()
     cat("          * Done aggregating similarity table in", 
         round(t1-t2, 2), units(t1-t2), "*\n")
