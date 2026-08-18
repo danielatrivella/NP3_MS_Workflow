@@ -122,8 +122,8 @@ def compute_pairwise_similarity_spec2vec(data_name, path_mgf, output_path, bin_s
     # remove lower triangular matrix values and reset diagonal with 1.0
     similarity_matrix[np.tril_indices_from(similarity_matrix)] = np.nan
     np.fill_diagonal(similarity_matrix, 1.0)
-    # set negative values to 0 - expected similarity values must be >= 0
-    similarity_matrix[similarity_matrix < 0.0] = 0.0
+    # set negative values and value below cutoff of 0.1 to 0 - expected similarity values must be >= 0.1
+    similarity_matrix[similarity_matrix < 0.1] = 0.0
     tend = time.time()
 
     if tend - tstart < 120:
@@ -131,6 +131,8 @@ def compute_pairwise_similarity_spec2vec(data_name, path_mgf, output_path, bin_s
     else:
         print(f"Calculated {similarity_matrix.shape[0]}x{similarity_matrix.shape[1]} scores in {(tend - tstart) / 60} min.")
 
+    # TODO, only compute matched peaks for valid similarities >= 0.1
+    # TODO, evaluate using compiled code in R to compute the matched peaks instead of using the matchms functionality
     # also compute matched peaks
     # the number of peaks is directly influenced by the filtering method, this result will be different from the R code
     tstart = time.time()
@@ -141,6 +143,8 @@ def compute_pairwise_similarity_spec2vec(data_name, path_mgf, output_path, bin_s
     else:
         print(f"Calculated {matched_peaks_matrix.shape[0]}x{matched_peaks_matrix.shape[1]} matches in {(tend - tstart) / 60} min.")
 
+    # TODO change similarity table format to be adequated to sparse matrix format,
+    #  # TODO save it in a single table with the matched peaks in 4 columns
     # save similarity table in the right format
     scans_number = [s.get("scans") for s in spectra_preprocessed]
     header_index = "parameters sim pairwise - spec2vec - scale_factor:0.5;bin_size:"+str(bin_size)+";trim_mz:"+str(trim_mz)
@@ -153,6 +157,8 @@ def compute_pairwise_similarity_spec2vec(data_name, path_mgf, output_path, bin_s
     matched_peaks_matrix.to_csv(os.path.join(output_path, "similarity_table_matches_"+data_name+".csv"),
               sep=',', na_rep="", index_label=header_index)
 
+# TODO also create function to compare only a set of spectra defined in a given column as groups
+# TODO which will come from the fragmented clusters computations and grouping
 
 if __name__ == "__main__":
     import sys, os
