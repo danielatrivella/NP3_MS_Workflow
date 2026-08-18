@@ -28,7 +28,7 @@ std::vector<std::vector<double>> normDotProductShiftList(
     std::vector<double> peaks_A, std::vector<double> ints_A,
     double mz_A, std::vector<std::vector<double> > peaks_B, 
     std::vector<std::vector<double> > ints_B, std::vector<double> mzs_B,
-    double bin_size, double max_shift) {
+    double bin_size, double max_shift,  double sim_cutoff = 0.1) {
   // double ISO_MASS = 1.0033;  // mass (13C) - mass (12C)
   int n_B = peaks_B.size();
   std::vector<double> similarities, matches, out_normDotProductShift,valid_sim_idx;
@@ -48,14 +48,12 @@ std::vector<std::vector<double>> normDotProductShiftList(
     // check if the similarity value (first idx) is greater or equal than the cut of 0.1
     // if yes, return it and add the current spec B idx to the valid list, 
     // otherwise ignore it - which is equal to setting it to zero
-    if (out_normDotProductShift[0] >= 0.1) {
+    if (out_normDotProductShift[0] >= sim_cutoff) {
       similarities.push_back(out_normDotProductShift[0]);
       matches.push_back(out_normDotProductShift[1]);
       valid_sim_idx.push_back(i+1);
     }
     // otherwise dont return the sim and the matches:
-    //out_normDotProductShift[0] = 0.0;
-    //out_normDotProductShift[1] = 0;
   }
   // return similarities and matched peaks
   std::vector<std::vector<double> > out_sim_matches;
