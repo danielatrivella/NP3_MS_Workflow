@@ -1,5 +1,7 @@
 #include <Rcpp.h>
 #include <math.h>
+#include <algorithm>
+#include <vector>
 using namespace Rcpp;
 
 // compute the absolute difference
@@ -191,9 +193,11 @@ std::vector<std::vector<double> > joinAdjPeaksScalee(std::vector<double> peaks,
 // if trim_mz == -1 do not trim spectra; if trim_mz != -1 trim spectra by precursor mz +- 20
 // scale_factor: 0 - ln; (0,] expoent of pow; and if 1 no scale; if -1 no norm
 // join_isotopic_peaks == 1 join isotopic peaks of carbon C13 and C14, else do not join isotopic peaks 
+// scans_to_keep is a sorted list of scans to be read or empty to read all
 // [[Rcpp::export]]
 List readMgfPeaksList(std::string filePath, double bin_size, float trim_mz, 
-                      double scale_factor, int join_isotopic_peaks) {
+                      double scale_factor, int join_isotopic_peaks,
+                      Rcpp::IntegerVector scans_to_keep = Rcpp::IntegerVector::create()) {
   FILE*  mgfStream = fopen(filePath.c_str(),"r");
   
   // Safety check: stops the crash if path is wrong or file is missing
@@ -201,6 +205,8 @@ List readMgfPeaksList(std::string filePath, double bin_size, float trim_mz,
     Rcpp::stop("MGF file not found or cannot be opened at (complete path needed): " + filePath);
   }
   
+  // retrieve the size of the scans_to_keep list, if this is empty read all scans
+  std::size_t size_scans_to_keep = scans_to_keep.size();
   //double ISO_MASS = 1.0033;
   std::vector<double> mz, inty, mz_prec;
   std::vector<int> scans;
@@ -289,6 +295,21 @@ List readMgfPeaksList(std::string filePath, double bin_size, float trim_mz,
       {
         Rcpp::stop("Error: couldn't read scan number from mgf file!\n");
       }
+      // if scanNumber not in the keep list, skip this ion
+      if (size_scans_to_keep > 0 && 
+          (!std::binary_search(scans_to_keep.begin(), scans_to_keep.end(), 
+                               scanNumber)))
+      {
+        // go to next END IONS and restart parsing
+        while (fgets(buffer, 256, mgfStream))
+        {
+          if (! strncmp(buffer,"END IONS",8) )
+            break;
+        }
+        // if eof breaks
+        if( ! fgets(buffer, 256, mgfStream))
+          break;
+      }
       continue;
     }
     else if (! strncmp(buffer,"SCANS=",6) ) // this is the offical MGF field, only the first number is kept
@@ -297,6 +318,21 @@ List readMgfPeaksList(std::string filePath, double bin_size, float trim_mz,
       if (sscanf(buffer+6,"%d",&scanNumber) != 1)
       {
         Rcpp::stop("Error: couldn't read scan number from mgf file!\n");
+      }
+      // if scanNumber not in the keep list, skip this ion
+      if (size_scans_to_keep > 0 && 
+          (!std::binary_search(scans_to_keep.begin(), scans_to_keep.end(), 
+                               scanNumber)))
+      {
+        // go to next END IONS and restart parsing
+        while (fgets(buffer, 256, mgfStream))
+        {
+          if (! strncmp(buffer,"END IONS",8) )
+            break;
+        }
+        // if eof breaks
+        if( ! fgets(buffer, 256, mgfStream))
+          break;
       }
       continue;
     }
