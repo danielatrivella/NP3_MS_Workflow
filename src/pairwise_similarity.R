@@ -166,7 +166,7 @@ compareSpectraNormDotProductSample_j <- function(i)
 }
 
 
-cat("Number of parallel cores to use in the pairwise comparisons:",parallel_cores,"\n")
+cat("Number of parallel cores to use in the pairwise comparison:",parallel_cores,"\n")
 
 
 # if a file was passed, read the mgf from the clean step
@@ -295,12 +295,7 @@ for (i in seq_along(path_mgf)) {
       comp_row_sim_matches <- dplyr::as_tibble(do.call(rbind, lapply(1:(n_scans-1), 
                                                     compareSpectraNormDotProductRow)))
     }
-    # check if all target ID is valid
-    if (any(is.na(comp_row_sim_matches[,"msclusterID_target"])))
-    {
-      stop("ERROR: a wrong index mapping was detected in the similarity matrix for mgf '",
-           path_mgf[[i]],"'. ")
-    }
+    
     # if no sim, save empty sim table
     if (nrow(comp_row_sim_matches) == 0) {
       readr::write_csv(x=dplyr::tibble(msclusterID_source=numeric(0), 
@@ -310,6 +305,12 @@ for (i in seq_along(path_mgf)) {
                        path = file.path(output_path,
                                         paste0("similarity_table_", data_name, ".csv")))
     } else {
+      # check if all target ID is valid
+      if (any(is.na(comp_row_sim_matches[,"msclusterID_target"])))
+      {
+        stop("ERROR: a wrong index mapping was detected in the similarity matrix for mgf '",
+             path_mgf[[i]],"'. ")
+      }
       # TODO eval use of data.table lib -> rbindlist(list_of_lists)
       # TODO eval fwrite from data.table 
       # save cosine values
@@ -365,7 +366,7 @@ for (i in seq_along(path_mgf)) {
                                                           compareSpectraNormDotProductSample_j, 
                                                           mc.cores = parallel_cores)))
       } else {
-        # sequential pairwise comparisons
+        # sequential pairwise comparison
         comp_sample_sim_matches <- dplyr::as_tibble(do.call(rbind, lapply(scan_index, compareSpectraNormDotProductSample, 
                                                                        ms2_sample_j$MZS, ms2_sample_j$INTS,
                                                                        ms2_sample_j$PREC_MZ, ms2_sample_j$SCANS)))
