@@ -1,5 +1,5 @@
 ## ----load-libs, message = FALSE--------------------------------------------
-cat("Loading packages Rcpp, readr, dplyr, CPP functions...\n")
+cat("Loading packages Matrix, stringi, readr, dplyr, CPP functions...\n")
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
 library(Matrix)
@@ -22,11 +22,13 @@ script_path <- function() {
 Rcpp::sourceCpp(file.path(script_path(), 'cluster_disjoint_set_union_find_R.cpp'))
 Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
 Rcpp::sourceCpp(file.path(script_path(), 'norm_dot_product.cpp'))
+source(file.path(script_path(), "pairwise_similarity_comparison_sets.R"))
 source(file.path(script_path(), "count_peak_area.R"))
 source(file.path(script_path(), "read_metadata_table.R"))
 source(file.path(script_path(), "writeMgfData_NP3.R"))
 source(file.path(script_path(), "final_report",  "compute_fragmented_cluster.R"))
 # TODO remove for debug
+# source(file.path("src/pairwise_similarity_comparison_sets.R"))
 # Rcpp::sourceCpp(file.path('src/cluster_disjoint_set_union_find_R.cpp'))
 # Rcpp::sourceCpp(file.path('src/read_mgf_peak_list_R.cpp'))
 # Rcpp::sourceCpp(file.path('src/norm_dot_product.cpp'))
@@ -45,6 +47,9 @@ rt_tol <- 2
 bin_size <- 0.05
 blank_depth <- 3
 scale_factor <- 0.5
+trim_mz <- TRUE # TODO add parm to args
+max_shift <- 200 # TODO add parm to args
+parallel_cores <- 2 # TODO add parm to args
 table_limit_size <- 3000  # set max number of rows to process in a chunck
 mz_rt_digits <- 4  # number of digits to round the mzConsensus and the retention times
 ion_mode <- "+" # + or -
@@ -149,16 +154,16 @@ if (length(args) < 3) {
   if (length(args) > 11) {
     mz_tol <- as.numeric(args[[4]])
     if (is.na(mz_tol))
-      stop("The m/z tolerance must be a numerica value. Wrong value informed: ",mz_tol)
+      stop("The m/z tolerance must be a numeric value. Wrong value informed: ",mz_tol)
     sim_tol <- as.numeric(args[[5]]) # sim to join
     if (is.na(sim_tol))
-      stop("The similarity tolerance must be a numerica value. Wrong value informed: ",sim_tol)
+      stop("The similarity tolerance must be a numeric value. Wrong value informed: ",sim_tol)
     rt_tol <- as.numeric(args[[6]])
     if (is.na(rt_tol))
-      stop("The retention time tolerance must be a numerica value. Wrong value informed: ",rt_tol)
+      stop("The retention time tolerance must be a numeric value. Wrong value informed: ",rt_tol)
     bin_size <- as.numeric(args[[7]])
     if (is.na(bin_size))
-      stop("The bin size must be a numerica value. Wrong value informed: ",bin_size)
+      stop("The bin size must be a numeric value. Wrong value informed: ",bin_size)
     
     scale_factor <- as.numeric(args[[8]])
     if (!is.na(scale_factor) || !is.null(scale_factor))
@@ -237,153 +242,6 @@ scaleInts <- function(ints, scale_factor)
   }
   return(round(ints,5))
 }
-
-# TODO remove
-# aggregate the rows of the similarity table for the joined spectra ids
-# use the maximum among values to aggregate the similarities
-# aggregate_sim_table <- function(joined_ids, scans_order, rm_rows, col_types, 
-#                                 nscans, sim_file, table_limit_size) 
-# {
-#   # print(joined_ids)
-#   n_scans <- length(scans_order)
-#   
-#   # obtain number of chunks to be used to read the sim table
-#   n_chunks <- ceiling(n_scans/table_limit_size)
-#   
-#   last_row_joined <- sapply(joined_ids, max)
-#   keep_rows <- which(!rm_rows)
-#   x_rows <- as.numeric(names(joined_ids))
-#   # add header
-#   write_csv(as.data.frame(matrix(scans_order[keep_rows], nrow = 1)), 
-#             path = file.path(output_path, 
-#                              "molecular_networking/similarity_tables", 
-#                              paste0("similarity_table_", output_name, "_tmp.csv")),
-#             col_names = FALSE)
-#   
-#   # for each join, aggregate the similarities
-#   to_row <- 1
-#   cat(paste0("            |", paste0(rep(" ", n_chunks), collapse = ""), "|\n            |", collapse = ""))
-#   for (i in seq_len(n_chunks)) 
-#   {
-#     cat("=")
-#     from_row <- to_row
-#     to_row <- min(max(round(n_scans/n_chunks*(i)), to_row + round(n_scans/n_chunks)), n_scans)
-#     if (n_scans - to_row == 1) # prevent resting one line
-#       to_row <- n_scans
-#     
-#     # check if the ids that are inside this chunk aggregate rows that are also inside,
-#     # if not enlarge chunk until all x_rows ids are included
-#     repeat {
-#       x_rows_chunk <- x_rows >= from_row & x_rows <= to_row
-#       to_row <- max(last_row_joined[x_rows_chunk][last_row_joined[x_rows_chunk] >= to_row], to_row)
-#       # check if new x_rows were included after enlarging the chunk, repeat until no new inclusion is possible
-#       if (!any(xor(x_rows_chunk, (x_rows >= from_row & x_rows <= to_row))))
-#         break
-#     }
-#     n_joins <- sum(rm_rows[1:from_row]) # number of joins until this row is reached - row 1 is the header
-#     n_rows <- to_row - from_row
-#     sim_chunk <- as.matrix(read_csv(sim_file, col_names = FALSE, skip = from_row, 
-#                                     n_max = n_rows, col_types = col_types))
-#     sim_chunk <- sim_chunk[,-1] # rm scans number col
-#     
-#     if (!is.double(sim_chunk))
-#       sim_chunk <- as.double(sim_chunk)
-#     
-#     # mirror similarity table simetric for the case where there are rows between the ids that
-#     # will be joined, garanting completeness
-#     # mirror from column from_row to to_row and all rows
-#     if (!is.null(nrow(sim_chunk)))
-#       mirror_matrix_tri_upper(sim_chunk, from_row, to_row-1)
-#     
-#     # aggregate columns
-#     # only if the selected cols for aggregation are greater or equal than from_row
-#     # else, only rm the aggregated ones - their values are NA here, no need of aggregating
-#     select_cols_ge_from_row <- (x_rows-1 >= from_row)
-#     if (any(x_rows-1 >= from_row)) {
-#       sim_chunk[,(x_rows-1)[select_cols_ge_from_row]] <- matrix(apply(sim_chunk, 1, function(x) {
-#         sapply(joined_ids[select_cols_ge_from_row], function(j) max(x[j-1], na.rm = T))}),
-#         ncol = length((x_rows-1)[select_cols_ge_from_row]), byrow = TRUE)
-#     }
-#     sim_chunk <- sim_chunk[, !rm_rows[-1]] # rm first column of scans number
-#     
-#     # if any joined id is inside the read chunk, aggregate the rows
-#     # only aggregate rows with at least one not NA value, which are the columns >= from_row
-#     # or with at least one not NA value
-#     if (any(x_rows_chunk)) 
-#     {
-#       sim_chunk[x_rows[x_rows_chunk]-from_row,] <- apply(sim_chunk, 2, function(x) {
-#         sapply(joined_ids[x_rows_chunk], 
-#                function(j) {
-#                  if (!all(is.na(x[j-from_row]))) {
-#                    max(x[j-from_row], na.rm = T)
-#                  } else {
-#                    NA
-#                  }})
-#       })
-#       # remove already aggregated rows
-#       sim_chunk <- sim_chunk[!rm_rows[(from_row+1):to_row], ]
-#     }
-#     
-#     # make lower triangle equals zero
-#     zero_matrix_tri_down(sim_chunk, from_row - n_joins, from_row - n_joins + nrow(sim_chunk)-1)
-#     
-#     # zero all columns with index <= from_row - n_joins - 1, these should be NA
-#     # when (from_row - n_joins - 1) > 1, this is not the first chunk and there will be NA columns left
-#     if ((from_row - n_joins - 1) >= 1) {
-#       sim_chunk[,1:(from_row - n_joins - 1)] <- 0
-#     }
-#     # check if there is still any NA value in the matrix, if yes something went wrong
-#     if (any(is.na(sim_chunk)) || any(is.infinite(sim_chunk))) {
-#       stop("ERROR when aggregating the similarity table. ",
-#            "There is still a NA or infinite value in the table, some indexing may have",
-#            " gone wrong - all values should be valid and greater or equal than zero here.",
-#            " Please contact the dev team.")
-#     }
-#     
-#     # add the scans order as the first column
-#     sim_chunk <- cbind(scans_order[(from_row+1):to_row][!rm_rows[(from_row+1):to_row]], 
-#                        sim_chunk)
-#     # store the current chunk of the similarity table
-#     write_csv(as.data.frame(sim_chunk), 
-#               path = file.path(output_path, 
-#                                "molecular_networking/similarity_tables", 
-#                                paste0("similarity_table_", output_name, "_tmp.csv")),
-#               col_names = FALSE, append = TRUE)
-#     rm(sim_chunk)
-#     if (to_row == n_scans)
-#       break;
-#   }
-#   cat("|\n")
-#   # check number of resulting rows and cols
-#   res <- readr::count_fields(file.path(output_path,
-#                                        "molecular_networking/similarity_tables",
-#                                        paste0("similarity_table_", output_name, "_tmp.csv")), 
-#                              skip = 1, tokenizer = tokenizer_csv())
-#   if (length(res) != nscans || any(res != nscans + 1)) {
-#     unlink(file.path(output_path,
-#                      "molecular_networking/similarity_tables",
-#                      paste0("similarity_table_", output_name, "_tmp.csv")),
-#            force = TRUE)
-#     unlink(file.path(output_path,
-#                      "molecular_networking/similarity_tables",
-#                      paste0("similarity_table_", output_name, "_aggMax.csv")),
-#            force = TRUE)
-#     stop("Wrong similarity table dimension after aggregation, something went wrong. Process Aborted.",
-#          " Please contact the dev team.")
-#   }
-#   # if number of rows is correct, then save clean table and remove the tmp
-#   file.copy(from = file.path(output_path,
-#                              "molecular_networking/similarity_tables",
-#                              paste0("similarity_table_", output_name, "_tmp.csv")), 
-#             to = file.path(output_path,
-#                            "molecular_networking/similarity_tables",
-#                            paste0("similarity_table_", output_name, "_aggMax.csv")),
-#             overwrite = TRUE)
-#   unlink(file.path(output_path,
-#                    "molecular_networking/similarity_tables",
-#                    paste0("similarity_table_", output_name, "_tmp.csv")),
-#          force = TRUE)
-# }
 
 # function to merge the count table by column
 # rules to merge each column
@@ -516,66 +374,100 @@ get_mz_pairs_share_samples <- function(df_samples_quantification, list_mscluster
   return(result_pairs)
 }
 
-
-# TODO make pairwise comparison of all isomers and return only the sim above the cutoff
-mz_isomers_groups <- compute_fragmented_clusters(ms_spectra_count, 
-                                                 max(ms_spectra_count$rtMax) - min(ms_spectra_count$rtMin), 
-                                                 3*mz_tol,
-                                                 putative_origin=TRUE, 
-                                                 table_type="isomers from clustering")
-number_comparisons <- sum(table(mz_isomers_groups$origin_cluster))
-
-# create the aggMax sim file by filtering only the similarities above the cutoff
-# using awk command
-cat("\n  ** Creating the aggMax similarity table for the cleaning step - filter similarities >=",
-    sim_tol,"**\n")
-# Define file paths
-sim_clust_file  <- file.path(output_path, 
-                         "molecular_networking/similarity_tables", 
-                         paste0("similarity_table_", output_name, ".csv"))
-if (!file.exists(sim_clust_file))
-{
-  stop("The pairwise similarity table file '", sim_clust_file,
-       "' from the clustering step does not exists. ",
-       "Rerun the job or provide a valid path to an output directory.")
-} 
-# new aggMax sim file of clean
-sim_file <- file.path(output_path, 
-                      "molecular_networking/similarity_tables", 
-                      paste0("similarity_table_", output_name, "_aggMax.csv"))
-# Start a timer to track performance
-start_time <- Sys.time()
-# Run awk to filter clustering sim table
-# stdout = sim_file streams directly to disk
-status <- system2(
-  command = "awk",
-  args = c(
-    "-F,",
-    "-v", paste0("sim_cutoff=", sim_tol),
-    "'NR == 1 || $3 >= sim_cutoff'", 
-    sim_clust_file
-  ),
-  stdout = sim_file # Captures errors if something goes wrong
-)
-end_time <- Sys.time()
-# check if status was 0 for success
-if (status != 0)
-{
-  cat("    - ERROR. Finished in:", round(end_time - start_time, 2), "seconds\n")
-  stop("The pairwise similarity table file '", sim_clust_file,
-       "' from clustering step 3 could not be filtered with awk to create the aggMax sim table of clean step 5. ",
-       "Check for warnings and the read/write permissions of the current user.")
-} 
-cat("    - Done in:", round(end_time - start_time, 2), "seconds\n")
-
-# read the metadata samples table
-batch_metadata <- readMetadataTable(path_batch_metadata)
-
 # read count files
 ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, 
                                               guess_max = 5000,
                                               col_types = cols(.default="?", 
                                                                msclusterID="i")))
+
+cat("\n  ** Retrieving the groups of putative isomers m/z with 3*mz_tol and ",
+    "max retention time range - all the possible fragmented clusters to be compared pairwise**\n")
+
+# first retrieve the groups of putative isomers with extended tolerances
+mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
+                                                 max(ms_spectra_count$rtMax) - min(ms_spectra_count$rtMin), 
+                                                 3*mz_tol,
+                                                 putative_origin=TRUE, 
+                                                 table_type="isomers from Step 3 - Clustering "))
+number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
+cat("\n    - Total number of m/z without isomers and percentage overall m/zs:", 
+    number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
+
+# make pairwise comparison of all possible isomers and store only the sim above the cutoff
+cat("\n  ** Creating the aggMax similarity table for the cleaning step - filter similarities >=",
+    sim_tol,"**\n")
+# Define file paths
+mgf_clust_file  <- file.path(output_path,"mgf/",paste0(output_name,"_all.mgf"))
+if (!file.exists(mgf_clust_file))
+{
+  stop("The MGF file '", mgf_clust_file,
+       "' from the clustering step does not exists. ",
+       "Rerun the job or provide a valid path to the output directory.")
+} 
+# new aggMax sim file of clean
+sim_file <- file.path(output_path, 
+                      "molecular_networking/similarity_tables", 
+                      paste0("similarity_table_", output_name, "_aggMax.csv"))
+# call pairwise similarity for the clusters_origin
+n_sim_computed <- pairwise_similarity_comparison_sets(df_mscluster_sets = mz_isomers_groups, 
+                                    path_mgf=mgf_clust_file, 
+                                    sim_output_path=sim_file, 
+                                    set_name="putative isomers groups from Step 3 Clustering",
+                                    sim_cutoff=sim_tol,
+                                    bin_size=bin_size, 
+                                    scale_factor=scale_factor,
+                                    trim_mz=(trim_mz==1),
+                                    max_shift=max_shift,
+                                    join_isotopic_peaks=1, # always on
+                                    parallel_cores=parallel_cores)
+
+
+# TODO remove old - create the aggMax sim file by filtering only the similarities above the cutoff
+# using awk command
+# cat("\n  ** Creating the aggMax similarity table for the cleaning step - comparing putative isomers groups pairwise - filter similarities >=",
+#     sim_tol,"**\n")
+# # Define file paths
+# sim_clust_file  <- file.path(output_path, 
+#                          "molecular_networking/similarity_tables", 
+#                          paste0("similarity_table_", output_name, ".csv"))
+# if (!file.exists(sim_clust_file))
+# {
+#   stop("The pairwise similarity table file '", sim_clust_file,
+#        "' from the clustering step does not exists. ",
+#        "Rerun the job or provide a valid path to an output directory.")
+# } 
+# # new aggMax sim file of clean
+# sim_file <- file.path(output_path, 
+#                       "molecular_networking/similarity_tables", 
+#                       paste0("similarity_table_", output_name, "_aggMax.csv"))
+# # Start a timer to track performance
+# start_time <- Sys.time()
+# # Run awk to filter clustering sim table
+# # stdout = sim_file streams directly to disk
+# status <- system2(
+#   command = "awk",
+#   args = c(
+#     "-F,",
+#     "-v", paste0("sim_cutoff=", sim_tol),
+#     "'NR == 1 || $3 >= sim_cutoff'", 
+#     sim_clust_file
+#   ),
+#   stdout = sim_file # Captures errors if something goes wrong
+# )
+# end_time <- Sys.time()
+# # check if status was 0 for success
+# if (status != 0)
+# {
+#   cat("    - ERROR. Finished in:", round(end_time - start_time, 2), "seconds\n")
+#   stop("The pairwise similarity table file '", sim_clust_file,
+#        "' from clustering step 3 could not be filtered with awk to create the aggMax sim table of clean step 5. ",
+#        "Check for warnings and the read/write permissions of the current user.")
+# } 
+# cat("    - Done in:", round(end_time - start_time, 2), "seconds\n")
+
+# read the metadata samples table
+batch_metadata <- readMetadataTable(path_batch_metadata)
+
 ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "tremolo_")]
 ms_spectra_count$joinedIDs <- NA
 ms_spectra_count$numJoins <- 0
@@ -959,56 +851,30 @@ repeat
   # aggregate similarity values of joined idxs
   if (num_joins > 0)
   {
-    # TODO check if there is any missing fragmented cluster, if yes recompute fragmented clusters
-    if (any(ms_spectra_count$fragmented_clusters != 0))
-    {
-      # TODO add this to the ms_spectra_count direct
-      # compute new fragmented clusters
-      new_fragmented_clusters <- compute_fragmented_clusters(ms_spectra_count, 
-                                  rt_tol, mz_tol, 
-                                  putative_origin=TRUE, 
-                                  table_type=paste0("Step 5 Clean End of Round ", step_join))
-      
-      # retrieve the new origin_clusters with joins
-      new_origin_clusters <- unique(new_fragmented_clusters[new_fragmented_clusters$fragmented_clusters!=0 & 
-                                                              ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
-      # TODO for the mz involved in the new fragmented clusters with joins,
-      # updated their similarities - replace old msclusterID present in the joinedIDs with the new msclusterID
-      ms_spectra_count[new_fragmented_clusters$origin_cluster %in% new_origin_clusters, ]
-      
-      # TODO call aggregate similarities here, how to deal with duplicates? just ignore?
-      
+    # recompute fragmented clusters
+    
+    # TODO add this to the ms_spectra_count direct
+    # compute new fragmented clusters
+    new_fragmented_clusters <- compute_fragmented_clusters(ms_spectra_count, 
+                                rt_tol, mz_tol, 
+                                putative_origin=TRUE, 
+                                table_type=paste0("Step 5 Clean End of Round ", step_join))
+    
+    # retrieve the new origin_clusters with joins
+    new_origin_clusters <- unique(new_fragmented_clusters[new_fragmented_clusters$fragmented_clusters!=0 & 
+                                                            ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
+    if (length(new_origin_clusters) == 0) {
+     # finish cleaning
+      # no more joins to make, there is no new fragmented cluster from a 
+      # previous joined result (which may have changed)
+      break()
     }
+    # TODO for the mz involved in the new fragmented clusters with joins,
+    # updated their similarities - replace old msclusterID present in the joinedIDs with the new msclusterID
+    ms_spectra_count[new_fragmented_clusters$origin_cluster %in% new_origin_clusters, ]
     
-    # cat("          * Aggregating similarity table with the joined Ids *\n")
-    # # aggregate the sim table rows for the joined_ids, 
-    # # keep only the rows involving the representative mz ID (which had joins in this step - which changed)
-    # mz_with_joins_idx <- (ms_spectra_count$numJoins > 0)
-    # joined_ids <- ms_spectra_count$joinedIDs[mz_with_joins_idx]
-    # # joined_ids <- lapply(ms_spectra_count$joinedIDs[mz_with_joins_idx], 
-    # #                      function(x) {
-    # #                        last_joined_scans <- match(as.numeric(strsplit(x, split = ";")[[1]]), scans_order)
-    # #                        last_joined_scans <- last_joined_scans[!is.na(last_joined_scans)] # remove NA introduced due to already joined scans from last step
-    # #                        last_joined_scans})
-    # names(joined_ids) <- ms_spectra_count$msclusterID[mz_with_joins_idx]
-    # 
-    # # free memory space before next step and the sim table aggregation
-    # #joined_ids_step <- ms_spectra_count$msclusterID[mz_with_joins_idx]
-    # #write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
-    # #                                             paste0(output_name, "_spectra_clean.csv")))
-    # #rm(ms_spectra_count, mz_with_joins_idx)
-    # 
-    # #TODO continue from here
-    # # use awk_cmd_sim_table_aggregate_msclusterIDs
-    # aggregate_sim_table(joined_ids, scans_order, joined_idx, col_types, 
-    #                     nscans, sim_file, table_limit_size)
+    # TODO call aggregate similarities here, how to deal with duplicates? just ignore?
     
-    # remove duplicated from assigned scans and from scans_order
-    #scans_order <- scans_order[!joined_idx]
-    #assigned_scans <- assigned_scans[!joined_idx]
-    # t1 <- Sys.time()
-    # cat("          * Done aggregating similarity table in", 
-    #     round(t1-t2, 2), units(t1-t2), "*\n")
   }
   
   num_joins_total <- num_joins_total + num_joins
@@ -1020,297 +886,6 @@ repeat
   step_join <- step_join + 1
 }
 
-# repeat
-# {
-#   t1 <- Sys.time()
-#   cat("\n      * Step", step_join, "*\n")
-#   num_joins <- 0
-#   
-#   # read the pairwise table in chunks
-#   col_types <- strrep("d", length(scans_order))
-#   if (step_join <= 1)
-#   {
-#     # read pairwise sim limited by the max chunk size
-#     pairwise_sim <- read_csv(file.path(output_path, 
-#                                        "molecular_networking/similarity_tables", 
-#                                        paste0("similarity_table_", output_name, "_aggMax.csv")), 
-#                              n_max = table_limit_size, skip = 1, 
-#                              col_names = F, col_types = col_types)
-#     
-#     if (step_join == 1 && blanks_flag && num_joins_total > 0) {
-#       # started with step 0, then if there was at least one joining and
-#       # num_joins_total > 0 -> read count tables from last step
-#       # otherwise continue to use the clustering table in step 1
-#       ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
-#                                                               paste0(output_name,"_spectra_clean.csv")),
-#                                                     guess_max = 5000,
-#                                                     col_types = cols(.default="?", 
-#                                                                      msclusterID="i")))
-#     }
-#   } else { 
-#     # after first step read the lines of all joined clusters
-#     # also use similarity of column info -> to obtain info of preceding scans
-#     if (length(joined_ids_step) > table_limit_size)
-#       joined_ids <- joined_ids_step[1:table_limit_size]
-#     else
-#       joined_ids <- joined_ids_step
-#     
-#     pairwise_sim <- read_csv_chunked(file.path(output_path, 
-#                                                "molecular_networking/similarity_tables", 
-#                                                paste0("similarity_table_", output_name, "_aggMax.csv")), 
-#                                      DataFrameCallback$new(function(x, pos) 
-#                                        subset(x, unlist(x[1]) %in% joined_ids)), 
-#                                      col_names = TRUE, col_types = col_types)
-#     # get preceding scans sim info
-#     pairwise_sim[,-1] <- pairwise_sim[,-1] + t(read_csv(file.path(output_path, 
-#                                                                   "molecular_networking/similarity_tables", 
-#                                                                   paste0("similarity_table_", output_name, "_aggMax.csv")), 
-#                                                         col_names = TRUE, paste(sapply(scans_order, 
-#                                                                                        function(i, x) ifelse(i %in% x, "d", "-"), 
-#                                                                                        joined_ids), 
-#                                                                                 collapse = "")))
-#     
-#     # read count tables from last step
-#     ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
-#                                                             paste0(output_name,"_spectra_clean.csv")),
-#                                                   guess_max = 5000,
-#                                                   col_types = cols(.default="?", 
-#                                                                    msclusterID="i")))
-#   }
-#   
-#   # print(table_limit_size)
-#   progress_joins <- unique(trunc(c(seq(from = 1, to = nscans, by = nscans/25), nscans)))
-#   n_progress <- length(progress_joins)
-#   cat(paste0("  |", paste0(rep(" ", n_progress), collapse = ""), "|\n  |", collapse = ""))
-#   
-#   i <- 1
-#   # TODO this should iterate directly in the fragmented clusters and than the one with numJoins>0
-#   while (i <= nscans) 
-#   {
-#     #cat("i: ", i, "\n")
-#     if (n_progress > 0 && i == progress_joins[[1]]) {
-#       progress_joins <- progress_joins[-1]
-#       n_progress <- n_progress - 1
-#       cat("=")
-#     }
-#     
-#     # get next cluster scan number and cluster info
-#     cluster <- ms_spectra_count[i,]
-#     scan_num <- cluster[[1]]
-#     
-#     # after step 1 only check clusters that changed - that were joined
-#     if (step_join > 1 && cluster$numJoins == 0) 
-#     { 
-#       i <- i + 1
-#       next()
-#     } else if (step_join == 0 && cluster$BLANKS_TOTAL == 0) 
-#     {
-#       # if step_join == 0 and cluster not blank, go to next
-#       # only join blank clusters in step 0
-#       i <- i + 1
-#       next()
-#     }
-#     
-#     sim_i <- which_eq(pairwise_sim[[1]], scan_num, 1)
-#     if (length(sim_i) == 0) # read more lines to find scan_num
-#     {
-#       if (step_join <= 1)
-#       {
-#         sim_i <- which_eq(scans_order, scan_num, 1) # scan line
-#         pairwise_sim <- read_csv(file.path(output_path, 
-#                                            "molecular_networking/similarity_tables", 
-#                                            paste0("similarity_table_", output_name, "_aggMax.csv")), 
-#                                  n_max = table_limit_size, skip = sim_i-1, 
-#                                  col_names = F, col_types = col_types)
-#         
-#         sim_i <- which_eq(pairwise_sim[[1]], scan_num, 1)
-#         if (length(sim_i) == 0) # read more lines
-#           stop("Error with the new similarity table, wrong scans order.")
-#         
-#       } else { # after first step only read joined ids similarity
-#         joined_ids <- joined_ids_step[joined_ids_step >= scan_num]
-#         if (length(joined_ids) > table_limit_size)
-#           joined_ids <- joined_ids[1:table_limit_size]
-#         
-#         pairwise_sim <- read_csv_chunked(file.path(output_path, 
-#                                                    "molecular_networking/similarity_tables", 
-#                                                    paste0("similarity_table_", output_name, "_aggMax.csv")), 
-#                                          DataFrameCallback$new(function(x, pos) 
-#                                            subset(x, unlist(x[1]) %in% joined_ids)), 
-#                                          col_names = TRUE, col_types = col_types)
-#         # get preceding scans sim info
-#         pairwise_sim[,-1] <- pairwise_sim[,-1] + t(read_csv(file.path(output_path, 
-#                                                                       "molecular_networking/similarity_tables", 
-#                                                                       paste0("similarity_table_", output_name, "_aggMax.csv")), 
-#                                                             col_names = TRUE, paste(sapply(scans_order, 
-#                                                                                            function(i, x) ifelse(i %in% x, "d", "-"), 
-#                                                                                            joined_ids), 
-#                                                                                     collapse = "")))
-#         sim_i <- which_eq(pairwise_sim[[1]], scan_num, 1)
-#         if (length(sim_i) == 0) # read more lines
-#           stop("Error with the new similarity table, wrong scans order.")
-#       }
-#     }
-#     
-#     if (pairwise_sim[sim_i,1] != scan_num)
-#       stop("Wrong scans order in the pairwise similarity.")
-#     
-#     # get the clusters ids that have a similarity with the current cluster including itself
-#     adj_clusters <- assigned_scans[which_ge(unlist(pairwise_sim[sim_i,-1]), sim_tol, 1)] # add one to scape first column
-#     
-#     # get the spectra that are in the same peak as the current cluster:
-#     # mz diff <= mz_tol, 
-#     # the rt center of one spectrum is contained in the other spectrum rt range within the rt_tol,
-#     cluster_peak <- ms_spectra_count[abs(ms_spectra_count$mzConsensus - cluster$mzConsensus) <= mz_tol &
-#                                        ((ms_spectra_count$rtMean >= cluster$rtMin - rt_tol & 
-#                                            ms_spectra_count$rtMean <= cluster$rtMax + rt_tol) |
-#                                           (cluster$rtMean >= ms_spectra_count$rtMin - rt_tol &
-#                                              cluster$rtMean <= ms_spectra_count$rtMax + rt_tol)),]
-#     
-#     # if not bflag check peak center and boundaries deviation, remove peaks not aligned
-#     # the spectra peak center deviation is <= 4 * rt_tol or peak boundaries deviation <= 2*rt_tol
-#     if (!blanks_flag || !cluster$BFLAG) {
-#       cluster_peak <- cluster_peak[abs(cluster$rtMean-cluster_peak$rtMean) <= 4*rt_tol |
-#                                      apply(cluster_peak[,c("rtMin", "rtMax")], 1,
-#                                            function(x,y)  RMSE(x, y),
-#                                            y = c(cluster$rtMin, cluster$rtMax)) <= 2*rt_tol,]
-#     }
-#     
-#     # if there is a not similar cluster in the current cluster peak check if they share any MS1 peak id 
-#     # and add them to the adj list to be joined
-#     if (cluster$numSpectra < 5000) { # too many spectra will make the regular expression too big 
-#       non_adj_peak <- !(cluster_peak$msclusterID %in% adj_clusters)
-#       if (any(non_adj_peak)) {
-#         # do not consider fake peaks ids
-#         peakIds <- strsplit(cluster$peakIds,";")[[1]]
-#         # peaksIds <- paste0(peakIds,collapse = "|")
-#         peakIds <- peakIds[!startsWith(peakIds, "fake_")]
-#         if (length(peakIds) > 0 && length(peakIds) <= 500) {
-#           peaksIds <- paste0(peakIds, collapse = "|")
-#           non_adj_peak <- cluster_peak$msclusterID[non_adj_peak][
-#             grepl(pattern = peaksIds,  
-#                   cluster_peak$peakIds[non_adj_peak])]
-#           if (length(non_adj_peak) > 0)
-#             adj_clusters <- c(adj_clusters, non_adj_peak)
-#         }
-#       }
-#     }
-#     # remove bflags TRUE using the basePeakInt cutoff
-#     if (BFLAG_cutoff >= 0) {
-#       non_adj_peak <- NULL
-#       # if blank cluster, also join BFLAGS with base peak below the cutoff
-#       if (cluster$BLANKS_TOTAL > 0) {
-#         non_adj_peak <- ((!(cluster_peak$msclusterID %in% adj_clusters)) & 
-#                            (cluster_peak$basePeakInt <= BFLAG_cutoff))
-#       } else if (cluster$BFLAG && cluster$basePeakInt <= BFLAG_cutoff) {
-#         # if not blank cluster but BFLAG True and basePeakInt <= cutoff, also join to blank clusters in the peak
-#         non_adj_peak <- ((!(cluster_peak$msclusterID %in% adj_clusters)) & 
-#                            (cluster_peak$BLANKS_TOTAL > 0))
-#         
-#       }
-#       if (any(non_adj_peak)) {
-#         adj_clusters <- c(adj_clusters, cluster_peak$msclusterID[non_adj_peak])
-#       }
-#     }
-#     # filter only adj peaks
-#     cluster_peak <- cluster_peak[cluster_peak$msclusterID %in% adj_clusters,]
-#     
-#     if (nrow(cluster_peak) == 1) # just the current cluster, then go to next spectrum
-#     {
-#       i <- i + 1
-#       next()
-#     } else if (nrow(cluster_peak) == 0) 
-#     {
-#       stop("Error in the similarity table aggMax, the current cluster is not ",
-#            "adjacent to itself - diagonal probable different from 1.0. ",
-#            "Something went wrong in the similarity table aggMax construction.")
-#     }
-#     num_joins <- num_joins + nrow(cluster_peak) - 1
-#     
-#     # get the cluster_peak members pos in the count table
-#     i_count <- match(cluster_peak$msclusterID, ms_spectra_count$msclusterID)
-#     
-#     # merge counts based on spectra counts
-#     cluster <- lapply(names(cluster_peak), merge_counts, cluster_peak)
-#     ms_spectra_count[i,] <- cluster
-#     
-#     # remove merged row from count tables
-#     i_count <- i_count[i_count != i] # remove the cluster pos from the cluster_peak members
-#     ms_spectra_count <- ms_spectra_count[-i_count,] 
-#     
-#     num_joins_last_step <- num_joins_last_step[-i_count]
-#     total_num_join_clusters <- total_num_join_clusters[-i_count]
-#     
-#     # update assigned scans of joined cluster
-#     assigned_scans[assigned_scans %in% cluster_peak$msclusterID] <- cluster[[1]]
-#     
-#     nscans <- nscans - nrow(cluster_peak) + 1 # remove scans that were merged from the total count
-#     if (n_progress > 0 && progress_joins[n_progress] > nscans) # rm from progress the joined scans
-#     {
-#       cat("=")
-#       progress_joins <- progress_joins[-n_progress]
-#       n_progress <- n_progress - 1
-#     }
-#     
-#     # decrement number of rows preceding the current that were removed - prevent skipping rows
-#     i <- i + 1 - sum(i_count < i)
-#   }
-#   cat("|\n")
-#   rm(pairwise_sim)
-#   
-#   # reset number of joins by m/z with the joined clusters of last step 
-#   ms_spectra_count$numJoins <- ms_spectra_count$numJoins - num_joins_last_step
-#   
-#   # reset number of joined clusters by m/z in this step
-#   num_joins_last_step <- ms_spectra_count$numJoins
-#   # update number of total joins by cluster after this step
-#   total_num_join_clusters <- total_num_join_clusters + num_joins_last_step
-#   
-#   t2 <- Sys.time()
-#   cat("        * Joined", num_joins, "similar clusters in", 
-#       round(t2-t1, 2), units(t2-t1), "*\n")
-#   
-#   # aggregate similarity values of joined idxs
-#   if (num_joins > 0)
-#   {
-#     cat("          * Aggregating similarity table with the joined Ids *\n")
-#     # aggregate the sim table row and cols, get the duplicated ids (to be removed) 
-#     # and match the joined ids with their position
-#     joined_idx <- duplicated(assigned_scans)
-#     numJoins_idx <- (ms_spectra_count$numJoins > 0)
-#     joined_ids <- lapply(ms_spectra_count$joinedIDs[numJoins_idx], 
-#                          function(x) {
-#                            last_joined_scans <- match(as.numeric(strsplit(x, split = ";")[[1]]), scans_order)
-#                            last_joined_scans <- last_joined_scans[!is.na(last_joined_scans)] # remove NA introduced due to already joined scans from last step
-#                            last_joined_scans})
-#     names(joined_ids) <- match(ms_spectra_count$msclusterID[numJoins_idx],
-#                                scans_order)
-#     
-#     # free memory space before next step and the sim table aggregation
-#     joined_ids_step <- ms_spectra_count$msclusterID[numJoins_idx]
-#     write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
-#                                                  paste0(output_name, "_spectra_clean.csv")))
-#     rm(ms_spectra_count, numJoins_idx)
-#     
-#     aggregate_sim_table(joined_ids, scans_order, joined_idx, col_types, 
-#                         nscans, sim_file, table_limit_size)
-#     
-#     # remove duplicated from assigned scans and from scans_order
-#     scans_order <- scans_order[!joined_idx]
-#     assigned_scans <- assigned_scans[!joined_idx]
-#     t1 <- Sys.time()
-#     cat("          * Done aggregating similarity table in", 
-#         round(t1-t2, 2), units(t1-t2), "*\n")
-#   }
-#   
-#   num_joins_total <- num_joins_total + num_joins
-#   
-#   # stop joining if no join was made in the last step and this is not the blanks step (step_join == 0)
-#   if (step_join >= 1 && (num_joins == 0 || step_join == 10))
-#     break()
-#   
-#   step_join <- step_join + 1
-# }
 
 # get total number of joins by cluster
 ms_spectra_count$numJoins <- total_num_join_clusters
@@ -1459,21 +1034,21 @@ if ("DESREPLICATION" %in% names(ms_area_count))
 {
   hflag_rows <- !is.na(ms_area_count$HFLAG) | !is.na(ms_area_count$DESREPLICATION)
   ms_spectra_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- 
-    ms_area_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- Reduce(rbind, 
-                                                                      lapply(which(hflag_rows), 
-                                                                             function(i)
-                                                                             {
-                                                                               if (is.na(ms_area_count$HFLAG[[i]]))
-                                                                                 hflag <- NA
-                                                                               else
-                                                                                 hflag <- paste0(unique(strsplit(ms_area_count$HFLAG[[i]], ";")[[1]]), collapse = ";")
-                                                                               if (is.na(ms_area_count$DESREPLICATION[[i]]))
-                                                                                 desrep <- NA
-                                                                               else
-                                                                                 desrep <- paste0(unique(strsplit(ms_area_count$DESREPLICATION[[i]], ";")[[1]]), collapse = ";")
-                                                                               
-                                                                               return(c(desrep, hflag))
-                                                                             }), init = NULL)
+  ms_area_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- Reduce(rbind, 
+    lapply(which(hflag_rows), 
+           function(i)
+           {
+             if (is.na(ms_area_count$HFLAG[[i]]))
+               hflag <- NA
+             else
+               hflag <- paste0(unique(strsplit(ms_area_count$HFLAG[[i]], ";")[[1]]), collapse = ";")
+             if (is.na(ms_area_count$DESREPLICATION[[i]]))
+               desrep <- NA
+             else
+               desrep <- paste0(unique(strsplit(ms_area_count$DESREPLICATION[[i]], ";")[[1]]), collapse = ";")
+             
+             return(c(desrep, hflag))
+           }), init = NULL)
 }
 
 cat("\n  ** Adding blanks neighborhood information **\n")
