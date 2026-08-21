@@ -135,9 +135,15 @@ pairwise_similarity_comparison_sets <- function(df_mscluster_sets, path_mgf, sim
     cat("\n  - No comparison to make, there is no group in the provided set of putative clusters. Aborting similarity computation... ")
     return(0)
   }
-  cat("    - Number of parallel cores to use in the pairwise comparison:",parallel_cores,"\n\n")
+  if (parallel_cores > 1 && !require(parallel)) {
+    parallel_cores <- 1
+    cat("    - Parallelization disabled. Could not load parallel package. ",
+        "Serial pairwise comparison will be used.\n\n")
+  }  else {
+    cat("    - Number of parallel cores to use in the pairwise comparison:",parallel_cores,"\n\n")
+  }
   
-  # TODO make progress have max length like in the clean step
+  # make progress have max length like in the clean step
   # add progress
   progress_comp <- unique(trunc(c(seq(from = 1, to = n_groups, by = n_groups/25), n_groups)))
   n_progress <- length(progress_comp)
