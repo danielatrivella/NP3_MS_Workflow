@@ -327,27 +327,40 @@ awk_cmd_filter_sim_table_msclusterIDs <- function(list_msclusterIDs_filter,
   return(awk_cmd)
 }
 
-# TODO aggregate the sim table using awk
+# TODO aggregate the sim table using awk to replace joined ids with the representative ID
 # format a awk command to read the rows of a given similarity table CSV in sim_file
-# that contains data from one of the msclusterID in the list_msclusterIDs_filter
-# and replace the matched ids with the given representative ID
-awk_cmd_sim_table_aggregate_msclusterIDs <- function(list_msclusterIDs_filter, 
-                                                  representative_msclusterID,
-                                                  sim_file) {
+# that may contain data from one of the msclusterIDs in the list_msclusterIDs_sub
+# and replace the matched ids with the given representative ID in the respective col
+# @ list_msclusterIDs_sub is a string with a list of msclusterIDs separated by pipe "|"
+# @ representative_msclusterID is the msclusterID to be used to replace the ones present in list_msclusterIDs_sub
+# @ sim_file is the path to the similarity file to make the replacements
+sim_table_replace_msclusterIDs <- function(list_msclusterIDs_sub, 
+                                           representative_msclusterID,
+                                           sim_file) {
   # concate the IDs to be filtered using pipe in a regex format
-  regex_pattern_keep <- paste0("'^(", paste(list_msclusterIDs_filter, 
-                                            collapse = "|"), ")$'")
+  regex_pattern_sub <- paste0("'^(", list_msclusterIDs_sub, ")$'")
   # Build the awk arguments
   # -F, tells awk it is a CSV file
   # $1 ~ pat ensures column 1 matches the list
   # $2 ~ pat ensures column 2 matches the list
-  # TODO use if below
-  # awk '{if ($1 == "apple") $1 = "fruit"; if ($2 == "apple") $2 = "fruit"} 1' input.txt
-
-  awk_cmd <- paste("awk -F,","-v", paste0("pat_keep=", regex_pattern_keep),
-                   "'NR == 1 || (($1 ~ pat_keep) || ($2 ~ pat_keep)) { $2 = "+representative_msclusterID+" } 1'",
+  # the trailing 1 indicates to return all rows
+  awk_cmd <- paste("-F,","-v", paste0("pat_sub=", regex_pattern_sub),
+                   paste0("'BEGIN {FS=OFS=\",\"} {if ($1 ~ pat_sub) $1 = ",representative_msclusterID,
+                          "; if ($2 ~ pat_sub) $2 = ",representative_msclusterID,"} 1'"),
                    sim_file)
-  return(awk_cmd)
+  
+  # Stream directly via system2
+  status <- system2(
+    command = "awk",
+    args = awk_cmd,
+    stdout = sim_file)
+  # Check execution status
+  if (status != 0) {
+    stop("ERROR: Awk replacement failed: ", paste(status, collapse = "\n"),
+         ". Could not replace some msclusterIDs from the similarity table '",
+         sim_file, "'. Check for warnings.")
+  }
+  return(status)
 }
 
 
@@ -847,7 +860,8 @@ repeat
   cat("        * Joined", num_joins, "similar clusters in", 
       round(t2-t1, 2), units(t2-t1), "*\n")
   
-  # TODO here recompute fragmented clusters and compute similarities again? Or filter aggMax and add missing similarities?
+  # TODO here recompute fragmented clusters and compute similarities again? 
+  # Or filter aggMax and add missing similarities?
   # aggregate similarity values of joined idxs
   if (num_joins > 0)
   {
@@ -862,7 +876,7 @@ repeat
     
     # retrieve the new origin_clusters with joins
     new_origin_clusters <- unique(new_fragmented_clusters[new_fragmented_clusters$fragmented_clusters!=0 & 
-                                                            ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
+                                                          ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
     if (length(new_origin_clusters) == 0) {
      # finish cleaning
       # no more joins to make, there is no new fragmented cluster from a 
@@ -871,9 +885,22 @@ repeat
     }
     # TODO for the mz involved in the new fragmented clusters with joins,
     # updated their similarities - replace old msclusterID present in the joinedIDs with the new msclusterID
-    ms_spectra_count[new_fragmented_clusters$origin_cluster %in% new_origin_clusters, ]
+    clusters_to_agg_sim <- ms_spectra_count[(new_fragmented_clusters$origin_cluster %in% new_origin_clusters) & 
+                       ms_spectra_count$numJoins > 0, c("msclusterID", "numJoins", "joinedIDs")]
+    # remove the reference msclusterID from the joinedIDs list
+    # TODO and call aggregate similarities here
+    clusters_sub_status <- lapply(seq_len(nrow(clusters_to_agg_sim)), 
+     function(i) {
+       joinedIDs_sub <- sub(x=clusters_to_agg_sim$joinedIDs[[i]], 
+           pattern=paste0(clusters_to_agg_sim$msclusterID[[i]],";"), 
+           replacement="")
+       sim_table_replace_msclusterIDs(list_msclusterIDs_sub = joinedIDs_sub,
+                                      representative_msclusterID = clusters_to_agg_sim$msclusterID[[i]],
+                                      sim_file)
+     })
     
-    # TODO call aggregate similarities here, how to deal with duplicates? just ignore?
+    # TODO how to deal with duplicates? just ignore?
+    
     
   }
   
