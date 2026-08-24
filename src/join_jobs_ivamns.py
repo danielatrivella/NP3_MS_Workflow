@@ -138,7 +138,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 				valid_msclusterIDs = job_clean.msclusterID[job_clean.basePeakInt >= basePeakInt_noise_cutoff]
 				del job_clean
 				# filter job_ivamn_att and then filter ivamn net edges
-				job_ivamn_att = job_ivamn_att.loc[job_ivamn_att.msclusterID.isin(valid_msclusterIDs),]
+				job_ivamn_att = job_ivamn_att.loc[job_ivamn_att.msclusterID.isin(valid_msclusterIDs),:]
 			
 			job_ivamn_att["msclusterID_job"] = job_ivamn_att.msclusterID.astype(str)+ "_" + job_code
 			try:
@@ -188,9 +188,10 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 			# # the msclusterID_new in the joined jobs
 			# first remove the edges between not valid nodes
 			if basePeakInt_noise_cutoff > 0:
-				# filter ivamn net edges between valid msclusterIDs
+				# filter ivamn net edges between valid msclusterIDs and reset the index
 				job_ivamn = job_ivamn.loc[(job_ivamn.msclusterID_source.isin(valid_msclusterIDs) &
 				                           job_ivamn.msclusterID_target.isin(valid_msclusterIDs)), :]
+				job_ivamn.reset_index(inplace=True, drop=True)
 			if job_ivamn.shape[0] > 0:
 				# if any valid edges left, proceed for the mapping
 				job_ivamn["msclusterID_source_new"] = job_ivamn_att.loc[
@@ -213,7 +214,7 @@ def join_jobs_ivamns(output_path, metadata_join_path, jobs_data_path, max_chunk=
 			select_duplicated_rows = ((job_ivamn.loc[duplicated_joined_edges, "msclusterID_source"] == dup_source_id) &
 			                          (job_ivamn.loc[duplicated_joined_edges, "msclusterID_target"] == dup_target_id))
 			unique_annotations_concat = ';'.join(job_ivamn.loc[duplicated_joined_edges,:].loc[select_duplicated_rows,
-			"annotation"].unique())
+				"annotation"].unique())
 			mzError_mean = job_ivamn.loc[duplicated_joined_edges, :].loc[select_duplicated_rows, "mzError"].mean()
 			job_ivamn.loc[dup_edge, "annotation"] = unique_annotations_concat
 			job_ivamn.loc[dup_edge, "mzError"] = np.round(mzError_mean, 3)

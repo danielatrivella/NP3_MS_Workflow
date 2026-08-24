@@ -4,15 +4,18 @@
 
 - - - - 
 
-# Current Version 1.5.0
+# Current Version 1.5.1
 
 - NEW features:
 
+  - (1.5.1) Bug fix in the join_jobs Step 7 when joining the IVAMNs. When the noise cutoff is applied the filtered IVAMN must reset its index to prevent matching errors in the next filters.
+      - Bug fix in the superclass distribution plot, added missing class "Organohalogen_and_Organometallic".    
   - (1.5.0) A new command called **post_dd_analysis** was added to the NP³ MS Workflow! The *noise_cutoff* was changed to receive an absolute value.
       - The command post_dd_analysis is a post-process that creates some visualization analysis for drug discovery research.
-      - Changed the superclass grouping plot from the final chemistry report to match the new plot being created in the post-processing drug discovery analysis; now this plotting correctly removes blanks and beds from the counts computation; and uses the occurrence of the final library annotated m/z in each group instead of their peak area abundance by sample for the percentage distribution computation. 
+      - Changed the superclass grouping plot from the final chemistry report to match the new plot being created in the post-processing drug discovery analysis; now this plotting correctly removes blanks and beds from the counts computation (it was not removing them as expected - bug); and uses the occurrence of the final library annotated m/z in each group instead of their peak area abundance by sample for the percentage distribution computation. 
       - The **noise_cutoff** is now the absolute value of the minimum base peak int (without normalization) that a MS2 must have to be kept after the clustering of Step 3, otherwise it is removed before the clean step 5.
       - The [M+H]+ networks are now created without culture media by default, the m/z that appears in bed samples are removed from the protonated networks.
+      - Bug fix in the clean step 5 when the maximum number of clustering rounds is reached, there was a count table access after its removal. This removal is not performed if this is the last clustering round.
   - (1.4.2) Added extra test cases to compare the consistency of the NP³ results. Equality tests are performed at the end of each saved test case to guarantee reproducibility and correctness of the steps. The results of the NP³ test cases were stored in the fixed_results folder to serve this testing.
       - Added a summary of the test cases in the test command, counting the errors and storing their types to show at the end - improved debugging.
       - Changed the ordering of the components in the IVAMN output to make it reproducible, the components with the largest size are written first. And the edges are also sorted by the source node ID in numerical ordering.

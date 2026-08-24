@@ -901,7 +901,6 @@ repeat
     
     # TODO how to deal with duplicates? just ignore?
     
-    
   }
   
   num_joins_total <- num_joins_total + num_joins

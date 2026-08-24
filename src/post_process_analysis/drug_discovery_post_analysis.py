@@ -15,6 +15,7 @@ superclass_colors = {'Alkaloids_and_Lactams': '#ff8b00',                    # or
 	                'Flavonoids_and_Phenolic_derivatives': '#6fffff',      # cyan
 	                'Lignans_and_Other_Ocompounds': '#00b9ff',             # blue
 	                'Organic_Acids_and_OthersGenerals': '#002eff',         # dark blue
+					'Organohalogen_and_Organometallic': '#660066',          # purple
 	                'Polyketides': '#ff008b',                              # pink
 	                'Terpenes_and_Carotenoids': '#cc0000',                 # dark red
 	                'Not_Annotated': "#cccccc"}                            # grey
