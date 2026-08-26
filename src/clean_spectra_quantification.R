@@ -1,42 +1,6 @@
-## ----load-libs, message = FALSE--------------------------------------------
-cat("Loading packages Matrix, stringi, readr, dplyr, CPP functions...\n")
-suppressPackageStartupMessages(library(readr))
-suppressPackageStartupMessages(library(dplyr))
-library(Matrix)
-library(stringi)
-
-script_path <- function() {
-  cmdArgs <- commandArgs(trailingOnly = FALSE)
-  needle <- "--file="
-  match <- grep(needle, cmdArgs)
-  if (length(match) > 0) {
-    # Rscript
-    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
-  } else {
-    # 'source'd via R console
-    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
-  }
-}
-
-#Rcpp::sourceCpp(file.path(script_path(), 'triangular_matrix_R.cpp'))
-Rcpp::sourceCpp(file.path(script_path(), 'cluster_disjoint_set_union_find_R.cpp'))
-Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
-Rcpp::sourceCpp(file.path(script_path(), 'norm_dot_product.cpp'))
-source(file.path(script_path(), "pairwise_similarity_comparison_sets.R"))
-source(file.path(script_path(), "count_peak_area.R"))
-source(file.path(script_path(), "read_metadata_table.R"))
-source(file.path(script_path(), "writeMgfData_NP3.R"))
-source(file.path(script_path(), "final_report",  "compute_fragmented_cluster.R"))
-# TODO remove for debug
-# source(file.path("src/pairwise_similarity_comparison_sets.R"))
-# Rcpp::sourceCpp(file.path('src/cluster_disjoint_set_union_find_R.cpp'))
-# Rcpp::sourceCpp(file.path('src/read_mgf_peak_list_R.cpp'))
-# Rcpp::sourceCpp(file.path('src/norm_dot_product.cpp'))
-# source(file.path("src/count_peak_area.R"))
-# source(file.path("src/read_metadata_table.R"))
-# source(file.path("src/writeMgfData_NP3.R"))
-# source(file.path("src/final_report",  "compute_fragmented_cluster.R"))
-
+##
+# Step 5 - clean optimal clustering of the fragmented clusters
+##
 options(digits=10) # increase precision
 options(readr.show_progress = FALSE)
 
@@ -45,12 +9,10 @@ mz_tol <- 0.025
 sim_tol <- 0.55 # sim to join
 rt_tol <- 2
 bin_size <- 0.05
-blank_depth <- 3
 scale_factor <- 0.5
-trim_mz <- TRUE # TODO add parm to args
-max_shift <- 200 # TODO add parm to args
-parallel_cores <- 2 # TODO add parm to args
-table_limit_size <- 3000  # set max number of rows to process in a chunck
+trim_mz <- TRUE 
+max_shift <- 200 
+parallel_cores <- 1 # no paralleliztion
 mz_rt_digits <- 4  # number of digits to round the mzConsensus and the retention times
 ion_mode <- "+" # + or -
 # BFLAG_cutoff_factor is A positive numeric value to scale the interquartile range (IQR) of the 
@@ -68,30 +30,26 @@ ion_mode <- "+" # + or -
 BFLAG_cutoff_factor <- 1.5 
 NOISE_cutoff <- 0 # the absolute base peak intesity minimum value that a spectra must have to be kept for cleaning
 
-RMSE <- function(x, y) {
-  x <- as.numeric(x)
-  y <- as.numeric(y)
-  sqrt(mean((x - y)^2))
-}
-
 # read input
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 3) {
-  stop("Two arguments must be supplied to clean and annotate the counts:\n", 
-       " 1 - Path to the output data folder, inside the outs directory of the clustering result folder. ", 
+  cat("Three arguments are mandatory to execute Step 5 - clean the clustering counts:\n", 
+       " 1 - output_path: Path to the output data folder, inside the outs directory of the clustering result folder. ", 
        "It should contain the mgf folder, the counts_table folder with the peak area count CSV and the spectra count CSV. The data name will be extracted from here.;\n", 
-       " 2 - Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks; if this is a join_jobs result the metadata must be set as '-1';\n",
-       " 3 - Path to the pre processed data folder were the MGFs were created. Used to compute the peak areas;\n",
-       " 4 - The precursor m/z tolerance in Da;\n",
-       " 5 - The similarity tolerance to JOIN mass dissipation spectra;\n",
-       " 6 - The retention time tolerance to enlarge the peaks before comparisions;\n",
-       " 7 - The bin size in Da to consider two fragmented peaks m/z's the same;\n",
-       " 8 - The scale factor to be used to aggregated the peaks of joined clusters;\n",
-       " 9 - The ionization mode, one of -1 or 1 (default to 1);\n",
-       " 10 - The bflag_cutoff a positive numeric or FALSE to disable it. If positive numeric, allow to join the spectra with a low basePeakInt (<= median + bflag_cutoff*IQR) with a blank spectra without relying on the similarity value;\n",
-       " 10 - The NOISE_cutoff an absolute positive numeric or 0 to disable it. If positive numeric, allow to remove the spectra with a low basePeakInt  (basePeakInt < NOISE_cutoff) before the clean step;\n",
-       " 11 - The maximum number of spectra (rows) to be processed at a time.",
-       call.=FALSE)
+       " 2 - path_batch_metadata: Path to the CSV batch metadata file containing filenames, sample codes, data collection batches and blanks; if this is a join_jobs result the metadata must be set as '-1';\n",
+       " 3 - processed_data_path: Path to the pre processed data folder were the MGFs were created. Used to compute the peak areas. If this is a joining job this parm will be ignored;\n",
+       " 4 - mz_tol: The precursor m/z tolerance in Da;\n",
+       " 5 - sim_tol: The similarity tolerance to JOIN mass dissipation spectra;\n",
+       " 6 - rt_tol: The retention time tolerance to enlarge the peaks before comparisions;\n",
+       " 7 - bin_size: The bin size in Da to consider two fragmented peaks m/z's the same;\n",
+       " 8 - scale_factor: The scale factor to be used to aggregated the peaks of joined clusters;\n",
+       " 9 - trim_mz: A logical indicating if the spectra should be trimmed by the precursor mass for pairwise comparison;\n",
+       " 10 - max_shift: The maximum difference allowed between precursor m/zs to search for shifted m/z fragments in the cosine computation of the pairwise comparion;\n", 
+       " 11 - ion_mode: The ionization mode, one of -1 or 1 (default to 1);\n",
+       " 12 - BFLAG_cutoff_factor: The bflag_cutoff a positive numeric or FALSE to disable it. If positive numeric, allow to join the spectra with BFLAG=T and a low basePeakInt (<= median + bflag_cutoff*IQR) with a blank spectra without relying on the similarity value;\n",
+       " 13 - NOISE_cutoff: The NOISE_cutoff an absolute positive numeric or 0 to disable it. If positive numeric, allow to remove the spectra with a low basePeakInt  (basePeakInt < NOISE_cutoff) before the clean step;\n",
+       " 14 - parallel_cores: (optional) The number of cores to use for parallel processing. At least 2 are needed for parallellization. If 1 disable parallel processing (default).\n\n")
+  stop("Wrong number of arguments. Minimum of 3 (default values to the rest) or all arguments must be informed.",call.=FALSE)
 } else {
   output_path <- file.path(args[[1]])
   if (!dir.exists(output_path))
@@ -123,7 +81,7 @@ if (length(args) < 3) {
     # default path to the original samples metadata - located in the output path
     joining_jobs <- TRUE
     path_batch_metadata <- file.path(output_path, "../..", 
-                                            "original_samples_METADATA.csv")
+                                     "original_samples_METADATA.csv")
     if (!file.exists(path_batch_metadata))
     {
       stop("The metadata with the original samples from the joined jobs '", path_batch_metadata,
@@ -151,7 +109,7 @@ if (length(args) < 3) {
     }
   }
   
-  if (length(args) > 11) {
+  if (length(args) > 13) {
     mz_tol <- as.numeric(args[[4]])
     if (is.na(mz_tol))
       stop("The m/z tolerance must be a numeric value. Wrong value informed: ",mz_tol)
@@ -182,42 +140,119 @@ if (length(args) < 3) {
       scale_factor <- 1 # no scale
     }
     
-    ion_mode <- as.numeric(args[[9]])
+    trim_mz <- as.logical(args[[9]])
+    if (!is.logical(trim_mz) || is.na(trim_mz))
+    {
+      cat("Invalid trim_mz parameter, it must be a logical indicating if ",
+          "the spectra peaks should be trimmed by the precursor mass for comparison. ",
+          "Trim mz set to TRUE by default.\n")
+      warning("Invalid trim_mz parameter", call. = FALSE)
+      trim_mz <- TRUE
+    }
+    if (trim_mz) {
+      trim_mz <- 1
+    } else {
+      trim_mz <- -1
+    }
+    max_shift <- as.numeric(args[[10]])
+    if (!is.numeric(max_shift) || max_shift < 0) {
+      stop("Invalid max_shift parameter value (", max_shift ,
+           "). The maximum allowed shift between precursor m/z parameter must be a non negative numeric value. ",
+           "Execution aborted.")
+    }
+    
+    ion_mode <- as.numeric(args[[11]])
     if (!(ion_mode %in% c(-1,1)))
       stop("The ion_mode arg must be a numeric value indicating the precursor ", 
            "ion mode. One of the following valid numeric values corresponding ", 
            "to a ion adduct type: '1' = positive, or '-1' = negative",  call. = FALSE)
     ion_mode <- ifelse(ion_mode > 0, "+", "-")
     
-    BFLAG_cutoff_factor <- args[[10]]  # check if it is FALSE
+    BFLAG_cutoff_factor <- args[[12]]  # check if it is FALSE
     if (BFLAG_cutoff_factor != "FALSE") { 
       # check if it is numeric
-      BFLAG_cutoff_factor <- as.numeric(args[[10]]) 
+      BFLAG_cutoff_factor <- as.numeric(args[[12]]) 
       if (is.na(BFLAG_cutoff_factor) || BFLAG_cutoff_factor < 0)
         stop("The BFLAG_cutoff arg must be a positive numeric value or FALSE to disable it. ",
              "If positive numeric value, indicates that the features with low basePeakInt and BFLAG TRUE should be joined with ",
              "a blank mz without relying on the similarity value.",  call. = FALSE)
     } else {
-      BFLAG_cutoff_factor <- as.logical(args[[10]]) 
+      BFLAG_cutoff_factor <- as.logical(args[[12]]) 
     }
     
-    NOISE_cutoff <- as.numeric(args[[11]])   # convert to absolute value
+    NOISE_cutoff <- as.numeric(args[[13]])   # convert to absolute value
     # check if it is numeric
     if (is.na(NOISE_cutoff) || NOISE_cutoff < 0)
       stop("The NOISE_cutoff arg must be a positive numeric value or 0 to disable it. ",
            "If positive numeric value, the features with a low basePeakInt < NOISE_cutoff will be removed before the clean step.",  
            call. = FALSE)
-  
     
-    table_limit_size <- as.numeric(args[[12]])
-    if (table_limit_size < 100) {
-      warning("The max number of spectra (rows) to be processed at a time was too small. ",
-              "Setting it to 100.", call. = FALSE)
-      table_limit_size <- 100
+    
+    parallel_cores <- as.numeric(args[[14]])
+    if (parallel_cores < 1) {
+      cat("Invalid parallel_cores value (", parallel_cores, 
+          "). The number of cores to be used for parallel processing must be at least 2 ",
+          "or 1 for disabling parallelization. The number of cores was set to 1 by default.\n")
+      warning("Invalid parallel_cores parameter value.")
+      parallel_cores <- 1    
+    } else if (parallel_cores > 1 && !require(parallel)) {
+      cat("Parallel library is not available, disabling parallelization. ",
+          "The number of cores was set to 1 by default.\n")
+      warning("Invalid parallel_cores parameter value.")
+      parallel_cores <- 1 
+    } else if (parallel_cores > 1 && !is.na(detectCores(logical = FALSE)) && parallel_cores >= detectCores(logical = FALSE)) {
+      cat("The number of paralell_cores =",parallel_cores,
+          " is greater or equal than the number of physical cores =",detectCores(logical = FALSE),
+          " in your machine. This is not recommended,",
+          "the number of parallel clusters will be limited by the number of physical cores minus two =",
+          detectCores(logical = FALSE)-2, ".\n")
+      warning("Invalid parallel_cores parameter value.")
+      parallel_cores <- detectCores(logical = FALSE)-2
     }
-  } 
+  } else {
+    cat("- Using the default value in the rest of the arguments (4 to 14). Inform all the arguments if this is not wanted.")
+  }
 }
 #print(args)
+
+## ----load-libs, message = FALSE--------------------------------------------
+cat("Loading packages Matrix, stringi, readr, dplyr, CPP functions...\n")
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+library(Matrix)
+library(stringi)
+
+script_path <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile)))
+  }
+}
+
+#Rcpp::sourceCpp(file.path(script_path(), 'triangular_matrix_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(), 'cluster_disjoint_set_union_find_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(), 'read_mgf_peak_list_R.cpp'))
+Rcpp::sourceCpp(file.path(script_path(), 'norm_dot_product.cpp'))
+source(file.path(script_path(), "pairwise_similarity_comparison_sets.R"))
+source(file.path(script_path(), "count_peak_area.R"))
+source(file.path(script_path(), "read_metadata_table.R"))
+source(file.path(script_path(), "writeMgfData_NP3.R"))
+source(file.path(script_path(), "final_report",  "compute_fragmented_cluster.R"))
+# commented for debug
+# source(file.path("src/pairwise_similarity_comparison_sets.R"))
+# Rcpp::sourceCpp(file.path('src/cluster_disjoint_set_union_find_R.cpp'))
+# Rcpp::sourceCpp(file.path('src/read_mgf_peak_list_R.cpp'))
+# Rcpp::sourceCpp(file.path('src/norm_dot_product.cpp'))
+# source(file.path("src/count_peak_area.R"))
+# source(file.path("src/read_metadata_table.R"))
+# source(file.path("src/writeMgfData_NP3.R"))
+# source(file.path("src/final_report",  "compute_fragmented_cluster.R"))
 
 inverse_scale <- function(ints, scale_factor)
 {
@@ -248,13 +283,13 @@ scaleInts <- function(ints, scale_factor)
 merge_counts <- function(col_name, x)
 {
   switch(col_name,
-         msclusterID = min(as.numeric(x$msclusterID)), # TODO get which max basePeakInt
+         msclusterID = min(as.numeric(x$msclusterID)), # TODO get which max basePeakInt or keep the smaller id?
          origin_cluster = as.numeric(x$msclusterID[[1]]),
          numJoins =  sum(x$numJoins) + nrow(x) - 1,
          mzConsensus=,rtMean=
-           round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits),
-         rtMin=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 0, round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits)),
-         rtMax=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 1000000, round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits)),
+           round(weighted.mean(x[[col_name]], x$basePeakInt), mz_rt_digits),
+         rtMin=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 0, round(weighted.mean(x[[col_name]], x$basePeakInt), mz_rt_digits)),
+         rtMax=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 1000000, round(weighted.mean(x[[col_name]], x$basePeakInt), mz_rt_digits)),
          numSpectra =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,sumInts = sum(x[[col_name]]),
          basePeakInt=max(as.numeric(x[[col_name]])),
          BEDFLAG=,BFLAG =,CFLAG = any(as.logical(x[[col_name]])),
@@ -262,11 +297,8 @@ merge_counts <- function(col_name, x)
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                   NA),
-         peaksList=,peaksInt= # if joining blank mzs, only keep the most intense spectra
-           ifelse(any(x$rtMin == 0), x[[col_name]][which.max(x$sumInts)],
-                  ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it
-                         paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
-                         NA)),
+         peaksList=,peaksInt= # only keep the most intense spectra as the representative
+           x[[col_name]][which.max(as.numeric(x$basePeakInt))],
          peakIds= # if there is a not NA value paste it, remove duplicates
            ifelse(any(!is.na(x[[col_name]])), 
                   paste(unique(unlist(strsplit(x[[col_name]][!is.na(x[[col_name]])], ";"))), collapse = ";"),
@@ -280,6 +312,7 @@ merge_counts <- function(col_name, x)
                        NA))) # cocatenate string fields (e.g. from gnps)
 }
 
+# TODO not used anymore, remove or use in another place
 # function to remove from a similarity table file in input_sim_table_file 
 # the rows containing any of the IDs present in the remove_msclsuterIDs list
 # and store the remaining table to output_sim_table_file
@@ -327,10 +360,12 @@ awk_cmd_filter_sim_table_msclusterIDs <- function(list_msclusterIDs_filter,
   return(awk_cmd)
 }
 
-# TODO aggregate the sim table using awk to replace joined ids with the representative ID
+# function to aggregate the sim table using awk to replace joined ids with the representative ID
+# only return the rows that are not a selfloop and are not duplicated
 # format a awk command to read the rows of a given similarity table CSV in sim_file
 # that may contain data from one of the msclusterIDs in the list_msclusterIDs_sub
 # and replace the matched ids with the given representative ID in the respective col
+# return the rows with msclusterID_from != msclusterID_to (no selfloop) and not duplicated
 # @ list_msclusterIDs_sub is a string with a list of msclusterIDs separated by pipe "|"
 # @ representative_msclusterID is the msclusterID to be used to replace the ones present in list_msclusterIDs_sub
 # @ sim_file is the path to the similarity file to make the replacements
@@ -343,26 +378,30 @@ sim_table_replace_msclusterIDs <- function(list_msclusterIDs_sub,
   # -F, tells awk it is a CSV file
   # $1 ~ pat ensures column 1 matches the list
   # $2 ~ pat ensures column 2 matches the list
-  # the trailing 1 indicates to return all rows
+  # $1 != $2 && (!seen[$1,$2]++) ensures column 1 is different from column 2 and is not duplicated
   awk_cmd <- paste("-F,","-v", paste0("pat_sub=", regex_pattern_sub),
                    paste0("'BEGIN {FS=OFS=\",\"} {if ($1 ~ pat_sub) $1 = ",representative_msclusterID,
-                          "; if ($2 ~ pat_sub) $2 = ",representative_msclusterID,"} 1'"),
+                          "; if ($2 ~ pat_sub) $2 = ",representative_msclusterID,
+                          "; if ($1 != $2 && (!seen[$1,$2]++)) print}'"),
                    sim_file)
   
+  # output to a tmp file
+  sim_tmp_file <- sub(pattern=".csv", replacement="_tmp.csv", x=sim_file)
   # Stream directly via system2
   status <- system2(
     command = "awk",
     args = awk_cmd,
-    stdout = sim_file)
+    stdout = sim_tmp_file)
   # Check execution status
   if (status != 0) {
     stop("ERROR: Awk replacement failed: ", paste(status, collapse = "\n"),
          ". Could not replace some msclusterIDs from the similarity table '",
          sim_file, "'. Check for warnings.")
   }
+  # if status ok, mv tmp to sim_file
+  file.rename(from=sim_tmp_file, sim_file)
   return(status)
 }
-
 
 # function to extract the pairs of msclusterIDs that share a sample occurrence
 # from the df with the samples quantification columns of each mz in list_msclusterIDs
@@ -387,113 +426,14 @@ get_mz_pairs_share_samples <- function(df_samples_quantification, list_mscluster
   return(result_pairs)
 }
 
+tstart <- Sys.time()
 # read count files
 ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, 
                                               guess_max = 5000,
                                               col_types = cols(.default="?", 
                                                                msclusterID="i")))
 
-cat("\n  ** Retrieving the groups of putative isomers m/z with 3*mz_tol and ",
-    "max retention time range - all the possible fragmented clusters to be compared pairwise**\n")
-
-# first retrieve the groups of putative isomers with extended tolerances
-mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
-                                                 max(ms_spectra_count$rtMax) - min(ms_spectra_count$rtMin), 
-                                                 3*mz_tol,
-                                                 putative_origin=TRUE, 
-                                                 table_type="isomers from Step 3 - Clustering "))
-number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
-cat("\n    - Total number of m/z without isomers and percentage overall m/zs:", 
-    number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
-
-# make pairwise comparison of all possible isomers and store only the sim above the cutoff
-cat("\n  ** Creating the aggMax similarity table for the cleaning step - filter similarities >=",
-    sim_tol,"**\n")
-# Define file paths
-mgf_clust_file  <- file.path(output_path,"mgf/",paste0(output_name,"_all.mgf"))
-if (!file.exists(mgf_clust_file))
-{
-  stop("The MGF file '", mgf_clust_file,
-       "' from the clustering step does not exists. ",
-       "Rerun the job or provide a valid path to the output directory.")
-} 
-# new aggMax sim file of clean
-sim_file <- file.path(output_path, 
-                      "molecular_networking/similarity_tables", 
-                      paste0("similarity_table_", output_name, "_aggMax.csv"))
-# call pairwise similarity for the clusters_origin
-n_sim_computed <- pairwise_similarity_comparison_sets(df_mscluster_sets = mz_isomers_groups, 
-                                    path_mgf=mgf_clust_file, 
-                                    sim_output_path=sim_file, 
-                                    set_name="putative isomers groups from Step 3 Clustering",
-                                    sim_cutoff=sim_tol,
-                                    bin_size=bin_size, 
-                                    scale_factor=scale_factor,
-                                    trim_mz=(trim_mz==1),
-                                    max_shift=max_shift,
-                                    join_isotopic_peaks=1, # always on
-                                    parallel_cores=parallel_cores)
-
-
-# TODO remove old - create the aggMax sim file by filtering only the similarities above the cutoff
-# using awk command
-# cat("\n  ** Creating the aggMax similarity table for the cleaning step - comparing putative isomers groups pairwise - filter similarities >=",
-#     sim_tol,"**\n")
-# # Define file paths
-# sim_clust_file  <- file.path(output_path, 
-#                          "molecular_networking/similarity_tables", 
-#                          paste0("similarity_table_", output_name, ".csv"))
-# if (!file.exists(sim_clust_file))
-# {
-#   stop("The pairwise similarity table file '", sim_clust_file,
-#        "' from the clustering step does not exists. ",
-#        "Rerun the job or provide a valid path to an output directory.")
-# } 
-# # new aggMax sim file of clean
-# sim_file <- file.path(output_path, 
-#                       "molecular_networking/similarity_tables", 
-#                       paste0("similarity_table_", output_name, "_aggMax.csv"))
-# # Start a timer to track performance
-# start_time <- Sys.time()
-# # Run awk to filter clustering sim table
-# # stdout = sim_file streams directly to disk
-# status <- system2(
-#   command = "awk",
-#   args = c(
-#     "-F,",
-#     "-v", paste0("sim_cutoff=", sim_tol),
-#     "'NR == 1 || $3 >= sim_cutoff'", 
-#     sim_clust_file
-#   ),
-#   stdout = sim_file # Captures errors if something goes wrong
-# )
-# end_time <- Sys.time()
-# # check if status was 0 for success
-# if (status != 0)
-# {
-#   cat("    - ERROR. Finished in:", round(end_time - start_time, 2), "seconds\n")
-#   stop("The pairwise similarity table file '", sim_clust_file,
-#        "' from clustering step 3 could not be filtered with awk to create the aggMax sim table of clean step 5. ",
-#        "Check for warnings and the read/write permissions of the current user.")
-# } 
-# cat("    - Done in:", round(end_time - start_time, 2), "seconds\n")
-
-# read the metadata samples table
-batch_metadata <- readMetadataTable(path_batch_metadata)
-
-ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "tremolo_")]
-ms_spectra_count$joinedIDs <- NA
-ms_spectra_count$numJoins <- 0
-# multiple the peakInts by the sumInts to correctly scale the joined spectra peaks
-ms_spectra_count$peaksInt <- sapply(seq_len(nrow(ms_spectra_count)), function(i){
-  peaksInt <- as.numeric(strsplit(ms_spectra_count$peaksInt[[i]], ";")[[1]])
-  # remove scale from intensities
-  peaksInt <- inverse_scale(peaksInt, scale_factor)
-  # weight by the sumInts
-  peaksInt <- peaksInt*ms_spectra_count$sumInts[[i]]
-  paste0(peaksInt, collapse=";")
-})
-# disable the BFLAG and NOISE cutoff if there is no blank sample
+# disable the BFLAG cutoff if there is no blank sample
 if ('BLANKS_TOTAL' %in% names(ms_spectra_count)) {
   blanks_flag <- TRUE
 } else {
@@ -504,19 +444,12 @@ if (!blanks_flag) {
   BFLAG_cutoff_factor <- FALSE
   BFLAG_cutoff <- -1
   cat("\nBFLAG cutoff : disabled\n")
-} 
-if (BFLAG_cutoff_factor != FALSE) {
+} else if (BFLAG_cutoff_factor != FALSE) {
   # compute the summary of the basePeakInt distribution for blank mzs if any, or using the complete distribution
-  if (blanks_flag) {
-    summary_basePeakInt <- summary(ms_spectra_count$basePeakInt[ms_spectra_count$BLANKS_TOTAL > 0])
-  } else {
-    summary_basePeakInt <- summary(ms_spectra_count$basePeakInt)
-  }
-  
+  summary_basePeakInt <- summary(ms_spectra_count$basePeakInt[ms_spectra_count$BLANKS_TOTAL > 0])
   # BFLAG_cutoff is a numeric value, compute the cutoff as the basePeakInt median + bflag_cutoff_factor*(q75-q25) of the blank mzs
   BFLAG_cutoff <- summary_basePeakInt[['Median']] + BFLAG_cutoff_factor*(summary_basePeakInt[['3rd Qu.']]-summary_basePeakInt[['1st Qu.']]) 
   cat("\nBFLAG cutoff : MS2 basePeakInt median +",BFLAG_cutoff_factor,"* (q75-q25) =", BFLAG_cutoff,"\n")
-  
   remove(summary_basePeakInt)
 } else {
   if (!exists('BFLAG_cutoff')) {
@@ -531,124 +464,153 @@ if (NOISE_cutoff == 0) {
   cat("\nNOISE cutoff : ", NOISE_cutoff," absolute MS2 basePeakInt\n")
 }
 
-not_count_columns <- which(!(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))) 
-count_columns <- which(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))
-
-# get the scans order from the msclusterID column
-scans_order <- ms_spectra_count$msclusterID
-nscans <- length(scans_order)
-
-# TODO remove
-# order_table <- match(scans_order[-1], ms_spectra_count$msclusterID)
-# if (any(is.na(order_table))) {
-#   stop("Wrong matching between the pairwise similarity table and the provided count table. Something went wrong in the pairwise similarity table computation.")
-# }
-# ms_spectra_count <- ms_spectra_count[order_table,]
-
-# TODO adapt this to use a sparse sim table
-# apply the noise cutoff filter before the clean step 
+# apply the noise cutoff filter before the clean step or the similarities computation 
 # based on the basePeakInt < noise_cutoff
 if (NOISE_cutoff > 0 && any(ms_spectra_count$basePeakInt < NOISE_cutoff)) {
-  cat("\n  ** Applying the noise cutoff and removing all spectra with a basePeakInt value <",
+  cat("\n** Applying the noise cutoff and removing all spectra with a basePeakInt value <",
       NOISE_cutoff,"**\n")
+  t1 <- Sys.time()
   spectra_to_keep <- (ms_spectra_count$basePeakInt >= NOISE_cutoff)
   msclusterID_to_remove <- ms_spectra_count$msclusterID[!spectra_to_keep]
   ms_spectra_count <- ms_spectra_count[spectra_to_keep,]
-  # also remove the spectra from the similarity table aggMax using awk
-  sim_table_filtering_out(remove_msclusterIDs = msclusterID_to_remove,
-                          input_sim_table_file = sim_file, 
-                          output_sim_table_file = sim_file)
-  # order in the columns and lines: skip header[1] and add -1 to avoid first column
-  scans_order <- scans_order[spectra_to_keep]
-  nscans <- length(scans_order)
-  cat("\n  * Done removing", sum(!spectra_to_keep), "noise spectra  *\n\n")
-  remove(spectra_to_keep)
+  # recompute number of scans
+  nscans <- nrow(ms_spectra_count)
+  tf <- Sys.time()
+  cat("\n  * Done removing", sum(!spectra_to_keep), "noise spectra in", 
+      round(tf-t1, 2), units(tf-t1), "*\n\n")
+  remove(spectra_to_keep, msclusterID_to_remove)
+  if (nscans == 0) {
+    stop("Removed all spectra with the defined noise cutoff. Reset this parameter value if this is not wanted.")
+  }
 }
 
-if (nscans != nrow(ms_spectra_count)) {
-  stop("Wrong pairwise similarity table. It is not compatible with the provided count table.")
-}
-# # store the scan number of the spectra after the clean step joins
-# assigned_scans <- scans_order 
+cat("\n** Retrieving the groups of putative isomers m/z with 3*mz_tol and ",
+    "max retention time range - all the possible fragmented clusters to be compared pairwise **\n")
+
+# first retrieve the groups of putative isomers with extended tolerances
+mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
+                                                 max(ms_spectra_count$rtMax) - min(ms_spectra_count$rtMin), 
+                                                 3*mz_tol,
+                                                 putative_origin=TRUE, 
+                                                 table_type="isomers from Step 3 - Clustering ",
+                                                 add_space_verbose="  "))
+number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
+cat("\n    - Total number of m/z without isomers and percentage overall m/zs:", 
+    number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
+
+# make pairwise comparison of all possible isomers and store only the sim above the cutoff
+cat("\n** Creating the similarity table for the cleaning step - filter similarities >=",
+    sim_tol,"**\n")
+# Define file paths
+mgf_clust_file  <- file.path(output_path,"mgf/",paste0(output_name,"_all.mgf"))
+if (!file.exists(mgf_clust_file))
+{
+  stop("The MGF file '", mgf_clust_file,
+       "' from the clustering step does not exists. ",
+       "Rerun the job or provide a valid path to the output directory.")
+} 
+# new aggMax sim file of clean
+sim_file <- file.path(output_path, 
+                      "molecular_networking/similarity_tables", 
+                      paste0("similarity_table_", output_name, "_aggMax.csv"))
+sim_clust_file <- file.path(output_path, 
+                      "molecular_networking/similarity_tables", 
+                      paste0("similarity_table_", output_name, ".csv"))
+# call pairwise similarity for the clusters_origin
+n_sim_computed <- pairwise_similarity_comparison_sets(df_mscluster_sets = mz_isomers_groups, 
+                                    path_mgf=mgf_clust_file, 
+                                    sim_output_path=sim_clust_file, 
+                                    set_name="putative isomers groups from Step 3 Clustering",
+                                    sim_cutoff=sim_tol,
+                                    bin_size=bin_size, 
+                                    scale_factor=scale_factor,
+                                    trim_mz=(trim_mz==1),
+                                    max_shift=max_shift,
+                                    join_isotopic_peaks=1, # always on
+                                    parallel_cores=parallel_cores)
+# copy sim clust table to the sim aggMax table, which will be aggregated during clean
+if (!file.copy(from=sim_clust_file, to=sim_file, overwrite=TRUE))
+  stop("Could not copy the similarity file '",sim_clust_file,"' to the aggMax file.")
+remove(sim_clust_file)
+# read the metadata samples table
+batch_metadata <- readMetadataTable(path_batch_metadata)
+
+# remove any column from tremolo or gnps
+ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "tremolo_")]
+ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "gnps_")]
+# reset columns used in the joins
+ms_spectra_count$joinedIDs <- NA
+ms_spectra_count$numJoins <- 0
+# multiple the peakInts by the sumInts to correctly scale the joined spectra peaks
+ms_spectra_count$peaksInt <- sapply(seq_len(nrow(ms_spectra_count)), function(i){
+  peaksInt <- as.numeric(strsplit(ms_spectra_count$peaksInt[[i]], ";")[[1]])
+  # remove scale from intensities
+  peaksInt <- inverse_scale(peaksInt, scale_factor)
+  # weight by the sumInts
+  peaksInt <- peaksInt*ms_spectra_count$sumInts[[i]]
+  paste0(peaksInt, collapse=";")
+})
+
+not_count_columns <- which(!(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))) 
+count_columns <- which(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))
+
+# order the spectra table by the msclusterID column
+ms_spectra_count <- ms_spectra_count[order(ms_spectra_count$msclusterID),]
+nscans <- nrow(ms_spectra_count)
+
+cat("\n** Cleanning counts, removing redudancies and aggregating data **\n")
 
 # compute the number of fragmented clusters in the clustering counts
 ms_spectra_count$fragmented_clusters <- NULL
 ms_spectra_count$origin_clusters <- NULL
 ms_spectra_count <- bind_cols(ms_spectra_count, compute_fragmented_clusters(ms_spectra_count, 
-                                                   rt_tol, mz_tol, 
-                                                   putative_origin=TRUE, 
-                                                   table_type="Step 3 clustering"))
+                                                                            rt_tol, mz_tol, 
+                                                                            putative_origin=TRUE, 
+                                                                            table_type="Step 3 clustering"))
 
-cat("\n** Cleanning counts, removing redudancies and aggregating data **\n")
-cat("\n      * Starting Optimal Clustering with Greedy Heuristics in 10 Rounds *\n")
+cat("\n  * Starting Clean Optimal Clustering with Greedy Heuristics in 10 Rounds *\n")
 if (!dir.exists(file.path(output_path, "count_tables", "clean")))
   dir.create(file.path(output_path, "count_tables", "clean"), showWarnings = FALSE)
 t0 <- Sys.time()
-# TODO check to remove this, no need to separate blank from not blank
-# # if there is a blank sample, run a previous step only joining the bflags to the blank clusters
-# if (blanks_flag) {
-#   step_join <- 0
-# } else {
-#   step_join <- 1
-# }
+# start on step 1, analys blank and not blank together
 step_join <- 1
 num_joins_total <- 0
 # stores the number of joins by step and the total number of joins by cluster
 num_joins_last_step <- total_num_join_clusters <- ms_spectra_count$numJoins
-# TODO check if needs to repeat the clean round or separate by blank and not blank
-# TODO provavelmente um for unico para todos os fragmented clusters eh suficiente, não precisar voltar nisso de novo
-# o objetivo eh remover esses fragmented cluster e pronto, sem distinção
 
+# repeat the clean in rounds, after the first round look just for the joined clusters 
 repeat
 {
   t1 <- Sys.time()
-  cat("\n      * Round ", step_join, "*\n")
+  cat("\n  * Round", step_join, "*\n")
   num_joins <- 0
   
   # start each round retrieving the msclusters with fragmented clusters, blank or not blank
-  msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0]
-  # TODO if this is a round > 1, also filter here the ones with numJoins > 0, do not check the same fragmented clusters again
-  # 
-  # if (step_join == 0)
-  # {
-  #   msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0 &
-  #                                    ms_spectra_count$BLANKS_TOTAL > 0]
-  # }
-  # else if (step_join == 1)
-  # {
-  #   if (blanks_flag) {
-  #     msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0 &
-  #                                      ms_spectra_count$BLANKS_TOTAL == 0]
-  #   } else {
-  #     msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0]
-  #   }
-  # } else { 
-  #   # TODO check if this is the wanted behavior
-  #   msclusterID_to_search <- joined_ids_step
-  #   # after first step read the lines of all joined clusters
-  #   if (length(joined_ids_step) > table_limit_size)
-  #     joined_ids <- joined_ids_step[1:table_limit_size]
-  #   else
-  #     joined_ids <- joined_ids_step
-  #   
-  #   # read count tables from last step
-  #   ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean", 
-  #                                                           paste0(output_name,"_spectra_clean.csv")),
-  #                                                 guess_max = 5000,
-  #                                                 col_types = cols(.default="?", 
-  #                                                                  msclusterID="i")))
-  # }
+  if (step_join == 1)
+  {
+    # in the first round, retrieve all mz with fragmented clusters
+    msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0]
+  } else {
+    # after the first round, retrieve the fragmented clusters or
+    # mz with fragmented clusters that have numJoins > 0 (which changed)
+    # and use their unique origin cluster
+    msclusterID_to_search <- unique(ms_spectra_count$origin_cluster[
+      ms_spectra_count$fragmented_clusters != 0 & ms_spectra_count$numJoins > 0])
+  }
   
-  # print(table_limit_size)
   nsearch <- length(msclusterID_to_search)
+  if (nsearch == 0) {
+    cat("    * Done. No more fragmented clusters to join. *\n")
+    break()
+  }
+  
   progress_joins <- msclusterID_to_search[unique(trunc(c(seq(from = 1, to = nsearch, by = nsearch/25), nsearch)))]
   n_progress <- length(progress_joins)
-  cat(paste0("  |", paste0(rep(" ", n_progress), collapse = ""), "|\n  |", collapse = ""))
-  
-  #i <- 1
+  cat(paste0("    |", paste0(rep(" ", n_progress), collapse = ""), "|\n    |", collapse = ""))
+
   # iterate directly on the m/z with fragmented clusters and 
-  # TODO after the first round, only iterate over the ones with numJoins>0
-  # msclusterID_to_search is the list of msclusterID from the m/z with fragmented clusters
+  # after the first round, only iterate over the ones with numJoins>0
+  # msclusterID_to_search is the list of msclusterID from the m/z with fragmented clusters or their origin clusters
   # and not their idx, because the idx changes during cleaning
   for (scan_num in msclusterID_to_search) 
   {
@@ -659,27 +621,17 @@ repeat
       n_progress <- n_progress - 1
       cat("=")
     }
+    if (is.na(i)) {
+      # this msclusterID was already joined, go to the next
+      next()
+    }
     
     # get next cluster scan number and cluster info
     cluster <- ms_spectra_count[i,]
-    
-    # TODO remove this from here, filter before the for loop
-    # after step 1 only check clusters that changed - that were joined
-    # if (step_join > 1 && cluster$numJoins == 0) 
-    # { 
-    #   cat("no joins for scan: ", scan_num, "\n")
-    #   next()
-    # } else if (step_join == 0 && cluster$BLANKS_TOTAL == 0) 
-    # {
-    #   # if step_join == 0 and cluster not blank, go to next
-    #   # only join blank clusters in step 0
-    #   cat("not blank clust in scan: ", scan_num, "\n")
-    #   next()
-    # }
-    
+    origin_cluster <- ms_spectra_count[i,"origin_cluster"][[1]]
     # get the cluster peak from the fragmented clusters origin,
     # this includes the current cluster row
-    cluster_peak <- ms_spectra_count[ms_spectra_count$origin_cluster %in% scan_num,]
+    cluster_peak <- ms_spectra_count[ms_spectra_count$origin_cluster %in% origin_cluster,]
     
     # create lists of m/z pairs to be joined
     join_from_msclusterIDs <- c()
@@ -761,12 +713,13 @@ repeat
           pairs_mz_matching_samples$samples_names <- mapply(function(a, b) {
               # Find column indices where both Row A and Row B are equal to 1
               sub("_spectra$", "", 
-                  names(which(matrix_cluster_peak_samples_count[a, ] > 1 & 
-                                matrix_cluster_peak_samples_count[b, ] > 1)))
+                  names(which(matrix_cluster_peak_samples_count[a, ] >= 1 & 
+                                matrix_cluster_peak_samples_count[b, ] >= 1)))
             }, match(pairs_mz_matching_samples$mz_ID_from, cluster_peak$msclusterID), 
             match(pairs_mz_matching_samples$mz_ID_to, cluster_peak$msclusterID), 
             SIMPLIFY = FALSE)
-          # create customized grepl to check if the pairs of mz sharing a sample also share a peakID, removing fake ids
+          # create customized grepl to check if the pairs of mz sharing a sample also share a peakID, 
+          # removing fake ids - which is not consistent to be used for a join
           pairs_mz_matching_samples$valid_pairs <- apply(pairs_mz_matching_samples, 1, function(x) {
             if (length(x[[3]]) == 0)
               return(FALSE)
@@ -775,6 +728,9 @@ repeat
             pattern_matching_samples <- paste0(paste0("(", "[0-9]+_", x[[3]][[1]],")"),collapse="|")
             peakIds_matches_from <- stri_extract_all_regex(peakIds_from, pattern_matching_samples)
             peakIds_matches_to <- stri_extract_all_regex(peakIds_to, pattern_matching_samples)
+            # if nothing to extract, remove resulting NA to prevent a match
+            peakIds_matches_from <- peakIds_matches_from[!is.na(peakIds_matches_from)]
+            peakIds_matches_to <- peakIds_matches_to[!is.na(peakIds_matches_to)]
             return(!all(is.na(match(peakIds_matches_from, peakIds_matches_to))))
           })
           
@@ -826,7 +782,6 @@ repeat
       # merge counts based on spectra counts
       new_cluster_j <- lapply(names(cluster_peak), merge_counts, cluster_peak[cluster_peak$msclusterID %in% new_cluster_j_members,])
       # get representative cluster ID - which for now is the lower msclusterID idx
-      # TODO in the future, change this to be the one with the biggest basePeakInt, after checking for equality consistency using the smaller idx first
       new_cluster_j_representative_ID <- new_cluster_j[[1]]
       new_cluster_j_representative_idx <- match(new_cluster_j_representative_ID, ms_spectra_count$msclusterID)
       # replace representative cluster with the new cluster counts
@@ -839,71 +794,77 @@ repeat
       total_num_join_clusters <- total_num_join_clusters[-new_cluster_j_count_idx]
     }
     
-    # check if the final number of rows in the ms_spectra_count 
-    # and the original number of scans minus the number of joins match
+    # check if the final number of rows in the ms_spectra_count match with
+    # the original number of scans minus the number of joins
     if ((nscans - num_joins) != nrow(ms_spectra_count)) {
       stop("ERROR: wrong number of joins compared to the current size of the count table being cleaned.")
     }
   }
   cat("|\n")
   
-  
   # reset number of joins by m/z with the joined clusters of last step 
   ms_spectra_count$numJoins <- ms_spectra_count$numJoins - num_joins_last_step
   
   # reset number of joined clusters by m/z in this step
   num_joins_last_step <- ms_spectra_count$numJoins
-  # update number of total joins by cluster after this step
+  # update number of total joins by cluster and in total after this step
   total_num_join_clusters <- total_num_join_clusters + num_joins_last_step
+  num_joins_total <- num_joins_total + num_joins
   
   t2 <- Sys.time()
-  cat("        * Joined", num_joins, "similar clusters in", 
+  cat("\n    * Joined", num_joins, "similar clusters in", 
       round(t2-t1, 2), units(t2-t1), "*\n")
   
-  # TODO here recompute fragmented clusters and compute similarities again? 
-  # Or filter aggMax and add missing similarities?
   # aggregate similarity values of joined idxs
   if (num_joins > 0)
   {
-    # recompute fragmented clusters
-    
-    # TODO add this to the ms_spectra_count direct
-    # compute new fragmented clusters
-    new_fragmented_clusters <- compute_fragmented_clusters(ms_spectra_count, 
+    # recompute fragmented clusters for the mz with numJoins > 0
+    ms_spectra_count[,c("fragmented_clusters","origin_cluster")] <- 
+      compute_fragmented_clusters(ms_spectra_count, 
                                 rt_tol, mz_tol, 
                                 putative_origin=TRUE, 
-                                table_type=paste0("Step 5 Clean End of Round ", step_join))
+                                table_type=paste0("m/z with joins from Round ", step_join),
+                                with_numJoins=TRUE,
+                                add_space_verbose="    ")
     
     # retrieve the new origin_clusters with joins
-    new_origin_clusters <- unique(new_fragmented_clusters[new_fragmented_clusters$fragmented_clusters!=0 & 
-                                                          ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
+    new_origin_clusters <- unique(ms_spectra_count[ms_spectra_count$fragmented_clusters!=0 & 
+                                                   ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
     if (length(new_origin_clusters) == 0) {
      # finish cleaning
       # no more joins to make, there is no new fragmented cluster from a 
       # previous joined result (which may have changed)
       break()
     }
-    # TODO for the mz involved in the new fragmented clusters with joins,
-    # updated their similarities - replace old msclusterID present in the joinedIDs with the new msclusterID
-    clusters_to_agg_sim <- ms_spectra_count[(new_fragmented_clusters$origin_cluster %in% new_origin_clusters) & 
-                       ms_spectra_count$numJoins > 0, c("msclusterID", "numJoins", "joinedIDs")]
-    # remove the reference msclusterID from the joinedIDs list
-    # TODO and call aggregate similarities here
-    clusters_sub_status <- lapply(seq_len(nrow(clusters_to_agg_sim)), 
+    cat("      * Aggregating similarity table with the joined Ids *\n")
+    t1 <- Sys.time()
+    # for the mz involved in the new fragmented clusters with joins,
+    # updated their similarities - replace old msclusterID present in the 
+    # joinedIDs with the new msclusterID
+    
+    # filter clusters to update
+    clusters_to_agg_sim <- ms_spectra_count[(
+      (ms_spectra_count$origin_cluster %in% new_origin_clusters) & 
+       ms_spectra_count$numJoins > 0), c("msclusterID", "numJoins", "joinedIDs")]
+    # call aggregate similarities - replace the joinedIDs by the representative msclusterID
+    # duplicates and selfloops are removed - overwrite sim_file 
+    clusters_sub_status <- sapply(seq_len(nrow(clusters_to_agg_sim)), 
      function(i) {
+       # first remove the reference msclusterID from the joinedIDs list
        joinedIDs_sub <- sub(x=clusters_to_agg_sim$joinedIDs[[i]], 
            pattern=paste0(clusters_to_agg_sim$msclusterID[[i]],";"), 
            replacement="")
+       # then change ; to |
+       joinedIDs_sub <- gsub(x=joinedIDs_sub, pattern=";", replacement="|")
        sim_table_replace_msclusterIDs(list_msclusterIDs_sub = joinedIDs_sub,
                                       representative_msclusterID = clusters_to_agg_sim$msclusterID[[i]],
                                       sim_file)
      })
-    
-    # TODO how to deal with duplicates? just ignore?
-    
+    nscans <- nrow(ms_spectra_count)
+    t2 <- Sys.time()
+    cat("        * Done aggregating similarity table in ", 
+        round(t2-t1, 2), units(t2-t1), "*\n")
   }
-  
-  num_joins_total <- num_joins_total + num_joins
   
   # stop joining if no join was made in the last step and this is not the blanks step (step_join == 0)
   if (step_join >= 1 && (num_joins == 0 || step_join == 10))
@@ -912,9 +873,12 @@ repeat
   step_join <- step_join + 1
 }
 
+# remove last fragmented cluster and origin cluster
+ms_spectra_count[,c("fragmented_clusters","origin_cluster")] <- NULL
 
 # get total number of joins by cluster
 ms_spectra_count$numJoins <- total_num_join_clusters
+
 # scale the spectra peaksInt by dividing by the sumInts
 ms_spectra_count$peaksInt <- sapply(seq_len(nrow(ms_spectra_count)), function(i){
   peaksInt <- as.numeric(strsplit(ms_spectra_count$peaksInt[[i]], ";")[[1]])
@@ -933,7 +897,8 @@ rm(cluster, cluster_peak, total_num_join_clusters, num_joins, num_joins_total,
    num_joins_last_step)
 # warnings()
 
-cat("\n  ** Computing Peak Area by Sample ** \n\n")
+cat("\n** Computing Peak Area by Sample ** \n\n")
+t1 <- Sys.time()
 ms_area_count <- ms_spectra_count
 names(ms_area_count)[count_columns] <- sub(pattern = "_spectra",
                                            replacement = "_area", fixed = TRUE,
@@ -967,9 +932,11 @@ rm(peak_areas_base_peak_int)
 # compute max area and the mean precursor intensity of the final clusters
 ms_area_count$maxArea <- ms_spectra_count$maxArea <- apply(ms_area_count[,count_columns], 1, max)
 ms_area_count$meanInt <- ms_spectra_count$meanInt <- ms_area_count$sumInts / ms_area_count$numSpectra
+tf <- Sys.time()
+cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
 
-cat("\n  ** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **\n")
-
+cat("\n** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **\n")
+t1 <- Sys.time()
 # check if joined ID are ok: min ID is in msclusterID column and the others IDs are not
 # and aggregate peaksList and peaksInt by ordering and joining adjacent peaks
 joined_idx <- which(!is.na(ms_area_count$joinedIDs))
@@ -1076,88 +1043,8 @@ if ("DESREPLICATION" %in% names(ms_area_count))
              return(c(desrep, hflag))
            }), init = NULL)
 }
-
-cat("\n  ** Adding blanks neighborhood information **\n")
-# compute distance to a blank
-if (length(blanks_code) > 0)
-{
-  any_blank <- TRUE
-  # free memmory of one count table
-  write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
-                                               paste0(output_name, "_spectra_clean.csv")))
-  rm(ms_spectra_count)
-  
-  # explore blank distS
-  blanks_neighbor <- list()
-  ms_area_count$BLANK_DIST <- NA
-  # get directly connected nodes to a blank
-  blank_ids <- ms_area_count$msclusterID[ms_area_count$BLANKS_TOTAL > 0]
-  ms_area_count$BLANK_DIST[ms_area_count$BLANKS_TOTAL > 0] <- 0 # set blanks dist = 0
-  
-  # dist 1
-  # get blanks similarity rows
-  pairwise_sim_blanks <- read_csv_chunked(file.path(output_path, 
-                                                    "molecular_networking/similarity_tables", 
-                                                    paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                          DataFrameCallback$new(function(x, pos) subset(x, unlist(x[1]) %in% blank_ids)), 
-                                          col_names = TRUE, col_types = col_types)
-  # use similarity proportional to the neighbor similarity* their similarity to each neighbor
-  blanks_neighbor[[1]] <- which(colSums(pairwise_sim_blanks[,-1] >= sim_tol) > 0)
-  # get blanks similarity cols
-  pairwise_sim_blanks <- read_csv(file.path(output_path, 
-                                            "molecular_networking/similarity_tables", 
-                                            paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                  col_names = TRUE, col_types = paste(sapply(scans_order, 
-                                                                 function(i, x) ifelse(i %in% x, "d", "-"), 
-                                                                 blank_ids), 
-                                                          collapse = ""))
-  blanks_neighbor[[1]] <- unique(c(blanks_neighbor[[1]],
-                                   which(rowSums(pairwise_sim_blanks >= sim_tol) > 0)))
-  blanks_neighbor[[1]] <- blanks_neighbor[[1]][!(blanks_neighbor[[1]] %in% match(blank_ids, scans_order[-1]))]
-  # set blank dist to 1 to not blank nodes
-  ms_area_count$BLANK_DIST[is.na(ms_area_count$BLANK_DIST) & 
-                             ms_area_count$msclusterID %in% scans_order[-1][blanks_neighbor[[1]]]] <- 1
-  
-  for (depth in 2:blank_depth) 
-  {
-    blank_idx <- blanks_neighbor[[depth-1]]
-    if (length(blank_idx) == 0) # if no new neighbor -> stop
-      break()
-    # get blanks similarity rows
-    pairwise_sim_blanks <- read_csv_chunked(file.path(output_path, 
-                                                      "molecular_networking/similarity_tables", 
-                                                      paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                            DataFrameCallback$new(function(x, pos) 
-                                              subset(x, unlist(x[1]) %in% scans_order[-1][blank_idx])), 
-                                            col_names = TRUE, col_types = col_types)
-    blanks_neighbor[[depth]] <- which(colSums(pairwise_sim_blanks[,-1] >= sim_tol) > 0)
-    # get blanks similarity cols
-    pairwise_sim_blanks <- read_csv(file.path(output_path, 
-                                              "molecular_networking/similarity_tables", 
-                                              paste0("similarity_table_", output_name, "_aggMax.csv")), 
-                                    col_names = TRUE, col_types = paste0("-", paste(sapply(seq_along(scans_order[-1]), 
-                                                                               function(i, x) ifelse(i %in% x, "d", "-"), 
-                                                                               blank_idx), 
-                                                                        collapse = "")))
-    blanks_neighbor[[depth]] <- unique(c(blanks_neighbor[[depth]],
-                                         which(rowSums(pairwise_sim_blanks >= sim_tol) > 0)))
-    blanks_neighbor[[depth]] <- blanks_neighbor[[depth]][!(blanks_neighbor[[depth]] %in% unlist(blanks_neighbor[1:(depth-1)]))]
-    # set blank dist to depth to not assigned dists
-    ms_area_count$BLANK_DIST[is.na(ms_area_count$BLANK_DIST) &
-                               ms_area_count$msclusterID %in% scans_order[-1][blanks_neighbor[[depth]]]] <- depth
-  }
-  
-  rm(blank_ids, blank_idx, blank_depth, blanks_neighbor, blanks_code, pairwise_sim_blanks)
-  ms_spectra_count <- suppressMessages(read_csv(file.path(output_path, "count_tables", "clean",
-                                                          paste0(output_name,"_spectra_clean.csv")),
-                                                guess_max = 5000,
-                                                col_types = cols(.default="?", 
-                                                                 msclusterID="i")))
-  
-  ms_spectra_count$BLANK_DIST <- ms_area_count$BLANK_DIST
-} else {
-  any_blank <- FALSE
-}
+tf <- Sys.time()
+cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
 
 # if join_jobs, create the cleanClustID column here to store the current cleaned msclusterIDs
 # and apply the integrative clustering heuristic to maintain the msclusterIDs from the
@@ -1165,6 +1052,8 @@ if (length(blanks_code) > 0)
 # to extract the minimum original msclusterID; here the msclusterID_integrative
 # will contain the original msclusterIDs that got joined in the clustering steps concatenated by ;
 if ("msclusterID_integrative" %in% names(ms_spectra_count)) {
+  cat("\n** Computing the integrative msclusterID **\n\n")
+  t1 <- Sys.time()
   ms_spectra_count$cleanClustID <- ms_area_count$cleanClustID <- ms_spectra_count$msclusterID
   # convert to char
   ms_spectra_count$msclusterID_integrative <- ms_area_count$msclusterID_integrative <- as.character(ms_spectra_count$msclusterID_integrative)
@@ -1172,9 +1061,12 @@ if ("msclusterID_integrative" %in% names(ms_spectra_count)) {
     min(as.integer(strsplit(x, ";")[[1]]))
   })
   ms_spectra_count$msclusterID <- ms_area_count$msclusterID <- new_msclusterIDs
+  tf <- Sys.time()
+  cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
 }
 
-cat("\n  ** Saving the clean MGF file **\n\n")
+cat("\n** Saving the clean MGF file **\n\n")
+t1 <- Sys.time()
 # sort by msclusterID, this order will be applied to the scans in the MGF file
 ms_area_count <- arrange(ms_area_count, msclusterID)
 ms_spectra_count <- arrange(ms_spectra_count, msclusterID)
@@ -1186,6 +1078,8 @@ writeMgfDataFile_NP3_table(ms_count_table = ms_area_count,
                            output_name = output_name,
                            charge = ion_mode,
                            scale_factor = scale_factor)
+tf <- Sys.time()
+cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
 
 # round mzConsensus and rts
 ms_spectra_count$mzConsensus <- ms_area_count$mzConsensus <- round(ms_area_count$mzConsensus, mz_rt_digits)
@@ -1207,10 +1101,6 @@ write_csv(ms_area_count, path = file.path(output_path, "count_tables", "clean",
 write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
                                              paste0(output_name, "_spectra_clean.csv")))
 rm(ms_spectra_count, ms_area_count)
-# not removing aggMax sim table - it is used in the testing scripts
-# unlink(file.path(output_path,
-#                  "molecular_networking/similarity_tables",
-#                  paste0("similarity_table_", output_name, "_aggMax.csv")),
-#        force = TRUE)
-t0 <- Sys.time()
-cat("\n    * Done in", round(t0-tf, 2), units(t0-tf), "*\n\n")
+
+tf <- Sys.time()
+cat("\n** Done Clean in", round(tf-t0, 2), units(tf-t0), "**\n\n")
