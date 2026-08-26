@@ -10,14 +10,14 @@ max_shift <- 200 # maximum mass difference allowed to search for shifted m/z fra
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 7) {
   stop("Seven arguments must be supplied to create the pairwise similarity table:\n",
-       " 1 - Job name;\n",
-       " 2 - Path to the MGF file with the spectra to be compared pairwise or directory where the mgfs from the clustering job exists;\n",
-       " 3 - Path to the output folder to save the resulting similarity table;\n", 
-       " 4 - The bin size to consider two fragmented peaks m/z's the same;\n",
-       " 5 - The spectra fragmented peaks scaling method: 0 - ln, 1 - no scale and x > 0 power scale;\n",
-       " 6 - A logical indicating if the spectra should be trimmed by the precursor mass;\n",
-       " 7 - The maximum difference allowed between precursor m/zs to search for shifted m/z fragments in the cosine computation (max_shift);\n",
-       " 8 - (optional) The number of cores to use for parallel processing. At least 2 are needed for parallellization. If 1 disable parallel processing (default).\n",
+       " 1 - output_name: Job name;\n",
+       " 2 - path_mgf_dir: Path to the MGF file with the spectra to be compared pairwise or directory where the mgfs from the clustering job exists;\n",
+       " 3 - output_path: Path to the output folder to save the resulting similarity table;\n", 
+       " 4 - bin_size: The bin size to consider two fragmented peaks m/z's the same;\n",
+       " 5 - scale_factor: The spectra fragmented peaks scaling method: 0 - ln, 1 - no scale and x > 0 power scale;\n",
+       " 6 - trim_mz: A logical indicating if the spectra should be trimmed by the precursor mass;\n",
+       " 7 - max_shift: The maximum difference allowed between precursor m/zs to search for shifted m/z fragments in the cosine computation (max_shift);\n",
+       " 8 - parallel_cores: (optional) The number of cores to use for parallel processing. At least 2 are needed for parallellization. If 1 disable parallel processing (default).\n",
        call.=FALSE)
 } else {
   data_name <- args[[1]]
