@@ -1409,7 +1409,7 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
 
 function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path, logOutputGNPSPath) {
     // check molecular networking consistency
-    var gnpsjoin_start = '\n*** Joining the GNPS identification to the NP3 counts tables ***\n';
+    var gnpsjoin_start = '\n*** Joining the GNPS identifications to the NP3 counts tables ***\n';
     console.log(gnpsjoin_start);
     let resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
         result_specnets_DB_path+' '+ms_count_path+' '+output_path, {async: false, silent: false});
@@ -1424,7 +1424,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     }
 
     // call compute rcdk descriptors
-    gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n';
+    gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS library annotations ***\n';
     console.log(gnpsjoin_start);
     var resExec_rcdk = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
         output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
@@ -1440,7 +1440,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
 
     // call curate GNPS identification and GNPSxUNPD
     // and create additional final reports - PCA gnps and PCA best origin - using the calculated rcdk
-    gnpsjoin_start = '\n*** Curating the GNPS identification result and selecting best identification origin ***\n';
+    gnpsjoin_start = '\n*** Curating the GNPS library annotation result and performing final curation ***\n';
     console.log(gnpsjoin_start);
     resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
         ms_count_path+' '+output_path+' '+metadata_path, {async: false, silent: false});
@@ -2016,7 +2016,7 @@ program
     .option('-z, --mz_tolerance [x]', 'this is the tolerance in Daltons for the m/z of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
         'and possibly joined. Used in the clustering jobs (Step 3),\n\t\t\t\t\t' +
-        'in the cleaning (Step 5), in the library identifications (Step 6)\n\t\t\t\t\t' +
+        'in the cleaning (Step 5), in the spectral identifications (Step 6)\n\t\t\t\t\t' +
         'and in the annotation of ionization variants (Step 7 - also used for the fragment tolerance of the annotations)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million\n\t\t\t\t\t' +
         '(ppm) to be used in the pre processing (Step 2). Typically set to a\n\t\t\t\t\t' +
@@ -2502,7 +2502,7 @@ program
             "It also contains the following data:\n" +
             "- Inside the 'count_tables' folder two sub folders named 'clean' and 'merge' containing CSV tables with the " +
             "counts from Steps 5, 7, 8 and 9;\n" +
-            "- The 'identifications' folder with the tremolo identification results;\n" +
+            "- The 'identifications' folder with the tremolo library annotation results;\n" +
             "- The 'molecular_networking' folder containing:\n" +
             "    - One sub folder named \"similarity_tables\" with the pairwise similarity tables;\n" +
             "    - Three molecular networks edge files (Steps 7 and 10): \n" +
@@ -2938,7 +2938,7 @@ program
             "*\<DATA\_COLLECTION\_BATCH\>* is the data collection batch number in the metadata file of each group of " +
             "samples and *\<X\>* is 0 if it is a data clustering step or 1 if it is a blank clustering step.\n\n" +
             "The final integration step result is located inside the 'outs' directory in a folder named with the " +
-            "*output\_name* and it also contains the tremolo identification results inside the " +
+            "*output\_name* and it also contains the tremolo library annotation results inside the " +
             "'identifications' folder.");
         console.log('');
         console.log('EXAMPLES:');
@@ -2958,7 +2958,7 @@ program
         'done yet) and then runs the cleaning of the clustering counts. It also runs Step 7 to annotate possible ion ' +
         'variants using the new clean count tables and to create the molecular network of annotations, and runs Step ' +
         '10 to overwrite any old computation of the molecular network of similarities. It can also run the library ' +
-        'spectra identifications (Step 6) for the collection of clean consensus spectra.\n\n')
+        'spectral identifications (Step 6) for the collection of clean consensus spectra.\n\n')
     .option('-m, --metadata <file>', 'path to the metadata table CSV file')
     .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the mgf folder, the peak area count CSV and the spectra count CSV. The job name will be extracted from here')
@@ -3196,14 +3196,14 @@ program
             '    - CSV files with the correlation columns added are also included when there is a biocorrelation result\n' +
             'The \'molecular_networking\' folder is also created if not present yet, and inside it: \n' +
             '    - One sub folder named "similarity_tables" with the clean version of the pairwise table of similarity;\n' +
-            '    - Two molecular networking\'s edge files: the MN of annotations is named as ' +
-            '\'<*output\\_name*>_ivamn.selfloops\' and the MN of similarity is named as ' +
+            '    - Two molecular networking\'s edge files: the MN of ionization variants annotations (IVAMN) is named as ' +
+            '\'<*output\\_name*>_ivamn.selfloops\' and the MN of spectra similarity (SSMN) is named as ' +
             '\'<*output\\_name*>_ssmn_w_<*similarity_mn*>_k_<*net_top_k*>_x_<*max_component_size*>.selfloop\', where the ' +
             '\'output\\_name\' is extracted from the \'output_path\';\n' +
-            '    - One CSV file with the molecular network of annotations edges attributes and protonated representative\n\n'+
+            '    - One CSV file with the IVAMN edges attributes and protonated representative\n\n'+
             'When running Tremolo the \'identification\' folder is also created (if not present yet) with the' +
-            ' identifications results inside it. These identifications are also added as new columns in the c' +
-            'reated clean count tables.');
+            ' library annotations results inside it. These library annotations are also added as new columns in the ' +
+            'created clean count tables.');
         console.log('');
         console.log('EXAMPLES:');
         console.log('');
@@ -3213,14 +3213,14 @@ program
 
 program
     .command('tremolo')
-    .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against ' +
+    .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, a spectral identification tool used for spectra matching against ' +
         'In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural ' +
         'Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.\n\n')
     .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored')
     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be searched and identified')
     .option('-c, --count_file_path [name]', 'optional paths to the count CSV files, separated by a comma ' +
-        'and no space, as outputted by the NP3 workflow where the identifications should be added as new columns. ' +
-        'The top_k search results for each msclusterID will be added in additional identification columns generated by tremolo, then the curated and best results will also be added in other columns. ' +
+        'and no space, as outputted by the NP3 workflow where the library annotations should be added as new columns. ' +
+        'The top_k search results for each msclusterID will be added in additional library annotation columns generated by tremolo, then the curated and best results will also be added in other columns. ' +
         'The count files header must be in the first row.', splitList, [])
     .option('-z, --mz_tolerance [x]', 'the tolerance for parent mass search in Daltons. Set a small tolerance for ' +
         'desreplication using parent ion mass as prefilter, keeping in mind the resolution of your data. Increase to the ' +
@@ -3273,49 +3273,6 @@ program
             '-c "/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_spectra_clean_annotated,' +
             '/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_peak_area_clean_annotated"');
     });
-
-// program
-//     .command('metfrag')
-//     .description('Step 6: An interactive prompt to run the MetFrag tool for identification search of individual spectra ' +
-//         'or of an entire experiment from a MGF file against the PubChem database\n\n')
-//     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be searched and identified')
-//     .option('-o, --output_path <path>', 'path to where the identification results will be saved. ' +
-//         'Prefereable inside the final clustering results directory in the \'job_name/outs/job_name/identifications\' folder')
-//     .action(function(options) {
-//         if (typeof options.mgf === 'undefined') {
-//             console.error('Missing the mandatory \'mgf\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-//             process.exit(1);
-//         }
-//         if (typeof options.output_path === 'undefined') {
-//             console.error('Missing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-//             process.exit(1);
-//         }
-//
-//         const { execFileSync } = require('child_process');
-//         // run workflow
-//         console.log('*** NP3 Comparing Spectra ***');
-//
-//         try {
-//             var resExec = execFileSync("Rscript", ["src/metfrag_interactivesearch.R", options.mgf, options.output_path],
-//                 {stdio: 'inherit'});
-//         } catch (err) {
-//             console.log('\nERROR');
-//             //console.log(err.toString().trim());
-//             process.exit(1);
-//         }
-//
-//         console.log('\nDONE!\n');
-//     })
-//     .on('--help', function() {
-//         console.log('');
-//         console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
-//         console.log('');
-//         console.log('EXAMPLES:');
-//         console.log('');
-//         console.log('  $ node np3_workflow.js metfrag --mgf "/path/to/the/mgf/file/input_search.mgf" --output_path "/path/to/the/output/directory/job_name/outs/job_name/identifications"');
-//         console.log('');
-//         console.log('  $ node np3_workflow.js metfrag --g "/path/to/the/mgf/file/input_search.mgf" -o "/path/to/the/output/directory/job_name/outs/job_name/identifications"');
-//     });
 
 program
     .command('annotate_protonated')
@@ -3660,7 +3617,7 @@ program
     .option('-z, --mz_tolerance [x]', 'this is the tolerance in Daltons for the m/z of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
         'and possibly joined. Used in the clustering job and\n\t\t\t\t\t' +
-        'in the library identifications (Step 6)', parseFloat, 0.025)
+        'in the library spectral identifications (Step 6)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
         'to be used in the pre-processing step if ran\n\t\t\t\t\t', parseFloat, 5)
     .option('-t, --rt_tolerance [x]', 'tolerance in seconds for the retention time width of the\n\t\t\t\t\t' +
@@ -4104,7 +4061,7 @@ program
             "'<step\_name>\_(spectra|peak\_area).csv'. And inside it the clean tables in a folder named 'clean'.\n" +
             "  - Another sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).\n" +
             "  - A third sub folder named 'mgf' with the resulting clean consensus spectra in MGF files.\n" +
-            "  - A fourth sub folder named 'identifications' with the tremolo identification results in a csv table.\n" +
+            "  - A fourth sub folder named 'identifications' with the tremolo library annotation results in a csv table.\n" +
             "  - A fifth sub folder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.\n" +
             "  - A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n");
         console.log('');
@@ -4127,7 +4084,7 @@ program
     .option('-g, --input_mgf_file <path>','path to the input MGF file with ' +
         'the MS/MS spectra data to be searched and identified')
     .option('-o, --output_path <path>', 'if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. ' +
-        'It should contain the identifications folder, if not it will be created and the results will be stored in it. ' +
+        'It should contain the "identifications" folder, if not it will be created and the results will be stored in it. ' +
         'If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).')
     .option('-z, --mz_tolerance [x]', 'the tolerance for parent mass search in Daltons, depending on the instrument and data accuracy.',
         parseFloat, 0.025)
@@ -4225,7 +4182,7 @@ program
 
 program
     .command('gnps_result')
-    .description('This command join the GNPS library identification result from the Molecular Networking (download clustered spectra) or ' +
+    .description('This command join the GNPS library spectral identification result from the Molecular Networking (download clustered spectra) or ' +
         'the Library Search (download all identifications) workflows to the count tables of the NP3 clustering or clean steps\n\n')
     .option('-i, --cluster_info_path [path]', 'If joining the result of a Molecular Networking GNPS job, ' +
         'this should be the path to the file inside the folder named ' +
@@ -4237,7 +4194,7 @@ program
     .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files. '+
-        'The clean mgf must be used for the identifications to join the results to the clean table.')
+        'The clean mgf must have being used as input for the identifications to join the results to the clean table.')
     .option('-o, --job_output_path <path>', 'path to the job final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the "identifications" folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
@@ -4476,8 +4433,8 @@ program
     .option('--rm_controls [value]', 'True or False to allow removing control samples and m/z from the ' +
         'metrics computation.', "False")
     .option('--superclass_grouping_column [value]', 'The name of the column in the provided clean table that should be '+
-        'used to get the superclass grouping values of the m/z. The best origin curated library identification result '+
-        'is used by default (best annotated result from UNPD and GNPS).', "best_origin_curated_superclass_grouping")
+        'used to get the superclass grouping values of the m/z. The final curated library annotation result '+
+        'is used by default (best origin from UNPD and GNPS).', "curated_lib_annotation_superclass_grouping")
     .option('--donutplots_title_size [value]', 'The title size of the donut plots.', "16")
     .option('--donutplots_text_size [value]', 'The axis and legend text sizes of the donut plots.', "14")
     .option('--donutplot_libAnnotations_colors [value]', 'The list of colors separated by comma for the library ' +
@@ -4556,7 +4513,7 @@ program
         console.log('');
         console.log('Five visualizations are created in the output_path directory: '+
             '\n(1) the samples composition in terms of the curated superclass grouping distribution across the final m/z by samples in a barplot; ' +
-            '\n(2) the m/z library identification novelty in a donut plot with the total count of curated library annotations; ' +
+            '\n(2) the m/z library spectral identification novelty in a donut plot with the total count of curated library annotations; ' +
             '\n(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; ' +
             '\n(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;'+
             '\n(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. \n ' +
@@ -4684,7 +4641,7 @@ program
                 console.log('ERROR\n');
                 test_errors.push("Test 1.1 - Exec");
             } else {
-                gnps_result_mn = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_mn = resExec.stdout.split('*** Joining the GNPS identifications to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS library annotations ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4706,7 +4663,7 @@ program
                 console.log('ERROR\n');
                 test_errors.push("Test 1.2 - Exec");
             } else {
-                gnps_result_ls = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_ls = resExec.stdout.split('*** Joining the GNPS identifications to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS library annotations ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
 
@@ -4731,7 +4688,7 @@ program
                 gnps_result_np3 = "ERROR"
                 test_errors.push("Test 1.3 - Exec");
             } else {
-                gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identifications to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS library annotations ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result, attribute to a var and than concate in the test res and test for error (independently of the pp testing result)
                 let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_all",
@@ -4767,7 +4724,7 @@ program
             console.log("@@@@@@ Test 1.4 - L754_bacs_all - pca_plot - PCA with clean @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' pca_plot ' +
-                '-s best_origin_SMILES -d curated_identification_best_origin ' +
+                '-s curated_lib_annotation_SMILES -d curated_lib_annotation_superclass ' +
                 '--table_path '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/final_reports/ -n L754_bacs_all_clean',
                 {async:false, silent:true});
