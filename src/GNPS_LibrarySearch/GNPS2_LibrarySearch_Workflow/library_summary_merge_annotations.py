@@ -52,6 +52,10 @@ def join_library_summary_annotations(library_summary_file, library_summary_annot
     if library_summary_enriched.shape[0] != library_summary.shape[0]:
         sys.exit("The library summary enrichment with the summary annotations failed, some Spectrum IDs went missing after the match.")
     
+    print("- Removing double quotes from the compound name...")
+    library_summary_enriched.loc[library_summary_enriched.Compound_Name.isna(), "Compound_Name"] = library_summary_enriched.loc[library_summary_enriched.Compound_Name.isna(), "compound_name"]
+    library_summary_enriched.loc[:, "Compound_Name"] = [cname.replace("\"","") for cname in library_summary_enriched.Compound_Name]
+    
     # validate SMILES list, remove invalid SMILES from the "Smiles" column and then
     # # for the invalid ones check if there is a valid Smiles string in the "smiles" column
     invalid_smiles = 0
@@ -85,6 +89,8 @@ def join_library_summary_annotations(library_summary_file, library_summary_annot
         check_Smiles_is_valid = (~library_summary_enriched.smiles_valid.isna() & library_summary_enriched.Smiles.isna())
         library_summary_enriched.loc[check_Smiles_is_valid, 'Smiles'] = library_summary_enriched.loc[check_Smiles_is_valid, 'smiles_valid']
         library_summary_enriched.drop(['smiles_valid'], axis=1, inplace=True)
+    else:
+        check_Smiles_is_valid = (~check_Smiles.smiles_valid.isna())
     
     revalidated_smiles = library_summary_enriched.loc[check_Smiles_is_valid, 'Smiles'].unique().size
     print("  - Recovered a total of ",revalidated_smiles, " unique SMILES string.")
