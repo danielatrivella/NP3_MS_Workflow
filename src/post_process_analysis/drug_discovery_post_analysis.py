@@ -81,7 +81,7 @@ def plot_stacked_bar_pandas_df(stackedbarplot_filepath, df, title, xlabel, ylabe
 # # mzs_barplot_colors colors for each sample or None to use default coloring
 def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk = None, rm_blanks = True,
                            rm_beds = True, rm_controls = True, use_protonated=False,
-                           superclass_grouping_column = "best_origin_curated_superclass_grouping",
+                           superclass_grouping_column = "curated_lib_annotation_superclass_grouping",
                            donutplots_title_size=16,
                            donutplots_text_size=14, donutplot_libAnnotations_colors=['#ff8b00', '#6372b4', "#c6c6c6"],
 						   donutplot_mzs_distr_colors=["#0072c3", "#42be65"],
@@ -188,8 +188,8 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 		
 	# create a column to store the m/z with an identification annotation
 	clean_counts_df["annotated"] = False
-	clean_counts_df.loc[clean_counts_df.curated_identification_best_origin.isin(["GNPS", "UNPD"]), "annotated"] = True
-	annotation_lib = clean_counts_df['curated_identification_best_origin'].value_counts()
+	clean_counts_df.loc[clean_counts_df.curated_lib_annotation_origin.isin(["GNPS", "UNPD"]), "annotated"] = True
+	annotation_lib = clean_counts_df['curated_lib_annotation_origin'].value_counts()
 	annotation_lib["not_annotated"] = (~clean_counts_df.annotated).sum()
 	if "GNPS" not in annotation_lib.index:
 		annotation_lib["GNPS"] = 0
@@ -198,12 +198,12 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	# check consistency
 	if annotation_lib.sum() != number_valid_mzs:
 		sys.exit("The number of total m/z (library annotated and not annotated) does not match the number of valid mzs. Something went wrong in the processing.")
-	print("- Creating the distribution of library annotation:", annotation_lib.to_dict())
+	print("- Creating the distribution of curated library annotation:", annotation_lib.to_dict())
 	
-	plot_donut_values(Path(output_path,output_name+"_mz_lib_annotation_dist.png"),
+	plot_donut_values(Path(output_path,output_name+"_mz_curated_lib_annotation_dist.png"),
 	                  values = annotation_lib[sorted(annotation_lib.index.values)].values,
 	                  categories=sorted(annotation_lib.index.values),
-	                  title = "Distribution of Library Annotations for the "+mzs_selected+"m/z", colors=donutplot_libAnnotations_colors,
+	                  title = "Distribution of Curated Library Annotations for the "+mzs_selected+"m/z", colors=donutplot_libAnnotations_colors,
 	                  title_size=donutplots_title_size, text_size=donutplots_text_size)
 	
 	# filter only the samples columns, use all area columns here for a correct computation of the indicators
@@ -235,7 +235,7 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	print("- Computing the m/z distribution occurrence by sample and creating some plots:\n  "+
 	      "- number of exclusive m/z (only appear in one sample);\n  "+
 	      "- number of redundant m/z (appear in more than one sample)\n  "+
-	      "- number of annotated m/z (received a library identification annotation from GNPS or UNPD).")
+	      "- number of annotated m/z (received a curated library annotation from GNPS or UNPD).")
 	# join the not annotated and the annotated m/z counts by sample
 	# df_final_1
 	mzs_count_by_sample = pd.concat([mzs_count_by_sample_annotated, mzs_count_by_sample_not_annotated], axis=1)
@@ -354,8 +354,8 @@ if __name__ == "__main__":
 	                    help="True or False to allow removing control samples and m/z from the metrics computation.")
 	parser.add_argument("--use_protonated", default=False, type=str2bool,
 	                    help="True of False defining if only the putative [M+H] m/z should be used in the output tables and plots (filter the table with protonated_representative == 1). This will affect the metrics computation.")
-	parser.add_argument("--superclass_grouping_column", default="best_origin_curated_superclass_grouping", type=str,
-	                    help="The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best result from UNPD and GNPS).")
+	parser.add_argument("--superclass_grouping_column", default="curated_lib_annotation_superclass_grouping", type=str,
+	                    help="The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The final origin curated library identification result is used by default (best result from UNPD and GNPS).")
 	# plots parms
 	parser.add_argument("--donutplots_title_size", default=16, type=int,
 	                    help="The title size of the donut plots.")
