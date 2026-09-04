@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.5.0
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.6.0
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
   - Luiz F. G. Alves^\*^
   - Rafael de Felicio^\*^
   - Daniela B. B. Trivella^\*^
   - Guilherme P. Telles^\†^
-date: July, 2026 
+date: September, 2026 
 output:
   pdf_document: default
   html_document:
@@ -231,6 +231,12 @@ If you did install the workflow dependencies using the conda environments, alway
   $ mamba activate np3
 ```
  
+## 3.1 $NP^{3}$ online in GNPS2 Workflows
+
+The $NP^{3}$ MS workflow is included in the GNPS2 Workflows and may be executed online using their web interface. This interface includes only the pre_process+run command functionality and the most important parameters. Search for "np3" in their workflows list: https://gnps2.org/workflows.
+
+For a more personalized use, the full installation is required and the CLI must be used.
+
 # 4. $NP^{3}$ MS Workflow Commands
  
 The $NP^{3}$ MS workflow was developed in a Node.js CLI capable of automatically running the entire workflow, except for the first step. It can also execute each step of the workflow separately, plus the visualization commands and the command to include the GNPS library identification results in the count tables. 
@@ -1007,32 +1013,36 @@ When the count_files are provided, the tremolo results are aggregated by spectra
 | tremolo_NPAtlas_origin_type	     | the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_genus	            | the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_origin_species     | the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';' |
-| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in the Identification Curation |
+| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in Section 4.6.2 |
 | tremolo_<identification columns>_best | some of the previous identification columns with the best result from index tremolo_best_position | 
 | tremolo_NPClassifier_superclass_clean_best | the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe) |
-| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in the Identification Curation |
+| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in Section 4.6.2 |
 | tremolo_UNPD_score_best | the corresponding score of the tremolo_UNPD_category_best |
-| curated_identification_best_origin | the database origin of the best identification, here it receives 'UNPD' for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). In the gnps_result it may also receive a value equal to 'GNPS' |
-| best_origin_SMILES | the SMILES of the curated identification from the best origin. Here where curated_identification_best_origin == UNPD it receives the value of the tremolo_SMILES_best | 
-| best_origin_curated_superclass | the NPClassifier superclass of the curated identification from the best origin. Here where curated_identification_best_origin == UNPD, it receives the value of the tremolo_NPClassifier_superclass_clean_best column |
 | tremolo_curated_superclass  | the result of the tremolo_NPClassifier_superclass_clean_best for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') |
-| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Identification Curation | 
-| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in the Identification Curation |
+| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Section 4.6.2 | 
+| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in Section 4.6.2 |
+| curated_lib_annotation_origin | the database library origin of the final curated identification, which have the greater score. It receives 'UNPD' if tremolo_UNPD_score_best > 0 or 'GNPS' if gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. Detailed in Section 4.6.3. |
+| curated_lib_annotation_SMILES | the SMILES of the final curated identification from the best origin. If curated_lib_annotation_origin == UNPD it receives the value of the tremolo_SMILES_best, if curated_lib_annotation_origin == GNPS it receives the value of the gnps_Smiles, otherwise ''| 
+| curated_lib_annotation_superclass | the NPClassifier superclass of the final curated identification from the best origin. Equals to tremolo_curated_superclass where origin is UNPD, equals to gnps_curated_superclass where origin is GNPS, and equals '' otherwise |
+| curated_lib_annotation_superclass_grouping | the superclass group from the mapped curated_lib_annotation_superclass following the proposed groups in Section 4.6.2 |
+| curated_lib_annotation_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the curated_lib_annotation_superclass_grouping zero, one or more times as detailed in Section 4.6.2|
+| curated_lib_annotation_score | the corresponding score of the final curated identification from the best origin. Equals to tremolo_UNPD_score_best for UNPD, or gnps_score for GNPS, or 0 otherwise. |
+| curated_lib_annotation_quality  | a quality group for the final curated identification. Equals to '1' if curated_lib_annotation_score >= 50, or '2' if curated_lib_annotation_score < 50 and curated_lib_annotation_score > 0, or '0' otherwise (curated_lib_annotation_score == 0). |
 
 For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md file and its documentation at src/ISDB_tremolo_NP3/Data/doc/Workflow_062016.pdf.
  
-##### 4.6.2. *tremolo* Identification Curation
+##### 4.6.2. *tremolo* UNPD Identification Curation
 
-A curation of the identification results was proposed in order to score and rank the best identification from the UNPD-tremolo. The curations is executed after the identification results are merged to the count_files tables. Some chemical criteria were defined to automatically select the best candidate from the top_k results. Additionally, a chemical grouping of the NPClassifier superclass were proposed by the $NP^{3}$ team to ease the chemical understanding of the best identifications.
+A curation of the identification results was proposed to score and rank the best identification from the UNPD-tremolo. The curation is executed after the library annotations are merged to the count_files tables. Some chemical criteria were defined to automatically select the best annotations from the top_k results. Additionally, a chemical grouping of the NPClassifier superclass were proposed by the $NP^{3}$ team to ease the chemical understanding of the best identifications.
 
-The curation starts by selecting the best result among the top_k identifications for each identified spectra and then extract their value for all the identification columns, as follow:
+The curation starts by selecting the best result among the top_k identifications for each identified spectra in UNPD and then extract its value for each  identification column, as follow:
 
-1. The best result is defined as the identification with the higher tremolo_MQScore which have tremolo_mzErrorPPM < 20 if any, otherwise it is defined equals to the identification with the smaller tremolo_mzErrorPPM rounded in the first decimal place which have the higher tremolo_MQScore;
-2. The best result is set in a new column named 'tremolo_best_position' which will store the index of the best result among the top_k identifications for each spectra;
-3. The identification columns with the best selected result are created equal to the identification columns names plus a suffix equals to '_best' and the result present in the tremolo_best_position is extracted and set to them.
-    - Additionally, it is created the column 'tremolo_NPClassifier_superclass_clean_best' with only the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe).
+1. The best result is defined as the library annotation with the higher tremolo_MQScore which have tremolo_mzErrorPPM < 20 if any, otherwise it is defined equals to the identification with the smaller tremolo_mzErrorPPM rounded in the first decimal place which have the higher tremolo_MQScore;
+2. The best result position is set in a new column named 'tremolo_best_position' which will store the index of the best result among the top_k library annotations of each spectra;
+3. New identification columns are created with only the best selected result (from the 'tremolo_best_position') and are named equal to the identification column names plus a suffix equals to '_best'.
+    - Additionally, it is created the column 'tremolo_NPClassifier_superclass_clean_best' with only the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a pipe '|' (only the best result before the pipe).
 
-After the best result were selected and their information extracted, the curation proceeds to a categorization and scoring of the best result. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+After the best UNPD result were selected and their information extracted, the curation proceeds to a categorization and scoring of the best result. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
 
 | Tremolo UNPD Category | Score | Criteria | 
 | :--------------- | :---: | :------------------------------------: | 
@@ -1050,13 +1060,9 @@ After the best result were selected and their information extracted, the curatio
   
 * Where mqs is the tremolo_MQScore_best, nsP is the tremolo_numSharedPeaks_best and mzE is the tremolo_mzErrorPPM_best values. 
 
-The defined category for each final best identification is stored in the column 'tremolo_UNPD_category_best' and its corresponding score is stored in the column 'tremolo_UNPD_score_best'.
+The defined category of each final best UNPD identification is stored in the column 'tremolo_UNPD_category_best' and its corresponding score is stored in the column 'tremolo_UNPD_score_best'.
 
-Finally, it is created the column 'curated_identification_best_origin' to store the name of the database that have the greatest curated score (UNPD or GNPS) for each spectra, from where the best identification originated. Here this column receives a value equals to 'UNPD' for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') and an empty string in the rest. When running the gnps_result command, some spectra may receive a value equal to 'GNPS' on this column depending on the comparison of the scores from the two identification origins (UNPD and GNPS), detailed in the gnps_result documentation section.
-
-The 'curated_identification_best_origin' column stores the best identification origin, and to complement this information the column 'best_origin_SMILES' and 'best_origin_curated_superclass' are also created with the SMILES and the superclass, respectively, from the best identification. Here it receives the tremolo-UNPD best values. In the gnps_result command it may receive values from the gnps result when they have a better score.
-
-Additionaly, the curation of the identification also defines and creates a grouping of the superclasses from the NPClassifier. In UNPD, there are 94 superclasses from the NPClassifier, which is a very large number for a fast analysis. Here the $NP^{3}$ team proposed a groupings with 10 major superclasses using a chemical reasoning to group related superclasses in a Drug Discovery perspective. The major superclasses groupings are presented in the table below:
+Finally, the curation of the UNPD identification also defines and creates 10 groupings of the superclasses from the NPClassifier. In UNPD, there are 94 superclasses from the NPClassifier, which is a very large number for a fast analysis. Here the $NP^{3}$ team proposed a groupings with 10 major superclasses using a chemical reasoning to group related superclasses in a Drug Discovery perspective. The major superclasses groupings are presented in the table below:
 
 | Major Superclass Group | NPClassifier Superclasses |
 | :---------- | :---------------: |
@@ -1072,11 +1078,26 @@ Additionaly, the curation of the identification also defines and creates a group
 | Organic_Acids_and_OthersGenerals | "Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives", "Organoheterocyclic compounds", "Organosulfur compounds" |
 | Not_Annotated | "not_annotated" |
 
-At the end of the tremolo curation, it is created the column 'tremolo_curated_superclass' that receives the result of the best tremolo superclass for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). This column is then mapped to the superclasses grouping defined above and stored in column 'tremolo_curated_superclass_grouping'. If multiple superclasses were assigned to the spectra, they are separated by a ':'. Finally, for each curated superclass grouping, it is created a column named 'tremolo_curated_superclass_GR_\<curated superclass grouping\>' with 0 or +1 values checking if the curated identification of UNPD-tremolo of the spectra were assigned to the corresponding curated superclass grouping zero, one or more times.
+Next, it is created the column 'tremolo_curated_superclass' that receives the result of the best tremolo superclass for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). This column is then mapped to the superclasses grouping defined above and stored in column 'tremolo_curated_superclass_grouping'. If multiple superclasses were assigned to a spectra, they are separated by a ':'. Finally, for each curated superclass grouping, it is created a column named 'tremolo_curated_superclass_GR_\<curated superclass grouping\>' with 0 or +1 values that counts how many times the curated library annotation from UNPD-tremolo appeared in the corresponding curated superclass grouping (zero, one or more times).
 
-In the gnps_result command a curation of the best origin identification result, comparing UNPDxGNPS, is automatically computed. In the final reports, the curated identification result (more refined result) is used for the final statistics and compared with the best identification not curated (complete result). 
+At the end, the final identification curation is performed (next section).
 
-##### 4.6.3. *tremolo* Examples
+##### 4.6.3. *tremolo* Final Identification Curation
+
+The final identification curation is performed at the end of the UNPD curation and at the end of the GNPS curation to select the origin (UNDP x GNPS) of the best library annotation present in the current $NP^{3}$ result. In the final reports, the final curated library annotations are used for the final statistics and compared with the best identifications from UNPD and GNPS not curated (complete identification result). The final identification curation results are stored in different columns with the prefix "curated_lib_annotation_*". 
+
+It starts by creating the column "curated_lib_annotation_origin" with the library origin (UNPD or GNPS) of the best library annotation with a score greater than 0. This column is set to 'GNPS' if the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present, uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Otherwise, if the GNPS result is not present, set it to 'UNPD' where tremolo_UNPD_score_best > 0. The preference here goes to GNPS, which is an experimental spectra library.
+
+Then, using the selected origin of each final curated identification, the procedure retrieves its respective score (from 'gnps_score' for 'GNPS' and from 'tremolo_UNPD_score_best' for 'UNPD') and stores it in the column "curated_lib_annotation_score". When no origin was selected, the score is set to 0. Using the score of the final curated identification, the column "curated_lib_annotation_quality" is created by assigning three quality groups to the library annotations equals to '1' if the curated_lib_annotation_score >= 50, equals to '2' if the curated_lib_annotation_score > 0 and curated_lib_annotation_score < 50, and equals to '0' if the curated_lib_annotation_score == 0 (category 'out').
+
+Next, the SMILES of the final curated identification is set to the column "curated_lib_annotation_SMILES", which receives the value from the column "gnps_Smiles" where origin equals to "GNPS" or the value from the column "tremolo_SMILES_best" where origin equals to "UNPD", otherwise leave it empty. Similarly, the superclass of the final curated identification is set to the column "curated_lib_annotation_superclass", which receives the value from the columns "gnps_curated_superclass" or "tremolo_curated_superclass". 
+
+Finally, using the values present in the superclass of the final curated library annotation, the columns with the superclass grouping are created accordingly named "curated_lib_annotation_superclass_grouping" and "curated_lib_annotation_superclass_GR_\<superclass_group\>", where superclass_group are the 10 superclass groups defined in the previous section plus the not annotated group.
+
+The final curated identifications present in the columns "curated_lib_annotation_*" are defined as the more reliable library annotations of each consensus spectra from a $NP^{3}$ result.
+
+
+##### 4.6.4. *tremolo* Examples
  
 Fake example to execute the Tremolo command:
  
@@ -1841,13 +1862,13 @@ In the GNPS Library Search (LS) workflow result, the '#Scan' column present in t
 
 At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
 
-##### 4.13.4. *gnps_result* Identification Curation and UNPDxGNPS Best Origin
+##### 4.13.4. *gnps_result* Identification Curation and UNPDxGNPS Final Curation
 
-A curation of the identification results was also proposed for the gnps_result in order to score and rank the best identification from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
+A curation of the identification results was also proposed for the gnps_result in order to score and rank the best identifications from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
 
 The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
 
-Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
+Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD' for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
 
 Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the Identification Curation of UNPD-tremolo. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
 
@@ -1869,16 +1890,15 @@ Then, after the gold results were selected, the curation proceeds to a categoriz
 
 The defined category for each GNPS identification is stored in the column 'gnps_category' and its corresponding score is stored in the column 'gnps_score'.
 
-The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the  '|') and is stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.2.
+The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the pipe '|') and its stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.2.
 
-Finally, the curation proceeds to the UNPDxGNPS identification result comparison, if the UNPD result is present. The column 'curated_identification_best_origin' is set to 'GNPS' where the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Then, updates the 'best_origin_SMILES' column accordingly, set it to the gnps_Smiles values where curated_identification_best_origin == GNPS. And creates the superclass curated best origin results, the column 'best_origin_curated_superclass' receives the value from the gnps_curated_superclass or the tremolo_curated_superclass depending on the curated_identification_best_origin value, and the same occurs for the columns 'best_origin_curated_superclass_grouping' and 'best_origin_curated_superclass_GR_
-\<superclass group\>'.
+Finally, the final identification curation is performed following section 4.6.3 to select the best library annotation from UNPDxGNPS, if the UNPD identification result is present, otherwise only the best library annotation from GNPS is used. The columns starting with the prefix 'curated_lib_annotation_*' will store the final curated library annotation, their origin (UNPD or GNPS), score, quality, SMILES and superclass. 
 
-At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
+At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the origin of the final curated identification (UNPDxGNPS). 
 
 For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
 
-If the metadata path is informed, the plot of the distribution of the superclass grouping is also created for GNPS and UNPDxGNPS using columns gnps_curated_superclass_grouping and best_origin_curated_superclass_grouping, respectively, and stored in the chemical report folder.
+If the metadata path is informed, the plot with the distribution of the superclass grouping are also created for GNPS and the final curated identification (UNPDxGNPS) using columns 'gnps_curated_superclass_grouping' and 'curated_lib_annotation_superclass_grouping', respectively, and are stored in the chemical report folder.
 
 ## 4.14. Command *pca_plot*
  
@@ -2037,7 +2057,7 @@ Options for the command *post_dd_analysis*:
 - *\-\-rm\_blanks* [value]  :  True or False to allow removing blank samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_beds* [value]  :    True or False to allow removing culture media samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_controls* [value]  :       True or False to allow removing control samples and m/z from the metrics computation. (default: "False")
-- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best annotated result from UNPD and GNPS). (default: "best_origin_curated_superclass_grouping")
+- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The final curated library annotation result is used by default (best origin from UNPD and GNPS). (default: "curated_lib_annotation_superclass_grouping")
 - *\-\-donutplots\_title\_size* [value]  :   The title size of the donut plots. (default: "16")
 - *\-\-donutplots\_text\_size* [value]  :    The axis and legend text sizes of the donut plots. (default: "14")
  *\-\-donutplot\_libAnnotations\_colors* [value]   :  The list of colors separated by comma for the library annotation distribution donut plot. Three colors are
