@@ -447,7 +447,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				"Total number of "+mz_types+" m/zs that were identified against the GNPS and selected as origin in the final curated library annotation (curated_lib_annotation_origin == 'GNPS'). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
 			# unique curated library annotations for unpd and gnps together
 			number_unique_unpd_gnps_curated = clean_data.curated_lib_annotation_SMILES[
-				(clean_data.curated_lib_annotation_SMILES != "")].unique().size
+				(clean_data.curated_lib_annotation_SMILES != "") & (~clean_data.curated_lib_annotation_SMILES.isna())].unique().size
 			unpd_gnps_statistics['Statistics'].append("Number of unique UNPD or GNPS final curated library annotations and their UNPD and GNPS coverage")
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_unpd_gnps_curated} ({number_unique_unpd_gnps_curated/(total_gnps_fixo+total_unpd_fixo)*100:.1f}%)")
@@ -719,7 +719,8 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				if "curated_lib_annotation_superclass" in clean_data.columns:
 					number_unique_superclass_best = np.unique([x for x in chain.from_iterable(
 						clean_data.curated_lib_annotation_superclass[
-							clean_data.curated_lib_annotation_origin != ""].str.split(":", expand=True).to_numpy())
+							(clean_data.curated_lib_annotation_origin != "") &
+							(~clean_data.curated_lib_annotation_origin.isna())].str.split(":", expand=True).to_numpy())
 					                                           if x == x and x is not None and x is not ""]).size
 					unpd_gnps_statistics['Statistics'].append(
 						"Chemical diversity of [M+H]+ in GNPS and UNPD Superclasses curated best")
@@ -730,7 +731,9 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 							total_superclass_npclassifier) + " for NPClassifier). ")
 				if "curated_lib_annotation_superclass_grouping" in clean_data.columns:
 					number_unique_superclass_grouping_best = np.unique(
-						clean_data.curated_lib_annotation_superclass_grouping.values[(clean_data.curated_lib_annotation_origin != "") & (clean_data.curated_lib_annotation_superclass_grouping != "Not_Annotated")]).size
+						clean_data.curated_lib_annotation_superclass_grouping.values[(clean_data.curated_lib_annotation_origin != "") &
+						                                                             (~clean_data.curated_lib_annotation_origin.isna()) &
+						                                                             (clean_data.curated_lib_annotation_superclass_grouping != "Not_Annotated")]).size
 					unpd_gnps_statistics['Statistics'].append("Chemical diversity of [M+H]+ in GNPS and UNPD Superclasses curated best grouping")
 					unpd_gnps_statistics['Value'].append(
 						f"{number_unique_superclass_grouping_best} ({number_unique_superclass_grouping_best / total_superclass_npclassifier_grouping * 100:.1f}%)")
