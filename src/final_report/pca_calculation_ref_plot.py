@@ -290,30 +290,30 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
         output_name = output_name + "_curated"
         if "tremolo_UNPD_score_best" not in new_data.columns:
             print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
-                     "curated identification result, column 'tremolo_UNPD_score_best' is missing. Skipping PCA for identifications.")
+                     "curated library annotation result, column 'tremolo_UNPD_score_best' is missing. Skipping PCA for library annotations.")
             return None
         if "tremolo_SMILES_best" not in new_data.columns:
             print("Invalid data from UNPD informed! The provided clean table does not have the tremolo-UNPD "+
-                     "best identification result, column 'tremolo_SMILES_best' is missing. Skipping PCA for identifications.")
+                     "best library annotation result, column 'tremolo_SMILES_best' is missing. Skipping PCA for library annotations.")
             return None
         # filter only the not blank results
         if "BLANKS_TOTAL" in new_data.columns:
             new_data = new_data.loc[new_data.BLANKS_TOTAL == 0, :]
         if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
-            print("No not blank and valid tremolo-UNPD curated identification is present in the provided clean table. "+
-                  "Could not create the chemical space. Skipping PCA for identifications.")
+            print("No not blank and valid tremolo-UNPD curated library annotation is present in the provided clean table. "+
+                  "Could not create the chemical space. Skipping PCA for library annotations.")
             return None
         # filter only the not bed results
         if "BEDS_TOTAL" in new_data.columns:
             new_data = new_data.loc[new_data.BEDS_TOTAL == 0, :]
         if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
-            print("No not blank and not bed and valid tremolo-UNPD curated identification is present in the provided clean table. "+
-                  "Could not create the chemical space. Skipping PCA for identifications.")
+            print("No not blank and not bed and valid tremolo-UNPD curated library annotation is present in the provided clean table. "+
+                  "Could not create the chemical space. Skipping PCA for library annotations.")
         # filter only the curated result with tremolo_UNPD_score_best > 0
         new_data = new_data.loc[new_data.tremolo_UNPD_score_best > 0,:]
         if new_data.shape[0] == 0 or not (~new_data.tremolo_SMILES_best.isna()).any():
-            print("No valid tremolo-UNPD curated identification is present in the provided clean table. "+
-                  "Could not create the chemical space. Skipping PCA for identifications.")
+            print("No valid tremolo-UNPD curated library annotation is present in the provided clean table. "+
+                  "Could not create the chemical space. Skipping PCA for library annotations.")
             return None
         # merge the new data with the reference descriptors using the best identified SMILES
         new_data_desc = pd.merge(new_data.loc[~new_data.tremolo_SMILES_best.isna(), ["tremolo_SMILES_best","protonated_representative"]],
@@ -349,7 +349,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
                                                 point_labels=[data_type] * new_data_desc_valid.shape[0],
                                                 pvars=pvars, components=arrows, feature_labels=features)
             else:
-                print(f"No valid tremolo-UNPD curated {'and protonated ' if protonated == 1 else ''}identification after merging with reference SMILES. Skipping PCA for identifications.")
+                print(f"No valid tremolo-UNPD curated {'and protonated ' if protonated == 1 else ''}library annotation after merging with reference SMILES. Skipping PCA for library annotations.")
                 return None
     elif data_type == "GNPS":
         # add the curated tag to the output name
@@ -376,20 +376,20 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
             new_data = new_data.loc[new_data.BLANKS_TOTAL == 0, :]
         if new_data.shape[0] == 0 or not (~new_data.gnps_Smiles.isna()).any():
             print(
-                "No not blank and valid GNPS curated identification is present in the provided clean table. " +
-                "Could not create the chemical space. Skipping PCA for identifications.")
+                "No not blank and valid GNPS curated library annotation is present in the provided clean table. " +
+                "Could not create the chemical space. Skipping PCA for library annotations.")
             return None
         # filter only the not bed results
         if "BEDS_TOTAL" in new_data.columns:
             new_data = new_data.loc[new_data.BEDS_TOTAL == 0, :]
         if new_data.shape[0] == 0 or not (~new_data.gnps_Smiles.isna()).any():
             print(
-                "No not blank and not bed and valid GNPS curated identification is present in the provided clean table. " +
-                "Could not create the chemical space. Skipping PCA for identifications.")
+                "No not blank and not bed and valid GNPS curated library annotation is present in the provided clean table. " +
+                "Could not create the chemical space. Skipping PCA for library annotations.")
         # filter the valid gnps smiles with gnps_score > 0 and get their descriptors
         new_data_desc = new_data.loc[new_data.gnps_score > 0 ,["gnps_Smiles","protonated_representative"]]
         if new_data_desc.shape[0] == 0:
-            print("  - No valid GNPS curated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+            print("  - No valid GNPS curated library annotation with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
             return None
         # read the descriptors calculation result and filter the valid ones
         gnps_descriptors_result = pd.read_csv(gnps_descriptors_file, low_memory=False)
@@ -400,7 +400,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
                 new_data_desc = new_data_desc.loc[new_data_desc.protonated_representative == 1,:]
                 if new_data_desc.shape[0] == 0:
                     print(
-                        "  - No valid GNPS curated and protonated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+                        "  - No valid GNPS curated and protonated library annotation with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
                     break
             else:
                 output_name_plot = output_name
@@ -413,11 +413,11 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
             if X_new_filtered.shape[0] == 0:
                 if protonated == 0:
                     print(
-                        "  - No valid GNPS curated identification with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+                        "  - No valid GNPS curated library annotation with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
                     return None
                 else:
                     print(
-                        "  - No valid GNPS curated and protonated identification with score > 0. PCA plotting for GNPS protonated aborted.")
+                        "  - No valid GNPS curated and protonated library annotation with score > 0. PCA plotting for GNPS protonated aborted.")
                     break # if no valid only for protonated, then go for UNPDxGNPS
             X_new_scaled = scaler.fit_transform(X_new_filtered)
             X_transformed = pca.transform(X_new_scaled)
@@ -436,19 +436,19 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
                                             pvars=pvars, components=arrows, feature_labels=features)
             
         ## Now get best origin identification data_type == "UNPDxGNPS", if both results are present
-        # and plot PCA of UNPD and GNPS together for the curated_identification_best_origin
+        # and plot PCA of UNPD and GNPS together using the curated_lib_annotation_origin
         data_type = "UNPDxGNPS"
         print("  - Transforming the new", data_type, "identified data to the reference PCA chemical space and plotting")
-        if new_data.columns.isin(["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best"]).sum() < 3:
+        if new_data.columns.isin(["curated_lib_annotation_origin", "gnps_Smiles", "tremolo_SMILES_best"]).sum() < 3:
             print("  - The tremolo-UNPD best result is not present, skipping UNPDxGNPS PCA plotting.")
             # skipt to the components circle plot
         else:
-            new_data_desc = new_data.loc[~new_data.curated_identification_best_origin.isna(),
-                                         ["curated_identification_best_origin", "gnps_Smiles", "tremolo_SMILES_best",
+            new_data_desc = new_data.loc[~new_data.curated_lib_annotation_origin.isna(),
+                                         ["curated_lib_annotation_origin", "gnps_Smiles", "tremolo_SMILES_best",
                                           "protonated_representative"]]
-            if new_data_desc.curated_identification_best_origin.unique().size < 2:
-                print("  - The curated_identification_best_origin only contains results from one source ('",
-                      new_data_desc.curated_identification_best_origin.unique()[0],"'), skipping UNPDxGNPS PCA plotting.")
+            if new_data_desc.curated_lib_annotation_origin.unique().size < 2:
+                print("  - The curated_lib_annotation_origin only contains results from one source ('",
+                      new_data_desc.curated_lib_annotation_origin.unique()[0],"'), skipping UNPDxGNPS PCA plotting.")
             else:
                 for protonated in [0, 1]:
                     if protonated == 1:
@@ -457,15 +457,15 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
                         new_data_desc = new_data_desc.loc[new_data_desc.protonated_representative == 1, :]
                         if new_data_desc.shape[0] == 0:
                             print(
-                                "  - No valid UNPDxGNPS curated and protonated identification with score > 0. PCA plotting for UNPDxGNPS protonated aborted.")
+                                "  - No valid UNPDxGNPS curated and protonated library annotation with score > 0. PCA plotting for UNPDxGNPS protonated aborted.")
                             break
                     else:
                         output_name_plot = output_name
-                    new_data_unpd_desc = pd.merge(new_data_desc.loc[new_data_desc.curated_identification_best_origin == 'UNPD'],
+                    new_data_unpd_desc = pd.merge(new_data_desc.loc[new_data_desc.curated_lib_annotation_origin == 'UNPD'],
                              data_reference_descriptors.loc[:, ["SMILES"] + set_reference_descriptors_bestCos_top24],
                              left_on="tremolo_SMILES_best", right_on="SMILES", how="left")
                     new_data_gnps_desc = gnps_descriptors_result.loc[gnps_descriptors_result.gnps_Smiles.isin(
-                        new_data_desc.gnps_Smiles[new_data_desc.curated_identification_best_origin == 'GNPS']),:]
+                        new_data_desc.gnps_Smiles[new_data_desc.curated_lib_annotation_origin == 'GNPS']),:]
                     
                     X_new = pd.concat([new_data_unpd_desc.iloc[:, 5:], new_data_gnps_desc.iloc[:, 4:]], axis=0)
                     X_new.loc[:,"point_labels"] = ['UNPD'] * new_data_unpd_desc.shape[0] + ['GNPS'] * new_data_gnps_desc.shape[0]
