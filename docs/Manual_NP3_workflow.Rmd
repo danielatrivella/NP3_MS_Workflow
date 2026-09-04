@@ -233,7 +233,9 @@ If you did install the workflow dependencies using the conda environments, alway
  
 ## 3.1 $NP^{3}$ online in GNPS2 Workflows
 
-The $NP^{3}$ MS workflow is included in the GNPS2 Workflows and may be executed online using their web interface. This interface includes only the pre_process+run command functionality and the most important parameters. Search for "np3" in their workflows list: https://gnps2.org/workflows.
+The $NP^{3}$ MS workflow is included in the GNPS2 Workflows and may be executed online using their web interface. This interface includes the *pre_process*+*run* commands features and the most important parameters. Using the desired parameters and one click, your job is submitted!
+
+Search for "np3" in their workflows list: https://gnps2.org/workflows.
 
 For a more personalized use, the full installation is required and the CLI must be used.
 
@@ -296,7 +298,7 @@ Commands:
     - *\-o, \-\-output_path* \<path\>       : path to the final output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'mgf' folder and the 'count_tables' folder with the peak area and spectra count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
  
-- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.
+- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, a spectral identification tool used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
@@ -961,13 +963,12 @@ Table: Clean Count Tables New Columns from the Data Cleaning Step
 
 ## 4.6. Step 6: Command *tremolo*
  
-Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode. The Step 6.1 corresponds to the GNPS2 Library Search and is described in section 4.12.
+Runs the spectral identification of a collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18] to retrieve library annotations. This tool can only be executed in Unix OS and for data in positive ion mode. The Step 6.1 corresponds to the GNPS2 Library Search and is described in section 4.12.
 
-The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the identification results.
+The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the library annotations.
  
-At the end of the identification step, a curation is performed to select the best result from the 
-top_k identifications of each spectra and to score them with a personalized
-criteria. Additionally, a superclass grouping of the NPClassifier result was proposed by the $NP^{3}$ team and is also applied here for the final curated superclass.
+At the end of the spectral identification step, a curation is performed to select the best UNPD result from the top_k identifications of each spectra and to score them with a personalized
+criteria. Additionally, a superclass grouping of the NPClassifier result was proposed by the $NP^{3}$ team and is also applied here for the curated superclass. Finally, the final identificaiton curation is performed (more details in next subsections).
 
 A binary version of the tremolo tool is freely available for download in the following link: http://proteomics.ucsd.edu/software-tools/tremolo/.
  
@@ -1025,7 +1026,7 @@ When the count_files are provided, the tremolo results are aggregated by spectra
 | curated_lib_annotation_SMILES | the SMILES of the final curated identification from the best origin. If curated_lib_annotation_origin == UNPD it receives the value of the tremolo_SMILES_best, if curated_lib_annotation_origin == GNPS it receives the value of the gnps_Smiles, otherwise ''| 
 | curated_lib_annotation_superclass | the NPClassifier superclass of the final curated identification from the best origin. Equals to tremolo_curated_superclass where origin is UNPD, equals to gnps_curated_superclass where origin is GNPS, and equals '' otherwise |
 | curated_lib_annotation_superclass_grouping | the superclass group from the mapped curated_lib_annotation_superclass following the proposed groups in Section 4.6.2 |
-| curated_lib_annotation_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the curated_lib_annotation_superclass_grouping zero, one or more times as detailed in Section 4.6.2|
+| curated_lib_annotation_superclass_GR_ \<final curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the curated_lib_annotation_superclass_grouping zero, one or more times as detailed in Section 4.6.2|
 | curated_lib_annotation_score | the corresponding score of the final curated identification from the best origin. Equals to tremolo_UNPD_score_best for UNPD, or gnps_score for GNPS, or 0 otherwise. |
 | curated_lib_annotation_quality  | a quality group for the final curated identification. Equals to '1' if curated_lib_annotation_score >= 50, or '2' if curated_lib_annotation_score < 50 and curated_lib_annotation_score > 0, or '0' otherwise (curated_lib_annotation_score == 0). |
 
@@ -1862,15 +1863,15 @@ In the GNPS Library Search (LS) workflow result, the '#Scan' column present in t
 
 At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
 
-##### 4.13.4. *gnps_result* Identification Curation and UNPDxGNPS Final Curation
+##### 4.13.4. *gnps_result* GNPS Identification Curation and UNPDxGNPS Final Curation
 
-A curation of the identification results was also proposed for the gnps_result in order to score and rank the best identifications from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
+A curation of the GNPS identification results was also proposed for the gnps_result in order to score and rank the best library annotations from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
 
 The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
 
 Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD' for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
 
-Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the Identification Curation of UNPD-tremolo. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the UNPD Identification Curation. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
 
 | GNPS Category | Score | Criteria | 
 | :--------------- | :---: | :------------------------------------: | 
