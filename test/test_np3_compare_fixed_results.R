@@ -507,7 +507,7 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
   if (gnps_library_search_tool != "") {
     chemical_reports_filenames <- c("chemical_statistics_UNPD.csv",
                                     "chemical_identification_statistics_GNPS.csv",
-                                    "chemical_identification_statistics_UNPDxGNPS_best_origin.csv")
+                                    "chemical_identification_statistics_UNPDxGNPS_final_curation.csv")
     chemical_reports_names <- c("UNPD",
                                 "GNPS",
                                 "UNPDxGNPS")
