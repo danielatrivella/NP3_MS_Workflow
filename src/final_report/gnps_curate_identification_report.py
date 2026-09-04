@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 Created on 08 Octu 2025
-@author: Cris
+@author: Cris, inspired in some of Rafa's F code
 
 Script to select the best result from the GNPS identification Library Search or Molecular Networking workflows
 Compare the gnps smiles with the best tremolo smiles when present, then categorize the gnps result using mqscore,
 mzerror and number of shared peaks. Uses a defined scoring and classification system to curate the results and select
 best results.
-  creates the coluns gnps_score and gnps_category with the final scores of the best identification and its classification
-  creates the column curated_identification_best_origin to store the current best origin of valid identifications - checked as 'UNPD' for all valid classifications
-  creates the gnps_curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group for GNPS and the best origin (UNPDxGNPS)
+  creates the columns gnps_score and gnps_category with the final scores of the best identification and its classification
+  creates the columns starting with curated_lib_annotation_ to store the final curated library annotations from the best origin - GNPS or UNPD
+  creates the gnps_curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group for GNPS and the final curated annotation (UNPDxGNPS)
 Stores the results in the clean table as new coloumns - overwritting it
 
 Args:
@@ -25,7 +25,7 @@ import pandas as pd
 import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit.Chem import rdFingerprintGenerator
-from tremolo_UNPD_curate_identification import group_curated_superclass_toCols
+from tremolo_UNPD_curate_identification import group_curated_superclass_toCols, final_lib_annotation_curation
 from pathlib import Path
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot
 from chemical_report_statistics import compute_chemical_identification_report_GNPS_result, plot_superclass_samples_distribution
@@ -157,16 +157,6 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
     # Create the column gnps_score to store the mapping result
     clean_table['gnps_score'] = clean_table['gnps_category'].map(score_mapping)
     
-    # define the best source of identification, if tremolo UNPD present compare their score
-    if 'tremolo_UNPD_score_best' in clean_table.columns:
-        clean_table.loc[(clean_table.gnps_score > 0) &
-                        (clean_table.gnps_score >= clean_table.tremolo_UNPD_score_best),
-                        'curated_identification_best_origin'] = 'GNPS'
-    else:
-        # no tremolo unpd result, set best source as empty and select the GNPS results
-        clean_table['curated_identification_best_origin'] = ''
-        clean_table.loc[(clean_table.gnps_score > 0), 'curated_identification_best_origin'] = 'GNPS'
-        
     # make the clean and the curated superclass for GNPS identification
     # get the first superclass from NPClassifier, the one before the pipe "|", if not NA else leave as NA
     clean_table['gnps_npclassifier_superclass_clean'] = clean_table.gnps_npclassifier_superclass.apply(
@@ -189,31 +179,11 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
         clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True)
     clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
     
-    # and now curate the superclass of the best origin, if tremolo result is present
-    # extract the best origin smiles and superclass and then group them
-    if 'tremolo_curated_superclass' in clean_table.columns:
-        clean_table['best_origin_curated_superclass'] = ''
-        clean_table['best_origin_SMILES'] = ''
-        # get superclass for best origin gnps
-        best_origin_gnps = (clean_table.curated_identification_best_origin == 'GNPS')
-        clean_table.loc[best_origin_gnps, 'best_origin_curated_superclass'] = clean_table.loc[
-            best_origin_gnps, 'gnps_curated_superclass']
-        clean_table.loc[best_origin_gnps, 'best_origin_SMILES'] = clean_table.loc[
-            best_origin_gnps, 'gnps_Smiles']
-        # get super class best origin unpd
-        best_origin_unpd = (clean_table.curated_identification_best_origin == 'UNPD')
-        clean_table.loc[best_origin_unpd, 'best_origin_curated_superclass'] = clean_table.loc[
-            best_origin_unpd, 'tremolo_curated_superclass']
-        clean_table.loc[best_origin_unpd, 'best_origin_SMILES'] = clean_table.loc[
-            best_origin_unpd, 'tremolo_SMILES_best']
-        # create grouping for best_origin_curated_superclass
-        curated_superclass_groupings = group_curated_superclass_toCols(clean_table['best_origin_curated_superclass'])
-        curated_superclass_groupings.columns = "best_origin_" + curated_superclass_groupings.columns
-        # drop previous result if exists
-        clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True, errors="ignore")  # remove existing new columns
-        clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
+    # make the final curation, if unpd result is present retrieve the best origin result from the two library annotations
+    # otherwise retrieve only the curated result from GNPS - new columns with prefix curated_lib_annotation_
+    clean_table = final_lib_annotation_curation(clean_table)
     
-    print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin: ",
+    print("  - Saving the clean table with the GNPS curated annotation result, superclass groupings and best final curated annotation: ",
           clean_table_file)
     # save the data with the new columns - overwrite original table
     clean_table.to_csv(clean_table_file, index=False, float_format="%.4f")
@@ -227,15 +197,15 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
         # no other clean table to save the curation result, set as empty
         clean_table_other_file = Path('')
     if clean_table_other_file.exists() and clean_table_other_file.is_file():
-        print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and best origin: ",
+        print("  - Saving the clean table with the GNPS curated identification result, superclasses groupings and final curation: ",
             clean_table_other_file)
-        gnps_columns = ['gnps_GoldCategory', 'gnps_category', 'gnps_score', 'gnps_npclassifier_superclass_clean',
-                        'gnps_npclassifier_superclass_grouping', 'curated_identification_best_origin']
+        gnps_columns = ['gnps_GoldCategory', 'gnps_score', 'gnps_category', 'gnps_npclassifier_superclass_clean',
+                        'gnps_npclassifier_superclass_grouping']
         if 'tanimoto_unpd_gnps' in clean_table.columns:
             gnps_columns = ['tanimoto_unpd_gnps'] + gnps_columns
         new_curated_columns = np.concatenate([gnps_columns,
                                               clean_table.columns.values[
-                                                  clean_table.columns.str.startswith("best_origin_") |
+                                                  clean_table.columns.str.startswith("curated_lib_annotation_") |
                                                   clean_table.columns.str.startswith("gnps_curated_superclass")]])
         clean_table_other = pd.read_csv(clean_table_other_file, converters={'msclusterID': str}, low_memory=False)
         clean_table_other.drop(new_curated_columns, axis=1, inplace=True, errors="ignore") # remove existing new columns
@@ -251,9 +221,9 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
     if metadata_file != "":
         plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
                                              superclass_grouping_name="gnps_curated_superclass_grouping")
-        if 'best_origin_curated_superclass_grouping' in clean_table.columns:
+        if 'curated_lib_annotation_superclass_grouping' in clean_table.columns:
             plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
-                                                 superclass_grouping_name="best_origin_curated_superclass_grouping")
+                                                 superclass_grouping_name="curated_lib_annotation_superclass_grouping")
     # call create report table
     compute_chemical_identification_report_GNPS_result(clean_table_file, chemical_report_path)
     # call PCA for GNPS and UNPDxGNPS
