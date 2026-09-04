@@ -4,10 +4,11 @@
 
 - - - - 
 
-# Current Version 1.5.1
+# Current Version 1.6.0
 
 - NEW features:
 
+  - (1.6.0) Standardized the final identification curation method and updated the names of the created columns using a prefix equals "curated_lib_annotation_*". More details in Section 4.6.3.
   - (1.5.1) Bug fix in the join_jobs Step 7 when joining the IVAMNs. When the noise cutoff is applied the filtered IVAMN must reset its index to prevent matching errors in the next filters.
       - Bug fix in the superclass distribution plot, added missing class "Organohalogen_and_Organometallic".    
   - (1.5.0) A new command called **post_dd_analysis** was added to the NP³ MS Workflow! The *noise_cutoff* was changed to receive an absolute value.
@@ -26,6 +27,18 @@
       - A new command was implemented, called **gnps_library_search**, which is capable of executing the GNPS2 Library Search workflow with some minor adaptations and full integration with the NP³ results and reports.
       - The ALL\_GNPS\_NO\_PROPOGATED library (all LC data present in GNPS2) is retrieved locally (**setup** command) and its annotations were previous enriched on April 2026 (no internet connection is needed).
       - This routine was also automated in the **run** command as step 6.1, which automatically identifies the result against GNPS2 experimental data.
+
+- - - -
+
+# NP³ Online in GNPS2 Workflows
+
+The $NP^{3}$ MS workflow is included in the GNPS2 Workflows and may be executed online using their web interface. 
+This interface includes the **pre_process**+**run** commands features (Steps 2 to 10) and 
+the most important parameters. Using the desired parameters and one click, your job is submitted!
+
+Search for "np3" in the GNPS2 workflows list: https://gnps2.org/workflows.
+
+For a more personalized use, the full installation is required and the CLI must be used.
 
 - - - -
 
@@ -48,7 +61,11 @@ The NP³ MS workflow consists of ten major steps, where only the first requires 
 ![NP³ MS Workflow Pipeline](docs/img/NP3_MS_workflow_infographic.jpg "NP³ MS Workflow Pipeline") 
 
 
-This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. A third command to join the GNPS or GNPS2 library identification results to the NP³ MS workflow quantification tables. A fourth command to execute locally the GNPS2 library search. A fifth command to unite different results from the NP³ MS Workflow. And a sixth command to create PCA plots in the NP³ reference chemical space.
+This workflow also contains two interactive commands for MS1 and MS2 data visualization and analysis. 
+A third command to join the GNPS or GNPS2 library identification results to the NP³ MS workflow quantification tables. 
+A fourth command to execute locally the GNPS2 library search. 
+A fifth command to unite different results from the NP³ MS Workflow. 
+And a sixth command to create PCA plots in the NP³ reference chemical space.
 
 The Steps 2 to 10 can be automatically executed with the NP³ command **run**. And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically execute Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach. At the end of the pipeline, final reports are created containing quantification, chemical and molecular networking statistics and plots. The chemical space of the identified result using PCA method is also created using a reference dataset for comparison and reproducibility.
 
