@@ -351,8 +351,8 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 	if 'gnps_category' not in clean_data.columns or (clean_data.gnps_category == "out").all():
 		gnps_curated = False
 		print("  - No valid GNPS curated data is available. All gnps_category is 'out' or missing. The chemical identification report for GNPS will use the best result not curated.")
-	if 'gnps_Smiles' in clean_data.columns and clean_data.gnps_Smiles.isna().all():
-		print("  - No valid GNPS identification data is available. All gnps_Smiles are NA. Aborting the chemical identification report for GNPS and final curated library annotation.")
+	if 'gnps_SpectrumID' in clean_data.columns and clean_data.gnps_SpectrumID.isna().all():
+		print("  - No valid GNPS identification data is available. All gnps_SpectrumID are NA. Aborting the chemical identification report for GNPS and final curated library annotation.")
 		return 0
 	
 	# create dictionary to store the chemical and identification statistics of the job for GNPS result
@@ -413,12 +413,12 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				"Total number of "+mz_types+" m/zs that were identified against the GNPS libraries (gnps_category != 'out'). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
 			# unique curated library annotations
 			number_unique_gnps_curated = clean_data.gnps_Smiles[
-				(clean_data.gnps_category != "out")].unique().size
+				(clean_data.gnps_category != "out") & (~clean_data.gnps_Smiles.isna())].unique().size
 			gnps_statistics['Statistics'].append("Number of unique GNPS library annotations curated and their coverage")
 			gnps_statistics['Value'].append(
 				f"{number_unique_gnps_curated} ({number_unique_gnps_curated / total_gnps_fixo * 100:.1f}%)")
 			gnps_statistics['Description'].append(
-				"Total number of unique GNPS library annotations from "+mz_types+" m/zs that passed the curation (unique gnps_Smiles with gnps_category != 'out') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique gnps_Smiles for gnps_category != 'out' over " + str(
+				"Total number of unique GNPS library annotations from "+mz_types+" m/zs that passed the curation (unique gnps_Smiles with gnps_category != 'out' and not NA) - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (unique gnps_Smiles for gnps_category != 'out' over " + str(
 					total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 		if curated_lib_annotation_exists:
 			# skip one empty row
@@ -428,19 +428,19 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			# identification statistics for spectra identification rate
 			number_identified_gnps = (clean_data.curated_lib_annotation_origin == "GNPS").sum()
 			number_identified_unpd = (clean_data.curated_lib_annotation_origin == "UNPD").sum()
-			unpd_gnps_statistics['Statistics'].append("Number of m/zs identified in UNPD or GNPS curated and spectral identification rate")
+			unpd_gnps_statistics['Statistics'].append("Number of m/zs identified in UNPD or GNPS final curated and spectral identification rate")
 			unpd_gnps_statistics['Value'].append(
 				f"{number_identified_gnps+number_identified_unpd} ({(number_identified_gnps+number_identified_unpd) / n * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of "+mz_types+" m/zs that were identified against the UNPD and GNPS libraries - final curated library annotation (curated_lib_annotation_origin != ''). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
+				"Total number of "+mz_types+" m/zs that were identified against the UNPD and GNPS libraries - final curated library annotation (curated_lib_annotation_origin not empty). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
 			unpd_gnps_statistics['Statistics'].append(
-				"Number of m/zs identified in UNPD as final curated library annotation curated and spectral identification rate")
+				"Number of m/zs identified in UNPD as final curated library annotation and spectral identification rate")
 			unpd_gnps_statistics['Value'].append(
 				f"{number_identified_unpd} ({(number_identified_unpd) / n * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
 				"Total number of "+mz_types+" m/zs that were identified against the UNPD and selected as origin in the final curated library annotation (curated_lib_annotation_origin == 'UNPD'). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
 			unpd_gnps_statistics['Statistics'].append(
-				"Number of m/zs identified in GNPS in the final curated library annotation and spectral identification rate")
+				"Number of m/zs identified in GNPS as final curated library annotation and spectral identification rate")
 			unpd_gnps_statistics['Value'].append(
 				f"{number_identified_gnps} ({(number_identified_gnps) / n * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
@@ -452,23 +452,24 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_unpd_gnps_curated} ({number_unique_unpd_gnps_curated/(total_gnps_fixo+total_unpd_fixo)*100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of unique UNPD and GNPS annotations that passed the final library annotation curation (unique curated_lib_annotation_SMILES with curated_lib_annotation_SMILES != '') - unique identified molecules and their percentage over the total number of unique SMILES in GNPS from "+gnps_date+" plus UNPD ("+str(total_gnps_fixo)+"+"+str(total_unpd_fixo)+" compounds for GNPS and UNPD total unique SMILES) - the final origin GNPS and UNPD coverage by [M+H]+.")
+				"Total number of unique UNPD and GNPS annotations that passed the final library annotation curation (unique curated_lib_annotation_SMILES with curated_lib_annotation_SMILES not empty) - unique identified molecules and their percentage over the total number of unique SMILES in GNPS from "+gnps_date+" plus UNPD ("+str(total_gnps_fixo)+"+"+str(total_unpd_fixo)+" compounds for GNPS and UNPD total unique SMILES) - the final origin GNPS and UNPD coverage by [M+H]+.")
 			# unique curated library annotations for unpd and gnps separated
 			number_unique_unpd_curated = clean_data.curated_lib_annotation_SMILES[
 				(clean_data.curated_lib_annotation_origin == "UNPD")].unique().size
 			number_unique_gnps_curated = clean_data.curated_lib_annotation_SMILES[
-				(clean_data.curated_lib_annotation_origin == "GNPS")].unique().size
+				(clean_data.curated_lib_annotation_origin == "GNPS") &
+				(~clean_data.curated_lib_annotation_SMILES.isna())].unique().size
 			unpd_gnps_statistics['Statistics'].append("Number of unique UNPD origin from the final curated library annotations and its UNPD coverage")
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_unpd_curated} ({number_unique_unpd_curated/total_unpd_fixo*100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of unique UNPD library annotations selected as final origin in the library annotation curation (unique curated_lib_annotation_SMILES with curated_lib_annotation_origin == 'UNPD') - unique identified molecules and its percentage over the total number of unique SMILES in UNPD (" + str(
+				"Total number of unique UNPD library annotations selected as origin in the final library annotation curation (unique curated_lib_annotation_SMILES with curated_lib_annotation_origin == 'UNPD') - unique identified molecules and its percentage over the total number of unique SMILES in UNPD (" + str(
 						total_unpd_fixo) + " compounds for UNPD total unique SMILES) - the UNPD coverage.")
 			unpd_gnps_statistics['Statistics'].append("Number of unique GNPS origin from the final curated library annotations and its GNPS coverage")
 			unpd_gnps_statistics['Value'].append(
 				f"{number_unique_gnps_curated} ({number_unique_gnps_curated / total_gnps_fixo * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of unique GNPS library annotations selected as final origin in the library annotation curation (unique curated_lib_annotation_SMILES with curated_lib_annotation_origin == 'GNPS') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (" + str(
+				"Total number of unique GNPS library annotations selected as origin in the final library annotation curation (unique curated_lib_annotation_SMILES with curated_lib_annotation_origin == 'GNPS') - unique identified molecules and its percentage over the total number of unique SMILES in GNPS from "+gnps_date+" (" + str(
 				total_gnps_fixo) + " compounds for GNPS total unique SMILES) - the GNPS coverage.")
 		# skip one empty row
 		gnps_statistics['Statistics'].append("")
@@ -477,13 +478,14 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 		# all gnps
 		# add identification stats for all gnps results not curated
 		# identification statistics for spectra identification rate
-		number_identified_gnps_all = (~clean_data.gnps_Smiles.isna()).sum()
+		# count all identifications with and without smiles using the gnps_SpectrumID
+		number_identified_gnps_all = (~clean_data.gnps_SpectrumID.isna()).sum()
 		gnps_statistics['Statistics'].append(
 			"Number of m/zs identified in GNPS all and spectral identification rate")
 		gnps_statistics['Value'].append(
 			f"{number_identified_gnps_all} ({number_identified_gnps_all / n * 100:.1f}%)")
 		gnps_statistics['Description'].append(
-			"Total number of all "+mz_types+" m/zs that were identified against the GNPS libraries (gnps_Smiles != NA). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
+			"Total number of all "+mz_types+" m/zs that were identified against the GNPS libraries (gnps_SpectrumID is not NA). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
 		# unique all library annotations
 		number_unique_gnps_all = clean_data.gnps_Smiles[(~clean_data.gnps_Smiles.isna())].unique().size
 		gnps_statistics['Statistics'].append("Number of unique GNPS library annotations from all and its GNPS coverage")
@@ -503,7 +505,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 			unpd_gnps_statistics['Value'].append(
 				f"{number_identified_gnps_all} ({number_identified_gnps_all / n * 100:.1f}%)")
 			unpd_gnps_statistics['Description'].append(
-				"Total number of all "+mz_types+" m/zs that were identified against the GNPS libraries (gnps_Smiles != NA). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
+				"Total number of all "+mz_types+" m/zs that were identified against the GNPS libraries (gnps_SpectrumID is not NA). And its percentage over the total number of "+mz_types+" m/zs - the spectral identification rate.")
 			# unique library annotations gnps all
 			unpd_gnps_statistics['Statistics'].append("Number of unique GNPS library annotations from all and its GNPS coverage")
 			unpd_gnps_statistics['Value'].append(
@@ -672,23 +674,23 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 				number_protonated_identified_gnps_best = (clean_data.curated_lib_annotation_origin == "GNPS").sum()
 				number_protonated_identified_unpd_best = (clean_data.curated_lib_annotation_origin == "UNPD").sum()
 				# curated library annotations
-				unpd_gnps_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in UNPD or GNPS curated")
+				unpd_gnps_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in UNPD or GNPS final curated")
 				unpd_gnps_statistics['Value'].append(
 					f"{number_protonated_identified_unpd_best+number_protonated_identified_gnps_best} ({(number_protonated_identified_unpd_best+number_protonated_identified_gnps_best) / number_protonated_mzs * 100:.1f}%)")
 				unpd_gnps_statistics['Description'].append(
-					"Total number of "+mz_types+" [M+H]+ m/zs that were identified against the UNPD or GNPS and passed the final library annotation curation (curated_lib_annotation_origin != ''). And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
+					"Total number of "+mz_types+" [M+H]+ m/zs that were identified against the UNPD or GNPS and passed the final library annotation curation (curated_lib_annotation_origin not empty). And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
 				# unpd origin in the final curated library annotation
-				unpd_gnps_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in UNPD as final origin in the library annotation curation")
+				unpd_gnps_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in UNPD as final curated library annotation")
 				unpd_gnps_statistics['Value'].append(
 					f"{number_protonated_identified_unpd_best} ({number_protonated_identified_unpd_best / number_protonated_mzs * 100:.1f}%)")
 				unpd_gnps_statistics['Description'].append(
-					"Total number of "+mz_types+" [M+H]+ m/zs that were identified against the UNPD and selected as final origin in the library annotation curation (curated_lib_annotation_origin == 'UNPD'). And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
+					"Total number of "+mz_types+" [M+H]+ m/zs that were identified against the UNPD and selected as origin in the final library annotation curation (curated_lib_annotation_origin == 'UNPD'). And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
 				# gnps final origin in the library annotation curation
-				unpd_gnps_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in GNPS as final origin in the library annotation curation")
+				unpd_gnps_statistics['Statistics'].append("Number of [M+H]+ m/zs identified in GNPS as final curated library annotation")
 				unpd_gnps_statistics['Value'].append(
 					f"{number_protonated_identified_gnps_best} ({number_protonated_identified_gnps_best / number_protonated_mzs * 100:.1f}%)")
 				unpd_gnps_statistics['Description'].append(
-					"Total number of "+mz_types+" [M+H]+ m/zs that were identified against the GNPS and selected as final origin in the library annotation curation (curated_lib_annotation_origin == 'GNPS'). And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
+					"Total number of "+mz_types+" [M+H]+ m/zs that were identified against the GNPS and selected as origin in the final library annotation curation (curated_lib_annotation_origin == 'GNPS'). And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
 				# unpd and gnps novel
 				unpd_gnps_statistics['Statistics'].append("Number of putative novel [M+H]+ m/zs in GNPS and UNPD curated")
 				unpd_gnps_statistics['Value'].append(
@@ -697,7 +699,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 					"Total number of "+mz_types+" [M+H]+ m/zs that were NOT identified against the UNPD or the GNPS libraries (curated_lib_annotation_origin == ''), thus, may represent putative novel compounds not present in the databases. And its percentage over the total number of "+mz_types+" [M+H]+ m/zs.")
 				# dataset coverage for final origin in the library annotation curation
 				number_protonated_unique_identification_gnps_best = clean_data.curated_lib_annotation_SMILES[
-					(clean_data.curated_lib_annotation_origin == "GNPS")].unique().size
+					(clean_data.curated_lib_annotation_origin == "GNPS") & (~clean_data.curated_lib_annotation_SMILES.isna())].unique().size
 				number_protonated_unique_identification_unpd_best = clean_data.curated_lib_annotation_SMILES[
 					(clean_data.curated_lib_annotation_origin == "UNPD")].unique().size
 				# GNPS coverage
@@ -723,7 +725,7 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 							(~clean_data.curated_lib_annotation_origin.isna())].str.split(":", expand=True).to_numpy())
 					                                           if x == x and x is not None and x is not ""]).size
 					unpd_gnps_statistics['Statistics'].append(
-						"Chemical diversity of [M+H]+ in GNPS and UNPD Superclasses curated best")
+						"Chemical diversity of [M+H]+ in GNPS and UNPD Superclasses final curated")
 					unpd_gnps_statistics['Value'].append(
 						f"{number_unique_superclass_best} ({number_unique_superclass_best / total_superclass_npclassifier * 100:.1f}%)")
 					unpd_gnps_statistics['Description'].append(
@@ -734,11 +736,11 @@ def compute_chemical_identification_report_GNPS_result(clean_table_file, output_
 						clean_data.curated_lib_annotation_superclass_grouping.values[(clean_data.curated_lib_annotation_origin != "") &
 						                                                             (~clean_data.curated_lib_annotation_origin.isna()) &
 						                                                             (clean_data.curated_lib_annotation_superclass_grouping != "Not_Annotated")]).size
-					unpd_gnps_statistics['Statistics'].append("Chemical diversity of [M+H]+ in GNPS and UNPD Superclasses curated best grouping")
+					unpd_gnps_statistics['Statistics'].append("Chemical diversity of [M+H]+ in GNPS and UNPD Superclasses grouping final curated")
 					unpd_gnps_statistics['Value'].append(
 						f"{number_unique_superclass_grouping_best} ({number_unique_superclass_grouping_best / total_superclass_npclassifier_grouping * 100:.1f}%)")
 					unpd_gnps_statistics['Description'].append(
-						"The unique number of superclasses grouping that got identified by the "+mz_types+" [M+H]+ m/zs in UNPD or GNPS libraries. And its percentage over the total number of unique superclasses grouping considered (" + str(
+						"The unique number of superclasses grouping that got identified by the "+mz_types+" [M+H]+ m/zs in UNPD or GNPS libraries (unique curated_lib_annotation_superclass_grouping != Not_Annotated). And its percentage over the total number of unique superclasses grouping considered (" + str(
 							total_superclass_npclassifier_grouping) + " groups proposed by NP3 from the NPClassifier superclasses without the not annotated ones). ")
 				# add chemical diversity for all GNPS and UNPD results before curation - no filter
 				# add M+H identification stats for all final curated library annotation results not curated - identification no filter
