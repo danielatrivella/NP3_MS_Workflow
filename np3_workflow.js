@@ -120,7 +120,7 @@ function convertIonMode(mode) {
     mode = parseDecimal(mode);
 
     if (![1,2].includes(mode)) {
-        console.error('\nERROR. Wrong ion_mode parameter value. The ion mode must be a positive numeric value in {1,2}. Execution aborted.');
+        console.error('\nERROR. Wrong ion_mode parameter value. The ion mode must be a positive numeric value in {1,2} for positive and negative modes, respectively. Execution aborted.');
         process.exit(1);
     }
 
@@ -1457,7 +1457,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
 }
 
 // run GNPS Library Search using one of 3 different search tools: gnps (original), gnps_indexed and gnps_new
-// Search only in the default LC library, the ALL_GNPS_NO_PROPOGATED (do not need to merge different libraries search result at this point)
+// Search only in the default LC library, the ALL_GNPS_NO_PROPAGATED (do not need to merge different libraries search result at this point)
 // Also includes the summary of the library matches (available in the NP3 repo) and
 // filter the top 1 result - all steps using the GNPS algorithms adapted for the NP3 pipeline - all offline
 // the similarity algorithm used is the cos in all search tools, which is the default. Not using the Filter Only To Compounds with Structures - set to no.
@@ -1468,7 +1468,7 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
                                analog_search, analog_max_shift, threads) {
     var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
     const start_gnps_libsearch = process.hrtime.bigint();
-    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** \n';
+    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPAGATED *** \n';
     console.log(gnpslibsearch_start);
     if (search_tool === "gnps") {
         // there is no max shift for analog search and no parallelization
@@ -2023,8 +2023,7 @@ program
         'generous multiple of the mass accuracy of the mass\n\t\t\t\t\t' +
         'spectrometer', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to an ion adduct type: \'1\' = [M+H]+ or\n\t\t\t\t\t' +
-        '\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to an ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
         'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
         'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
@@ -2148,7 +2147,7 @@ program
     .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
         'the Tremolo tool should be used for the spectra matching\n\t\t\t\t\t' +
         'against the ISDB from the UNPD (Step 6)', toupper, "TRUE")
-    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
+    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPAGATED (Step 6.1). ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine, the peak transformation function is the square root and top k equals 5.',
         convertGNPSSearchTool, "gnps_indexed")
@@ -2233,7 +2232,13 @@ program
 
         // setup GNPS library search parms and library path
         var resExec_gnps = 1; // set the execution as not executed
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        // use ion mode here to select the correct library in positive or negative mode
+        if (options.ion_mode === 1) { // positive
+            var ion_mode = "Positive";
+        } else { // for ion_mode == -1 negative
+            var ion_mode = "Negative";
+        }
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPAGATED_IonMode_"+ion_mode+".mgf";
         const top_k = 5; // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
         var filter_window = "0";
         if (options.gnps_window_filter === "TRUE")
@@ -2247,7 +2252,7 @@ program
         // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
         if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
         {
-            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library "+library_mgf_path+" is not "+
                         "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
                         "Please execute the np3 setup command again to retrieve this library file and allow the search.");
             options.gnps_search_tool = "";
@@ -2557,8 +2562,7 @@ program
         'generous multiple of the mass accuracy of the mass\n\t\t\t\t\t' +
         'spectrometer.', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to a ion adduct type: \'1\' = [M+H]+ or\n\t\t\t\t\t' +
-        '\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-e, --peak_width [X,Y]', 'two numeric values separated by comma without spaces and using\n\t\t\t\t\t' +
         'decimal point equals dot, containing the expected\n\t\t\t\t\t' +
         'approximate peak width in chromatographic space. Given\n\t\t\t\t\t' +
@@ -2729,7 +2733,7 @@ program
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
         'to be used in the pre-processing step if processed_data_overwrite is TRUE\n\t\t\t\t\t', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-s, --similarity [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
         'clustering, starts in 0.70 and decrease to X in 15 rounds\n\t\t\t\t\t', parseFloat, 0.55)
     .option('-g, --similarity_blank [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
@@ -2975,7 +2979,7 @@ program
         'in the annotation Step 7; and the tolerance [y] is used \n\t\t\t\t\t' +
         'in the clean Step 5', splitListFloat, [1,2])
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values corresponding ' +
-        'to a ion adduct type: \'1\' = [M+H]+ or \'2\' = [M-H]-', convertIonMode,1)
+        'to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
         'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
         'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
@@ -3294,7 +3298,7 @@ program
         'fragmented peaks with an intensity >= x and to use them in the in-source fragment variant annotation. ' +
         'The MS2 fragmented peaks intensity range from 0 to 1000. (default to 15)', parseFloat, "15")
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values corresponding ' +
-        'to a ion adduct type: \'1\' = [M+H]+ or \'2\' = [M-H]-', convertIonMode,1)
+        'to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules for ' +
         'detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses.',
         __dirname+"/rules/np3_modifications.csv")
@@ -3625,7 +3629,7 @@ program
         'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
         'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t', parseFloat, 2)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
         'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
         'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
@@ -3718,7 +3722,7 @@ program
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra to be loaded and processed in a\n\t\t\t\t\t" +
         "chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased",parseDecimal,3000)
-    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
+    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPAGATED (Step 6.1). ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
         convertGNPSSearchTool, "gnps_indexed")
@@ -3802,7 +3806,13 @@ program
 
         // setup GNPS library search parms and library path
         var resExec_gnps = 1; // set the execution as not executed
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        // use ion mode here to select the correct library in positive or negative mode
+        if (options.ion_mode === 1) { // positive
+            var ion_mode = "Positive";
+        } else { // for ion_mode == -1 negative
+            var ion_mode = "Negative";
+        }
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPAGATED_IonMode_"+ion_mode+".mgf";
         const top_k = 5; // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
         var filter_window = "0";
         if (options.gnps_window_filter === "TRUE")
@@ -3816,7 +3826,7 @@ program
         // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
         if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
         {
-            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library "+library_mgf_path+" is not "+
                 "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
                 "Please execute the np3 setup command again to retrieve this library file and allow the search.");
             options.gnps_search_tool = "";
@@ -4080,7 +4090,7 @@ program
 program
     .command('gnps_library_search')
     .description('Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against '+
-                 'the ALL_GNPS_NO_PROPOGATED library (default for LC data).\n\n')
+                 'the ALL_GNPS_NO_PROPAGATED library (default for LC data).\n\n')
     .option('-g, --input_mgf_file <path>','path to the input MGF file with ' +
         'the MS/MS spectra data to be searched and identified')
     .option('-o, --output_path <path>', 'if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. ' +
@@ -4090,7 +4100,9 @@ program
         parseFloat, 0.025)
     .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. ' +
         'Used for comparing the mass of the peaks during the search.', parseFloat, 0.05)
-    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED. ' +
+    .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-. This will be used to select the library MGF file.', convertIonMode,1)
+    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPAGATED. ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
         convertGNPSSearchTool, "gnps_indexed")
@@ -4135,7 +4147,27 @@ program
         const start_gnpssearch = process.hrtime.bigint();
         // run workflow
         console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        // use ion mode here to select the correct library in positive or negative mode
+        if (options.ion_mode === 1) { // positive
+            var ion_mode = "Positive";
+        } else { // for ion_mode == -1 negative
+            var ion_mode = "Negative";
+        }
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPAGATED_IonMode_"+ion_mode+".mgf";
+        // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
+        if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
+        {
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library "+library_mgf_path+" is not "+
+                "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
+                "Please execute the np3 'setup' command again to retrieve this library file and allow the search.");
+            options.gnps_search_tool = "";
+        }
+        if (options.gnps_search_tool === "")
+        {
+            console.error("Invalid gnps_search_tool selected equals to '' - disabled.");
+            process.exit(1);
+        }
+
         const result_folder = options.output_path + osSep() + "identifications";
         var output_name = basename(options.output_path);
         var filter_window = "0";
@@ -4169,7 +4201,7 @@ program
         console.log('');
         console.log('Creates a directory named "identifications", inside the provided *output_path*, to store the results. ');
         console.log('Three tables will be stored in this directory: \n' +
-            '1) one containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPOGATED.mgf) and the search tool used;\n' +
+            '1) one containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPAGATED_IonMode_<ion_mode>.mgf) and the search tool used;\n' +
             '2) another containing table 1 enriched with GNPS2 annotations named with the *output_path* basename plus the tag "library_search" and the search tool used;\n' +
             '3) and the final result table with the top 1 result named with table 2 name plus a suffix equals "top1".\n' +
             'A log file with the searching outputs is also created, named "logGNPS2LibrarySearch".');
@@ -4233,7 +4265,7 @@ program
         console.log('RESULTS:');
         console.log('');
         console.log('The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", ' +
-            '"gnps_Adduct", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", ' +
+            '"gnps_Adduct", "gnps_IonMode", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", ' +
             '"gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_superclass", ' +
             '"gnps_class", "gnps_subclass" and "gnps_Ion_Source_Instrument". See the GNPS documentation for the ' +
             'description of these columns.\n' +
