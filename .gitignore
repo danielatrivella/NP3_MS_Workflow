@@ -51,3 +51,7 @@ src/GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.t
 src/GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_enriched.tsv
 src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/__pycache__/*
 src/GNPS_LibrarySearch/GNPS2_LibrarySearch_Workflow/gnps_new/__pycache__/*
+
+# Cytoscape logs #
+##################
+logs/*
