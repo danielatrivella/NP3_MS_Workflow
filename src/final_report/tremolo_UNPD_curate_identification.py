@@ -137,6 +137,8 @@ def final_lib_annotation_curation(clean_table_df):
 	# otherwise use only the best result of the present library with score > 0
 	# reset curated library annotation columns
 	clean_table_df['curated_lib_annotation_origin'] = ''
+	clean_table_df['curated_lib_annotation_ID'] = ''
+	clean_table_df['curated_lib_annotation_compoundName'] = ''
 	clean_table_df['curated_lib_annotation_SMILES'] = ''
 	clean_table_df['curated_lib_annotation_superclass'] = ''
 	clean_table_df['curated_lib_annotation_score'] = 0
@@ -168,6 +170,10 @@ def final_lib_annotation_curation(clean_table_df):
 			curated_origin_gnps, 'gnps_Smiles']
 		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_score'] = clean_table_df.loc[
 			curated_origin_gnps, 'gnps_score']
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_ID'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_SpectrumID']
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_compoundName'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_Compound_Name']
 	# get SMILES and curated superclass from origin = unpd
 	curated_origin_unpd = (clean_table_df.curated_lib_annotation_origin == 'UNPD')
 	if curated_origin_unpd.any():
@@ -177,6 +183,10 @@ def final_lib_annotation_curation(clean_table_df):
 			curated_origin_unpd, 'tremolo_SMILES_best']
 		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_score'] = clean_table_df.loc[
 			curated_origin_unpd, 'tremolo_UNPD_score_best']
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_ID'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_UNPD_IDs_best']
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_compoundName'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_chemicalNames_best']
 	# create quality classification for the curated annotation based on the score
 	clean_table_df.loc[clean_table_df.curated_lib_annotation_score > 0, "curated_lib_annotation_quality"] = 2
 	clean_table_df.loc[clean_table_df.curated_lib_annotation_score >= 50, "curated_lib_annotation_quality"] = 1
