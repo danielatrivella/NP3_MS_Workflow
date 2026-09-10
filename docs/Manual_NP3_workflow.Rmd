@@ -323,7 +323,7 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
-- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). 
+- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPAGATED library (default for LC data). 
     - List of mandatory options:
     - *\-g, \-\-input_mgf_file* \<path\>      :  path to the input MGF file with the MS/MS spectra data to be searched and identified
     - *\-o, \-\-output_path* \<path\>         :  if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. It should contain the "identifications" folder, if not it will be created and the results will be stored in it. If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).
@@ -403,7 +403,7 @@ Options for the command *run*:
 - *\-f, \-\-fragment_tolerance* [x]  : the tolerance in Daltons for fragment peaks. Peaks in the original MS/MS spectra that are closer than this tolerance are merged in the clustering steps (Step 3). It is also used in the pre-processing (Step 2), in the spectra similarity comparisons and in the cleanning Step 5 (default: 0.05)
 - *\-z, \-\-mz_tolerance* [x]              : this is the tolerance in Daltons for the m/z of the precursor that determines if two spectra will be compared and possibly joined. It is used in the clustering steps (Step 3), in the cleaning (Step 5), in the library identifications (Step 6) and in the annotation of ionization variants (Step 7) (default: 0.025)
 - *\-p, \-\-ppm_tolerance* [x]        : the maximum tolerated m/z deviation in parts per million (ppm) to be used in the pre-processing (Step 2). Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
-- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the minimum similarity to be considered in the hierarchical clustering of Step 3, starts in 0.70 and decrease to X in 15 rounds. Also used in the Step 5 quantification cleaning (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
@@ -561,7 +561,7 @@ Options for the command *pre_process*:
 -  *\-t, \-\-rt_tolerance* [x]       :       the tolerance in seconds used to enlarge the MS1 peaks boundaries and accept as a match all MS2 ions that have a retention time value that is within a MS1 peak range. This value is applied to both sides of the MS1 peaks (RTmin - rt_tolerance and RTmax + rt_tolerance). Tries to overcome bad MS1 peak integrations. (default: 3)
 -  *\-z, \-\-mz_tolerance* [x]       :      the tolerance in Daltons for matching a MS1 peak m/z with a MS2 spectrum precursor m/z. (default: 0.05)
 -  *\-p, \-\-ppm_tolerance* [x]       :     the maximal tolerated m/z deviation in consecutive MS1 scans in parts per million (ppm) for the initial ROI definition of the R::xcms::centWave algorithm. Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
--  *\-a, \-\-ion_mode* [x]              :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = [M+H]+ or 2' = [M-H]- (default: 1)
+-  *\-a, \-\-ion_mode* [x]              :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 -  *\-e, \-\-peak_width* [X,Y]      :       two numeric separated by comma ',' without spaces and using decimal point equals dot '.', containing the expected approximate peak width in chromatographic space. Given as a range (min, max) in seconds. The mean value will be used to simulate the width of the fake peaks (see Details section bellow) (default: 2,10)
 -  *\-s, \-\-snthresh* [x]  :           a numeric defining the signal to noise ratio cutoff. (default: 0)
 -  *\-f, \-\-pre_filter* [k,I]  :       two numeric separated by comma ',' without spaces and with decimal point equals dot '.' specifying the prefilter step for the first analysis step (ROI detection) of the R::xcms::centWave algorithm. Mass traces are only retained if they contain at least k peaks with intensity >= I. (default: 1,750)
@@ -709,7 +709,7 @@ Options for the command *clustering*:
 - *\-f, \-\-fragment_tolerance* [x]  :    the tolerance in Daltons for fragment peaks. Peaks in the original spectra that are closer than this get merged by the NP3_MSCluster algorithm (default: 0.05)
 - *\-z, \-\-mz_tolerance* [x]         :   this is the tolerance in Daltons for the m/z of the precursor that determines if two spectra will be compared and possibly joined. Used in the clustering job and in the library identifications (Step 6) (default: 0.025)
 - *\-p, \-\-ppm_tolerance* [x]        :   the maximal tolerated m/z deviation in parts per million (ppm) to be used in the pre-processing step if needed (default: 5)
-- *\-a, \-\-ion_mode* [x]            :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = [M+H]+ or '2' = [M\-H]\- (default: 1)
+- *\-a, \-\-ion_mode* [x]            :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-s, \-\-similarity* [x]           :   the minimum similarity to be consider in the hierarchical clustering, starts in 0.70 and decrease to X in 15 rounds (default: 0.55)
 - *\-g, \-\-similarity_blank* [x]      :  the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-t, \-\-rt_tolerance* [x,y] :        tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. The first tolerance [x] is used in the data, blank and batches integration clustering steps; and the second tolerance [y] is for the final integration step between all samples (default: 1,2)
@@ -849,7 +849,7 @@ Options for the command *clean*:
 - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
 - *\-z, \-\-mz_tolerance* [x]              : the tolerance in Daltons that determines if two spectra will be compared and possibly joined. It is also used in Step 7 to detect possible ion variants (default: 0.025)
 - *\-t, \-\-rt_tolerance* [x,y]        : tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. It is directly applied to the retention time minimum (subtracted) and maximum (added) of the spectra. It enlarges the peak boundaries to deal with disaligned samples or ionization variant spectra. The first tolerance [x] is used in the annotation Step 7; and the tolerance [y] is used in the clean Step 5 (default: 1,2)
-- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the similarity to be consider when joining clusters and merging their counts in not blank samples (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the similarity to be consider when joining clusters and merging their counts in blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
@@ -1023,6 +1023,8 @@ When the count_files are provided, the tremolo results are aggregated by spectra
 | tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Section 4.6.2 | 
 | tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in Section 4.6.2 |
 | curated_lib_annotation_origin | the database library origin of the final curated identification, which have the greater score. It receives 'UNPD' if tremolo_UNPD_score_best > 0 or 'GNPS' if gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. Detailed in Section 4.6.3. |
+| curated_lib_annotation_ID | the library ID of the final curated identification from the best origin. Equals to tremolo_UNPD_IDs_best where origin is UNPD, equals to gnps_SpectrumID where origin is GNPS, and equals '' otherwise |
+| curated_lib_annotation_compoundName | the compound name of the final curated identification from the best origin. Equals to tremolo_chemicalNames_best where origin is UNPD, equals to gnps_Compound_Name where origin is GNPS, and equals '' otherwise |
 | curated_lib_annotation_SMILES | the SMILES of the final curated identification from the best origin. If curated_lib_annotation_origin == UNPD it receives the value of the tremolo_SMILES_best, if curated_lib_annotation_origin == GNPS it receives the value of the gnps_Smiles, otherwise ''| 
 | curated_lib_annotation_superclass | the NPClassifier superclass of the final curated identification from the best origin. Equals to tremolo_curated_superclass where origin is UNPD, equals to gnps_curated_superclass where origin is GNPS, and equals '' otherwise |
 | curated_lib_annotation_superclass_grouping | the superclass group from the mapped curated_lib_annotation_superclass following the proposed groups in Section 4.6.2 |
@@ -1085,13 +1087,13 @@ At the end, the final identification curation is performed (next section).
 
 ##### 4.6.3. *tremolo* Final Identification Curation
 
-The final identification curation is performed at the end of the UNPD curation and at the end of the GNPS curation to select the origin (UNDP x GNPS) of the best library annotation present in the current $NP^{3}$ result. In the final reports, the final curated library annotations are used for the final statistics and compared with the best identifications from UNPD and GNPS not curated (complete identification result). The final identification curation results are stored in different columns with the prefix "curated_lib_annotation_*". 
+The final identification curation is performed at the end of the UNPD curation and at the end of the GNPS curation. It selects the origin (UNDP x GNPS) of the best library annotation present in the current $NP^{3}$ result, apply a filter based on their curated score and set a quality class. In the final reports, the final curated library annotations are used for the final statistics and compared with the best identifications from UNPD and GNPS not curated (complete identification result). The final curated library annotations are stored in different columns with the prefix "curated_lib_annotation_*". 
 
-It starts by creating the column "curated_lib_annotation_origin" with the library origin (UNPD or GNPS) of the best library annotation with a score greater than 0. This column is set to 'GNPS' if the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present, uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Otherwise, if the GNPS result is not present, set it to 'UNPD' where tremolo_UNPD_score_best > 0. The preference here goes to GNPS, which is an experimental spectra library.
+The final identification curation starts by creating the column "curated_lib_annotation_origin" with the library origin (UNPD or GNPS) of the best library annotation with a score greater than 0. This column is set to 'GNPS' if the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present, uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Otherwise, if the GNPS result is not present, set it to 'UNPD' where tremolo_UNPD_score_best > 0. The preference here goes to GNPS, which is an experimental spectra library.
 
 Then, using the selected origin of each final curated identification, the procedure retrieves its respective score (from 'gnps_score' for 'GNPS' and from 'tremolo_UNPD_score_best' for 'UNPD') and stores it in the column "curated_lib_annotation_score". When no origin was selected, the score is set to 0. Using the score of the final curated identification, the column "curated_lib_annotation_quality" is created by assigning three quality groups to the library annotations equals to '1' if the curated_lib_annotation_score >= 50, equals to '2' if the curated_lib_annotation_score > 0 and curated_lib_annotation_score < 50, and equals to '0' if the curated_lib_annotation_score == 0 (category 'out').
 
-Next, the SMILES of the final curated identification is set to the column "curated_lib_annotation_SMILES", which receives the value from the column "gnps_Smiles" where origin equals to "GNPS" or the value from the column "tremolo_SMILES_best" where origin equals to "UNPD", otherwise leave it empty. Similarly, the superclass of the final curated identification is set to the column "curated_lib_annotation_superclass", which receives the value from the columns "gnps_curated_superclass" or "tremolo_curated_superclass". 
+Next, the SMILES of the final curated identification is set to the column "curated_lib_annotation_SMILES", which receives the value from the column "gnps_Smiles" where origin equals to "GNPS" or the value from the column "tremolo_SMILES_best" where origin equals to "UNPD", otherwise leave it empty. Similarly, the superclass of the final curated identification is set to the column "curated_lib_annotation_superclass", which receives the value from the columns "gnps_curated_superclass" or "tremolo_curated_superclass"; the final curated ID is set to the column "curated_lib_annotation_ID", which receives the value from the columns "gnps_SpectrumID" or "tremolo_UNPD_IDs_best"; and the final curated compound name is set to the column "curated_lib_annotation_compoundName", which receives values from the columns "gnps_Compound_Name" or "tremolo_chemicalNames_best".
 
 Finally, using the values present in the superclass of the final curated library annotation, the columns with the superclass grouping are created accordingly named "curated_lib_annotation_superclass_grouping" and "curated_lib_annotation_superclass_GR_\<superclass_group\>", where superclass_group are the 10 superclass groups defined in the previous section plus the not annotated group.
 
@@ -1135,7 +1137,7 @@ Options for the command *annotate_protonated*:
 - *\-f, \-\-fragment_tolerance* [x]  : the tolerance in Daltons for matching the numerical rules of in-source fragments and multiple charge isotopic patterns. (default: 0.025)
 - *\-t, \-\-rt_tolerance* [x]        : tolerance in seconds to enlarge the peak boundaries for detecting concurrent variant spectra. (default: "2")
 - *\-i, \-\-absolute_ms2_int_cutoff* [x] :    The absolute intensity cutoff for fragmented MS2 peaks in the interval of 0 to 1000 (default: 15)
-- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-u, \-\-rules* [x]              :   path to the CSV file with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. (default: "rules/np3_modifications.csv")
 - *\-c, \-\-scale_factor* [x]          :  the scaling method to be used in the fragmented peak's intensities before any dot product comparison (Step 5). Valid values are: 0 for the natural logarithm (ln) of the intensities; 1 for no scaling; and other values greater than zero for raising the fragment peaks intensities to the power of x (e.g. x = 0.5 is the square root scaling). [x] >= 0 (default: 0.5)
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000)
@@ -1710,7 +1712,9 @@ The join_jobs workflow ends with the molecular networking (Step 10) similar to t
 
 ## 4.12. Command *gnps_library_search*
 
-Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). Data was enriched in April 2026.
+Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPAGATED library (default for LC data). Annotations data was enriched in April 2026.
+
+The GNPS identification curation is executed at the end to score and classify the retrieved library annotations (more details in Section 4.13.4).
 
 Options for the command *gnps_library_search*:
 
@@ -1730,8 +1734,9 @@ Options for the command *gnps_library_search*:
 - *\-f, \-\-fragment\_tolerance* [x]  :     the tolerance in Daltons for fragment peaks. Used for
                                      comparing the mass of the peaks during the search.
                                      (default: 0.05)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]-.  This will be used to select the library MGF file. (default: 1)
 - *\-i, \-\-search\_tool* [x]  :        the GNPS2 search tool to be used in the library
-                                     searching against the ALL_GNPS_NO_PROPOGATED. One of
+                                     searching against the ALL_GNPS_NO_PROPAGATED. One of
                                      "gnps_indexed", "gnps", "gnps_new" or "" (disabled). The
                                      similarity function is hardcoded to be the cosine and
                                      the peak transformation function is the square root.
@@ -1782,7 +1787,7 @@ Creates a directory named "identifications", inside the provided *output_path*, 
 
 Three tables will be stored in this directory: 
 
-1. One containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPOGATED.mgf) and the search tool used;
+1. One containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPAGATED_IonMode_\<ion_mode\>.mgf) and the search tool used;
 2. Another containing table 1 enriched with GNPS2 annotations named with the *output_path* basename plus the tag "library_search" and the search tool used;
 3. And the final result table with the top 1 result named with table 2 name plus a suffix equals "top1".
 
@@ -1793,21 +1798,37 @@ A log file with the searching outputs is also created, named "logGNPS2LibrarySea
 Example identifying the result of one of the test cases using the gnps_new search tool.
 
 ```{r, eval=F} 
-$ node np3_workflow.js gnps_library_search -g test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/
-L754_bacs_blanks_one_sample_clean.mgf -o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ -i gnps_new
+$ node np3_workflow.js gnps_library_search -g 
+test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/\
+L754_bacs_blanks_one_sample_clean.mgf \
+-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ \
+-i gnps_new
+```
+
+Now, example of identifying a data in the negative ion mode:
+
+```{r, eval=F} 
+$ node np3_workflow.js gnps_library_search -a 2 -g data_in_negative_ion_mode.mgf \
+-o output_path/data/library_search_result/ -i gnps_new
 ```
 
 ##### 4.12.3. *gnps_library_search* Details
 
-The GNPS2 Library Search workflow was adapted and integrated to the $NP^{3}$ MS Workflow. All LC libraries, aggregated in the ALL_GNPS_NO_PROPOGATED library (https://external.gnps2.org/gnpslibrary), are used in this routine. It's MGF is retrieved locally in the *setup* command and enriched with online annotations previous organized from April 2026. This enrichment is followed by a validation routine of the retrieved SMILES to maintain only the valid ones that can be processed by Cytoscape using ChemViz2. If the SMILES present in the MGF is validated it will be used in the entries where the online SMILES was invalid. The GNPS2 Library Search annotations will be updated with the GNPS2 online data from time to time by the admins of this repository. 
+The GNPS2 Library Search workflow was adapted and integrated to the $NP^{3}$ MS Workflow. All GNPS2 LC libraries, aggregated in the ALL_GNPS_NO_PROPOGATED library (https://external.gnps2.org/gnpslibrary), are used in this routine. It's MGF is retrieved locally by the *setup* command and is separated in two MGF files, one containing data in positive ion mode and another in negative ion mode only. Then, the setup creates a table with this MGF library ion headers information and enriches this table with GNPS2 online annotations previous organized from April 2026 (all offline). This enrichment is followed by a validation routine of the retrieved SMILES to maintain only the valid ones that can be processed by Cytoscape using ChemViz2 and to remove double quotes from the compound names. If a SMILES present in the MGF is validated it will be used in the entries where the online SMILES was invalid. 
 
-Three search tools from GNPS2 are used here for the local identifications: gnps_indexed (current default in GNPS2), gnps and gnps_new. The following filters that are applied in GNPS2 Library Search workflow were also adapted to use the offline annotations enrichment and the top1 selection was adapted to resolve ties in the MQScore by using the number of matched peaks and the library quality string of the retrieved matches (different from GNPS2 online which only uses the MQScore).
+The GNPS2 Library Search annotations will be updated with the GNPS2 online data from time to time by the admins of this repository and at that moment the *setup* command will need to be executed again to retrieve the new updates. 
 
-The ALL_GNPS_NO_PROPOGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from which 862848 (90%) spectra have a valid SMILES from 90253 unique molecules, which counts the unique SMILES present in the annotations. Additional disk space is necessary to store this library offline, around 4Gbs are used.
+Three search tools from GNPS2 are used here for the local identifications: gnps_indexed (current default in GNPS2), gnps and gnps_new. The following filters that are applied in GNPS2 Library Search workflow were also adapted here to use the offline annotations enrichment. The top1 selection was adapted to resolve ties in the MQScore by using the number of matched peaks and the library quality string of the retrieved matches (different from GNPS2 online which only uses the MQScore).
+
+The ALL_GNPS_NO_PROPAGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from which 862848 (90%) spectra have a valid SMILES from 90253 unique molecules, which counts the unique SMILES present in the annotations. The data in positive ion mode (ALL_GNPS_NO_PROPAGATED_IonMode_Positive) contains 713858 (75%) spectra and the data in negative ion mode (ALL_GNPS_NO_PROPAGATED_IonMode_Negative) contains 242500 (25%) spectra. Additional disk space is necessary to store this library offline, around 4Gbs are used.
 
 The GNPS2 data and the codes adapted and modified from GNPS2 are located in: 'src/GNPS_LibrarySearch'; The enriched annotations are located in:
 
-'GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv.tar.gz'. 
+'GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPAGATED_annotations.tsv.tar.gz'. 
+
+The retrieved libraries MGF files are stored in:
+
+'GNPS_LibrarySearch/data/libraries'.
 
 
 ## 4.13. Command *gnps_result*
@@ -1830,7 +1851,7 @@ Options for the command *gnps_result*:
  
 ##### 4.13.1. *gnps_result* Results
  
-The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", 
+The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_IonMode", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", 
 \newline "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
 See the GNPS documentation for the description of these columns (https://ccms-ucsd.github.io/GNPSDocumentation/spectrumcuration/#adding-single-spectra).
  
