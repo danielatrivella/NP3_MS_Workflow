@@ -376,7 +376,7 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
             new_data = new_data.loc[new_data.BLANKS_TOTAL == 0, :]
         if new_data.shape[0] == 0 or not (~new_data.gnps_Smiles.isna()).any():
             print(
-                "No not blank and valid GNPS curated library annotation is present in the provided clean table. " +
+                "No not blank and valid GNPS library annotation (gnps_Smiles not NA) is present in the provided clean table. " +
                 "Could not create the chemical space. Skipping PCA for library annotations.")
             return None
         # filter only the not bed results
@@ -384,12 +384,12 @@ def pca_calculation_smiles_rcdk_ref_plot(data_reference_path, new_data_path, out
             new_data = new_data.loc[new_data.BEDS_TOTAL == 0, :]
         if new_data.shape[0] == 0 or not (~new_data.gnps_Smiles.isna()).any():
             print(
-                "No not blank and not bed and valid GNPS curated library annotation is present in the provided clean table. " +
+                "No not blank and not bed and valid GNPS library annotation (gnps_Smiles not NA) is present in the provided clean table. " +
                 "Could not create the chemical space. Skipping PCA for library annotations.")
         # filter the valid gnps smiles with gnps_score > 0 and get their descriptors
         new_data_desc = new_data.loc[new_data.gnps_score > 0 ,["gnps_Smiles","protonated_representative"]]
         if new_data_desc.shape[0] == 0:
-            print("  - No valid GNPS curated library annotation with score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
+            print("  - No valid GNPS curated library annotation - gnps_score > 0. PCA plotting for GNPS and UNPDxGNPS aborted.")
             return None
         # read the descriptors calculation result and filter the valid ones
         gnps_descriptors_result = pd.read_csv(gnps_descriptors_file, low_memory=False)
