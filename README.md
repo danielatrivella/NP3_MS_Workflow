@@ -8,7 +8,12 @@
 
 - NEW features:
 
-  - (1.6.0) Standardized the final identification curation method and updated the names of the created columns using a prefix equals "curated_lib_annotation_*". More details in Section 4.6.3.
+  - (1.6.0) Standardized the final identification curation method and split the ALL_GNPS MGF library by ion mode (**setup** required). Updated some of the final reports chemical statistics.
+      - Updated the names of the final curated library annotation columns using a prefix equals "curated_lib_annotation_*". More details in Manual Section 4.6.3.
+      - Split the ALL_GNPS_NO_PROPOGATED.mgf in two MGF files, one with the positive ions and another with the negative ions. The library search procedure will choose the appropriated library depending on the ion_mode informed, positive or negative. The **setup** must be executed again for this modification to take effect.
+        - Added ion_mode parameter in the **gnps_library_search** command. And retrieving the IonMode in the GNPS2 library annotations.
+      - Updated some chemical statistics names according to the use of the final curated library annotation data. Counting the GNPS identifications using the gnps_SpectrumID instead of the SMILES, which may be empty.
+      - Added a post process script to automatically build the SSMN in Cytoscape and create some reports by filtering the clean count table (code in src/post_process_analysis/ssmn_mount/)
   - (1.5.1) Bug fix in the join_jobs Step 7 when joining the IVAMNs. When the noise cutoff is applied the filtered IVAMN must reset its index to prevent matching errors in the next filters.
       - Bug fix in the superclass distribution plot, added missing class "Organohalogen_and_Organometallic".    
   - (1.5.0) A new command called **post_dd_analysis** was added to the NP³ MS Workflow! The *noise_cutoff* was changed to receive an absolute value.
@@ -371,7 +376,7 @@ The *join_jobs* command may be useful for processing growing libraries, which wi
     - *\-y, \-\-pre_processed_dir_path* \<path\> :  path to the folder containing the input jobs pre processing result, this should contain all the original jobs previous NP3 pre processing result in separated folders named accordingly to what is specified in the metadata_join.
     - *\-o, \-\-output_path* \<path\>    :    path to where the output directory will be created
 
-- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). 
+- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPAGATED library (default for LC data). 
     - List of mandatory options:
     - *-g, --input_mgf_file* \<path\>      :  path to the input MGF file with the MS/MS spectra data to be searched and identified
     - *-o, --output_path* \<path\>         :  if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. It should contain the "identifications" folder, if not it will be created and the results will be stored in it. If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).
