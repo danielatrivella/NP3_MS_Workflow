@@ -13,7 +13,7 @@
       - Split the ALL_GNPS_NO_PROPOGATED.mgf in two MGF files, one with the positive ions and another with the negative ions. The library search procedure will choose the appropriated library depending on the ion_mode informed, positive or negative. The **setup** must be executed again for this modification to take effect.
         - Added ion_mode parameter in the **gnps_library_search** command. And retrieving the IonMode in the GNPS2 library annotations.
       - Updated some chemical statistics names according to the use of the final curated library annotation data. Counting the GNPS identifications using the gnps_SpectrumID instead of the SMILES, which may be empty.
-      - Added a post process script to automatically build the SSMN in Cytoscape and create some reports by filtering the clean count table (code in src/post_process_analysis/ssmn_mount/)
+      - Added a post process script to automatically build the SSMN in Cytoscape and create some reports by filtering the clean count table (code in src/post_process_analysis/ssmn_mount/).
   - (1.5.1) Bug fix in the join_jobs Step 7 when joining the IVAMNs. When the noise cutoff is applied the filtered IVAMN must reset its index to prevent matching errors in the next filters.
       - Bug fix in the superclass distribution plot, added missing class "Organohalogen_and_Organometallic".    
   - (1.5.0) A new command called **post_dd_analysis** was added to the NP³ MS Workflow! The *noise_cutoff* was changed to receive an absolute value.
