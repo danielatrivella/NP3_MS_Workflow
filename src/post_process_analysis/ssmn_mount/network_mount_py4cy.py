@@ -5,15 +5,17 @@ Created on Mon Apr 12 17:24:52 2021
 
 @author: Cris e Luiz e Rafa
 
-Script para montar automaticamente a rede SSMN e SSMN [M+H]+ no cytoscape
-Caso existam colunas de COR_, Cria o Ranking de Correlação (Spearman) em formato decimal (Rank + Repeticoes/1000) - Codigo Enzo
+Script para montar automaticamente a rede SSMN e SSMN [M+H]+ no cytoscape - versao atual desse script 1.6.0
+Usa as colunas do np3 da versao 1.6.0.
+
+Caso existam colunas de COR_, Cria o Ranking de Correlacao (Spearman) em formato decimal (Rank + Repeticoes/1000) - Codigo Enzo
 
 Argumentos preliminares:
     selfloop SSMN
     selfloop SSMN [M+H]+
     clean table csv
     numero de bioscores - numero de linhas para pular, caso correlacao
-    # TODO add estilo cytoscape
+    estilo cytoscape XML
     
 Passos:
   1. Ler a tabela clean e aplicar ranking
@@ -73,8 +75,11 @@ def apply_corr_ranking(df):
 def create_collaborators_tables(df, clean_table_file, filename_suffix="protonated_collaborators"):
     print("* Creating table for the collaborators in CSV and Excel *")
     # Criar coluna 'curated_superclass' caso nao exista, preenchendo com valor padrao vazio
-    if 'best_origin_curated_superclass_grouping' not in df.columns:
-        df['best_origin_curated_superclass_grouping'] = ''
+    if 'curated_lib_annotation_superclass_grouping' not in df.columns:
+        df['curated_lib_annotation_superclass_grouping'] = ''
+    if 'curated_lib_annotation_ID' not in df.columns:
+        print("  - WARNING: the column 'curated_lib_annotation_ID' does not exist, collaborators table will not be created. ")
+        return
     
     # Passo 1: remove blanks e beds
     # Filtro: manter apenas linhas com BLANKS_TOTAL == 0
@@ -86,13 +91,13 @@ def create_collaborators_tables(df, clean_table_file, filename_suffix="protonate
     
     # Passo 2a
     # Remove todas as barras '/' da string
-    df['best_origin_SMILES'] = df['best_origin_SMILES'].str.replace('/', '', regex=False)
+    df['curated_lib_annotation_SMILES'] = df['curated_lib_annotation_SMILES'].str.replace('/', '', regex=False)
 
-    # Passo 2b - Remover linhas com best_origin_SMILES vazio ou nulo
-    df = df[df['best_origin_SMILES'].notna() & (df['best_origin_SMILES'] != '')].copy()
+    # Passo 2b - Remover linhas com curated_lib_annotation_ID vazio ou nulo
+    df = df[df['curated_lib_annotation_ID'].notna() & (df['curated_lib_annotation_ID'] != '')].copy()
     
     if df.shape[0] == 0:
-        print("  - WARNING: No valid 'best_origin_SMILES' left, collaborators table will not be created. ")
+        print("  - WARNING: No valid 'curated_lib_annotation_ID' left, collaborators table will not be created. ")
         return
     
     # %%
@@ -100,6 +105,9 @@ def create_collaborators_tables(df, clean_table_file, filename_suffix="protonate
     count_cols = df.columns.str.endswith("_area")
     if not count_cols.any():
         count_cols = df.columns.str.endswith("_spectra")
+    if not count_cols.any():
+        print("  - WARNING: No valid count columns detected, ending with '_area' or '_spectra'. The collaborators table will not be created. ")
+        return
     count_cols = df.columns[count_cols].values
     colunas_selection = np.asarray([
         'msclusterID',
@@ -107,11 +115,18 @@ def create_collaborators_tables(df, clean_table_file, filename_suffix="protonate
         'rtMean_minutes',
         'sumInts',
         'basePeakInt',
-        'curated_identification_best_origin']+ list(count_cols) + ['best_origin_curated_superclass_grouping',
-        'best_origin_SMILES',
+        'curated_lib_annotation_origin']+ list(count_cols) + [
+        'curated_lib_annotation_ID',
+        'curated_lib_annotation_SMILES',
+        'curated_lib_annotation_compoundName',
+        'curated_lib_annotation_score',
+        'curated_lib_annotation_quality',
+        'curated_lib_annotation_superclass',
+        'curated_lib_annotation_superclass_grouping',
         'gnps_Smiles',
         'gnps_SpectrumID',
         'gnps_Compound_Name',
+        'gnps_IonMode',
         'gnps_MZErrorPPM',
         'gnps_MQScore',
         'gnps_SharedPeaks',
@@ -174,7 +189,7 @@ def build_ssmn_protonated_cytoscape(ssmn_file, ssmn_protonated_file, clean_table
     try:
         py4.cytoscape_ping()
     except requests.exceptions.RequestException as e:
-        sys.exit("  - Cytoscape is not running... =( Open Cytoscape application and try again. Error:",e)
+        sys.exit("  - Cytoscape is not running... =( Open Cytoscape application and try again. \nError:"+str(e))
     
     print("  - Import SSMN filtered and SSMN [M+H]+ filtered and check isolated nodes (selfloops)...")
     # import the informed network files
