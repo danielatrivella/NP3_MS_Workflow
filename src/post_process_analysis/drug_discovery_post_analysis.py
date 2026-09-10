@@ -115,6 +115,11 @@ def post_dd_analysis_plots(metadata_path, clean_counts_path, output_path, topk =
 	metadata_df = pd.read_csv(metadata_path)
 	# fix the metadata column to upper and the sample types to lower
 	metadata_df.columns = metadata_df.columns.str.upper()
+	# check if the metadata contains all the mandatory columns
+	if metadata_df.columns.isin(["SAMPLE_CODE", "SAMPLE_TYPE"]).sum() != 2:
+		sys.exit("The provided metadata table does not have the mandatory columns 'SAMPLE_CODE' and 'SAMPLE_TYPE' (case insensitive). "
+		         "Please check your metadata table format (columns separator equal comma ',' and mandatory columns) and retry.")
+	# sample type to lower case
 	metadata_df["SAMPLE_TYPE"] = metadata_df.SAMPLE_TYPE.str.lower()
 	# if no topk was informed, set it to the size of the provided metadata
 	if topk is None or topk <= 0 or topk > metadata_df.shape[0]:
@@ -355,7 +360,7 @@ if __name__ == "__main__":
 	parser.add_argument("--use_protonated", default=False, type=str2bool,
 	                    help="True of False defining if only the putative [M+H] m/z should be used in the output tables and plots (filter the table with protonated_representative == 1). This will affect the metrics computation.")
 	parser.add_argument("--superclass_grouping_column", default="curated_lib_annotation_superclass_grouping", type=str,
-	                    help="The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The final origin curated library identification result is used by default (best result from UNPD and GNPS).")
+	                    help="The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The final curated library identification result is used by default (best curated result from UNPD and GNPS).")
 	# plots parms
 	parser.add_argument("--donutplots_title_size", default=16, type=int,
 	                    help="The title size of the donut plots.")
