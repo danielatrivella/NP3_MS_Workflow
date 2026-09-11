@@ -1,8 +1,8 @@
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 number of spectra: 155
-Time to create 155 documents: 0.006173610687255859 s.
-Calculated 155x155 scores in 1.8406140804290771 s.
-Calculated 155x155 matches in 0.31330442428588867 s.
+Time to create 155 documents: 0.0064868927001953125 s.
+Calculated 155x155 scores in 1.8617634773254395 s.
+Calculated 155x155 matches in 0.30620336532592773 s.
 
 
 DONE! 
@@ -11,9 +11,9 @@ Finish pairwise comparison Time Elapsed: 0.10min
 ======
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 number of spectra: 111
-Time to create 111 documents: 0.004697084426879883 s.
-Calculated 111x111 scores in 1.7903168201446533 s.
-Calculated 111x111 matches in 0.22408127784729004 s.
+Time to create 111 documents: 0.004705190658569336 s.
+Calculated 111x111 scores in 1.7897655963897705 s.
+Calculated 111x111 matches in 0.22343087196350098 s.
 
 
 DONE! 

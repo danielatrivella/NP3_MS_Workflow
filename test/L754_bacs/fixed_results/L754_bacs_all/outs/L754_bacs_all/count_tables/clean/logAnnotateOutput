@@ -16,18 +16,18 @@ Loading packages Rcpp, readr, dplyr, stringr...
 
 ** Getting list of fragmented peaks and data collection batches by cluster **
 
-  * Done in 0.07 secs *
+  * Done in 0.08 secs *
 
 
 ** Annotating variant spectra that are in concurrent MS1 peaks **
   * Searching for adducts, dimers/trimers, multi charge, neutral loss, fragments, isotopes ions *
   |                          |
   |==========================|
-  * Done annotating clusters in 0.43 secs *
+  * Done annotating clusters in 0.46 secs *
 
 
 ** Creating the IVAMN and separating the annotations by types of ionization variants **
-  * Done in 0.1 secs *
+  * Done in 0.11 secs *
 
 
 ** Annotation summary by type **

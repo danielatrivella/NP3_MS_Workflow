@@ -5,13 +5,13 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_blanks_one_sample result spectra pairwise *
         |     |
         |=====|
-    * Done making 5460 pairwise comparisions in 20.54 secs *
+    * Done making 5460 pairwise comparisions in 18.88 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.47min
+Finish pairwise comparison Time Elapsed: 0.44min
 ======
 *** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** 
 Loading package dplyr and Rcpp functions...
@@ -20,11 +20,11 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_blanks_one_sample_clean result spectra pairwise *
         | |
         |=|
-    * Done making 3003 pairwise comparisions in 4.21 secs *
+    * Done making 3003 pairwise comparisions in 3.87 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.20min
+Finish pairwise comparison Time Elapsed: 0.19min
 ======

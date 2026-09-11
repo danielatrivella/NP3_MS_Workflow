@@ -526,6 +526,9 @@ compare_two_np3_run_results <- function(fixed_result_path, new_result_path, outp
     if (!file.exists(new_report_path)) {
       test_report_stats <- paste("The ", chemical_reports_names[[i]],
                                  " chemical report table of the new job was not created - missing file.")
+    } else if (!file.exists(fixed_report_path)) {
+      test_report_stats <- paste("The ", chemical_reports_names[[i]],
+                                 " chemical report table of the fixed job does not exists - missing file.")
     } else {
       test_report_stats <- compare_tables(fixed_table_path=fixed_report_path, 
                                           new_table_path=new_report_path,

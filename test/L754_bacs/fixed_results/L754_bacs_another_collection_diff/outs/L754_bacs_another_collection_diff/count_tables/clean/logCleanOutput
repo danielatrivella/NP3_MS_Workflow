@@ -5,13 +5,13 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_another_collection_diff result spectra pairwise *
         |       |
         |=======|
-    * Done making 5050 pairwise comparisions in 20.64 secs *
+    * Done making 5050 pairwise comparisions in 18.94 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.48min
+Finish pairwise comparison Time Elapsed: 0.44min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -38,7 +38,7 @@ NOISE cutoff :  1000
   |==========================|
         * Joined 0 similar clusters in 0.04 secs *
 
-  * Done reducing 0 similar clusters in 0.26 secs *
+  * Done reducing 0 similar clusters in 0.27 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -60,11 +60,11 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.3 secs *
+    * Done in 0.29 secs *
 
 
 
-DONE! Time Elapsed: 0.23min
+DONE! Time Elapsed: 0.22min
 
 *** Analysing the count of spectra  *** 
 
@@ -95,15 +95,15 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_another_collection_diff_clean result spectra pairwise *
         | |
         |=|
-    * Done making 1770 pairwise comparisions in 4.35 secs *
+    * Done making 1770 pairwise comparisions in 3.84 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.21min
+Finish pairwise comparison Time Elapsed: 0.19min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.44min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.41min (without the clustered spectra comparison time) 
 ======
