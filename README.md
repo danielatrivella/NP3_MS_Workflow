@@ -9,7 +9,7 @@
 - NEW features:
 
   - (1.6.0) Standardized the final identification curation method and split the ALL_GNPS MGF library by ion mode (**setup** required). Updated some of the final reports chemical statistics.
-      - Updated the names of the final curated library annotation columns using a prefix equals "curated_lib_annotation_*". More details in Manual Section 4.6.3.
+      - Updated the names of the final curated library annotation columns using a prefix equals "curated_lib_annotation_*". More details in Manual Section 4.6.5.
       - Split the ALL_GNPS_NO_PROPOGATED.mgf in two MGF files, one with the positive ions and another with the negative ions. The library search procedure will choose the appropriated library depending on the ion_mode informed, positive or negative. The **setup** must be executed again for this modification to take effect.
         - Added ion_mode parameter in the **gnps_library_search** command. And retrieving the IonMode in the GNPS2 library annotations.
       - Updated some chemical statistics names according to the use of the final curated library annotation data. Counting the GNPS identifications using the gnps_SpectrumID instead of the SMILES, which may be empty.
