@@ -486,25 +486,28 @@ At the end of the pipeline processing, the $NP^{3}$ will automatically create di
 final reports with statistics of the final results. These reports are stored in a
 folder named 'final_reports', located in the final output folder inside outs/*output_name*/.
 
-The $NP^{3}$ MS Workflow final reports are organized in three groups of reports: *quantification*, *chemical* and *molecular networking* statistics, separated in different subfolders.
+The $NP^{3}$ MS Workflow final reports are organized in three different groups: *quantification*, *chemical* and *molecular networking* statistics, separated in different subfolders.
 
-The *quantification* report is located inside the quantification_report subfolder and contains:
+The **quantification** report is located inside the *quantification_report* subfolder and contains:
+
 - A table with the final quantification of clean consensus spectra, with statistics of the total number of m/z in blank and bed samples, global spectral identification rate against UNPD-tremolo, average number of putative isomers, number of isotope ions and number of fragmented clusters.
 
-The *chemical* report is located inside the chemical_report subfolder and contains: 
-- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation. If the GNPS2 library search is enable or when gnps_result is executed, another two similar tables are created with the spectral identification and putative novelty against the GNPS libraries and also against the best origin identification GNPSxUNPD after and before the curation.
-- A folder named chemical_space_identifications with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
-- Another folder named chemical_space_mzs with the chemical space plot of the m/z, retention time and their quantification information.
+The **chemical** report is located inside the *chemical_report* subfolder and contains: 
+
+- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation. If the GNPS2 library search is enable or when gnps_result is executed, a similar table is created with the spectral identification and putative novelty against the GNPS libraries. Additionally, another table is created with the final identification curation statistics from GNPSxUNPD top quality library annotations and the statistics of the complete identifications before curation are also included for an ease comparison.
+- A folder named *chemical_space_identifications* with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
+- Another folder named *chemical_space_mzs* with the chemical space plot of the m/z, retention time and their quantification information.
 - A plot with the distribution of the superclass grouping among the not blank and not bed samples. This plot is computed using the percentage of occurrence of each superclass in the final library annotated m/z.
 
-The identification curation is detailed in section 4.6.2 *tremolo*.
+The identification curation is detailed in section 4.6.4 for UNPD, in 4.12.4 for GNPS and in 4.6.5 for the final identification curation.
 
-The *molecular networking* report is located inside the molecular_networking_report subfolder and contains:
+The **molecular networking** report is located inside the *molecular_networking_report* subfolder and contains:
+
 - One table for each network created by the $NP^{3}$ pipeline containing some network statistics such as size, average degree, number of isolates, number of components by size and clustering coefficients.
 
 All statistics present in the created tables have a column with a detailed description explaining how they are calculated and what they represent. These values synthesize the final $NP^{3}$ results and accelerates further analysis.
 
-The *chemical space* of the identifications created in the chemical report was standardized to use *PCA* and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom were fixed). 
+The **chemical space** of the identifications created in the chemical report was standardized to use *PCA* and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom were fixed). 
 
 The top 24 descriptors selected from CDK contains 18 topological and 6 constitutional descriptors and are named: 'WPOL','ATSp1','ATSp2','SP.3','Zagreb','VP.3','naAromAtom','SP.2','ATSp3','VP.2','ATSm3','nB',
 'ATSm2','nAromRings','nAromBlocks','C2SP2','khs.aasC','nAtomP','khs.aaCH','LipinskiFailures','MW',
@@ -519,11 +522,11 @@ For each final $NP^{3}$ result, in the chemical report creation, the clean conse
 
 The format of the final chemical space and the circle plot with the top 24 components can be found at NP3_MS_Workflow/docs/chemical_space_reference. The PCA method was chosen to create the chemical space of the $NP^{3}$ results because it allows keeping a high understanding of the result with the principal components showing the respective variables information. A better understanding is more important here than a better clustering of the identifications.
 
-A PCA plot is also created in the *gnps_result* command using the curated identifications joined from GNPS (see details of this command).
+A PCA plot is also created in the *gnps_result* and *gnps_library_search* commands using the curated identifications joined from GNPS (see details of this result in Section 4.12.4).
 
-Another PCA is created in the chemical space plot of the final m/zs, which uses the final clean consensus spectra chromatographic information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no coloring or grouping is being applied in this PCA, this is a beta analysis to be improved.
+Another PCA is created in the chemical space plot of the final m/zs, which uses the final clean consensus spectra chromatographic information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no coloring or grouping is being applied in this PCA, this is a *beta analysis* to be improved.
 
-Furthermore, the command *pca_plot* may be used to create other PCA plots, a posteriori or with external data, using the $NP^{3}$ reference chemical space as base (exploratory analysis). See details in this command section.
+Furthermore, the command *pca_plot* may be used to create other PCA plots, a posteriori or with external data, using the $NP^{3}$ reference chemical space as base (exploratory analysis). See details in this command Section 4.14.
  
 ##### 4.2.3. *run* Examples
  
@@ -1014,27 +1017,48 @@ When the count_files are provided, the tremolo results are aggregated by spectra
 | tremolo_NPAtlas_origin_type	     | the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_genus	            | the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_origin_species     | the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';' |
-| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in Section 4.6.2 |
+| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in Section 4.6.4 |
 | tremolo_<identification columns>_best | some of the previous identification columns with the best result from index tremolo_best_position | 
 | tremolo_NPClassifier_superclass_clean_best | the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe) |
-| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in Section 4.6.2 |
+| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in Section 4.6.4 |
 | tremolo_UNPD_score_best | the corresponding score of the tremolo_UNPD_category_best |
 | tremolo_curated_superclass  | the result of the tremolo_NPClassifier_superclass_clean_best for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') |
-| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Section 4.6.2 | 
-| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in Section 4.6.2 |
-| curated_lib_annotation_origin | the database library origin of the final curated identification, which have the greater score. It receives 'UNPD' if tremolo_UNPD_score_best > 0 or 'GNPS' if gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. Detailed in Section 4.6.3. |
+| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Section 4.6.4 | 
+| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in Section 4.6.4 |
+| curated_lib_annotation_origin | the database library origin of the final curated identification, which have the greater score. It receives 'UNPD' if tremolo_UNPD_score_best > 0 or 'GNPS' if gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. Detailed in Section 4.6.5. |
 | curated_lib_annotation_ID | the library ID of the final curated identification from the best origin. Equals to tremolo_UNPD_IDs_best where origin is UNPD, equals to gnps_SpectrumID where origin is GNPS, and equals '' otherwise |
 | curated_lib_annotation_compoundName | the compound name of the final curated identification from the best origin. Equals to tremolo_chemicalNames_best where origin is UNPD, equals to gnps_Compound_Name where origin is GNPS, and equals '' otherwise |
 | curated_lib_annotation_SMILES | the SMILES of the final curated identification from the best origin. If curated_lib_annotation_origin == UNPD it receives the value of the tremolo_SMILES_best, if curated_lib_annotation_origin == GNPS it receives the value of the gnps_Smiles, otherwise ''| 
 | curated_lib_annotation_superclass | the NPClassifier superclass of the final curated identification from the best origin. Equals to tremolo_curated_superclass where origin is UNPD, equals to gnps_curated_superclass where origin is GNPS, and equals '' otherwise |
-| curated_lib_annotation_superclass_grouping | the superclass group from the mapped curated_lib_annotation_superclass following the proposed groups in Section 4.6.2 |
-| curated_lib_annotation_superclass_GR_ \<final curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the curated_lib_annotation_superclass_grouping zero, one or more times as detailed in Section 4.6.2|
+| curated_lib_annotation_superclass_grouping | the superclass group from the mapped curated_lib_annotation_superclass following the proposed groups in Section 4.6.4 |
+| curated_lib_annotation_superclass_GR_ \<final curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the curated_lib_annotation_superclass_grouping zero, one or more times as detailed in Section 4.6.4 |
 | curated_lib_annotation_score | the corresponding score of the final curated identification from the best origin. Equals to tremolo_UNPD_score_best for UNPD, or gnps_score for GNPS, or 0 otherwise. |
 | curated_lib_annotation_quality  | a quality group for the final curated identification. Equals to '1' if curated_lib_annotation_score >= 50, or '2' if curated_lib_annotation_score < 50 and curated_lib_annotation_score > 0, or '0' otherwise (curated_lib_annotation_score == 0). |
 
 For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md file and its documentation at src/ISDB_tremolo_NP3/Data/doc/Workflow_062016.pdf.
  
-##### 4.6.2. *tremolo* UNPD Identification Curation
+##### 4.6.3. *tremolo* Examples
+ 
+Fake example to execute the Tremolo command:
+ 
+```{r, eval=F} 
+  $ node np3_workflow.js tremolo --output_path 
+    "/path/to/the/output/dir/test_np3/outs/test_np3/identifications" --mgf 
+    "/path/to/the/output/dir/test_np3/outs/test_np3/mgf/test_np3_all.mgf"
+```
+ 
+Concatenate tremolo results in the count files:
+ 
+```{r, eval=F} 
+  $ node np3_workflow.js tremolo -o 
+    "/path/to/the/output/dir/test_np3/outs/test_np3/identifications" 
+    -g "/path/to/the/output/dir/test_np3/outs/test_np3/mgf/test_np3_all.mgf" -c 
+    "/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_spectra_clean_ann.csv,
+    /path/to/the/output/dir/test_np3/outs/test_np3/test_np3_peak_area_clean_ann.csv"
+```
+ 
+ 
+##### 4.6.4. *tremolo* UNPD Identification Curation
 
 A curation of the identification results was proposed to score and rank the best identification from the UNPD-tremolo. The curation is executed after the library annotations are merged to the count_files tables. Some chemical criteria were defined to automatically select the best annotations from the top_k results. Additionally, a chemical grouping of the NPClassifier superclass were proposed by the $NP^{3}$ team to ease the chemical understanding of the best identifications.
 
@@ -1083,15 +1107,23 @@ Finally, the curation of the UNPD identification also defines and creates 10 gro
 
 Next, it is created the column 'tremolo_curated_superclass' that receives the result of the best tremolo superclass for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). This column is then mapped to the superclasses grouping defined above and stored in column 'tremolo_curated_superclass_grouping'. If multiple superclasses were assigned to a spectra, they are separated by a ':'. Finally, for each curated superclass grouping, it is created a column named 'tremolo_curated_superclass_GR_\<curated superclass grouping\>' with 0 or +1 values that counts how many times the curated library annotation from UNPD-tremolo appeared in the corresponding curated superclass grouping (zero, one or more times).
 
-At the end, the final identification curation is performed (next section).
+At the end, the final identification curation is performed (next section). And then, the final chemical reports are created.
 
-##### 4.6.3. *tremolo* Final Identification Curation
+##### 4.6.5. *tremolo* Final Identification Curation
 
-The final identification curation is performed at the end of the UNPD curation and at the end of the GNPS curation. It selects the origin (UNDP x GNPS) of the best library annotation present in the current $NP^{3}$ result, apply a filter based on their curated score and set a quality class. In the final reports, the final curated library annotations are used for the final statistics and compared with the best identifications from UNPD and GNPS not curated (complete identification result). The final curated library annotations are stored in different columns with the prefix "curated_lib_annotation_*". 
+The final identification curation is performed at the end of the UNPD curation and at the end of the GNPS curation. It selects the origin (UNDP x GNPS) of the best library annotation present in the current $NP^{3}$ result, apply a filter based on their curated score by origin and also set a quality class based on this score. In the final reports, the final curated library annotations are used for the final statistics and compared with the best identifications from UNPD and GNPS not curated (complete identification result). The final curated library annotations are stored in different columns with the prefix "curated_lib_annotation_*". 
 
 The final identification curation starts by creating the column "curated_lib_annotation_origin" with the library origin (UNPD or GNPS) of the best library annotation with a score greater than 0. This column is set to 'GNPS' if the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present, uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Otherwise, if the GNPS result is not present, set it to 'UNPD' where tremolo_UNPD_score_best > 0. The preference here goes to GNPS, which is an experimental spectra library.
 
-Then, using the selected origin of each final curated identification, the procedure retrieves its respective score (from 'gnps_score' for 'GNPS' and from 'tremolo_UNPD_score_best' for 'UNPD') and stores it in the column "curated_lib_annotation_score". When no origin was selected, the score is set to 0. Using the score of the final curated identification, the column "curated_lib_annotation_quality" is created by assigning three quality groups to the library annotations equals to '1' if the curated_lib_annotation_score >= 50, equals to '2' if the curated_lib_annotation_score > 0 and curated_lib_annotation_score < 50, and equals to '0' if the curated_lib_annotation_score == 0 (category 'out').
+Then, using the selected origin of each final curated identification, the procedure retrieves its respective score (from 'gnps_score' for 'GNPS' and from 'tremolo_UNPD_score_best' for 'UNPD') and stores it in the column "curated_lib_annotation_score". When no origin was selected, the score is set to 0. These scores are defined in Section 4.6.4 for UNPD and Section 4.12.4 for GNPS.
+
+Using the score of the final curated identification, a **quality grouping** is defined and assigned to column "curated_lib_annotation_quality" using three quality groups: 
+
+| Quality Group | Criteria | Description |
+| :--: | :---------: | :---------: |
+| 1 | curated_lib_annotation_score >= 50 | representing good/top quality library annotations |
+| 2 | curated_lib_annotation_score > 0 and curated_lib_annotation_score < 50 | less reliable library annotations, mostly analogs or low similarity score |
+| 0 | curated_lib_annotation_score == 0 | category 'out' - not annotated |
 
 Next, the SMILES of the final curated identification is set to the column "curated_lib_annotation_SMILES", which receives the value from the column "gnps_Smiles" where origin equals to "GNPS" or the value from the column "tremolo_SMILES_best" where origin equals to "UNPD", otherwise leave it empty. Similarly, the superclass of the final curated identification is set to the column "curated_lib_annotation_superclass", which receives the value from the columns "gnps_curated_superclass" or "tremolo_curated_superclass"; the final curated ID is set to the column "curated_lib_annotation_ID", which receives the value from the columns "gnps_SpectrumID" or "tremolo_UNPD_IDs_best"; and the final curated compound name is set to the column "curated_lib_annotation_compoundName", which receives values from the columns "gnps_Compound_Name" or "tremolo_chemicalNames_best".
 
@@ -1099,28 +1131,6 @@ Finally, using the values present in the superclass of the final curated library
 
 The final curated identifications present in the columns "curated_lib_annotation_*" are defined as the more reliable library annotations of each consensus spectra from a $NP^{3}$ result.
 
-
-##### 4.6.4. *tremolo* Examples
- 
-Fake example to execute the Tremolo command:
- 
-```{r, eval=F} 
-  $ node np3_workflow.js tremolo --output_path 
-    "/path/to/the/output/dir/test_np3/outs/test_np3/identifications" --mgf 
-    "/path/to/the/output/dir/test_np3/outs/test_np3/mgf/test_np3_all.mgf"
-```
- 
-Concatenate tremolo results in the count files:
- 
-```{r, eval=F} 
-  $ node np3_workflow.js tremolo -o 
-    "/path/to/the/output/dir/test_np3/outs/test_np3/identifications" 
-    -g "/path/to/the/output/dir/test_np3/outs/test_np3/mgf/test_np3_all.mgf" -c 
-    "/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_spectra_clean_ann.csv,
-    /path/to/the/output/dir/test_np3/outs/test_np3/test_np3_peak_area_clean_ann.csv"
-```
- 
- 
 ## 4.7. Step 7: Command *annotate_protonated*
  
 Annotate possible ionization variants in the clean count tables and creates the ionization variant annotation molecular network (IVAMN) - for positive ion mode only. It searches for adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragments based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the IVAMN to assign some consensus spectra as putative [M+H]+ representatives. 
@@ -1714,7 +1724,7 @@ The join_jobs workflow ends with the molecular networking (Step 10) similar to t
 
 Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPAGATED library (default for LC data). Annotations data was enriched in April 2026.
 
-The GNPS identification curation is executed at the end to score and classify the retrieved library annotations (more details in Section 4.13.4).
+The GNPS identification curation is executed at the end to score and classify the retrieved library annotations (more details in Section 4.12.4).
 
 Options for the command *gnps_library_search*:
 
@@ -1830,12 +1840,50 @@ The retrieved libraries MGF files are stored in:
 
 'GNPS_LibrarySearch/data/libraries'.
 
+##### 4.12.4. *gnps_library_search* GNPS Identification Curation and UNPDxGNPS Final Curation Statistics
+
+A curation of the GNPS identification results is also performed for the gnps_library_search and gnps_result in order to score and rank the best library annotations from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
+
+The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
+
+Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD' for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
+
+Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the UNPD Identification Curation. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+
+| GNPS Category | Score | Criteria | 
+| :--------------- | :---: | :------------------------------------: | 
+| Top1\|mqs>=0.9 | 100 | mzE <= 20 and nsP >= 6 |
+| Top2\|0.8<=mqs<0.9 | 80 | mzE <= 20 and nsP >= 6 |
+| Top3\|sp<6 mqs>=0.9 | 60 | mzE <= 20 and nsP < 6 |
+| Top4\|sp<6 0.8<=mqs<0.9 | 50| mzE <= 20 and nsP < 6 |
+| Top5\|mqs>=0.7 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.8 |
+| Analog1\|mqs>=0.9 | 40 | mzE > 20  and nsP >= 6 |
+| Analog2\|0.8<=mqs<0.9 | 30 | mzE > 20 and nsP >= 6 |
+| Analog3\|sp<6 mqs>=0.9 |  20 | mzE > 20 and nsP < 6 |
+| Analog4\|sp<6 0.8<=mqs<0.9 | 10 | mzE > 20 and nsP < 6 |
+| Analog5\|mqs>=0.7 | 5 | mzE > 20 and nsP >= 6 and mqs<0.8 |
+| out | 0 | did not passed in any category - unreliable identification |
+  
+* Where mqs is the gnps_MQScore, nsP is the gnps_SharedPeaks and mzE is the gnps_MZErrorPPM values. 
+
+The defined category for each GNPS identification is stored in the column 'gnps_category' and its corresponding score is stored in the column 'gnps_score'.
+
+The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the pipe '|') and its stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.4.
+
+Finally, the final identification curation is performed following section 4.6.5. to select the best library annotation from UNPDxGNPS, if the UNPD identification result is present, otherwise only the best library annotation from GNPS is used. The columns starting with the prefix 'curated_lib_annotation_*' will store the final curated library annotation, their origin (UNPD or GNPS), score, quality, SMILES and superclass. 
+
+At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the commands further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the origin of the final curated identification (UNPDxGNPS). 
+
+For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
+
+If the metadata path is informed, the plot with the distribution of the superclass grouping are also created for GNPS and the final curated identification (UNPDxGNPS) using columns 'gnps_curated_superclass_grouping' and 'curated_lib_annotation_superclass_grouping', respectively, and are stored in the chemical report folder.
+
 
 ## 4.13. Command *gnps_result*
  
 Join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'all identifications') workflows to the count tables of the $NP^{3}$ clustering or clean steps (Steps 3 or 5) from a run or a join_jobs result.
 
-It computes the CDK top descriptors for the unique SMILES identified in GNPS and then make the curation of the identifications to score and filter the more reliable results. At the end, it also performs the curation of the best identification origin from UNPDxGNPS.
+It computes the CDK top descriptors for the unique SMILES identified in GNPS and then make the curation of the identifications to score and filter the more reliable results. At the end, it also performs the final identification curation from UNPDxGNPS.
  
 Options for the command *gnps_result*:
  
@@ -1880,47 +1928,11 @@ The GNPS library identifications results should be obtained using the collection
  
 In the GNPS Molecular Networking (MN) workflow result, the 'clusterinfo' file contains the column 'SpecIdx' which is equal to the SCANS numbers present in the $NP^{3}$ MS workflow MGF file used for the identification job. The SCANS numbers of the MGF files are equal to the msclursterIDs of the $NP^{3}$ MS workflow count tables for the respective result (clean MGF for clean and all MGF for clustering). The column 'ClusterIdx' of the GNPS MN output \'clusterinfo\' file is equivalent to the column '#Scan' of the \'result_specnets_DB\' file, and they are used to join the information of both files to obtain for each identification result the correct reference (the 'SpecIdx' column) to the msclusterIDs present in the $NP^{3}$ MS workflow count tables.
 
-In the GNPS Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
+In the GNPS or GNPS2 Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
 
-At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
+Finally, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
 
-##### 4.13.4. *gnps_result* GNPS Identification Curation and UNPDxGNPS Final Curation
-
-A curation of the GNPS identification results was also proposed for the gnps_result in order to score and rank the best library annotations from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
-
-The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
-
-Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD' for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
-
-Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the UNPD Identification Curation. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
-
-| GNPS Category | Score | Criteria | 
-| :--------------- | :---: | :------------------------------------: | 
-| Top1\|mqs>=0.9 | 100 | mzE <= 20 and nsP >= 6 |
-| Top2\|0.8<=mqs<0.9 | 80 | mzE <= 20 and nsP >= 6 |
-| Top3\|sp<6 mqs>=0.9 | 60 | mzE <= 20 and nsP < 6 |
-| Top4\|sp<6 0.8<=mqs<0.9 | 50| mzE <= 20 and nsP < 6 |
-| Top5\|mqs>=0.7 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.8 |
-| Analog1\|mqs>=0.9 | 40 | mzE > 20  and nsP >= 6 |
-| Analog2\|0.8<=mqs<0.9 | 30 | mzE > 20 and nsP >= 6 |
-| Analog3\|sp<6 mqs>=0.9 |  20 | mzE > 20 and nsP < 6 |
-| Analog4\|sp<6 0.8<=mqs<0.9 | 10 | mzE > 20 and nsP < 6 |
-| Analog5\|mqs>=0.7 | 5 | mzE > 20 and nsP >= 6 and mqs<0.8 |
-| out | 0 | did not passed in any category - unreliable identification |
-  
-* Where mqs is the gnps_MQScore, nsP is the gnps_SharedPeaks and mzE is the gnps_MZErrorPPM values. 
-
-The defined category for each GNPS identification is stored in the column 'gnps_category' and its corresponding score is stored in the column 'gnps_score'.
-
-The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the pipe '|') and its stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.2.
-
-Finally, the final identification curation is performed following section 4.6.3 to select the best library annotation from UNPDxGNPS, if the UNPD identification result is present, otherwise only the best library annotation from GNPS is used. The columns starting with the prefix 'curated_lib_annotation_*' will store the final curated library annotation, their origin (UNPD or GNPS), score, quality, SMILES and superclass. 
-
-At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the origin of the final curated identification (UNPDxGNPS). 
-
-For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
-
-If the metadata path is informed, the plot with the distribution of the superclass grouping are also created for GNPS and the final curated identification (UNPDxGNPS) using columns 'gnps_curated_superclass_grouping' and 'curated_lib_annotation_superclass_grouping', respectively, and are stored in the chemical report folder.
+At the end, the GNPS identification curation is also perfomed to classify the retrieved library annotations (see Section 4.12.4 for more details). It is followed by the final identification curation (best from UNPD and GNPS) which is described in Section 4.6.5.
 
 ## 4.14. Command *pca_plot*
  
@@ -2055,7 +2067,9 @@ Example to execute the MS² spectra viewer application:
 
 ## 4.17. Command *post_dd_analysis*
 
-This command perform a post-processing analysis of a NP3 result for drug discovery research. Five different visualizations and two data tables are created. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a library annotation) and the novelty across samples (with redundant and/or exclusive m/z). 
+This command perform a post-processing analysis of a NP3 result for drug discovery research. Six different visualizations and two data tables are created. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a final curated library annotation within a quality group) and the novelty across samples (with redundant and/or exclusive m/z). 
+
+The final curated library annotations that are considered for the plots depends on the *lib_annotation_quality_filter* parameter which will select as annotated only the m/z with a final annotation in the provided quality group, default to 1 (only the good ones, with a high score in the curation). A distribution plot of the quality filter of the final curated library annotations is also created.
 
 The analysis may be filtered to show only a subset of the samples (using the provided *metadata* table) or the top novelty samples distribution (*topk* parameter) and/or only the protonated m/z (*use\_protonated* parameter).
 
@@ -2080,6 +2094,7 @@ Options for the command *post_dd_analysis*:
 - *\-\-rm\_beds* [value]  :    True or False to allow removing culture media samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_controls* [value]  :       True or False to allow removing control samples and m/z from the metrics computation. (default: "False")
 - *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The final curated library annotation result is used by default (best origin from UNPD and GNPS). (default: "curated_lib_annotation_superclass_grouping")
+- *\-\-lib_annotation_quality_filter* [value]   :    Set the quality group filter of the final curated library annotations, one of 1 or 2. If 1, only consider as annotated the m/z with "curated_lib_annotation_quality" == 1; otherwise if 2, consider as annotated the m/z with "curated_lib_annotation_quality" equals 1 or 2. The rest is set as "not_annotated". (default: "1")
 - *\-\-donutplots\_title\_size* [value]  :   The title size of the donut plots. (default: "16")
 - *\-\-donutplots\_text\_size* [value]  :    The axis and legend text sizes of the donut plots. (default: "14")
  *\-\-donutplot\_libAnnotations\_colors* [value]   :  The list of colors separated by comma for the library annotation distribution donut plot. Three colors are
@@ -2117,13 +2132,14 @@ Options for the command *post_dd_analysis*:
    
 ##### 4.17.1. *post_dd_analysis* Results
 
-Five visualizations are created in the output_path directory: 
+Six visualizations are created in the output_path directory: 
 
-(1) the samples composition in terms of the desired superclass grouping distribution across the final m/z by samples in a barplot; 
-(2) the m/z library identification novelty in a donut plot with the total count of curated library annotations; 
-(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; 
-(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;
-(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. 
+(1) A barplot with the samples composition in terms of the desired superclass grouping distribution across the final m/z by sample; 
+(2) A donut plot with the m/z final curated library identification novelty with the count of final curated library annotations by origin in the selected quality group;
+(3) A donut plot with the m/z final curated library identification quality group distribution;
+(4) A donut plot with the m/z samples novelty with the total count of redundant and exclusive m/z across valid samples; 
+(5) Another donut plot with the identified m/z samples novelty with the total count of redundant and exclusive m/z with final curated library annotation;
+(6) A barplot with the m/z samples novelty (redundant or exclusive) distribution with and without a final curated library annotation by sample. 
  
  And two CSV tables are created with the count of m/z novelty by sample and the count of superclass grouping by sample.
  
@@ -2131,7 +2147,7 @@ All the output plots and tables are named with a prefix equal the output_name (e
 
 ##### 4.17.2. *post_dd_analysis* Examples
 
-Example to execute the post-processing drug discovery analysis from $NP^{3}$ MS Workflow:
+Example to execute the post-processing drug discovery analysis command:
 
 ```{r, eval=F} 
    $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv 
@@ -2151,14 +2167,17 @@ Example to create the analysis plots with the top 5 novelty samples and only [M+
 
 The provided metadata table may be used to filter the final plots and display only a subset of the original samples. This will not modify the metrics, only the visualization of the data is modified. This may be useful for middle to big datasets with more than 50 samples, for which the complete view is not clear.
 
-The top k may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not library annotated m/z - are selected for the final plots. The samples novelty here is measured by the amount of m/z that were not present/identified in any library search - not annotated - and the amount of m/z that were not detected in other samples - which are exclusive to a respective sample.
+The top k parameter may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not library annotated m/z - are selected for the final plots. 
 
-This post-processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4) and (5) of the results, it calculates the following metrics by sample:
+The samples novelty here is measured by the amount of m/z that were not present/identified in any library search after the final curation and quality filter - not annotated - and the amount of m/z that were not detected in other samples - which are exclusive to a respective sample.
 
-  - number of exclusive m/z (only appear in one sample);
-  - number of redundant m/z (appear in more than one sample)
-  - number of annotated m/z (received a library identification annotation from GNPS or UNPD)
+This post-processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4),(5) and (6) of the results, it calculates the following metrics by sample:
 
+  - number of exclusive m/z: only appear in one sample;
+  - number of redundant m/z: appear in more than one sample;
+  - number of annotated m/z: received a library identification from GNPS or UNPD in the final curation (column curated_lib_annotation_origin) and passed the quality filter (parameter lib_annotation_quality_filter);
+  
+  
 The plot (1) is created by computing the provided superclass grouping distribution by sample. For this, the groups present in the column provided in the parameter superclass\_grouping\_column are counted by sample by checking the presence of their respective m/z in the valid samples, grouping their occurrence by the superclass groups and summing their counts by sample, any missing group will receive a value equals to zero. This will result in the percentage of detected m/z by annotated superclass group in the superclass\_grouping\_column for each sample.
 
 There are different parameters to personalize the final plots with different text sizing and legend organization and position, the users may change the default values according to their needs.
