@@ -28,7 +28,7 @@ from rdkit.Chem import rdFingerprintGenerator
 from tremolo_UNPD_curate_identification import group_curated_superclass_toCols, final_lib_annotation_curation
 from pathlib import Path
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot
-from chemical_report_statistics import compute_chemical_identification_report_GNPS_result, plot_superclass_samples_distribution
+from chemical_report_statistics import compute_chemical_identification_report_GNPS, plot_superclass_samples_distribution, compute_chemical_identification_report_Final_Curation
 import os
 
 # funcao para calcular o coeficiente de Tanimoto
@@ -225,7 +225,8 @@ def curate_gnps_identification(clean_table_file, output_path, metadata_file):
             plot_superclass_samples_distribution(metadata_file, clean_table_file, chemical_report_path,
                                                  superclass_grouping_name="curated_lib_annotation_superclass_grouping")
     # call create report table
-    compute_chemical_identification_report_GNPS_result(clean_table_file, chemical_report_path)
+    compute_chemical_identification_report_GNPS(clean_table_file, chemical_report_path)
+    compute_chemical_identification_report_Final_Curation(clean_table_file, chemical_report_path)
     # call PCA for GNPS and UNPDxGNPS
     data_reference_path = Path(os.path.dirname(__file__) , "Chemical_space_data",
                                "descriptors_reference_unpd_drugbank_allo_rev_natural_pubmedID_clean_top24.csv")
