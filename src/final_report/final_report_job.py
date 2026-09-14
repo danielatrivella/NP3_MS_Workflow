@@ -1,4 +1,4 @@
-from chemical_report_statistics import compute_chemical_report_statistics, plot_superclass_samples_distribution
+from chemical_report_statistics import compute_chemical_report_statistics_UNPD, plot_superclass_samples_distribution, compute_chemical_identification_report_Final_Curation,compute_chemical_identification_report_GNPS
 from pca_calculation_ref_plot import pca_calculation_smiles_rcdk_ref_plot,pca_calculation_mz_ref_plot
 from quantification_report_statistics import compute_quantification_report_statistics
 from molecular_networking_report_statistics import compute_mn_report_statistics
@@ -33,8 +33,11 @@ def run_final_report(metadata_file, clean_table_path, output_path, output_name, 
 	if not chemical_report_path.exists() or not chemical_report_path.is_dir():
 		print("The final chemical report path could not be created. Chemical report statistics aborted.")
 	else:
-		# call function to create the chemical report statistics
-		compute_chemical_report_statistics(clean_table_path, chemical_report_path)
+		# call function to create the chemical report statistics for UNPD
+		compute_chemical_report_statistics_UNPD(clean_table_path, chemical_report_path)
+		# call function to create the chemical report stats for GNPS and final report
+		compute_chemical_identification_report_GNPS(clean_table_path, chemical_report_path)
+		compute_chemical_identification_report_Final_Curation(clean_table_path, chemical_report_path)
 		# call function to create the superclasses grouping distribution by sample
 		plot_superclass_samples_distribution(metadata_file, clean_table_path, chemical_report_path)
 		# create the chemical space identification subfolder inside the chemical_report folder
