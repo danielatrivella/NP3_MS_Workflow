@@ -1105,14 +1105,15 @@ function mergeTremoloResults(path_tremolo_result, max_results, path_count_files,
     shell.ShellString("\nDONE!\n").toEnd(logTremoloFile);
 }
 
-function curateTremoloResults(path_count_file, logTremoloFile, verbose)
+function curateTremoloResults(path_count_file, logTremoloFile, chemical_report_path, verbose)
 {
     const start_curatetremolo = process.hrtime.bigint();
     tremolo_unpd_curating = '\n*** Curating the tremolo-UNPD identification result - selecting best results ***\n'
     console.log(tremolo_unpd_curating);
     shell.ShellString(tremolo_unpd_curating).toEnd(logTremoloFile);
     try {
-        var resExec = shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' + path_count_file,
+        var resExec = shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' +
+            path_count_file+ ' '+chemical_report_path,
             {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
@@ -1129,7 +1130,7 @@ function curateTremoloResults(path_count_file, logTremoloFile, verbose)
 }
 
 function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, top_k, path_count_files,
-                               verbose, verbose_search) {
+                               verbose, verbose_search, chemical_report_path="") {
     const start_tremolo = process.hrtime.bigint();
     tremolo_start = '*** Step 6 - Calling tremolo to perform an in-silico spectral library identification against UNPD *** \n'
     console.log(tremolo_start);
@@ -1224,8 +1225,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
                 output_path+"/logTremolo", verbose)
 
             // call the curate tremolo result
-            curateTremoloResults(path_count_files[0], output_path+"/logTremolo",
-                verbose)
+            curateTremoloResults(path_count_files[0], output_path+"/logTremolo", chemical_report_path, verbose)
         }
     }
 
@@ -3223,7 +3223,8 @@ program
     .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, a spectral identification tool used for spectra matching against ' +
         'In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural ' +
         'Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.\n\n')
-    .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored')
+    .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored, in a folder named "identifications" which will be created if not exists yet. '+
+        'Another folder named final_reports/chemical_report will also be created to store the updated chemical reports.')
     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be searched and identified')
     .option('-c, --count_file_path [name]', 'optional paths to the count CSV files, separated by a comma ' +
         'and no space, as outputted by the NP3 workflow where the library annotations should be added as new columns. ' +
@@ -3254,9 +3255,9 @@ program
         }
 
         //call tremoloIdentification(output_name, output_path, count_files, mgf, mz_tol, sim_tol, top_k, verbose, verbose search)
-        tremoloIdentification("tremolo_identification", options.output_path, options.mgf,
+        tremoloIdentification("tremolo_identification", options.output_path + "/identifications", options.mgf,
             options.mz_tolerance, options.similarity, options.top_k, options.count_file_path, options.verbose,
-            options.verbose);
+            options.verbose, options.output_path + "/final_reports/chemical_report",);
     })
     .on('--help', function() {
         console.log('');
@@ -4441,10 +4442,10 @@ program
     .description('This command perform a post-processing analysis of a NP3 result for drug discovery research. ' +
         'Five different visualizations and two data tables are created. ' +
         'The visualization focus on the superclass grouping distribution, the novelty of the m/z ' +
-        '(with or without a library annotation) and ' +
+        '(with or without a final curated library annotation within a quality group) and ' +
         'the novelty across samples (with redundant and/or exclusive m/z). ' +
-        'The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution '+
-        'and/or only the protonated m/z.\n\n')
+        'The analysis may be filtered to show only a subset of the samples (metadata) or the top novelty samples distribution (topk) '+
+        'and/or only the protonated m/z (use_protonated).\n\n')
     .option('-c, --clean_counts_path <path>', 'Path to the clean counts table file with peak area of the NP3 job to be ' +
         'post analysed, the same of the metadata. The prefix of its filename will be used to name the output files.')
     .option('-m, --metadata_path <path>', 'Path to the metadata file of the same NP3 job to be post ' +
@@ -4551,12 +4552,13 @@ program
         console.log('');
         console.log('RESULTS:');
         console.log('');
-        console.log('Five visualizations are created in the output_path directory: '+
-            '\n(1) the samples composition in terms of the curated superclass grouping distribution across the final m/z by samples in a barplot; ' +
-            '\n(2) the m/z library spectral identification novelty in a donut plot with the total count of curated library annotations; ' +
-            '\n(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; ' +
-            '\n(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;'+
-            '\n(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. \n ' +
+        console.log('Six visualizations are created in the output_path directory: '+
+            '\n(1) A barplot with the samples composition in terms of the desired superclass grouping distribution across the final m/z by sample; ' +
+            '\n(2) A donut plot with the m/z final curated library identification novelty with the count of final curated library annotations by origin in the selected quality group; ' +
+            '\n(3) A donut plot with the m/z final curated library identification quality group distribution; '+
+            '\n(4) A donut plot with the m/z samples novelty with the total count of redundant and exclusive m/z across valid samples; ' +
+            '\n(5) Another donut plot with the identified m/z samples novelty with the total count of redundant and exclusive m/z with final curated library annotation;'+
+            '\n(6) A barplot with the m/z samples novelty (redundant or exclusive) distribution with and without a final curated library annotation by sample. \n ' +
             '\n And two CSV tables are created with the count of m/z novelty by sample and the count of superclass grouping by sample.\n'+
             'All the output plots and tables are named with a prefix equal the output_name (extracted from the clean table) concatenated with the metadata filename.\n');
         console.log('');
@@ -5018,7 +5020,7 @@ program
             console.log("@@@@@ Test 7 - L754_bacs_blanks_one_sample - tremolo @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' tremolo ' +
-                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/identifications/ ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ ' +
                 '-g '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_all.mgf ' +
                 '-k 20 -v 13',
                 {async:false, silent:true});
