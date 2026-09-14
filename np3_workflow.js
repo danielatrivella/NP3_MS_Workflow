@@ -98,7 +98,6 @@ function basename(str) {
     if (str.lastIndexOf("\\") > index_sep) {
         index_sep = str.lastIndexOf("\\")
     }
-
     return str.substr(index_sep + 1);
 }
 
@@ -112,18 +111,15 @@ function basedir(str) {
     if (str.lastIndexOf("\\") > index_sep) {
         index_sep = str.lastIndexOf("\\")
     }
-
     return str.substr(0, index_sep+1);
 }
 
 function convertIonMode(mode) {
     mode = parseDecimal(mode);
-
     if (![1,2].includes(mode)) {
         console.error('\nERROR. Wrong ion_mode parameter value. The ion mode must be a positive numeric value in {1,2} for positive and negative modes, respectively. Execution aborted.');
         process.exit(1);
     }
-
     if (mode === 2)
         return(-1);
     else
@@ -135,7 +131,6 @@ function convertMethodCorr(method) {
         console.error('\nERROR. Wrong method parameter value. The correlation method must be one of {"pearson", "kendall", "spearman"}. Execution aborted.');
         process.exit(1);
     }
-
     return(method);
 }
 
@@ -144,7 +139,6 @@ function convertSimilarityFunc(simFunc) {
         console.error('\nERROR. Wrong similarity function parameter value. The similarity function must be one of {"np3_shifted_cosine", "spec2vec"}. Execution aborted.');
         process.exit(1);
     }
-
     return(simFunc);
 }
 
@@ -153,8 +147,15 @@ function convertGNPSSearchTool(tool) {
         console.error('\nERROR. Wrong GNPS search tool parameter value. The GNPS search tool must be one of {"gnps_indexed", "gnps", "gnps_new", ""}. Execution aborted.');
         process.exit(1);
     }
-
     return(tool);
+}
+
+function convertLibAnnotationQuality(quality_group) {
+    if (!["1", "2"].includes(quality_group)) {
+        console.error('\nERROR. Wrong quality group filter value. The quality group filter of the final curated library annotations must be one of {"1", "2"}. Execution aborted.');
+        process.exit(1);
+    }
+    return(quality_group);
 }
 
 function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_factor, logOutputPath, verbose)
@@ -1612,7 +1613,7 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
 
 // call the post-process drug discovery analysis script
 function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path, topk, rm_blanks, rm_beds, rm_controls,
-                                   use_protonated, superclass_grouping_column, donutplots_title_size, donutplots_text_size,
+                                   use_protonated, superclass_grouping_column, lib_annotation_quality_filter, donutplots_title_size, donutplots_text_size,
                                    donutplot_libAnnotations_colors, donutplot_mzs_distr_colors, mzs_barplot_figsize,
                                    mzs_barplot_label_size, mzs_barplot_title_size, mzs_barplot_legend_bbox,
                                    mzs_barplot_legend_fontsize, mzs_barplot_legend_ncol, mzs_barplot_colors,
@@ -1624,8 +1625,10 @@ function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path
     console.log(step_name);
     var resExec = shell.exec(python3()+' '+__dirname+'/src/post_process_analysis/drug_discovery_post_analysis.py ' +
         '--metadata_path '+metadata_path+' --clean_counts_path '+clean_counts_path+' --output_path '+ output_path +
-        ' --topk '+topk+' --rm_blanks '+rm_blanks+' --rm_beds '+rm_beds+' --rm_controls '+rm_controls+' --use_protonated '+
-        use_protonated+' --superclass_grouping_column '+superclass_grouping_column+' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
+        ' --topk '+topk+' --rm_blanks '+rm_blanks+' --rm_beds '+rm_beds+' --rm_controls '+rm_controls+
+        ' --use_protonated '+use_protonated+' --superclass_grouping_column '+superclass_grouping_column+
+        ' --lib_annotation_quality_filter '+lib_annotation_quality_filter+
+        ' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
         ' --donutplot_libAnnotations_colors "'+donutplot_libAnnotations_colors+'" --donutplot_mzs_distr_colors "'+
         donutplot_mzs_distr_colors+'" --mzs_barplot_figsize '+mzs_barplot_figsize+' --mzs_barplot_label_size '+
         mzs_barplot_label_size+' --mzs_barplot_title_size '+mzs_barplot_title_size+' --mzs_barplot_legend_bbox '+
@@ -4467,6 +4470,10 @@ program
     .option('--superclass_grouping_column [value]', 'The name of the column in the provided clean table that should be '+
         'used to get the superclass grouping values of the m/z. The final curated library annotation result '+
         'is used by default (best origin from UNPD and GNPS).', "curated_lib_annotation_superclass_grouping")
+    .option('--lib_annotation_quality_filter [value]', 'Set the quality group filter of the final curated library ' +
+        'annotations, one of 1 or 2. If 1, only consider as annotated the m/z with "curated_lib_annotation_quality" == 1; ' +
+        'otherwise if 2, consider as annotated the m/z with "curated_lib_annotation_quality" equals 1 or 2. ' +
+        'The rest is set as "not_annotated".', convertLibAnnotationQuality, "1")
     .option('--donutplots_title_size [value]', 'The title size of the donut plots.', "16")
     .option('--donutplots_text_size [value]', 'The axis and legend text sizes of the donut plots.', "14")
     .option('--donutplot_libAnnotations_colors [value]', 'The list of colors separated by comma for the library ' +
@@ -4525,7 +4532,8 @@ program
         const start_post_dd_analysis = process.hrtime.bigint();
 
         callPostProcessDDAnalysis(options.metadata_path, options.clean_counts_path, options.output_path, options.topk,
-            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated, options.superclass_grouping_column,
+            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated,
+            options.superclass_grouping_column, options.lib_annotation_quality_filter,
             options.donutplots_title_size, options.donutplots_text_size, options.donutplot_libAnnotations_colors,
             options.donutplot_mzs_distr_colors, options.mzs_barplot_figsize, options.mzs_barplot_label_size,
             options.mzs_barplot_title_size, options.mzs_barplot_legend_bbox, options.mzs_barplot_legend_fontsize,
@@ -4779,7 +4787,8 @@ program
                 '-m '+output_path+'/test/L754_bacs/L754_bacs_all/marine_bacteria_library_L754_metadata.csv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/final_reports/post_dd_analysis/ ' +
-                '--superclass_barplot_legend_bbox 0.5,-0.5 --superclass_barplot_figsize 15,12 --superclass_barplot_legend_ncol 3',
+                '--superclass_barplot_legend_bbox 0.5,-0.5 --superclass_barplot_figsize 15,12 --superclass_barplot_legend_ncol 3 '+
+                '--mzs_barplot_legend_bbox 0.5,-0.35 --lib_annotation_quality_filter 2',
                 {async:false, silent:true});
 
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
