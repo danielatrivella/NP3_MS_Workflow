@@ -10,7 +10,7 @@ Loading packages readr and auxiliary functions...
 
   ** Computing Peak Area by Sample ** 
 
-  * Done in 0.27 secs *
+  * Done in 0.26 secs *
 
 Registered S3 methods overwritten by 'tibble':
   method     from  

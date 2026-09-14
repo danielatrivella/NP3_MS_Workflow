@@ -2,16 +2,16 @@
 *** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPAGATED *** 
 
 
-DONE! Time Elapsed: 1.71min
+DONE! Time Elapsed: 1.73min
 
    * Retrieving the GNPS2 library annotations of the identified spectra *
-  0%|          | 0/86 [00:00<?, ?it/s]100%|██████████| 86/86 [00:00<00:00, 56440.33it/s]
+  0%|          | 0/86 [00:00<?, ?it/s]100%|██████████| 86/86 [00:00<00:00, 58179.06it/s]
 
 DONE!
 
    * Filtering the top 1 result from the GNPS2 library search *
 
-DONE! Time Elapsed: 2.28min
+DONE! Time Elapsed: 2.29min
 
 
 *** Joining the GNPS identifications to the NP3 counts tables ***
@@ -47,7 +47,9 @@ DONE!
 
   - Creating the samples composition by superclass grouping distribution of not blank or bed m/z 
 
-* Computing the chemical and identification statistics for GNPS and UNPDxGNPS final curation *
+* Computing the chemical and identification statistics for GNPS *
+
+* Computing the chemical and identification statistics for UNPDxGNPS final curation *
 
 * Creating the NP3 reference PCA from SMILES for plotting GNPS *
   - Explained variance: PC1 65.74% and PC2 25.39%

@@ -5,13 +5,13 @@ Number of parallel cores to use in the pairwise comparisons: 4
   * Comparing L754_bacs_all result spectra pairwise *
         |       |
         |=======|
-    * Done making 29161 pairwise comparisions in 33.76 secs *
+    * Done making 29161 pairwise comparisions in 32.42 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.69min
+Finish pairwise comparison Time Elapsed: 0.67min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -30,12 +30,12 @@ NOISE cutoff : disabled
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
-          * Done aggregating similarity table in 0.1 secs *
+          * Done aggregating similarity table in 0.09 secs *
 
       * Step 1 *
   |                          |
   |==========================|
-        * Joined 2 similar clusters in 0.2 secs *
+        * Joined 2 similar clusters in 0.21 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
@@ -46,7 +46,7 @@ NOISE cutoff : disabled
   |==========================|
         * Joined 0 similar clusters in 0.06 secs *
 
-  * Done reducing 15 similar clusters in 0.73 secs *
+  * Done reducing 15 similar clusters in 0.74 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -68,11 +68,11 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.66 secs *
+    * Done in 0.64 secs *
 
 
 
-DONE! Time Elapsed: 0.24min
+DONE! Time Elapsed: 0.23min
 
 *** Analysing the count of spectra  *** 
 
@@ -107,7 +107,7 @@ Number of parallel cores to use in the pairwise comparisons: 4
   * Comparing L754_bacs_all_clean result spectra pairwise *
         | |
         |=|
-    * Done making 25651 pairwise comparisions in 4.91 secs *
+    * Done making 25651 pairwise comparisions in 4.65 secs *
 
 Loading required package: parallel
 
@@ -117,5 +117,5 @@ Finish pairwise comparison Time Elapsed: 0.21min
 ======
 
 ======
-Finish Step 5 Time Elapsed: 0.45min (without the clustered spectra comparison time) 
+Finish Step 5 Time Elapsed: 0.44min (without the clustered spectra comparison time) 
 ======

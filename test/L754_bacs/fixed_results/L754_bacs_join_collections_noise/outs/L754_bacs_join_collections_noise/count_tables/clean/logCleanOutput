@@ -5,7 +5,7 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_join_collections_noise result spectra pairwise *
         |       |
         |=======|
-    * Done making 10585 pairwise comparisions in 23.14 secs *
+    * Done making 10585 pairwise comparisions in 23.05 secs *
 
 Loading required package: parallel
 
@@ -55,7 +55,7 @@ Checking created MGF  /home/crisfbazz/Documents/CNPEM/NP3_MS_Workflow/test/L754_
 
     - Total number of putative fragmented clusters and percentage overall m/zs: 0 ( 0 % ) 
 
-    * Done in 0.47 secs *
+    * Done in 0.46 secs *
 
 
 
@@ -92,13 +92,13 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_join_collections_noise_clean result spectra pairwise *
         | |
         |=|
-    * Done making 10585 pairwise comparisions in 3.81 secs *
+    * Done making 10585 pairwise comparisions in 4.05 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.19min
+Finish pairwise comparison Time Elapsed: 0.20min
 ======
 
 ======

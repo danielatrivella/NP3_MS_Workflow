@@ -5,7 +5,7 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_blanks_one_sample result spectra pairwise *
         |     |
         |=====|
-    * Done making 5460 pairwise comparisions in 18.88 secs *
+    * Done making 5460 pairwise comparisions in 18.69 secs *
 
 Loading required package: parallel
 
@@ -20,7 +20,7 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_blanks_one_sample_clean result spectra pairwise *
         | |
         |=|
-    * Done making 3003 pairwise comparisions in 3.87 secs *
+    * Done making 3003 pairwise comparisions in 3.83 secs *
 
 Loading required package: parallel
 
