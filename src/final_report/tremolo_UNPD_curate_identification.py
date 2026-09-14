@@ -21,6 +21,8 @@ Args:
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from chemical_report_statistics import compute_chemical_report_statistics_UNPD, compute_chemical_identification_report_Final_Curation
+
 
 # return the position of the first float with value < value_lt from a list of string with floats
 # - which will be the one with the greater mqscore, following the tremolo result ordering -,
@@ -194,13 +196,22 @@ def final_lib_annotation_curation(clean_table_df):
 	curated_superclass_groupings = group_curated_superclass_toCols(clean_table_df['curated_lib_annotation_superclass'])
 	curated_superclass_groupings.columns = curated_superclass_groupings.columns.str.replace("curated_",
 	                                                                                        "curated_lib_annotation_")
+	
+	curated_superclass_groupings = pd.concat([clean_table_df.loc[:,['curated_lib_annotation_origin',
+	                                                                'curated_lib_annotation_score',
+	                                                                'curated_lib_annotation_quality',
+	                                                                'curated_lib_annotation_ID',
+	                                                                'curated_lib_annotation_compoundName',
+	                                                                'curated_lib_annotation_SMILES',
+	                                                                'curated_lib_annotation_superclass']],
+	                                          curated_superclass_groupings], axis=1)
 	# drop previous result if exists
 	clean_table_df.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True,
 	                    errors="ignore")  # remove existing new columns
 	clean_table_df = pd.concat([clean_table_df, curated_superclass_groupings], axis=1)
 	return clean_table_df
 
-def curate_tremolo_unpd_identification(clean_table_file):
+def curate_tremolo_unpd_identification(clean_table_file, chemical_report_path=""):
 	clean_table_file = Path(clean_table_file)
 	if not clean_table_file.exists() or not clean_table_file.is_file():
 		sys.exit(
@@ -367,17 +378,25 @@ def curate_tremolo_unpd_identification(clean_table_file):
 			clean_table.loc[:, np.concatenate([["msclusterID"], new_curated_columns])], how="left",
 			on="msclusterID")
 		clean_table_other.to_csv(clean_table_other_file, index=False, float_format="%.4f")
+	# call chemical statistics for tremolo and final curation if the chemical report path was informed
+	if chemical_report_path != "" and chemical_report_path.is_dir() and chemical_report_path.exists():
+		compute_chemical_report_statistics_UNPD(clean_table_file, chemical_report_path)
+		compute_chemical_identification_report_Final_Curation(clean_table_file, chemical_report_path)
 
 
 if __name__ == "__main__":
-	import sys, os
+	import sys
+	chemical_report_path = ""
 	if len(sys.argv) > 1:
 		# print(sys.argv)
 		clean_table_file = sys.argv[1]
+		if len(sys.argv) > 2:
+			chemical_report_path = sys.argv[2]
 	else:
 		print("Error: One argument must be supplied to curate the UNPD identification result using tremolo:\n",
-			  " 1 - clean_table_file: Path to the clean table containing identification results from UNPD using tremolo.\n")
+			  " 1 - clean_table_file: Path to the clean table containing identification results from UNPD using tremolo;\n",
+		      " 2 - chemical_report_path: (optional) Path to the chemical report folder to store the chemical statistics if informed.\n")
 		sys.exit(1)
 	# call the curate function
-	curate_tremolo_unpd_identification(clean_table_file)
+	curate_tremolo_unpd_identification(clean_table_file, chemical_report_path)
 	
