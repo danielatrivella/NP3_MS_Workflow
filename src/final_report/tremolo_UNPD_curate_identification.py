@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 Created on 26 Sep 2025
-@author: Cris
+@author: Cris, inspired in some of Rafa's F code
 
-Script to select the best result from the UNPD identification using tremolo
+Script to select the best result from the UNPD library annotation using tremolo
 Selects the best tremolo result with the greater mqscore and mzerror < 20, if any, or >= 20 within conditions of number of matched peaks and mqscore range
    Uses a defined scoring and classification system to select the best results
   creates the coluns tremolo_<>_best with the best selected identification result
-  creates the coluns tremolo_UNPD_score_best and tremolo_UNPD_category_best with the final scores of the best identification and its classification
-  creates the column curated_identification_best_origin to store the current best origin of valid identifications - checked as 'UNPD' for all valid classifications
-  creates the tremolo_curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group fro the best origin, here UNPD only
+  creates the columns tremolo_UNPD_score_best and tremolo_UNPD_category_best with the final scores of the best identification and its classification
+  creates the column curated_lib_annotation_origin to store the current best origin of valid identifications - UNPD or GNPS; and other columns curated_lib_annotation_*
+  creates the tremolo_curated_superclass columns and the curated superclasses groupings columns with the counts of occurrence in each group for the best origin, here UNPD and UNPDxGNPS if GNPS is already present
 Stores the results in the clean table - overwritting it
 
 Args:
@@ -21,6 +21,8 @@ Args:
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from chemical_report_statistics import compute_chemical_report_statistics_UNPD, compute_chemical_identification_report_Final_Curation
+
 
 # return the position of the first float with value < value_lt from a list of string with floats
 # - which will be the one with the greater mqscore, following the tremolo result ordering -,
@@ -131,7 +133,85 @@ def group_curated_superclass_toCols(curated_superclass_col):
 	# return the superclasses groupings counts
 	return curated_superclass_col
 
-def curate_tremolo_unpd_identification(clean_table_file):
+def final_lib_annotation_curation(clean_table_df):
+	# check if both sources of library annotation are present in the table, tremolo-UNPD and GNPS
+	# when both are present, make the final curation of the best of them, which have the greater score, ties go to GNPS;
+	# otherwise use only the best result of the present library with score > 0
+	# reset curated library annotation columns
+	clean_table_df['curated_lib_annotation_origin'] = ''
+	clean_table_df['curated_lib_annotation_ID'] = ''
+	clean_table_df['curated_lib_annotation_compoundName'] = ''
+	clean_table_df['curated_lib_annotation_SMILES'] = ''
+	clean_table_df['curated_lib_annotation_superclass'] = ''
+	clean_table_df['curated_lib_annotation_score'] = 0
+	clean_table_df['curated_lib_annotation_quality'] = 0
+	clean_table_df.loc[:, clean_table_df.columns.str.startswith("curated_lib_annotation_superclass_")] = ''
+	if 'tremolo_UNPD_score_best' in clean_table_df.columns and 'gnps_score' in clean_table_df.columns:
+		# make final curation from UNPD and GNPS
+		# select curated annotation best origin
+		clean_table_df.loc[clean_table_df.tremolo_UNPD_score_best > 0, 'curated_lib_annotation_origin'] = 'UNPD'
+		clean_table_df.loc[(clean_table_df.gnps_score > 0) &
+		                   (clean_table_df.gnps_score >= clean_table_df.tremolo_UNPD_score_best),
+						   'curated_lib_annotation_origin'] = 'GNPS'
+	elif 'tremolo_UNPD_score_best' in clean_table_df.columns:
+		# select lib annotations with score > 0
+		clean_table_df.loc[clean_table_df.tremolo_UNPD_score_best > 0, 'curated_lib_annotation_origin'] = 'UNPD'
+	elif 'gnps_score' in clean_table_df.columns:
+		# select lib annotations with score > 0
+		clean_table_df.loc[(clean_table_df.gnps_score > 0), 'curated_lib_annotation_origin'] = 'GNPS'
+	else:
+		# no library annotation present, return the input
+		return clean_table_df
+		
+	# get SMILES and curated superclass from origin = gnps
+	curated_origin_gnps = (clean_table_df.curated_lib_annotation_origin == 'GNPS')
+	if curated_origin_gnps.any():
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_superclass'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_curated_superclass']
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_SMILES'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_Smiles']
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_score'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_score']
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_ID'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_SpectrumID']
+		clean_table_df.loc[curated_origin_gnps, 'curated_lib_annotation_compoundName'] = clean_table_df.loc[
+			curated_origin_gnps, 'gnps_Compound_Name']
+	# get SMILES and curated superclass from origin = unpd
+	curated_origin_unpd = (clean_table_df.curated_lib_annotation_origin == 'UNPD')
+	if curated_origin_unpd.any():
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_superclass'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_curated_superclass']
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_SMILES'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_SMILES_best']
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_score'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_UNPD_score_best']
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_ID'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_UNPD_IDs_best']
+		clean_table_df.loc[curated_origin_unpd, 'curated_lib_annotation_compoundName'] = clean_table_df.loc[
+			curated_origin_unpd, 'tremolo_chemicalNames_best']
+	# create quality classification for the curated annotation based on the score
+	clean_table_df.loc[clean_table_df.curated_lib_annotation_score > 0, "curated_lib_annotation_quality"] = 2
+	clean_table_df.loc[clean_table_df.curated_lib_annotation_score >= 50, "curated_lib_annotation_quality"] = 1
+	# create grouping for curated_lib_annotation_superclass
+	curated_superclass_groupings = group_curated_superclass_toCols(clean_table_df['curated_lib_annotation_superclass'])
+	curated_superclass_groupings.columns = curated_superclass_groupings.columns.str.replace("curated_",
+	                                                                                        "curated_lib_annotation_")
+	
+	curated_superclass_groupings = pd.concat([clean_table_df.loc[:,['curated_lib_annotation_origin',
+	                                                                'curated_lib_annotation_score',
+	                                                                'curated_lib_annotation_quality',
+	                                                                'curated_lib_annotation_ID',
+	                                                                'curated_lib_annotation_compoundName',
+	                                                                'curated_lib_annotation_SMILES',
+	                                                                'curated_lib_annotation_superclass']],
+	                                          curated_superclass_groupings], axis=1)
+	# drop previous result if exists
+	clean_table_df.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True,
+	                    errors="ignore")  # remove existing new columns
+	clean_table_df = pd.concat([clean_table_df, curated_superclass_groupings], axis=1)
+	return clean_table_df
+
+def curate_tremolo_unpd_identification(clean_table_file, chemical_report_path=""):
 	clean_table_file = Path(clean_table_file)
 	if not clean_table_file.exists() or not clean_table_file.is_file():
 		sys.exit(
@@ -248,13 +328,6 @@ def curate_tremolo_unpd_identification(clean_table_file):
 	# Creates the new column "tremolo_UNPD_score_best" with the mapped score based on the category of the best identification
 	clean_table['tremolo_UNPD_score_best'] = clean_table['tremolo_UNPD_category_best'].map(score_mapping)
 
-	# defines the current best source/origin of the identificaiton - only UNPD
-	clean_table['curated_identification_best_origin'] = ''
-	clean_table.loc[clean_table.tremolo_UNPD_score_best > 0,'curated_identification_best_origin'] = 'UNPD'
-	clean_table['best_origin_SMILES'] = ''
-	clean_table.loc[clean_table.tremolo_UNPD_score_best > 0, 'best_origin_SMILES'] = clean_table.loc[
-			clean_table.tremolo_UNPD_score_best > 0, 'tremolo_SMILES_best']
-	
 	# make the clean and the curated superclass for UNPD identification
 	# get the first superclass from NPClassifier, the one before the pipe "|", if not NA else leave as NA
 	clean_table['tremolo_NPClassifier_superclass_clean_best'] = clean_table.tremolo_NPClassifier_superclass_best.apply(
@@ -277,6 +350,10 @@ def curate_tremolo_unpd_identification(clean_table_file):
 		clean_table.drop(curated_superclass_groupings.columns.values, axis=1, inplace=True)
 	clean_table = pd.concat([clean_table, curated_superclass_groupings], axis=1)
 	
+	# make the final curation, if gnps result is present retrieve the best origin result from the two library annotations
+	# otherwise retrieve only the best curated result from UNPD - new columns with prefix curated_lib_annotation_
+	clean_table = final_lib_annotation_curation(clean_table)
+	
 	print("  - Saving the clean table with the UNPD curated identification result and superclasses groupings: ", clean_table_file)
 	# save the data with the new columns - overwrite original table
 	clean_table.to_csv(clean_table_file, index=False, float_format="%.4f")
@@ -293,25 +370,33 @@ def curate_tremolo_unpd_identification(clean_table_file):
 		      clean_table_other_file)
 		new_curated_columns = np.concatenate([["tremolo_best_position"], clean_table.columns.values[
 			(clean_table.columns.str.startswith("tremolo_") & clean_table.columns.str.endswith("_best")) |
-			(clean_table.columns.str.startswith("tremolo_curated_superclass"))],
-		                                      ["curated_identification_best_origin", "best_origin_SMILES"]])
+			(clean_table.columns.str.startswith("tremolo_curated_superclass")) |
+			(clean_table.columns.str.startswith("curated_lib_annotation_"))]])
 		clean_table_other = pd.read_csv(clean_table_other_file, converters={'msclusterID':str}, low_memory=False)
 		clean_table_other.drop(new_curated_columns, axis=1, inplace=True, errors="ignore") # remove existing new columns
 		clean_table_other = clean_table_other.merge(
 			clean_table.loc[:, np.concatenate([["msclusterID"], new_curated_columns])], how="left",
 			on="msclusterID")
 		clean_table_other.to_csv(clean_table_other_file, index=False, float_format="%.4f")
+	# call chemical statistics for tremolo and final curation if the chemical report path was informed
+	if chemical_report_path != "" and chemical_report_path.is_dir() and chemical_report_path.exists():
+		compute_chemical_report_statistics_UNPD(clean_table_file, chemical_report_path)
+		compute_chemical_identification_report_Final_Curation(clean_table_file, chemical_report_path)
 
 
 if __name__ == "__main__":
-	import sys, os
+	import sys
+	chemical_report_path = ""
 	if len(sys.argv) > 1:
 		# print(sys.argv)
 		clean_table_file = sys.argv[1]
+		if len(sys.argv) > 2:
+			chemical_report_path = sys.argv[2]
 	else:
 		print("Error: One argument must be supplied to curate the UNPD identification result using tremolo:\n",
-			  " 1 - clean_table_file: Path to the clean table containing identification results from UNPD using tremolo.\n")
+			  " 1 - clean_table_file: Path to the clean table containing identification results from UNPD using tremolo;\n",
+		      " 2 - chemical_report_path: (optional) Path to the chemical report folder to store the chemical statistics if informed.\n")
 		sys.exit(1)
 	# call the curate function
-	curate_tremolo_unpd_identification(clean_table_file)
+	curate_tremolo_unpd_identification(clean_table_file, chemical_report_path)
 	

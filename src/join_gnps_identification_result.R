@@ -65,7 +65,7 @@ join_gnps_result_count_tables <- function(ms_count_path, gnps_columns_keep, lib_
 
 suppressPackageStartupMessages(library(dplyr))
 
-cat("\n*** Joining the GNPS library indentification results to the NP3 count files ***\n\n")
+cat("\n*** Joining the GNPS library annotation results to the NP3 count files ***\n\n")
 t0 <- Sys.time()
 
 # read gnps results spec net file with the libraries identifications results
@@ -117,7 +117,7 @@ lib_idres_scans <- dplyr::arrange(lib_idres_scans, msclusterID, desc(MQScore))
 
 # filter only the wanted columns
 # merge the ion source with the instrument
-gnps_columns_keep <- c('msclusterID', 'SpectrumID','Adduct','Smiles', 'InChIKey',
+gnps_columns_keep <- c('msclusterID', 'SpectrumID','Adduct', 'IonMode', 'Smiles', 'InChIKey',
                        'CAS_Number','Compound_Name','LibMZ','MZErrorPPM',
                        'MQScore','LibraryQualityString','SharedPeaks','Organism',
                        'npclassifier_superclass', 'npclassifier_class', 'npclassifier_pathway', # old gnps columns for npclassifier result 'superclass','class','subclass',

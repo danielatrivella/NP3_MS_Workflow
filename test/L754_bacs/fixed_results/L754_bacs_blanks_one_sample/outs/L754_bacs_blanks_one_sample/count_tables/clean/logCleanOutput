@@ -5,13 +5,13 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_blanks_one_sample result spectra pairwise *
         |     |
         |=====|
-    * Done making 5460 pairwise comparisions in 20.54 secs *
+    * Done making 5460 pairwise comparisions in 18.69 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.47min
+Finish pairwise comparison Time Elapsed: 0.44min
 ======
 
 *** Step 5 - Cleaning the clustering counts tables *** 
@@ -26,7 +26,7 @@ NOISE cutoff : disabled
       * Step 0 *
   |                          |
   |==========================|
-        * Joined 27 similar clusters in 0.07 secs *
+        * Joined 27 similar clusters in 0.08 secs *
           * Aggregating similarity table with the joined Ids *
             | |
             |=|
@@ -37,7 +37,7 @@ NOISE cutoff : disabled
   |==========================|
         * Joined 0 similar clusters in 0.04 secs *
 
-  * Done reducing 27 similar clusters in 0.38 secs *
+  * Done reducing 27 similar clusters in 0.4 secs *
 
 
   ** Computing Peak Area by Sample ** 
@@ -94,13 +94,13 @@ Number of parallel cores to use in the pairwise comparisons: 2
   * Comparing L754_bacs_blanks_one_sample_clean result spectra pairwise *
         | |
         |=|
-    * Done making 3003 pairwise comparisions in 4.21 secs *
+    * Done making 3003 pairwise comparisions in 3.83 secs *
 
 Loading required package: parallel
 
 DONE! 
 ======
-Finish pairwise comparison Time Elapsed: 0.20min
+Finish pairwise comparison Time Elapsed: 0.19min
 ======
 
 ======

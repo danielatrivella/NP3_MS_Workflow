@@ -6,7 +6,7 @@ Loading packages readr and auxiliary functions...
     |     |
     |=====|
 
-  * Done creating 9 symbolic clusters in 0.13 secs *
+  * Done creating 9 symbolic clusters in 0.12 secs *
 
   ** Computing Peak Area by Sample ** 
 
@@ -137,5 +137,5 @@ Warning messages:
 DONE! Time Elapsed: 0.01min
 
 ======
-Finish Step 8 Time Elapsed: 0.12min
+Finish Step 8 Time Elapsed: 0.11min
 ======

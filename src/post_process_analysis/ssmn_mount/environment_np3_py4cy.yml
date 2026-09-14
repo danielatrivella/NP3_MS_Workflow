@@ -1,0 +1,21 @@
+name: np3_py4cy
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - igraph
+  - requests
+  - pandas
+  - networkx
+  - numpy
+  - openpyxl
+  - pip
+  - pip: 
+    - chardet
+    - decorator
+    - backoff
+    - colour
+    - colorbrewer
+    - py4cytoscape
+

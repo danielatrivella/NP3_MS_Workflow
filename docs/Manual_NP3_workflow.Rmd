@@ -1,13 +1,13 @@
 ---
 title: '$NP^{3}$ MS Workflow'
-subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.5.0
+subtitle: A Pipeline for LC-MS/MS Metabolomics Data Process and Analysis \newline Version - 1.6.0
 author:  
   - Cristina F. Bazzano^[Brazilian Biosciences National Laboratory (LNBio), National Center for Research in Energy and Materials (CNPEM), 13083-970, Campinas, SP, Brazil and ^\†^Institute of Computing (IC), University of Campinas (UNICAMP), 13083-852, Campinas, SP, Brazil - cristina.bazzano@lnbio.cnpem.br, luizimgiolo@gmail.com, rafael.felicio@lnbio.cnpem.br, daniela.trivella@lnbio.cnpem.br, gpt@ic.unicamp.br] ^\†^
   - Luiz F. G. Alves^\*^
   - Rafael de Felicio^\*^
   - Daniela B. B. Trivella^\*^
   - Guilherme P. Telles^\†^
-date: July, 2026 
+date: September, 2026 
 output:
   pdf_document: default
   html_document:
@@ -231,6 +231,14 @@ If you did install the workflow dependencies using the conda environments, alway
   $ mamba activate np3
 ```
  
+## 3.1 $NP^{3}$ online in GNPS2 Workflows
+
+The $NP^{3}$ MS workflow is included in the GNPS2 Workflows and may be executed online using their web interface. This interface includes the *pre_process*+*run* commands features and the most important parameters. Using the desired parameters and one click, your job is submitted!
+
+Search for "np3" in their workflows list: https://gnps2.org/workflows.
+
+For a more personalized use, the full installation is required and the CLI must be used.
+
 # 4. $NP^{3}$ MS Workflow Commands
  
 The $NP^{3}$ MS workflow was developed in a Node.js CLI capable of automatically running the entire workflow, except for the first step. It can also execute each step of the workflow separately, plus the visualization commands and the command to include the GNPS library identification results in the count tables. 
@@ -290,7 +298,7 @@ Commands:
     - *\-o, \-\-output_path* \<path\>       : path to the final output data folder, inside the 'outs' directory of the clustering result folder. It should contain the 'mgf' folder and the 'count_tables' folder with the peak area and spectra count tables in CSV files. The job name will be extracted from here
     - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
  
-- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.
+- **tremolo** [options] : Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, a spectral identification tool used for spectra matching against In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.
     - List of mandatory options:
     - *\-o, \-\-output_path* <path>   :     path to where the spectral library search results will be stored
     - *\-g, \-\-mgf* <file>       :      path to the input MGF file with the MS/MS spectra data to be searched and identified
@@ -315,7 +323,7 @@ Commands:
     - List of mandatory options:
     - *\-o, \-\-output_path* \<path\>       : path to the output data folder, inside the outs directory of the clustering result folder. It should contain the 'molecular_networking' folder and inside it the 'similarity_tables' folder. The job name will be extracted from here
  
-- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). 
+- **gnps_library_search** [options] : Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPAGATED library (default for LC data). 
     - List of mandatory options:
     - *\-g, \-\-input_mgf_file* \<path\>      :  path to the input MGF file with the MS/MS spectra data to be searched and identified
     - *\-o, \-\-output_path* \<path\>         :  if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. It should contain the "identifications" folder, if not it will be created and the results will be stored in it. If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).
@@ -395,7 +403,7 @@ Options for the command *run*:
 - *\-f, \-\-fragment_tolerance* [x]  : the tolerance in Daltons for fragment peaks. Peaks in the original MS/MS spectra that are closer than this tolerance are merged in the clustering steps (Step 3). It is also used in the pre-processing (Step 2), in the spectra similarity comparisons and in the cleanning Step 5 (default: 0.05)
 - *\-z, \-\-mz_tolerance* [x]              : this is the tolerance in Daltons for the m/z of the precursor that determines if two spectra will be compared and possibly joined. It is used in the clustering steps (Step 3), in the cleaning (Step 5), in the library identifications (Step 6) and in the annotation of ionization variants (Step 7) (default: 0.025)
 - *\-p, \-\-ppm_tolerance* [x]        : the maximum tolerated m/z deviation in parts per million (ppm) to be used in the pre-processing (Step 2). Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
-- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the minimum similarity to be considered in the hierarchical clustering of Step 3, starts in 0.70 and decrease to X in 15 rounds. Also used in the Step 5 quantification cleaning (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
@@ -478,25 +486,28 @@ At the end of the pipeline processing, the $NP^{3}$ will automatically create di
 final reports with statistics of the final results. These reports are stored in a
 folder named 'final_reports', located in the final output folder inside outs/*output_name*/.
 
-The $NP^{3}$ MS Workflow final reports are organized in three groups of reports: *quantification*, *chemical* and *molecular networking* statistics, separated in different subfolders.
+The $NP^{3}$ MS Workflow final reports are organized in three different groups: *quantification*, *chemical* and *molecular networking* statistics, separated in different subfolders.
 
-The *quantification* report is located inside the quantification_report subfolder and contains:
+The **quantification** report is located inside the *quantification_report* subfolder and contains:
+
 - A table with the final quantification of clean consensus spectra, with statistics of the total number of m/z in blank and bed samples, global spectral identification rate against UNPD-tremolo, average number of putative isomers, number of isotope ions and number of fragmented clusters.
 
-The *chemical* report is located inside the chemical_report subfolder and contains: 
-- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation. If the GNPS2 library search is enable or when gnps_result is executed, another two similar tables are created with the spectral identification and putative novelty against the GNPS libraries and also against the best origin identification GNPSxUNPD after and before the curation.
-- A folder named chemical_space_identifications with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
-- Another folder named chemical_space_mzs with the chemical space plot of the m/z, retention time and their quantification information.
+The **chemical** report is located inside the *chemical_report* subfolder and contains: 
+
+- A table with statistics of the final putative [M+H]+ ions, their redundancy over the samples and spectral identification and putative novelty against the UNPD-tremolo after and before the curation. If the GNPS2 library search is enable or when gnps_result is executed, a similar table is created with the spectral identification and putative novelty against the GNPS libraries. Additionally, another table is created with the final identification curation statistics from GNPSxUNPD top quality library annotations and the statistics of the complete identifications before curation are also included for an ease comparison.
+- A folder named *chemical_space_identifications* with the chemical space plot of the identifications using PCA based on the CDK [26] descriptors calculated for the identified SMILES. These are created and compared against reference datasets (more details below).
+- Another folder named *chemical_space_mzs* with the chemical space plot of the m/z, retention time and their quantification information.
 - A plot with the distribution of the superclass grouping among the not blank and not bed samples. This plot is computed using the percentage of occurrence of each superclass in the final library annotated m/z.
 
-The identification curation is detailed in section 4.6.2 *tremolo*.
+The identification curation is detailed in section 4.6.4 for UNPD, in 4.12.4 for GNPS and in 4.6.5 for the final identification curation.
 
-The *molecular networking* report is located inside the molecular_networking_report subfolder and contains:
+The **molecular networking** report is located inside the *molecular_networking_report* subfolder and contains:
+
 - One table for each network created by the $NP^{3}$ pipeline containing some network statistics such as size, average degree, number of isolates, number of components by size and clustering coefficients.
 
 All statistics present in the created tables have a column with a detailed description explaining how they are calculated and what they represent. These values synthesize the final $NP^{3}$ results and accelerates further analysis.
 
-The *chemical space* of the identifications created in the chemical report was standardized to use *PCA* and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom were fixed). 
+The **chemical space** of the identifications created in the chemical report was standardized to use *PCA* and to be created using the unique compounds (SMILES) of three reference datasets: the complete UNPD from 2018 - 169383 compounds -, the natural drugs from DrugBank 2019 - 8757 compounds - and the natural allosteric drugs from a 2019 review [27] - 335 compound. These reference datasets will always be the background of the created chemical space and have a total of 178345 unique compounds. The CDK descriptors - https://cdk.github.io/ - of these reference data was computed for each final SMILES and the top 24 descriptors were selected based on their variance explanation of the final PCA and importance for Drug Discovery (LipinskiFailures, MW and nAtom were fixed). 
 
 The top 24 descriptors selected from CDK contains 18 topological and 6 constitutional descriptors and are named: 'WPOL','ATSp1','ATSp2','SP.3','Zagreb','VP.3','naAromAtom','SP.2','ATSp3','VP.2','ATSm3','nB',
 'ATSm2','nAromRings','nAromBlocks','C2SP2','khs.aasC','nAtomP','khs.aaCH','LipinskiFailures','MW',
@@ -511,11 +522,11 @@ For each final $NP^{3}$ result, in the chemical report creation, the clean conse
 
 The format of the final chemical space and the circle plot with the top 24 components can be found at NP3_MS_Workflow/docs/chemical_space_reference. The PCA method was chosen to create the chemical space of the $NP^{3}$ results because it allows keeping a high understanding of the result with the principal components showing the respective variables information. A better understanding is more important here than a better clustering of the identifications.
 
-A PCA plot is also created in the *gnps_result* command using the curated identifications joined from GNPS (see details of this command).
+A PCA plot is also created in the *gnps_result* and *gnps_library_search* commands using the curated identifications joined from GNPS (see details of this result in Section 4.12.4).
 
-Another PCA is created in the chemical space plot of the final m/zs, which uses the final clean consensus spectra chromatographic information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no coloring or grouping is being applied in this PCA, this is a beta analysis to be improved.
+Another PCA is created in the chemical space plot of the final m/zs, which uses the final clean consensus spectra chromatographic information (m/z, rtMean, sumInt, maxArea, basePeakInt) to create a PCA for viewing their scattering. For now no coloring or grouping is being applied in this PCA, this is a *beta analysis* to be improved.
 
-Furthermore, the command *pca_plot* may be used to create other PCA plots, a posteriori or with external data, using the $NP^{3}$ reference chemical space as base (exploratory analysis). See details in this command section.
+Furthermore, the command *pca_plot* may be used to create other PCA plots, a posteriori or with external data, using the $NP^{3}$ reference chemical space as base (exploratory analysis). See details in this command Section 4.14.
  
 ##### 4.2.3. *run* Examples
  
@@ -553,7 +564,7 @@ Options for the command *pre_process*:
 -  *\-t, \-\-rt_tolerance* [x]       :       the tolerance in seconds used to enlarge the MS1 peaks boundaries and accept as a match all MS2 ions that have a retention time value that is within a MS1 peak range. This value is applied to both sides of the MS1 peaks (RTmin - rt_tolerance and RTmax + rt_tolerance). Tries to overcome bad MS1 peak integrations. (default: 3)
 -  *\-z, \-\-mz_tolerance* [x]       :      the tolerance in Daltons for matching a MS1 peak m/z with a MS2 spectrum precursor m/z. (default: 0.05)
 -  *\-p, \-\-ppm_tolerance* [x]       :     the maximal tolerated m/z deviation in consecutive MS1 scans in parts per million (ppm) for the initial ROI definition of the R::xcms::centWave algorithm. Typically set to a generous multiple of the mass accuracy of the mass spectrometer. (default: 15)
--  *\-a, \-\-ion_mode* [x]              :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = [M+H]+ or 2' = [M-H]- (default: 1)
+-  *\-a, \-\-ion_mode* [x]              :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 -  *\-e, \-\-peak_width* [X,Y]      :       two numeric separated by comma ',' without spaces and using decimal point equals dot '.', containing the expected approximate peak width in chromatographic space. Given as a range (min, max) in seconds. The mean value will be used to simulate the width of the fake peaks (see Details section bellow) (default: 2,10)
 -  *\-s, \-\-snthresh* [x]  :           a numeric defining the signal to noise ratio cutoff. (default: 0)
 -  *\-f, \-\-pre_filter* [k,I]  :       two numeric separated by comma ',' without spaces and with decimal point equals dot '.' specifying the prefilter step for the first analysis step (ROI detection) of the R::xcms::centWave algorithm. Mass traces are only retained if they contain at least k peaks with intensity >= I. (default: 1,750)
@@ -701,7 +712,7 @@ Options for the command *clustering*:
 - *\-f, \-\-fragment_tolerance* [x]  :    the tolerance in Daltons for fragment peaks. Peaks in the original spectra that are closer than this get merged by the NP3_MSCluster algorithm (default: 0.05)
 - *\-z, \-\-mz_tolerance* [x]         :   this is the tolerance in Daltons for the m/z of the precursor that determines if two spectra will be compared and possibly joined. Used in the clustering job and in the library identifications (Step 6) (default: 0.025)
 - *\-p, \-\-ppm_tolerance* [x]        :   the maximal tolerated m/z deviation in parts per million (ppm) to be used in the pre-processing step if needed (default: 5)
-- *\-a, \-\-ion_mode* [x]            :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = [M+H]+ or '2' = [M\-H]\- (default: 1)
+- *\-a, \-\-ion_mode* [x]            :    the precursor ion mode. One of the following numeric values corresponding to a ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-s, \-\-similarity* [x]           :   the minimum similarity to be consider in the hierarchical clustering, starts in 0.70 and decrease to X in 15 rounds (default: 0.55)
 - *\-g, \-\-similarity_blank* [x]      :  the minimum similarity to be consider in the hierarchical clustering of the blank clustering steps, starts in 0.70 and decrease to X in 15 rounds. Only used in the clustering of blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
 - *\-t, \-\-rt_tolerance* [x,y] :        tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. The first tolerance [x] is used in the data, blank and batches integration clustering steps; and the second tolerance [y] is for the final integration step between all samples (default: 1,2)
@@ -841,7 +852,7 @@ Options for the command *clean*:
 - *\-y, \-\-processed_data_dir* \<path\>  : the path to the folder inside the raw data folder where the pre-processed data (MGFs) were stored.
 - *\-z, \-\-mz_tolerance* [x]              : the tolerance in Daltons that determines if two spectra will be compared and possibly joined. It is also used in Step 7 to detect possible ion variants (default: 0.025)
 - *\-t, \-\-rt_tolerance* [x,y]        : tolerances in seconds for the retention time width of the precursor that determines if two spectra will be compared and possibly joined. It is directly applied to the retention time minimum (subtracted) and maximum (added) of the spectra. It enlarges the peak boundaries to deal with disaligned samples or ionization variant spectra. The first tolerance [x] is used in the annotation Step 7; and the tolerance [y] is used in the clean Step 5 (default: 1,2)
-- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-i, \-\-similarity_function* [x]  :    the similarity function to be used in the spectra comparison to create the pairwise similarity tables after clustering and clean steps. One of "np3_shifted_cosine" or "spec2vec". If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) is used by spec2vec in the spectra comparison and the matchms library is used to compute the number of matched peaks between the compared spectra; otherwise, the $NP^{3}$ shifted cosine function is used. (default: "np3_shifted_cosine")
 - *\-s, \-\-similarity* [x]          : the similarity to be consider when joining clusters and merging their counts in not blank samples (default: 0.55)
 - *\-g, \-\-similarity_blank* [x] :    the similarity to be consider when joining clusters and merging their counts in blank samples (column SAMPLE_TYPE equals 'blank' in the metadata table) (default: 0.3)
@@ -955,13 +966,12 @@ Table: Clean Count Tables New Columns from the Data Cleaning Step
 
 ## 4.6. Step 6: Command *tremolo*
  
-Runs the library spectra identification of the collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] in positive ion mode for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18]. This tool can only be executed in Unix OS and for data in positive ion mode. The Step 6.1 corresponds to the GNPS2 Library Search and is described in section 4.12.
+Runs the spectral identification of a collection of consensus spectra against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) [16] for 170 602 Natural Products from the Universal Natural Products Database (UNPD) [17] using the tremolo tool [18] to retrieve library annotations. This tool can only be executed in Unix OS and for data in positive ion mode. The Step 6.1 corresponds to the GNPS2 Library Search and is described in section 4.12.
 
-The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the identification results.
+The NPClassifier [21], NPAtlas [22] and ClassyFire [23] solutions were used to add origin and class information to the UNPD compounds. $NP^{3}$ MS Workflow will retrieve this information together with the library annotations.
  
-At the end of the identification step, a curation is performed to select the best result from the 
-top_k identifications of each spectra and to score them with a personalized
-criteria. Additionally, a superclass grouping of the NPClassifier result was proposed by the $NP^{3}$ team and is also applied here for the final curated superclass.
+At the end of the spectral identification step, a curation is performed to select the best UNPD result from the top_k identifications of each spectra and to score them with a personalized
+criteria. Additionally, a superclass grouping of the NPClassifier result was proposed by the $NP^{3}$ team and is also applied here for the curated superclass. Finally, the final identificaiton curation is performed (more details in next subsections).
 
 A binary version of the tremolo tool is freely available for download in the following link: http://proteomics.ucsd.edu/software-tools/tremolo/.
  
@@ -1007,75 +1017,26 @@ When the count_files are provided, the tremolo results are aggregated by spectra
 | tremolo_NPAtlas_origin_type	     | the biological origin type from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_genus	            | the biological genus from NPAtlas of the top_k identified spectra concatenated with a ';' |
 | tremolo_NPAtlas_origin_species     | the biological origin species from NPAtlas of the top_k identified spectra concatenated with a ';' |
-| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in the Identification Curation |
+| tremolo_best_position | the index position of the best tremolo result among the top_k identifications following the criteria defined in Section 4.6.4 |
 | tremolo_<identification columns>_best | some of the previous identification columns with the best result from index tremolo_best_position | 
 | tremolo_NPClassifier_superclass_clean_best | the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe) |
-| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in the Identification Curation |
+| tremolo_UNPD_category_best | the tremolo UNPD category of the best result following the criteria define in Section 4.6.4 |
 | tremolo_UNPD_score_best | the corresponding score of the tremolo_UNPD_category_best |
-| curated_identification_best_origin | the database origin of the best identification, here it receives 'UNPD' for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). In the gnps_result it may also receive a value equal to 'GNPS' |
-| best_origin_SMILES | the SMILES of the curated identification from the best origin. Here where curated_identification_best_origin == UNPD it receives the value of the tremolo_SMILES_best | 
-| best_origin_curated_superclass | the NPClassifier superclass of the curated identification from the best origin. Here where curated_identification_best_origin == UNPD, it receives the value of the tremolo_NPClassifier_superclass_clean_best column |
 | tremolo_curated_superclass  | the result of the tremolo_NPClassifier_superclass_clean_best for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') |
-| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Identification Curation | 
-| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in the Identification Curation |
+| tremolo_curated_superclass_grouping | the superclass group from the mapped tremolo_curated_superclass following the proposed groups in Section 4.6.4 | 
+| tremolo_curated_superclass_GR_\<curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the tremolo_curated_superclass_grouping zero, one or more times as detailed in Section 4.6.4 |
+| curated_lib_annotation_origin | the database library origin of the final curated identification, which have the greater score. It receives 'UNPD' if tremolo_UNPD_score_best > 0 or 'GNPS' if gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. Detailed in Section 4.6.5. |
+| curated_lib_annotation_ID | the library ID of the final curated identification from the best origin. Equals to tremolo_UNPD_IDs_best where origin is UNPD, equals to gnps_SpectrumID where origin is GNPS, and equals '' otherwise |
+| curated_lib_annotation_compoundName | the compound name of the final curated identification from the best origin. Equals to tremolo_chemicalNames_best where origin is UNPD, equals to gnps_Compound_Name where origin is GNPS, and equals '' otherwise |
+| curated_lib_annotation_SMILES | the SMILES of the final curated identification from the best origin. If curated_lib_annotation_origin == UNPD it receives the value of the tremolo_SMILES_best, if curated_lib_annotation_origin == GNPS it receives the value of the gnps_Smiles, otherwise ''| 
+| curated_lib_annotation_superclass | the NPClassifier superclass of the final curated identification from the best origin. Equals to tremolo_curated_superclass where origin is UNPD, equals to gnps_curated_superclass where origin is GNPS, and equals '' otherwise |
+| curated_lib_annotation_superclass_grouping | the superclass group from the mapped curated_lib_annotation_superclass following the proposed groups in Section 4.6.4 |
+| curated_lib_annotation_superclass_GR_ \<final curated superclass group\> | 0 or +1 values indicating if the respective curated superclass group appears in the curated_lib_annotation_superclass_grouping zero, one or more times as detailed in Section 4.6.4 |
+| curated_lib_annotation_score | the corresponding score of the final curated identification from the best origin. Equals to tremolo_UNPD_score_best for UNPD, or gnps_score for GNPS, or 0 otherwise. |
+| curated_lib_annotation_quality  | a quality group for the final curated identification. Equals to '1' if curated_lib_annotation_score >= 50, or '2' if curated_lib_annotation_score < 50 and curated_lib_annotation_score > 0, or '0' otherwise (curated_lib_annotation_score == 0). |
 
 For more details about the Tremolo tool see the src/ISDB_tremolo_NP3/README.md file and its documentation at src/ISDB_tremolo_NP3/Data/doc/Workflow_062016.pdf.
  
-##### 4.6.2. *tremolo* Identification Curation
-
-A curation of the identification results was proposed in order to score and rank the best identification from the UNPD-tremolo. The curations is executed after the identification results are merged to the count_files tables. Some chemical criteria were defined to automatically select the best candidate from the top_k results. Additionally, a chemical grouping of the NPClassifier superclass were proposed by the $NP^{3}$ team to ease the chemical understanding of the best identifications.
-
-The curation starts by selecting the best result among the top_k identifications for each identified spectra and then extract their value for all the identification columns, as follow:
-
-1. The best result is defined as the identification with the higher tremolo_MQScore which have tremolo_mzErrorPPM < 20 if any, otherwise it is defined equals to the identification with the smaller tremolo_mzErrorPPM rounded in the first decimal place which have the higher tremolo_MQScore;
-2. The best result is set in a new column named 'tremolo_best_position' which will store the index of the best result among the top_k identifications for each spectra;
-3. The identification columns with the best selected result are created equal to the identification columns names plus a suffix equals to '_best' and the result present in the tremolo_best_position is extracted and set to them.
-    - Additionally, it is created the column 'tremolo_NPClassifier_superclass_clean_best' with only the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a '|' (only the best result before the pipe).
-
-After the best result were selected and their information extracted, the curation proceeds to a categorization and scoring of the best result. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
-
-| Tremolo UNPD Category | Score | Criteria | 
-| :--------------- | :---: | :------------------------------------: | 
-| Top1\|mqs>=0.5 | 100 | mzE <= 20 and nsP >= 6 |
-| Top2\|0.4<=mqs<0.5 | 80 | mzE <= 20 and nsP >= 6 |
-| Top3\|sp<6 mqs>=0.5 | 60 | mzE <= 20 and nsP < 6 |
-| Top4\|sp<6 0.4<=mqs<0.5 | 50| mzE <= 20 and nsP < 6 |
-| Top5\|mqs>=0.2 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.4 |
-| Analog1\|mqs>=0.5 | 40 | mzE > 20 and nsP >= 6 |
-| Analog2\|0.4<=mqs<0.5 | 30 | mzE > 20 and nsP >= 6 |
-| Analog3\|sp<6 mqs>=0.5 |  20 | mzE > 20 and nsP < 6 |
-| Analog4\|sp<6 0.4<=mqs<0.5 | 10 | mzE > 20 and nsP < 6 |
-| Analog5\|mqs>=0.2 | 5 | mzE > 20 and nsP >= 6 and mqs<0.4 |
-| out | 0 | did not passed in any category - unreliable identification |
-  
-* Where mqs is the tremolo_MQScore_best, nsP is the tremolo_numSharedPeaks_best and mzE is the tremolo_mzErrorPPM_best values. 
-
-The defined category for each final best identification is stored in the column 'tremolo_UNPD_category_best' and its corresponding score is stored in the column 'tremolo_UNPD_score_best'.
-
-Finally, it is created the column 'curated_identification_best_origin' to store the name of the database that have the greatest curated score (UNPD or GNPS) for each spectra, from where the best identification originated. Here this column receives a value equals to 'UNPD' for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out') and an empty string in the rest. When running the gnps_result command, some spectra may receive a value equal to 'GNPS' on this column depending on the comparison of the scores from the two identification origins (UNPD and GNPS), detailed in the gnps_result documentation section.
-
-The 'curated_identification_best_origin' column stores the best identification origin, and to complement this information the column 'best_origin_SMILES' and 'best_origin_curated_superclass' are also created with the SMILES and the superclass, respectively, from the best identification. Here it receives the tremolo-UNPD best values. In the gnps_result command it may receive values from the gnps result when they have a better score.
-
-Additionaly, the curation of the identification also defines and creates a grouping of the superclasses from the NPClassifier. In UNPD, there are 94 superclasses from the NPClassifier, which is a very large number for a fast analysis. Here the $NP^{3}$ team proposed a groupings with 10 major superclasses using a chemical reasoning to group related superclasses in a Drug Discovery perspective. The major superclasses groupings are presented in the table below:
-
-| Major Superclass Group | NPClassifier Superclasses |
-| :---------- | :---------------: |
-| Aminoacids_and_Peptides_and_OtherNComp | "Amino acid glycosides", "Mycosporine derivatives", "Oligopeptides", "Small peptides", "Aminosugars and aminoglycosides", "Diazotetronic acids and derivatives", "Mitomycin derivatives", "Organic nitrogen compounds", "Nucleosides, nucleotides, and analogues", "Nucleosides" |
-| Alkaloids_and_Lactams | "Alkaloids and derivatives", "Anthranilic acid alkaloids", "Lysine alkaloids", "Guanidine alkaloids", "Histidine alkaloids", "Ornithine alkaloids", "Peptide alkaloids", "Proline alkaloids", "Pseudoalkaloids", "Tetramate alkaloids", "Miscellaneous alkaloids", "Nicotinic acid alkaloids", "Serine alkaloids", "Tryptophan alkaloids", "Tyrosine alkaloids", "$\beta$-lactams", "$\gamma$-lactam-$\beta$-lactones" |
-| Terpenes_and_Carotenoids | "Diterpenoids", "Meroterpenoids", "Monoterpenoids", "Sesterterpenoids", "Triterpenoids", "Steroids", "Sesquiterpenoids", "Apocarotenoids", "Carotenoids (C40)", "Carotenoids (C45)", "Carotenoids (C50)" |
-| Fatty_Acids_and_Lipids | "Fatty Acids and Conjugates", "Fatty acyl glycosides", "Fatty acyls", "Fatty amides", "Fatty esters", "Lipids and lipid-like molecules", "Docosanoids", "Eicosanoids", "Glycerophospholipids", "Glycerolipids", "Octadecanoids", "Sphingolipids", "Hydrocarbons", "Hydrocarbon derivatives" |
-|		Polyketides | "Aromatic polyketides", "Cyclic polyketides", "Macrolides", "Linear polyketides", "Miscellaneous polyketides", "Polycyclic aromatic polyketides", "Polyethers" |
-| Benzenoids | "Benzenoids", "Diarylheptanoids", "Naphthalenes", "Phenanthrenoids", "Stilbenoids", "Terphenyls", "Diphenyl ethers (DPEs)", "Fluorenes" |
-| Flavonoids_and_Phenolic_derivatives | "Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)", "Phenylethanoids (C6-C2)", "Phenylpropanoids (C6-C3)", "Phloroglucinols", "Phenylpropanoids and polyketides" |
-| Organohalogen_and_Organometallic | "Organohalogen compounds", "Organometallic compounds", "Acetylides" |
-| Lignans_and_Other_Ocompounds | "Chromanes", "Coumarins", "Organic oxygen compounds", "Polyols", "Polyprenols", "Saccharides", "Styrylpyrones", "Xanthones", "Lignans", "Lignans, neolignans and related compounds", "Tropolones" |
-| Organic_Acids_and_OthersGenerals | "Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives", "Organoheterocyclic compounds", "Organosulfur compounds" |
-| Not_Annotated | "not_annotated" |
-
-At the end of the tremolo curation, it is created the column 'tremolo_curated_superclass' that receives the result of the best tremolo superclass for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). This column is then mapped to the superclasses grouping defined above and stored in column 'tremolo_curated_superclass_grouping'. If multiple superclasses were assigned to the spectra, they are separated by a ':'. Finally, for each curated superclass grouping, it is created a column named 'tremolo_curated_superclass_GR_\<curated superclass grouping\>' with 0 or +1 values checking if the curated identification of UNPD-tremolo of the spectra were assigned to the corresponding curated superclass grouping zero, one or more times.
-
-In the gnps_result command a curation of the best origin identification result, comparing UNPDxGNPS, is automatically computed. In the final reports, the curated identification result (more refined result) is used for the final statistics and compared with the best identification not curated (complete result). 
-
 ##### 4.6.3. *tremolo* Examples
  
 Fake example to execute the Tremolo command:
@@ -1097,6 +1058,79 @@ Concatenate tremolo results in the count files:
 ```
  
  
+##### 4.6.4. *tremolo* UNPD Identification Curation
+
+A curation of the identification results was proposed to score and rank the best identification from the UNPD-tremolo. The curation is executed after the library annotations are merged to the count_files tables. Some chemical criteria were defined to automatically select the best annotations from the top_k results. Additionally, a chemical grouping of the NPClassifier superclass were proposed by the $NP^{3}$ team to ease the chemical understanding of the best identifications.
+
+The curation starts by selecting the best result among the top_k identifications for each identified spectra in UNPD and then extract its value for each  identification column, as follow:
+
+1. The best result is defined as the library annotation with the higher tremolo_MQScore which have tremolo_mzErrorPPM < 20 if any, otherwise it is defined equals to the identification with the smaller tremolo_mzErrorPPM rounded in the first decimal place which have the higher tremolo_MQScore;
+2. The best result position is set in a new column named 'tremolo_best_position' which will store the index of the best result among the top_k library annotations of each spectra;
+3. New identification columns are created with only the best selected result (from the 'tremolo_best_position') and are named equal to the identification column names plus a suffix equals to '_best'.
+    - Additionally, it is created the column 'tremolo_NPClassifier_superclass_clean_best' with only the superclass assigned by NPClassifier when the result from ClassyFire is also present and separated by a pipe '|' (only the best result before the pipe).
+
+After the best UNPD result were selected and their information extracted, the curation proceeds to a categorization and scoring of the best result. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+
+| Tremolo UNPD Category | Score | Criteria | 
+| :--------------- | :---: | :------------------------------------: | 
+| Top1\|mqs>=0.5 | 100 | mzE <= 20 and nsP >= 6 |
+| Top2\|0.4<=mqs<0.5 | 80 | mzE <= 20 and nsP >= 6 |
+| Top3\|sp<6 mqs>=0.5 | 60 | mzE <= 20 and nsP < 6 |
+| Top4\|sp<6 0.4<=mqs<0.5 | 50| mzE <= 20 and nsP < 6 |
+| Top5\|mqs>=0.2 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.4 |
+| Analog1\|mqs>=0.5 | 40 | mzE > 20 and nsP >= 6 |
+| Analog2\|0.4<=mqs<0.5 | 30 | mzE > 20 and nsP >= 6 |
+| Analog3\|sp<6 mqs>=0.5 |  20 | mzE > 20 and nsP < 6 |
+| Analog4\|sp<6 0.4<=mqs<0.5 | 10 | mzE > 20 and nsP < 6 |
+| Analog5\|mqs>=0.2 | 5 | mzE > 20 and nsP >= 6 and mqs<0.4 |
+| out | 0 | did not passed in any category - unreliable identification |
+  
+* Where mqs is the tremolo_MQScore_best, nsP is the tremolo_numSharedPeaks_best and mzE is the tremolo_mzErrorPPM_best values. 
+
+The defined category of each final best UNPD identification is stored in the column 'tremolo_UNPD_category_best' and its corresponding score is stored in the column 'tremolo_UNPD_score_best'.
+
+Finally, the curation of the UNPD identification also defines and creates 10 groupings of the superclasses from the NPClassifier. In UNPD, there are 94 superclasses from the NPClassifier, which is a very large number for a fast analysis. Here the $NP^{3}$ team proposed a groupings with 10 major superclasses using a chemical reasoning to group related superclasses in a Drug Discovery perspective. The major superclasses groupings are presented in the table below:
+
+| Major Superclass Group | NPClassifier Superclasses |
+| :---------- | :---------------: |
+| Aminoacids_and_Peptides_and_OtherNComp | "Amino acid glycosides", "Mycosporine derivatives", "Oligopeptides", "Small peptides", "Aminosugars and aminoglycosides", "Diazotetronic acids and derivatives", "Mitomycin derivatives", "Organic nitrogen compounds", "Nucleosides, nucleotides, and analogues", "Nucleosides" |
+| Alkaloids_and_Lactams | "Alkaloids and derivatives", "Anthranilic acid alkaloids", "Lysine alkaloids", "Guanidine alkaloids", "Histidine alkaloids", "Ornithine alkaloids", "Peptide alkaloids", "Proline alkaloids", "Pseudoalkaloids", "Tetramate alkaloids", "Miscellaneous alkaloids", "Nicotinic acid alkaloids", "Serine alkaloids", "Tryptophan alkaloids", "Tyrosine alkaloids", "$\beta$-lactams", "$\gamma$-lactam-$\beta$-lactones" |
+| Terpenes_and_Carotenoids | "Diterpenoids", "Meroterpenoids", "Monoterpenoids", "Sesterterpenoids", "Triterpenoids", "Steroids", "Sesquiterpenoids", "Apocarotenoids", "Carotenoids (C40)", "Carotenoids (C45)", "Carotenoids (C50)" |
+| Fatty_Acids_and_Lipids | "Fatty Acids and Conjugates", "Fatty acyl glycosides", "Fatty acyls", "Fatty amides", "Fatty esters", "Lipids and lipid-like molecules", "Docosanoids", "Eicosanoids", "Glycerophospholipids", "Glycerolipids", "Octadecanoids", "Sphingolipids", "Hydrocarbons", "Hydrocarbon derivatives" |
+|		Polyketides | "Aromatic polyketides", "Cyclic polyketides", "Macrolides", "Linear polyketides", "Miscellaneous polyketides", "Polycyclic aromatic polyketides", "Polyethers" |
+| Benzenoids | "Benzenoids", "Diarylheptanoids", "Naphthalenes", "Phenanthrenoids", "Stilbenoids", "Terphenyls", "Diphenyl ethers (DPEs)", "Fluorenes" |
+| Flavonoids_and_Phenolic_derivatives | "Alkylresorcinols", "Flavonoids", "Isoflavonoids", "Phenolic acids (C6-C1)", "Phenylethanoids (C6-C2)", "Phenylpropanoids (C6-C3)", "Phloroglucinols", "Phenylpropanoids and polyketides" |
+| Organohalogen_and_Organometallic | "Organohalogen compounds", "Organometallic compounds", "Acetylides" |
+| Lignans_and_Other_Ocompounds | "Chromanes", "Coumarins", "Organic oxygen compounds", "Polyols", "Polyprenols", "Saccharides", "Styrylpyrones", "Xanthones", "Lignans", "Lignans, neolignans and related compounds", "Tropolones" |
+| Organic_Acids_and_OthersGenerals | "Homogeneous non-metal compounds", "Organic 1,3-dipolar compounds", "Organic acids and derivatives", "Organoheterocyclic compounds", "Organosulfur compounds" |
+| Not_Annotated | "not_annotated" |
+
+Next, it is created the column 'tremolo_curated_superclass' that receives the result of the best tremolo superclass for the spectra that have tremolo_UNPD_score_best > 0 (or tremolo_UNPD_category_best != 'out'). This column is then mapped to the superclasses grouping defined above and stored in column 'tremolo_curated_superclass_grouping'. If multiple superclasses were assigned to a spectra, they are separated by a ':'. Finally, for each curated superclass grouping, it is created a column named 'tremolo_curated_superclass_GR_\<curated superclass grouping\>' with 0 or +1 values that counts how many times the curated library annotation from UNPD-tremolo appeared in the corresponding curated superclass grouping (zero, one or more times).
+
+At the end, the final identification curation is performed (next section). And then, the final chemical reports are created.
+
+##### 4.6.5. *tremolo* Final Identification Curation
+
+The final identification curation is performed at the end of the UNPD curation and at the end of the GNPS curation. It selects the origin (UNDP x GNPS) of the best library annotation present in the current $NP^{3}$ result, apply a filter based on their curated score by origin and also set a quality class based on this score. In the final reports, the final curated library annotations are used for the final statistics and compared with the best identifications from UNPD and GNPS not curated (complete identification result). The final curated library annotations are stored in different columns with the prefix "curated_lib_annotation_*". 
+
+The final identification curation starts by creating the column "curated_lib_annotation_origin" with the library origin (UNPD or GNPS) of the best library annotation with a score greater than 0. This column is set to 'GNPS' if the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present, uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Otherwise, if the GNPS result is not present, set it to 'UNPD' where tremolo_UNPD_score_best > 0. The preference here goes to GNPS, which is an experimental spectra library.
+
+Then, using the selected origin of each final curated identification, the procedure retrieves its respective score (from 'gnps_score' for 'GNPS' and from 'tremolo_UNPD_score_best' for 'UNPD') and stores it in the column "curated_lib_annotation_score". When no origin was selected, the score is set to 0. These scores are defined in Section 4.6.4 for UNPD and Section 4.12.4 for GNPS.
+
+Using the score of the final curated identification, a **quality grouping** is defined and assigned to column "curated_lib_annotation_quality" using three quality groups: 
+
+| Quality Group | Criteria | Description |
+| :--: | :---------: | :---------: |
+| 1 | curated_lib_annotation_score >= 50 | representing good/top quality library annotations |
+| 2 | curated_lib_annotation_score > 0 and curated_lib_annotation_score < 50 | less reliable library annotations, mostly analogs or low similarity score |
+| 0 | curated_lib_annotation_score == 0 | category 'out' - not annotated |
+
+Next, the SMILES of the final curated identification is set to the column "curated_lib_annotation_SMILES", which receives the value from the column "gnps_Smiles" where origin equals to "GNPS" or the value from the column "tremolo_SMILES_best" where origin equals to "UNPD", otherwise leave it empty. Similarly, the superclass of the final curated identification is set to the column "curated_lib_annotation_superclass", which receives the value from the columns "gnps_curated_superclass" or "tremolo_curated_superclass"; the final curated ID is set to the column "curated_lib_annotation_ID", which receives the value from the columns "gnps_SpectrumID" or "tremolo_UNPD_IDs_best"; and the final curated compound name is set to the column "curated_lib_annotation_compoundName", which receives values from the columns "gnps_Compound_Name" or "tremolo_chemicalNames_best".
+
+Finally, using the values present in the superclass of the final curated library annotation, the columns with the superclass grouping are created accordingly named "curated_lib_annotation_superclass_grouping" and "curated_lib_annotation_superclass_GR_\<superclass_group\>", where superclass_group are the 10 superclass groups defined in the previous section plus the not annotated group.
+
+The final curated identifications present in the columns "curated_lib_annotation_*" are defined as the more reliable library annotations of each consensus spectra from a $NP^{3}$ result.
+
 ## 4.7. Step 7: Command *annotate_protonated*
  
 Annotate possible ionization variants in the clean count tables and creates the ionization variant annotation molecular network (IVAMN) - for positive ion mode only. It searches for adducts, neutral losses, multiple charge, dimers/trimers, isotopes and in-source fragments based on numerical equivalences and chemical rules. Finally, it runs a link analysis in the IVAMN to assign some consensus spectra as putative [M+H]+ representatives. 
@@ -1113,7 +1147,7 @@ Options for the command *annotate_protonated*:
 - *\-f, \-\-fragment_tolerance* [x]  : the tolerance in Daltons for matching the numerical rules of in-source fragments and multiple charge isotopic patterns. (default: 0.025)
 - *\-t, \-\-rt_tolerance* [x]        : tolerance in seconds to enlarge the peak boundaries for detecting concurrent variant spectra. (default: "2")
 - *\-i, \-\-absolute_ms2_int_cutoff* [x] :    The absolute intensity cutoff for fragmented MS2 peaks in the interval of 0 to 1000 (default: 15)
-- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = [M+H]+ or '2' = [M-H]- (default: 1)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]- (default: 1)
 - *\-u, \-\-rules* [x]              :   path to the CSV file with the accepted ionization modification rules for detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses. (default: "rules/np3_modifications.csv")
 - *\-c, \-\-scale_factor* [x]          :  the scaling method to be used in the fragmented peak's intensities before any dot product comparison (Step 5). Valid values are: 0 for the natural logarithm (ln) of the intensities; 1 for no scaling; and other values greater than zero for raising the fragment peaks intensities to the power of x (e.g. x = 0.5 is the square root scaling). [x] >= 0 (default: 0.5)
 - *\-b, \-\-max_chunk_spectra* [x]      :   Maximum number of spectra (rows) to be loaded and processed in a chunk at the same time. In case of memory issues this value should be decreased (default: 3000)
@@ -1688,7 +1722,9 @@ The join_jobs workflow ends with the molecular networking (Step 10) similar to t
 
 ## 4.12. Command *gnps_library_search*
 
-Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPOGATED library (default for LC data). Data was enriched in April 2026.
+Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against the ALL_GNPS_NO_PROPAGATED library (default for LC data). Annotations data was enriched in April 2026.
+
+The GNPS identification curation is executed at the end to score and classify the retrieved library annotations (more details in Section 4.12.4).
 
 Options for the command *gnps_library_search*:
 
@@ -1708,8 +1744,9 @@ Options for the command *gnps_library_search*:
 - *\-f, \-\-fragment\_tolerance* [x]  :     the tolerance in Daltons for fragment peaks. Used for
                                      comparing the mass of the peaks during the search.
                                      (default: 0.05)
+- *\-a, \-\-ion_mode* [x]             :  the precursor ion mode. One of the following numeric values corresponding to an ion adduct type: '1' = Positive [M+H]+ or '2' = Negative [M-H]-.  This will be used to select the library MGF file. (default: 1)
 - *\-i, \-\-search\_tool* [x]  :        the GNPS2 search tool to be used in the library
-                                     searching against the ALL_GNPS_NO_PROPOGATED. One of
+                                     searching against the ALL_GNPS_NO_PROPAGATED. One of
                                      "gnps_indexed", "gnps", "gnps_new" or "" (disabled). The
                                      similarity function is hardcoded to be the cosine and
                                      the peak transformation function is the square root.
@@ -1760,7 +1797,7 @@ Creates a directory named "identifications", inside the provided *output_path*, 
 
 Three tables will be stored in this directory: 
 
-1. One containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPOGATED.mgf) and the search tool used;
+1. One containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPAGATED_IonMode_\<ion_mode\>.mgf) and the search tool used;
 2. Another containing table 1 enriched with GNPS2 annotations named with the *output_path* basename plus the tag "library_search" and the search tool used;
 3. And the final result table with the top 1 result named with table 2 name plus a suffix equals "top1".
 
@@ -1771,28 +1808,82 @@ A log file with the searching outputs is also created, named "logGNPS2LibrarySea
 Example identifying the result of one of the test cases using the gnps_new search tool.
 
 ```{r, eval=F} 
-$ node np3_workflow.js gnps_library_search -g test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/
-L754_bacs_blanks_one_sample_clean.mgf -o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ -i gnps_new
+$ node np3_workflow.js gnps_library_search -g 
+test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/\
+L754_bacs_blanks_one_sample_clean.mgf \
+-o test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ \
+-i gnps_new
+```
+
+Now, example of identifying a data in the negative ion mode:
+
+```{r, eval=F} 
+$ node np3_workflow.js gnps_library_search -a 2 -g data_in_negative_ion_mode.mgf \
+-o output_path/data/library_search_result/ -i gnps_new
 ```
 
 ##### 4.12.3. *gnps_library_search* Details
 
-The GNPS2 Library Search workflow was adapted and integrated to the $NP^{3}$ MS Workflow. All LC libraries, aggregated in the ALL_GNPS_NO_PROPOGATED library (https://external.gnps2.org/gnpslibrary), are used in this routine. It's MGF is retrieved locally in the *setup* command and enriched with online annotations previous organized from April 2026. This enrichment is followed by a validation routine of the retrieved SMILES to maintain only the valid ones that can be processed by Cytoscape using ChemViz2. If the SMILES present in the MGF is validated it will be used in the entries where the online SMILES was invalid. The GNPS2 Library Search annotations will be updated with the GNPS2 online data from time to time by the admins of this repository. 
+The GNPS2 Library Search workflow was adapted and integrated to the $NP^{3}$ MS Workflow. All GNPS2 LC libraries, aggregated in the ALL_GNPS_NO_PROPOGATED library (https://external.gnps2.org/gnpslibrary), are used in this routine. It's MGF is retrieved locally by the *setup* command and is separated in two MGF files, one containing data in positive ion mode and another in negative ion mode only. Then, the setup creates a table with this MGF library ion headers information and enriches this table with GNPS2 online annotations previous organized from April 2026 (all offline). This enrichment is followed by a validation routine of the retrieved SMILES to maintain only the valid ones that can be processed by Cytoscape using ChemViz2 and to remove double quotes from the compound names. If a SMILES present in the MGF is validated it will be used in the entries where the online SMILES was invalid. 
 
-Three search tools from GNPS2 are used here for the local identifications: gnps_indexed (current default in GNPS2), gnps and gnps_new. The following filters that are applied in GNPS2 Library Search workflow were also adapted to use the offline annotations enrichment and the top1 selection was adapted to resolve ties in the MQScore by using the number of matched peaks and the library quality string of the retrieved matches (different from GNPS2 online which only uses the MQScore).
+The GNPS2 Library Search annotations will be updated with the GNPS2 online data from time to time by the admins of this repository and at that moment the *setup* command will need to be executed again to retrieve the new updates. 
 
-The ALL_GNPS_NO_PROPOGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from which 862848 (90%) spectra have a valid SMILES from 90253 unique molecules, which counts the unique SMILES present in the annotations. Additional disk space is necessary to store this library offline, around 4Gbs are used.
+Three search tools from GNPS2 are used here for the local identifications: gnps_indexed (current default in GNPS2), gnps and gnps_new. The following filters that are applied in GNPS2 Library Search workflow were also adapted here to use the offline annotations enrichment. The top1 selection was adapted to resolve ties in the MQScore by using the number of matched peaks and the library quality string of the retrieved matches (different from GNPS2 online which only uses the MQScore).
+
+The ALL_GNPS_NO_PROPAGATED library contains 956358 experimental spectra MS/MS with distinct SpectrumID's, from which 862848 (90%) spectra have a valid SMILES from 90253 unique molecules, which counts the unique SMILES present in the annotations. The data in positive ion mode (ALL_GNPS_NO_PROPAGATED_IonMode_Positive) contains 713858 (75%) spectra and the data in negative ion mode (ALL_GNPS_NO_PROPAGATED_IonMode_Negative) contains 242500 (25%) spectra. Additional disk space is necessary to store this library offline, around 4Gbs are used.
 
 The GNPS2 data and the codes adapted and modified from GNPS2 are located in: 'src/GNPS_LibrarySearch'; The enriched annotations are located in:
 
-'GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv.tar.gz'. 
+'GNPS_LibrarySearch/data/library_summary_ALL_GNPS_NO_PROPAGATED_annotations.tsv.tar.gz'. 
+
+The retrieved libraries MGF files are stored in:
+
+'GNPS_LibrarySearch/data/libraries'.
+
+##### 4.12.4. *gnps_library_search* GNPS Identification Curation and UNPDxGNPS Final Curation Statistics
+
+A curation of the GNPS identification results is also performed for the gnps_library_search and gnps_result in order to score and rank the best library annotations from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
+
+The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
+
+Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD' for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
+
+Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the UNPD Identification Curation. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
+
+| GNPS Category | Score | Criteria | 
+| :--------------- | :---: | :------------------------------------: | 
+| Top1\|mqs>=0.9 | 100 | mzE <= 20 and nsP >= 6 |
+| Top2\|0.8<=mqs<0.9 | 80 | mzE <= 20 and nsP >= 6 |
+| Top3\|sp<6 mqs>=0.9 | 60 | mzE <= 20 and nsP < 6 |
+| Top4\|sp<6 0.8<=mqs<0.9 | 50| mzE <= 20 and nsP < 6 |
+| Top5\|mqs>=0.7 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.8 |
+| Analog1\|mqs>=0.9 | 40 | mzE > 20  and nsP >= 6 |
+| Analog2\|0.8<=mqs<0.9 | 30 | mzE > 20 and nsP >= 6 |
+| Analog3\|sp<6 mqs>=0.9 |  20 | mzE > 20 and nsP < 6 |
+| Analog4\|sp<6 0.8<=mqs<0.9 | 10 | mzE > 20 and nsP < 6 |
+| Analog5\|mqs>=0.7 | 5 | mzE > 20 and nsP >= 6 and mqs<0.8 |
+| out | 0 | did not passed in any category - unreliable identification |
+  
+* Where mqs is the gnps_MQScore, nsP is the gnps_SharedPeaks and mzE is the gnps_MZErrorPPM values. 
+
+The defined category for each GNPS identification is stored in the column 'gnps_category' and its corresponding score is stored in the column 'gnps_score'.
+
+The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the pipe '|') and its stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.4.
+
+Finally, the final identification curation is performed following section 4.6.5. to select the best library annotation from UNPDxGNPS, if the UNPD identification result is present, otherwise only the best library annotation from GNPS is used. The columns starting with the prefix 'curated_lib_annotation_*' will store the final curated library annotation, their origin (UNPD or GNPS), score, quality, SMILES and superclass. 
+
+At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the commands further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the origin of the final curated identification (UNPDxGNPS). 
+
+For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
+
+If the metadata path is informed, the plot with the distribution of the superclass grouping are also created for GNPS and the final curated identification (UNPDxGNPS) using columns 'gnps_curated_superclass_grouping' and 'curated_lib_annotation_superclass_grouping', respectively, and are stored in the chemical report folder.
 
 
 ## 4.13. Command *gnps_result*
  
 Join the GNPS library identification result from the Molecular Networking (download 'clustered spectra') or the Library Search (download 'all identifications') workflows to the count tables of the $NP^{3}$ clustering or clean steps (Steps 3 or 5) from a run or a join_jobs result.
 
-It computes the CDK top descriptors for the unique SMILES identified in GNPS and then make the curation of the identifications to score and filter the more reliable results. At the end, it also performs the curation of the best identification origin from UNPDxGNPS.
+It computes the CDK top descriptors for the unique SMILES identified in GNPS and then make the curation of the identifications to score and filter the more reliable results. At the end, it also performs the final identification curation from UNPDxGNPS.
  
 Options for the command *gnps_result*:
  
@@ -1808,7 +1899,7 @@ Options for the command *gnps_result*:
  
 ##### 4.13.1. *gnps_result* Results
  
-The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", 
+The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", "gnps_Adduct", "gnps_IonMode", "gnps_Smiles", "gnps_InChIKey", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", "gnps_MQScore", 
 \newline "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_npclassifier_superclass", "gnps_npclassifier_class", "gnps_npclassifier_subclass" and "gnps_npclassifier_pathway".
 See the GNPS documentation for the description of these columns (https://ccms-ucsd.github.io/GNPSDocumentation/spectrumcuration/#adding-single-spectra).
  
@@ -1837,48 +1928,11 @@ The GNPS library identifications results should be obtained using the collection
  
 In the GNPS Molecular Networking (MN) workflow result, the 'clusterinfo' file contains the column 'SpecIdx' which is equal to the SCANS numbers present in the $NP^{3}$ MS workflow MGF file used for the identification job. The SCANS numbers of the MGF files are equal to the msclursterIDs of the $NP^{3}$ MS workflow count tables for the respective result (clean MGF for clean and all MGF for clustering). The column 'ClusterIdx' of the GNPS MN output \'clusterinfo\' file is equivalent to the column '#Scan' of the \'result_specnets_DB\' file, and they are used to join the information of both files to obtain for each identification result the correct reference (the 'SpecIdx' column) to the msclusterIDs present in the $NP^{3}$ MS workflow count tables.
 
-In the GNPS Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
+In the GNPS or GNPS2 Library Search (LS) workflow result, the '#Scan' column present in the output file is equal to the SCANS numbers of the MGF files. These SCANS are equal to the msclusterIDs of the $NP^{3}$ MS workflow count tables. In this case, the join is directly performed.
 
-At the end, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
+Finally, the joined GNPS results are also stored to a separated file called 'gnps_results_smiles.csv' inside the job_output_path/identifications folder. It will be used to compute the CDK descriptors for the unique SMILES from the GNPS result.
 
-##### 4.13.4. *gnps_result* Identification Curation and UNPDxGNPS Best Origin
-
-A curation of the identification results was also proposed for the gnps_result in order to score and rank the best identification from the GNPS libraries. The curation is executed after the gnps result is merged to the $NP^{3}$ count tables.
-
-The curation of the GNPS identification result start by comparing the SMILES from the tremolo_SMILES_best and the gnps_Smiles using Tanimoto, and stores the similarity scores in the 'tanimoto_unpd_gnps' column.
-
-Next, it creates the column 'gnps_GoldCategory' and set it as 'GOLD for the spectra that have gnps_MZErrorPPM <= 20 and gnps_MQScore >= 0.9, otherwise set it as 'out'. The spectra set as 'GOLD' contains a very reliable identification.
-
-Then, after the gold results were selected, the curation proceeds to a categorization and scoring of the GNPS result, similarly to the Identification Curation of UNPD-tremolo. Ten categories and scores were defined to group the best results according to the reliability of their matches or to put them out of the analysis, using the criteria presented below:
-
-| GNPS Category | Score | Criteria | 
-| :--------------- | :---: | :------------------------------------: | 
-| Top1\|mqs>=0.9 | 100 | mzE <= 20 and nsP >= 6 |
-| Top2\|0.8<=mqs<0.9 | 80 | mzE <= 20 and nsP >= 6 |
-| Top3\|sp<6 mqs>=0.9 | 60 | mzE <= 20 and nsP < 6 |
-| Top4\|sp<6 0.8<=mqs<0.9 | 50| mzE <= 20 and nsP < 6 |
-| Top5\|mqs>=0.7 | 45 | mzE <= 20 and nsP >= 6 and mqs<0.8 |
-| Analog1\|mqs>=0.9 | 40 | mzE > 20  and nsP >= 6 |
-| Analog2\|0.8<=mqs<0.9 | 30 | mzE > 20 and nsP >= 6 |
-| Analog3\|sp<6 mqs>=0.9 |  20 | mzE > 20 and nsP < 6 |
-| Analog4\|sp<6 0.8<=mqs<0.9 | 10 | mzE > 20 and nsP < 6 |
-| Analog5\|mqs>=0.7 | 5 | mzE > 20 and nsP >= 6 and mqs<0.8 |
-| out | 0 | did not passed in any category - unreliable identification |
-  
-* Where mqs is the gnps_MQScore, nsP is the gnps_SharedPeaks and mzE is the gnps_MZErrorPPM values. 
-
-The defined category for each GNPS identification is stored in the column 'gnps_category' and its corresponding score is stored in the column 'gnps_score'.
-
-The superclass of the GNPS result is cleaned to only retrieve the NPClassifier or first result present (before the  '|') and is stored in the column 'gnps_npclassifier_superclass_clean'. This clean result is used to create the 'gnps_curated_superclass' column, which receives the gnps_npclassifier_superclass_clean where gnps_score > 0 (or gnps_category != 'out'). Following, it is created the 'gnps_curated_superclass_grouping' column with the grouping of the gnps_curated_superclass and the 'gnps_curated_superclass_GR_\<superclass group\>' columns checking the occurrence of the spectra in each superclass group. The superclass grouping follow the table defined in the Identification Curation of UNPD-Tremolo result of Step 6, section 4.6.2.
-
-Finally, the curation proceeds to the UNPDxGNPS identification result comparison, if the UNPD result is present. The column 'curated_identification_best_origin' is set to 'GNPS' where the gnps_score > 0 and gnps_score >= tremolo_UNPD_score_best. If the tremolo result is not present uses only gnps_score > 0 to set the best origin as 'GNPS', the rest is left empty. Then, updates the 'best_origin_SMILES' column accordingly, set it to the gnps_Smiles values where curated_identification_best_origin == GNPS. And creates the superclass curated best origin results, the column 'best_origin_curated_superclass' receives the value from the gnps_curated_superclass or the tremolo_curated_superclass depending on the curated_identification_best_origin value, and the same occurs for the columns 'best_origin_curated_superclass_grouping' and 'best_origin_curated_superclass_GR_
-\<superclass group\>'.
-
-At the end of the GNPS curation step, the final $NP^{3}$ result will have the best curated identification from UNPD and GNPS. If the job_output_path is informed, the command further creates two chemical reports with the GNPS and UNPDxGNPS identification statistics and stores them to the <job_output_path>/final_reports/chemical_reports folder. In the chemical report, this command also plots the $NP^{3}$ chemical space with the curated GNPS identification and the best origin identification (UNPDxGNPS). 
-
-For the chemical space plotting using PCA, the CDK descriptors of the GNPS result are previous computed and stored in the <job_output_path>/identifications folder in a CSV file named 'gnps_results_smiles_descriptorsCDK.csv'. The file 'gnps_results_smiles.csv' is created from the GNPS joined identifications and is used for the CDK descriptors computation. The top 24 descriptors are computed here for each unique SMILES present in the gnps_Smiles column. Only the identifications from not blank and not bed m/zs (BLANKS_TOTAL == 0 and BEDS_TOTAL == 0) are used in the PCA plot, and a separated plot is created filtering only the protonated m/zs.
-
-If the metadata path is informed, the plot of the distribution of the superclass grouping is also created for GNPS and UNPDxGNPS using columns gnps_curated_superclass_grouping and best_origin_curated_superclass_grouping, respectively, and stored in the chemical report folder.
+At the end, the GNPS identification curation is also perfomed to classify the retrieved library annotations (see Section 4.12.4 for more details). It is followed by the final identification curation (best from UNPD and GNPS) which is described in Section 4.6.5.
 
 ## 4.14. Command *pca_plot*
  
@@ -2013,7 +2067,9 @@ Example to execute the MS² spectra viewer application:
 
 ## 4.17. Command *post_dd_analysis*
 
-This command perform a post-processing analysis of a NP3 result for drug discovery research. Five different visualizations and two data tables are created. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a library annotation) and the novelty across samples (with redundant and/or exclusive m/z). 
+This command perform a post-processing analysis of a NP3 result for drug discovery research. Six different visualizations and two data tables are created. The visualization focus on the superclass grouping distribution, the novelty of the m/z (with or without a final curated library annotation within a quality group) and the novelty across samples (with redundant and/or exclusive m/z). 
+
+The final curated library annotations that are considered for the plots depends on the *lib_annotation_quality_filter* parameter which will select as annotated only the m/z with a final annotation in the provided quality group, default to 1 (only the good ones, with a high score in the curation). A distribution plot of the quality filter of the final curated library annotations is also created.
 
 The analysis may be filtered to show only a subset of the samples (using the provided *metadata* table) or the top novelty samples distribution (*topk* parameter) and/or only the protonated m/z (*use\_protonated* parameter).
 
@@ -2037,7 +2093,8 @@ Options for the command *post_dd_analysis*:
 - *\-\-rm\_blanks* [value]  :  True or False to allow removing blank samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_beds* [value]  :    True or False to allow removing culture media samples and m/z from the metrics computation. (default: "True")
 - *\-\-rm\_controls* [value]  :       True or False to allow removing control samples and m/z from the metrics computation. (default: "False")
-- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The best origin curated library identification result is used by default (best annotated result from UNPD and GNPS). (default: "best_origin_curated_superclass_grouping")
+- *\-\-superclass\_grouping\_column* [value] : The name of the column in the provided clean table that should be used to get the superclass grouping values of the m/z. The final curated library annotation result is used by default (best origin from UNPD and GNPS). (default: "curated_lib_annotation_superclass_grouping")
+- *\-\-lib_annotation_quality_filter* [value]   :    Set the quality group filter of the final curated library annotations, one of 1 or 2. If 1, only consider as annotated the m/z with "curated_lib_annotation_quality" == 1; otherwise if 2, consider as annotated the m/z with "curated_lib_annotation_quality" equals 1 or 2. The rest is set as "not_annotated". (default: "1")
 - *\-\-donutplots\_title\_size* [value]  :   The title size of the donut plots. (default: "16")
 - *\-\-donutplots\_text\_size* [value]  :    The axis and legend text sizes of the donut plots. (default: "14")
  *\-\-donutplot\_libAnnotations\_colors* [value]   :  The list of colors separated by comma for the library annotation distribution donut plot. Three colors are
@@ -2075,13 +2132,14 @@ Options for the command *post_dd_analysis*:
    
 ##### 4.17.1. *post_dd_analysis* Results
 
-Five visualizations are created in the output_path directory: 
+Six visualizations are created in the output_path directory: 
 
-(1) the samples composition in terms of the desired superclass grouping distribution across the final m/z by samples in a barplot; 
-(2) the m/z library identification novelty in a donut plot with the total count of curated library annotations; 
-(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; 
-(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;
-(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. 
+(1) A barplot with the samples composition in terms of the desired superclass grouping distribution across the final m/z by sample; 
+(2) A donut plot with the m/z final curated library identification novelty with the count of final curated library annotations by origin in the selected quality group;
+(3) A donut plot with the m/z final curated library identification quality group distribution;
+(4) A donut plot with the m/z samples novelty with the total count of redundant and exclusive m/z across valid samples; 
+(5) Another donut plot with the identified m/z samples novelty with the total count of redundant and exclusive m/z with final curated library annotation;
+(6) A barplot with the m/z samples novelty (redundant or exclusive) distribution with and without a final curated library annotation by sample. 
  
  And two CSV tables are created with the count of m/z novelty by sample and the count of superclass grouping by sample.
  
@@ -2089,7 +2147,7 @@ All the output plots and tables are named with a prefix equal the output_name (e
 
 ##### 4.17.2. *post_dd_analysis* Examples
 
-Example to execute the post-processing drug discovery analysis from $NP^{3}$ MS Workflow:
+Example to execute the post-processing drug discovery analysis command:
 
 ```{r, eval=F} 
    $ node np3_workflow.js post_dd_analysis -m /path/to/the/np3/job/metadata.csv 
@@ -2109,14 +2167,17 @@ Example to create the analysis plots with the top 5 novelty samples and only [M+
 
 The provided metadata table may be used to filter the final plots and display only a subset of the original samples. This will not modify the metrics, only the visualization of the data is modified. This may be useful for middle to big datasets with more than 50 samples, for which the complete view is not clear.
 
-The top k may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not library annotated m/z - are selected for the final plots. The samples novelty here is measured by the amount of m/z that were not present/identified in any library search - not annotated - and the amount of m/z that were not detected in other samples - which are exclusive to a respective sample.
+The top k parameter may also be used to filter the final view, in this case the most novelty samples - the ones with more exclusive and not library annotated m/z - are selected for the final plots. 
 
-This post-processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4) and (5) of the results, it calculates the following metrics by sample:
+The samples novelty here is measured by the amount of m/z that were not present/identified in any library search after the final curation and quality filter - not annotated - and the amount of m/z that were not detected in other samples - which are exclusive to a respective sample.
 
-  - number of exclusive m/z (only appear in one sample);
-  - number of redundant m/z (appear in more than one sample)
-  - number of annotated m/z (received a library identification annotation from GNPS or UNPD)
+This post-processing computes the m/z distribution occurrence by sample to create the plots (2),(3),(4),(5) and (6) of the results, it calculates the following metrics by sample:
 
+  - number of exclusive m/z: only appear in one sample;
+  - number of redundant m/z: appear in more than one sample;
+  - number of annotated m/z: received a library identification from GNPS or UNPD in the final curation (column curated_lib_annotation_origin) and passed the quality filter (parameter lib_annotation_quality_filter);
+  
+  
 The plot (1) is created by computing the provided superclass grouping distribution by sample. For this, the groups present in the column provided in the parameter superclass\_grouping\_column are counted by sample by checking the presence of their respective m/z in the valid samples, grouping their occurrence by the superclass groups and summing their counts by sample, any missing group will receive a value equals to zero. This will result in the percentage of detected m/z by annotated superclass group in the superclass\_grouping\_column for each sample.
 
 There are different parameters to personalize the final plots with different text sizing and legend organization and position, the users may change the default values according to their needs.

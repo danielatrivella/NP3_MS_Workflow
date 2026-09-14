@@ -98,7 +98,6 @@ function basename(str) {
     if (str.lastIndexOf("\\") > index_sep) {
         index_sep = str.lastIndexOf("\\")
     }
-
     return str.substr(index_sep + 1);
 }
 
@@ -112,18 +111,15 @@ function basedir(str) {
     if (str.lastIndexOf("\\") > index_sep) {
         index_sep = str.lastIndexOf("\\")
     }
-
     return str.substr(0, index_sep+1);
 }
 
 function convertIonMode(mode) {
     mode = parseDecimal(mode);
-
     if (![1,2].includes(mode)) {
-        console.error('\nERROR. Wrong ion_mode parameter value. The ion mode must be a positive numeric value in {1,2}. Execution aborted.');
+        console.error('\nERROR. Wrong ion_mode parameter value. The ion mode must be a positive numeric value in {1,2} for positive and negative modes, respectively. Execution aborted.');
         process.exit(1);
     }
-
     if (mode === 2)
         return(-1);
     else
@@ -135,7 +131,6 @@ function convertMethodCorr(method) {
         console.error('\nERROR. Wrong method parameter value. The correlation method must be one of {"pearson", "kendall", "spearman"}. Execution aborted.');
         process.exit(1);
     }
-
     return(method);
 }
 
@@ -144,7 +139,6 @@ function convertSimilarityFunc(simFunc) {
         console.error('\nERROR. Wrong similarity function parameter value. The similarity function must be one of {"np3_shifted_cosine", "spec2vec"}. Execution aborted.');
         process.exit(1);
     }
-
     return(simFunc);
 }
 
@@ -153,8 +147,15 @@ function convertGNPSSearchTool(tool) {
         console.error('\nERROR. Wrong GNPS search tool parameter value. The GNPS search tool must be one of {"gnps_indexed", "gnps", "gnps_new", ""}. Execution aborted.');
         process.exit(1);
     }
-
     return(tool);
+}
+
+function convertLibAnnotationQuality(quality_group) {
+    if (!["1", "2"].includes(quality_group)) {
+        console.error('\nERROR. Wrong quality group filter value. The quality group filter of the final curated library annotations must be one of {"1", "2"}. Execution aborted.');
+        process.exit(1);
+    }
+    return(quality_group);
 }
 
 function callPlotBasePeakIntDistribution(path_clustering_count, bflag_cutoff_factor, logOutputPath, verbose)
@@ -1104,14 +1105,15 @@ function mergeTremoloResults(path_tremolo_result, max_results, path_count_files,
     shell.ShellString("\nDONE!\n").toEnd(logTremoloFile);
 }
 
-function curateTremoloResults(path_count_file, logTremoloFile, verbose)
+function curateTremoloResults(path_count_file, logTremoloFile, chemical_report_path, verbose)
 {
     const start_curatetremolo = process.hrtime.bigint();
     tremolo_unpd_curating = '\n*** Curating the tremolo-UNPD identification result - selecting best results ***\n'
     console.log(tremolo_unpd_curating);
     shell.ShellString(tremolo_unpd_curating).toEnd(logTremoloFile);
     try {
-        var resExec = shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' + path_count_file,
+        var resExec = shell.exec(python3() + ' ' + __dirname + '/src/final_report/tremolo_UNPD_curate_identification.py ' +
+            path_count_file+ ' '+chemical_report_path,
             {async: false, silent: (verbose <= 0)});
     } catch (e) {
         if (verbose <= 0) {
@@ -1128,7 +1130,7 @@ function curateTremoloResults(path_count_file, logTremoloFile, verbose)
 }
 
 function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, top_k, path_count_files,
-                               verbose, verbose_search) {
+                               verbose, verbose_search, chemical_report_path="") {
     const start_tremolo = process.hrtime.bigint();
     tremolo_start = '*** Step 6 - Calling tremolo to perform an in-silico spectral library identification against UNPD *** \n'
     console.log(tremolo_start);
@@ -1223,8 +1225,7 @@ function tremoloIdentification(output_name, output_path, mgf, mz_tol, sim_tol, t
                 output_path+"/logTremolo", verbose)
 
             // call the curate tremolo result
-            curateTremoloResults(path_count_files[0], output_path+"/logTremolo",
-                verbose)
+            curateTremoloResults(path_count_files[0], output_path+"/logTremolo", chemical_report_path, verbose)
         }
     }
 
@@ -1409,7 +1410,7 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
 
 function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path, logOutputGNPSPath) {
     // check molecular networking consistency
-    var gnpsjoin_start = '\n*** Joining the GNPS identification to the NP3 counts tables ***\n';
+    var gnpsjoin_start = '\n*** Joining the GNPS identifications to the NP3 counts tables ***\n';
     console.log(gnpsjoin_start);
     let resExec = shell.exec('Rscript '+__dirname+'/src/join_gnps_identification_result.R \"' + cluster_info_path+'\" '+
         result_specnets_DB_path+' '+ms_count_path+' '+output_path, {async: false, silent: false});
@@ -1424,7 +1425,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     }
 
     // call compute rcdk descriptors
-    gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS identification ***\n';
+    gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS library annotations ***\n';
     console.log(gnpsjoin_start);
     var resExec_rcdk = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
         output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
@@ -1440,7 +1441,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
 
     // call curate GNPS identification and GNPSxUNPD
     // and create additional final reports - PCA gnps and PCA best origin - using the calculated rcdk
-    gnpsjoin_start = '\n*** Curating the GNPS identification result and selecting best identification origin ***\n';
+    gnpsjoin_start = '\n*** Curating the GNPS library annotation result and performing final curation ***\n';
     console.log(gnpsjoin_start);
     resExec = shell.exec(python3()+' '+__dirname+'/src/final_report/gnps_curate_identification_report.py ' +
         ms_count_path+' '+output_path+' '+metadata_path, {async: false, silent: false});
@@ -1457,7 +1458,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
 }
 
 // run GNPS Library Search using one of 3 different search tools: gnps (original), gnps_indexed and gnps_new
-// Search only in the default LC library, the ALL_GNPS_NO_PROPOGATED (do not need to merge different libraries search result at this point)
+// Search only in the default LC library, the ALL_GNPS_NO_PROPAGATED (do not need to merge different libraries search result at this point)
 // Also includes the summary of the library matches (available in the NP3 repo) and
 // filter the top 1 result - all steps using the GNPS algorithms adapted for the NP3 pipeline - all offline
 // the similarity algorithm used is the cos in all search tools, which is the default. Not using the Filter Only To Compounds with Structures - set to no.
@@ -1468,7 +1469,7 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
                                analog_search, analog_max_shift, threads) {
     var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
     const start_gnps_libsearch = process.hrtime.bigint();
-    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPOGATED *** \n';
+    var gnpslibsearch_start = '*** Step 6.1 - Calling GNPS2 Library Search to perform an experimental spectral library identification against ALL_GNPS_NO_PROPAGATED *** \n';
     console.log(gnpslibsearch_start);
     if (search_tool === "gnps") {
         // there is no max shift for analog search and no parallelization
@@ -1612,7 +1613,7 @@ function callFinalReportsCreation(metadata_path, count_area_table, output_path, 
 
 // call the post-process drug discovery analysis script
 function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path, topk, rm_blanks, rm_beds, rm_controls,
-                                   use_protonated, superclass_grouping_column, donutplots_title_size, donutplots_text_size,
+                                   use_protonated, superclass_grouping_column, lib_annotation_quality_filter, donutplots_title_size, donutplots_text_size,
                                    donutplot_libAnnotations_colors, donutplot_mzs_distr_colors, mzs_barplot_figsize,
                                    mzs_barplot_label_size, mzs_barplot_title_size, mzs_barplot_legend_bbox,
                                    mzs_barplot_legend_fontsize, mzs_barplot_legend_ncol, mzs_barplot_colors,
@@ -1624,8 +1625,10 @@ function callPostProcessDDAnalysis(metadata_path, clean_counts_path, output_path
     console.log(step_name);
     var resExec = shell.exec(python3()+' '+__dirname+'/src/post_process_analysis/drug_discovery_post_analysis.py ' +
         '--metadata_path '+metadata_path+' --clean_counts_path '+clean_counts_path+' --output_path '+ output_path +
-        ' --topk '+topk+' --rm_blanks '+rm_blanks+' --rm_beds '+rm_beds+' --rm_controls '+rm_controls+' --use_protonated '+
-        use_protonated+' --superclass_grouping_column '+superclass_grouping_column+' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
+        ' --topk '+topk+' --rm_blanks '+rm_blanks+' --rm_beds '+rm_beds+' --rm_controls '+rm_controls+
+        ' --use_protonated '+use_protonated+' --superclass_grouping_column '+superclass_grouping_column+
+        ' --lib_annotation_quality_filter '+lib_annotation_quality_filter+
+        ' --donutplots_title_size '+donutplots_title_size+' --donutplots_text_size '+donutplots_text_size+
         ' --donutplot_libAnnotations_colors "'+donutplot_libAnnotations_colors+'" --donutplot_mzs_distr_colors "'+
         donutplot_mzs_distr_colors+'" --mzs_barplot_figsize '+mzs_barplot_figsize+' --mzs_barplot_label_size '+
         mzs_barplot_label_size+' --mzs_barplot_title_size '+mzs_barplot_title_size+' --mzs_barplot_legend_bbox '+
@@ -1733,7 +1736,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.5.1',  '--version')
+    .version('1.6.0',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -2016,15 +2019,14 @@ program
     .option('-z, --mz_tolerance [x]', 'this is the tolerance in Daltons for the m/z of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
         'and possibly joined. Used in the clustering jobs (Step 3),\n\t\t\t\t\t' +
-        'in the cleaning (Step 5), in the library identifications (Step 6)\n\t\t\t\t\t' +
+        'in the cleaning (Step 5), in the spectral identifications (Step 6)\n\t\t\t\t\t' +
         'and in the annotation of ionization variants (Step 7 - also used for the fragment tolerance of the annotations)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million\n\t\t\t\t\t' +
         '(ppm) to be used in the pre processing (Step 2). Typically set to a\n\t\t\t\t\t' +
         'generous multiple of the mass accuracy of the mass\n\t\t\t\t\t' +
         'spectrometer', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to an ion adduct type: \'1\' = [M+H]+ or\n\t\t\t\t\t' +
-        '\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to an ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
         'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
         'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
@@ -2148,7 +2150,7 @@ program
     .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
         'the Tremolo tool should be used for the spectra matching\n\t\t\t\t\t' +
         'against the ISDB from the UNPD (Step 6)', toupper, "TRUE")
-    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
+    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPAGATED (Step 6.1). ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine, the peak transformation function is the square root and top k equals 5.',
         convertGNPSSearchTool, "gnps_indexed")
@@ -2233,7 +2235,13 @@ program
 
         // setup GNPS library search parms and library path
         var resExec_gnps = 1; // set the execution as not executed
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        // use ion mode here to select the correct library in positive or negative mode
+        if (options.ion_mode === 1) { // positive
+            var ion_mode = "Positive";
+        } else { // for ion_mode == -1 negative
+            var ion_mode = "Negative";
+        }
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPAGATED_IonMode_"+ion_mode+".mgf";
         const top_k = 5; // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
         var filter_window = "0";
         if (options.gnps_window_filter === "TRUE")
@@ -2247,7 +2255,7 @@ program
         // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
         if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
         {
-            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library "+library_mgf_path+" is not "+
                         "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
                         "Please execute the np3 setup command again to retrieve this library file and allow the search.");
             options.gnps_search_tool = "";
@@ -2502,7 +2510,7 @@ program
             "It also contains the following data:\n" +
             "- Inside the 'count_tables' folder two sub folders named 'clean' and 'merge' containing CSV tables with the " +
             "counts from Steps 5, 7, 8 and 9;\n" +
-            "- The 'identifications' folder with the tremolo identification results;\n" +
+            "- The 'identifications' folder with the tremolo library annotation results;\n" +
             "- The 'molecular_networking' folder containing:\n" +
             "    - One sub folder named \"similarity_tables\" with the pairwise similarity tables;\n" +
             "    - Three molecular networks edge files (Steps 7 and 10): \n" +
@@ -2557,8 +2565,7 @@ program
         'generous multiple of the mass accuracy of the mass\n\t\t\t\t\t' +
         'spectrometer.', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to a ion adduct type: \'1\' = [M+H]+ or\n\t\t\t\t\t' +
-        '\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-e, --peak_width [X,Y]', 'two numeric values separated by comma without spaces and using\n\t\t\t\t\t' +
         'decimal point equals dot, containing the expected\n\t\t\t\t\t' +
         'approximate peak width in chromatographic space. Given\n\t\t\t\t\t' +
@@ -2729,7 +2736,7 @@ program
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
         'to be used in the pre-processing step if processed_data_overwrite is TRUE\n\t\t\t\t\t', parseFloat, 15)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-s, --similarity [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
         'clustering, starts in 0.70 and decrease to X in 15 rounds\n\t\t\t\t\t', parseFloat, 0.55)
     .option('-g, --similarity_blank [x]', 'the minimum similarity to be consider in the hierarchical\n\t\t\t\t\t' +
@@ -2938,7 +2945,7 @@ program
             "*\<DATA\_COLLECTION\_BATCH\>* is the data collection batch number in the metadata file of each group of " +
             "samples and *\<X\>* is 0 if it is a data clustering step or 1 if it is a blank clustering step.\n\n" +
             "The final integration step result is located inside the 'outs' directory in a folder named with the " +
-            "*output\_name* and it also contains the tremolo identification results inside the " +
+            "*output\_name* and it also contains the tremolo library annotation results inside the " +
             "'identifications' folder.");
         console.log('');
         console.log('EXAMPLES:');
@@ -2958,7 +2965,7 @@ program
         'done yet) and then runs the cleaning of the clustering counts. It also runs Step 7 to annotate possible ion ' +
         'variants using the new clean count tables and to create the molecular network of annotations, and runs Step ' +
         '10 to overwrite any old computation of the molecular network of similarities. It can also run the library ' +
-        'spectra identifications (Step 6) for the collection of clean consensus spectra.\n\n')
+        'spectral identifications (Step 6) for the collection of clean consensus spectra.\n\n')
     .option('-m, --metadata <file>', 'path to the metadata table CSV file')
     .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the mgf folder, the peak area count CSV and the spectra count CSV. The job name will be extracted from here')
@@ -2975,7 +2982,7 @@ program
         'in the annotation Step 7; and the tolerance [y] is used \n\t\t\t\t\t' +
         'in the clean Step 5', splitListFloat, [1,2])
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values corresponding ' +
-        'to a ion adduct type: \'1\' = [M+H]+ or \'2\' = [M-H]-', convertIonMode,1)
+        'to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
         'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
         'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
@@ -3196,14 +3203,14 @@ program
             '    - CSV files with the correlation columns added are also included when there is a biocorrelation result\n' +
             'The \'molecular_networking\' folder is also created if not present yet, and inside it: \n' +
             '    - One sub folder named "similarity_tables" with the clean version of the pairwise table of similarity;\n' +
-            '    - Two molecular networking\'s edge files: the MN of annotations is named as ' +
-            '\'<*output\\_name*>_ivamn.selfloops\' and the MN of similarity is named as ' +
+            '    - Two molecular networking\'s edge files: the MN of ionization variants annotations (IVAMN) is named as ' +
+            '\'<*output\\_name*>_ivamn.selfloops\' and the MN of spectra similarity (SSMN) is named as ' +
             '\'<*output\\_name*>_ssmn_w_<*similarity_mn*>_k_<*net_top_k*>_x_<*max_component_size*>.selfloop\', where the ' +
             '\'output\\_name\' is extracted from the \'output_path\';\n' +
-            '    - One CSV file with the molecular network of annotations edges attributes and protonated representative\n\n'+
+            '    - One CSV file with the IVAMN edges attributes and protonated representative\n\n'+
             'When running Tremolo the \'identification\' folder is also created (if not present yet) with the' +
-            ' identifications results inside it. These identifications are also added as new columns in the c' +
-            'reated clean count tables.');
+            ' library annotations results inside it. These library annotations are also added as new columns in the ' +
+            'created clean count tables.');
         console.log('');
         console.log('EXAMPLES:');
         console.log('');
@@ -3213,14 +3220,15 @@ program
 
 program
     .command('tremolo')
-    .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, used for spectra matching against ' +
+    .description('Step 6: (for Unix OS and positive ion mode only) This command runs the tremolo tool, a spectral identification tool used for spectra matching against ' +
         'In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD (Universal Natural ' +
         'Products Database). It also includes origin and class information of the compounds from NPClassifier, NPAtlas and ClassyFire.\n\n')
-    .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored')
+    .option('-o, --output_path <path>', 'path to where the spectral library search results will be stored, in a folder named "identifications" which will be created if not exists yet. '+
+        'Another folder named final_reports/chemical_report will also be created to store the updated chemical reports.')
     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be searched and identified')
     .option('-c, --count_file_path [name]', 'optional paths to the count CSV files, separated by a comma ' +
-        'and no space, as outputted by the NP3 workflow where the identifications should be added as new columns. ' +
-        'The top_k search results for each msclusterID will be added in additional identification columns generated by tremolo, then the curated and best results will also be added in other columns. ' +
+        'and no space, as outputted by the NP3 workflow where the library annotations should be added as new columns. ' +
+        'The top_k search results for each msclusterID will be added in additional library annotation columns generated by tremolo, then the curated and best results will also be added in other columns. ' +
         'The count files header must be in the first row.', splitList, [])
     .option('-z, --mz_tolerance [x]', 'the tolerance for parent mass search in Daltons. Set a small tolerance for ' +
         'desreplication using parent ion mass as prefilter, keeping in mind the resolution of your data. Increase to the ' +
@@ -3247,9 +3255,9 @@ program
         }
 
         //call tremoloIdentification(output_name, output_path, count_files, mgf, mz_tol, sim_tol, top_k, verbose, verbose search)
-        tremoloIdentification("tremolo_identification", options.output_path, options.mgf,
+        tremoloIdentification("tremolo_identification", options.output_path + "/identifications", options.mgf,
             options.mz_tolerance, options.similarity, options.top_k, options.count_file_path, options.verbose,
-            options.verbose);
+            options.verbose, options.output_path + "/final_reports/chemical_report",);
     })
     .on('--help', function() {
         console.log('');
@@ -3274,49 +3282,6 @@ program
             '/path/to/the/output/dir/test_np3/outs/test_np3/test_np3_peak_area_clean_annotated"');
     });
 
-// program
-//     .command('metfrag')
-//     .description('Step 6: An interactive prompt to run the MetFrag tool for identification search of individual spectra ' +
-//         'or of an entire experiment from a MGF file against the PubChem database\n\n')
-//     .option('-g, --mgf <path>', 'path to the input MGF file with the MS/MS spectra data to be searched and identified')
-//     .option('-o, --output_path <path>', 'path to where the identification results will be saved. ' +
-//         'Prefereable inside the final clustering results directory in the \'job_name/outs/job_name/identifications\' folder')
-//     .action(function(options) {
-//         if (typeof options.mgf === 'undefined') {
-//             console.error('Missing the mandatory \'mgf\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-//             process.exit(1);
-//         }
-//         if (typeof options.output_path === 'undefined') {
-//             console.error('Missing the mandatory \'output_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
-//             process.exit(1);
-//         }
-//
-//         const { execFileSync } = require('child_process');
-//         // run workflow
-//         console.log('*** NP3 Comparing Spectra ***');
-//
-//         try {
-//             var resExec = execFileSync("Rscript", ["src/metfrag_interactivesearch.R", options.mgf, options.output_path],
-//                 {stdio: 'inherit'});
-//         } catch (err) {
-//             console.log('\nERROR');
-//             //console.log(err.toString().trim());
-//             process.exit(1);
-//         }
-//
-//         console.log('\nDONE!\n');
-//     })
-//     .on('--help', function() {
-//         console.log('');
-//         console.log('Angled brackets (e.g. <x>) indicate required input. Square brackets (e.g. [y]) indicate optional input.');
-//         console.log('');
-//         console.log('EXAMPLES:');
-//         console.log('');
-//         console.log('  $ node np3_workflow.js metfrag --mgf "/path/to/the/mgf/file/input_search.mgf" --output_path "/path/to/the/output/directory/job_name/outs/job_name/identifications"');
-//         console.log('');
-//         console.log('  $ node np3_workflow.js metfrag --g "/path/to/the/mgf/file/input_search.mgf" -o "/path/to/the/output/directory/job_name/outs/job_name/identifications"');
-//     });
-
 program
     .command('annotate_protonated')
     .description('Step 7: (for positive ion mode only) This command runs the annotation of possible ionization variants in the clean count tables ' +
@@ -3337,7 +3302,7 @@ program
         'fragmented peaks with an intensity >= x and to use them in the in-source fragment variant annotation. ' +
         'The MS2 fragmented peaks intensity range from 0 to 1000. (default to 15)', parseFloat, "15")
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values corresponding ' +
-        'to a ion adduct type: \'1\' = [M+H]+ or \'2\' = [M-H]-', convertIonMode,1)
+        'to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules for ' +
         'detecting adducts, multiple charge and dimers/trimers variants, and their combination with neutral losses.',
         __dirname+"/rules/np3_modifications.csv")
@@ -3660,7 +3625,7 @@ program
     .option('-z, --mz_tolerance [x]', 'this is the tolerance in Daltons for the m/z of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
         'and possibly joined. Used in the clustering job and\n\t\t\t\t\t' +
-        'in the library identifications (Step 6)', parseFloat, 0.025)
+        'in the library spectral identifications (Step 6)', parseFloat, 0.025)
     .option('-p, --ppm_tolerance [x]', 'the maximal tolerated m/z deviation in parts per million (ppm)\n\t\t\t\t\t' +
         'to be used in the pre-processing step if ran\n\t\t\t\t\t', parseFloat, 5)
     .option('-t, --rt_tolerance [x]', 'tolerance in seconds for the retention time width of the\n\t\t\t\t\t' +
@@ -3668,7 +3633,7 @@ program
         'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
         'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t', parseFloat, 2)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
-        'corresponding to a ion adduct type: \'1\' = [M+H]+ or \n\t\t\t\t\t\'2\' = [M-H]-', convertIonMode,1)
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
         'to create the pairwise similarity table after clustering and clean steps. \n\t\t\t\t\t' +
         'If "spec2vec" is selected, the model trained on UniqueInchikey subset (12,797 spectra) \n\t\t\t\t\t' +
@@ -3761,7 +3726,7 @@ program
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra to be loaded and processed in a\n\t\t\t\t\t" +
         "chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased",parseDecimal,3000)
-    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED (Step 6.1). ' +
+    .option('--gnps_search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPAGATED (Step 6.1). ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
         convertGNPSSearchTool, "gnps_indexed")
@@ -3845,7 +3810,13 @@ program
 
         // setup GNPS library search parms and library path
         var resExec_gnps = 1; // set the execution as not executed
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        // use ion mode here to select the correct library in positive or negative mode
+        if (options.ion_mode === 1) { // positive
+            var ion_mode = "Positive";
+        } else { // for ion_mode == -1 negative
+            var ion_mode = "Negative";
+        }
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPAGATED_IonMode_"+ion_mode+".mgf";
         const top_k = 5; // defines the maximal number of results returned by the GNPS Search Tool for each input spectrum.
         var filter_window = "0";
         if (options.gnps_window_filter === "TRUE")
@@ -3859,7 +3830,7 @@ program
         // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
         if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
         {
-            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library ALL_GNPS_NO_PROPOGATED.mgf is not "+
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library "+library_mgf_path+" is not "+
                 "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
                 "Please execute the np3 setup command again to retrieve this library file and allow the search.");
             options.gnps_search_tool = "";
@@ -4104,7 +4075,7 @@ program
             "'<step\_name>\_(spectra|peak\_area).csv'. And inside it the clean tables in a folder named 'clean'.\n" +
             "  - Another sub folder named 'clust' with the clusters membership files (which SCANS or msclusterID were joined).\n" +
             "  - A third sub folder named 'mgf' with the resulting clean consensus spectra in MGF files.\n" +
-            "  - A fourth sub folder named 'identifications' with the tremolo identification results in a csv table.\n" +
+            "  - A fourth sub folder named 'identifications' with the tremolo library annotation results in a csv table.\n" +
             "  - A fifth sub folder named 'molecular_networking' with the molecular networking of this joined job, both SSMN and IVAMN.\n" +
             "  - A text file named 'logNP3MSClusterOutput' with the NP3\_MSCluster log output.\n\n");
         console.log('');
@@ -4123,17 +4094,19 @@ program
 program
     .command('gnps_library_search')
     .description('Step 6.1: This command runs the GNPS2 Library Search workflow (offline) to identify the informed spectra against '+
-                 'the ALL_GNPS_NO_PROPOGATED library (default for LC data).\n\n')
+                 'the ALL_GNPS_NO_PROPAGATED library (default for LC data).\n\n')
     .option('-g, --input_mgf_file <path>','path to the input MGF file with ' +
         'the MS/MS spectra data to be searched and identified')
     .option('-o, --output_path <path>', 'if the input is a NP3 result, the path to the final NP3 output data folder, inside the outs directory of the clustering result folder. ' +
-        'It should contain the identifications folder, if not it will be created and the results will be stored in it. ' +
+        'It should contain the "identifications" folder, if not it will be created and the results will be stored in it. ' +
         'If the input is not a NP3 result, this should be a chosen result folder. The job name (output_name) will be extracted from here (basename).')
     .option('-z, --mz_tolerance [x]', 'the tolerance for parent mass search in Daltons, depending on the instrument and data accuracy.',
         parseFloat, 0.025)
     .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. ' +
         'Used for comparing the mass of the peaks during the search.', parseFloat, 0.05)
-    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPOGATED. ' +
+    .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values\n\t\t\t\t\t' +
+        'corresponding to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-. This will be used to select the library MGF file.', convertIonMode,1)
+    .option('-i, --search_tool [x]', 'the GNPS2 search tool to be used in the library searching against the ALL_GNPS_NO_PROPAGATED. ' +
         'One of "gnps_indexed", "gnps", "gnps_new" or "" (disabled). ' +
         'The similarity function is hardcoded to be the cosine and the peak transformation function is the square root.',
         convertGNPSSearchTool, "gnps_indexed")
@@ -4178,7 +4151,27 @@ program
         const start_gnpssearch = process.hrtime.bigint();
         // run workflow
         console.log('*** GNPS2 Library Search Workflow for NP3 ***\n');
-        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPOGATED.mgf";
+        // use ion mode here to select the correct library in positive or negative mode
+        if (options.ion_mode === 1) { // positive
+            var ion_mode = "Positive";
+        } else { // for ion_mode == -1 negative
+            var ion_mode = "Negative";
+        }
+        const library_mgf_path = __dirname+"/src/GNPS_LibrarySearch/data/libraries/ALL_GNPS_NO_PROPAGATED_IonMode_"+ion_mode+".mgf";
+        // check if the library_mgf_path exists, if not disable the gnps search and warn for the need to execute the setup again
+        if (options.gnps_search_tool !== "" && !(shell.test('-e', library_mgf_path) && shell.test('-f', library_mgf_path)))
+        {
+            console.log("WARNING: GNPS2 library search disabled! The GNPS2 library "+library_mgf_path+" is not "+
+                "present in the NP3_MS_Workflow/src/GNPS_LibrarySearch/data/libraries/ folder. " +
+                "Please execute the np3 'setup' command again to retrieve this library file and allow the search.");
+            options.gnps_search_tool = "";
+        }
+        if (options.gnps_search_tool === "")
+        {
+            console.error("Invalid gnps_search_tool selected equals to '' - disabled.");
+            process.exit(1);
+        }
+
         const result_folder = options.output_path + osSep() + "identifications";
         var output_name = basename(options.output_path);
         var filter_window = "0";
@@ -4212,7 +4205,7 @@ program
         console.log('');
         console.log('Creates a directory named "identifications", inside the provided *output_path*, to store the results. ');
         console.log('Three tables will be stored in this directory: \n' +
-            '1) one containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPOGATED.mgf) and the search tool used;\n' +
+            '1) one containing all the *top_k* library matches with no annotations named with the *input_mgf_file* basename concatenated with the library file name (ALL_GNPS_NO_PROPAGATED_IonMode_<ion_mode>.mgf) and the search tool used;\n' +
             '2) another containing table 1 enriched with GNPS2 annotations named with the *output_path* basename plus the tag "library_search" and the search tool used;\n' +
             '3) and the final result table with the top 1 result named with table 2 name plus a suffix equals "top1".\n' +
             'A log file with the searching outputs is also created, named "logGNPS2LibrarySearch".');
@@ -4225,7 +4218,7 @@ program
 
 program
     .command('gnps_result')
-    .description('This command join the GNPS library identification result from the Molecular Networking (download clustered spectra) or ' +
+    .description('This command join the GNPS library spectral identification result from the Molecular Networking (download clustered spectra) or ' +
         'the Library Search (download all identifications) workflows to the count tables of the NP3 clustering or clean steps\n\n')
     .option('-i, --cluster_info_path [path]', 'If joining the result of a Molecular Networking GNPS job, ' +
         'this should be the path to the file inside the folder named ' +
@@ -4237,7 +4230,7 @@ program
     .option('-c, --count_file_path <path>', 'Path to any of the count tables (peak_area or spectra) resulting ' +
         'from the NP3 clustering or clean steps. If the peak_area is informed and the spectra table file '+
         'exists in the same path (or the opposite), it will merge the GNPS results to both files. '+
-        'The clean mgf must be used for the identifications to join the results to the clean table.')
+        'The clean mgf must have being used as input for the identifications to join the results to the clean table.')
     .option('-o, --job_output_path <path>', 'path to the job final output data folder, inside the outs directory of the clustering result folder. ' +
         'It should contain the "identifications" folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
@@ -4276,7 +4269,7 @@ program
         console.log('RESULTS:');
         console.log('');
         console.log('The following columns with the GNPS results are added to the count tables: "gnps_SpectrumID", ' +
-            '"gnps_Adduct", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", ' +
+            '"gnps_Adduct", "gnps_IonMode", "gnps_Smiles", "gnps_CAS_Number", "gnps_Compound_Name", "gnps_LibMZ", "gnps_MZErrorPPM", ' +
             '"gnps_MQScore", "gnps_LibraryQualityString", "gnps_SharedPeaks", "gnps_Organism", "gnps_superclass", ' +
             '"gnps_class", "gnps_subclass" and "gnps_Ion_Source_Instrument". See the GNPS documentation for the ' +
             'description of these columns.\n' +
@@ -4449,10 +4442,10 @@ program
     .description('This command perform a post-processing analysis of a NP3 result for drug discovery research. ' +
         'Five different visualizations and two data tables are created. ' +
         'The visualization focus on the superclass grouping distribution, the novelty of the m/z ' +
-        '(with or without a library annotation) and ' +
+        '(with or without a final curated library annotation within a quality group) and ' +
         'the novelty across samples (with redundant and/or exclusive m/z). ' +
-        'The analysis may be filtered to show only a subset of the samples or the top novelty samples distribution '+
-        'and/or only the protonated m/z.\n\n')
+        'The analysis may be filtered to show only a subset of the samples (metadata) or the top novelty samples distribution (topk) '+
+        'and/or only the protonated m/z (use_protonated).\n\n')
     .option('-c, --clean_counts_path <path>', 'Path to the clean counts table file with peak area of the NP3 job to be ' +
         'post analysed, the same of the metadata. The prefix of its filename will be used to name the output files.')
     .option('-m, --metadata_path <path>', 'Path to the metadata file of the same NP3 job to be post ' +
@@ -4476,8 +4469,12 @@ program
     .option('--rm_controls [value]', 'True or False to allow removing control samples and m/z from the ' +
         'metrics computation.', "False")
     .option('--superclass_grouping_column [value]', 'The name of the column in the provided clean table that should be '+
-        'used to get the superclass grouping values of the m/z. The best origin curated library identification result '+
-        'is used by default (best annotated result from UNPD and GNPS).', "best_origin_curated_superclass_grouping")
+        'used to get the superclass grouping values of the m/z. The final curated library annotation result '+
+        'is used by default (best origin from UNPD and GNPS).', "curated_lib_annotation_superclass_grouping")
+    .option('--lib_annotation_quality_filter [value]', 'Set the quality group filter of the final curated library ' +
+        'annotations, one of 1 or 2. If 1, only consider as annotated the m/z with "curated_lib_annotation_quality" == 1; ' +
+        'otherwise if 2, consider as annotated the m/z with "curated_lib_annotation_quality" equals 1 or 2. ' +
+        'The rest is set as "not_annotated".', convertLibAnnotationQuality, "1")
     .option('--donutplots_title_size [value]', 'The title size of the donut plots.', "16")
     .option('--donutplots_text_size [value]', 'The axis and legend text sizes of the donut plots.', "14")
     .option('--donutplot_libAnnotations_colors [value]', 'The list of colors separated by comma for the library ' +
@@ -4536,7 +4533,8 @@ program
         const start_post_dd_analysis = process.hrtime.bigint();
 
         callPostProcessDDAnalysis(options.metadata_path, options.clean_counts_path, options.output_path, options.topk,
-            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated, options.superclass_grouping_column,
+            options.rm_blanks, options.rm_beds, options.rm_controls, options.use_protonated,
+            options.superclass_grouping_column, options.lib_annotation_quality_filter,
             options.donutplots_title_size, options.donutplots_text_size, options.donutplot_libAnnotations_colors,
             options.donutplot_mzs_distr_colors, options.mzs_barplot_figsize, options.mzs_barplot_label_size,
             options.mzs_barplot_title_size, options.mzs_barplot_legend_bbox, options.mzs_barplot_legend_fontsize,
@@ -4554,12 +4552,13 @@ program
         console.log('');
         console.log('RESULTS:');
         console.log('');
-        console.log('Five visualizations are created in the output_path directory: '+
-            '\n(1) the samples composition in terms of the curated superclass grouping distribution across the final m/z by samples in a barplot; ' +
-            '\n(2) the m/z library identification novelty in a donut plot with the total count of curated library annotations; ' +
-            '\n(3) the m/z samples novelty in a donut plot with the total count of redundant and exclusive m/z across valid samples; ' +
-            '\n(4) the identified m/z samples novelty in another donut plot with the total count of redundant and exclusive m/z with library annotation;'+
-            '\n(5) the m/z samples novelty distribution with and without library annotation in a barplot by sample. \n ' +
+        console.log('Six visualizations are created in the output_path directory: '+
+            '\n(1) A barplot with the samples composition in terms of the desired superclass grouping distribution across the final m/z by sample; ' +
+            '\n(2) A donut plot with the m/z final curated library identification novelty with the count of final curated library annotations by origin in the selected quality group; ' +
+            '\n(3) A donut plot with the m/z final curated library identification quality group distribution; '+
+            '\n(4) A donut plot with the m/z samples novelty with the total count of redundant and exclusive m/z across valid samples; ' +
+            '\n(5) Another donut plot with the identified m/z samples novelty with the total count of redundant and exclusive m/z with final curated library annotation;'+
+            '\n(6) A barplot with the m/z samples novelty (redundant or exclusive) distribution with and without a final curated library annotation by sample. \n ' +
             '\n And two CSV tables are created with the count of m/z novelty by sample and the count of superclass grouping by sample.\n'+
             'All the output plots and tables are named with a prefix equal the output_name (extracted from the clean table) concatenated with the metadata filename.\n');
         console.log('');
@@ -4684,7 +4683,7 @@ program
                 console.log('ERROR\n');
                 test_errors.push("Test 1.1 - Exec");
             } else {
-                gnps_result_mn = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_mn = resExec.stdout.split('*** Joining the GNPS identifications to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS library annotations ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
@@ -4706,7 +4705,7 @@ program
                 console.log('ERROR\n');
                 test_errors.push("Test 1.2 - Exec");
             } else {
-                gnps_result_ls = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_ls = resExec.stdout.split('*** Joining the GNPS identifications to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS library annotations ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
             }
 
@@ -4731,7 +4730,7 @@ program
                 gnps_result_np3 = "ERROR"
                 test_errors.push("Test 1.3 - Exec");
             } else {
-                gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identification to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS identification ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
+                gnps_result_np3 = resExec.stdout.split('*** Joining the GNPS identifications to the NP3 counts tables ***')[1].split('*** Computing the RCDK descriptors for the valid GNPS library annotations ***')[0].replace(/[0-9]+(\.[0-9]+)* secs \*/,"");
                 console.log('DONE!\n');
                 // run equality comparison in the obtained result, attribute to a var and than concate in the test res and test for error (independently of the pp testing result)
                 let test_equality_run_res = callTestRunEquality(job_name="L754_bacs_all",
@@ -4767,7 +4766,7 @@ program
             console.log("@@@@@@ Test 1.4 - L754_bacs_all - pca_plot - PCA with clean @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' pca_plot ' +
-                '-s best_origin_SMILES -d curated_identification_best_origin ' +
+                '-s curated_lib_annotation_SMILES -d curated_lib_annotation_superclass ' +
                 '--table_path '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_spectra_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/final_reports/ -n L754_bacs_all_clean',
                 {async:false, silent:true});
@@ -4790,7 +4789,8 @@ program
                 '-m '+output_path+'/test/L754_bacs/L754_bacs_all/marine_bacteria_library_L754_metadata.csv ' +
                 '-c '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/count_tables/clean/L754_bacs_all_peak_area_clean_ann.csv '+
                 '-o '+output_path+'/test/L754_bacs/L754_bacs_all/outs/L754_bacs_all/final_reports/post_dd_analysis/ ' +
-                '--superclass_barplot_legend_bbox 0.5,-0.5 --superclass_barplot_figsize 15,12 --superclass_barplot_legend_ncol 3',
+                '--superclass_barplot_legend_bbox 0.5,-0.5 --superclass_barplot_figsize 15,12 --superclass_barplot_legend_ncol 3 '+
+                '--mzs_barplot_legend_bbox 0.5,-0.35 --lib_annotation_quality_filter 2',
                 {async:false, silent:true});
 
             if (resExec.code || resExec.stdout.includes("ERROR") || resExec.stderr.includes("ERROR")) {
@@ -5020,7 +5020,7 @@ program
             console.log("@@@@@ Test 7 - L754_bacs_blanks_one_sample - tremolo @@@@@");
             console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             resExec = shell.exec(np3_js_call+' tremolo ' +
-                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/identifications/ ' +
+                '-o '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/ ' +
                 '-g '+output_path+'/test/L754_bacs/L754_bacs_blanks_one_sample/outs/L754_bacs_blanks_one_sample/mgf/L754_bacs_blanks_one_sample_all.mgf ' +
                 '-k 20 -v 13',
                 {async:false, silent:true});

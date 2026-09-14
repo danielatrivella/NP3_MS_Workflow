@@ -170,7 +170,7 @@ Loading packages Rcpp, readr, dplyr, stringr...
 
 ** Getting list of fragmented peaks and data collection batches by cluster **
 
-  * Done in 0.02 secs *
+  * Done in 0.03 secs *
 
 
 ** Annotating variant spectra that are in concurrent MS1 peaks **

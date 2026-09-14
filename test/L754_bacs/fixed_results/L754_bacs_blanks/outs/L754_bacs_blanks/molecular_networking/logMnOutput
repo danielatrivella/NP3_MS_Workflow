@@ -35,7 +35,7 @@ DONE!
 
 *** Creating the [M+H]+ networks without blanks - protonated SSMN and IVAMN *** 
   * Creating the IVAMN [M+H]+ network *
-	1. Remove blanks from IVAMN using the blank_expansion
+	1. Remove blanks from IVAMN using the blank_expansion= 0
 	2. Select the [M+H]+ ions in the remaining IVAMN
 
     Done for IVAMN [M+H]+!
@@ -80,5 +80,5 @@ DONE!
 
 DONE! 
 ======
-Finish Step 10 Time Elapsed: 0.15min
+Finish Step 10 Time Elapsed: 0.11min
 ======
