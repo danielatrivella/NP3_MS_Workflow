@@ -28,11 +28,24 @@ if wget -N https://external.gnps2.org/gnpslibrary/ALL_GNPS_NO_PROPOGATED_SPLITS.
         cat ALL_GNPS_NO_PROPOGATED_*.mgf > ALL_GNPS_NO_PROPOGATED.mgf
         # remove the split parts
         rm ALL_GNPS_NO_PROPOGATED_*.mgf  
+        if [ -f "ALL_GNPS_NO_PROPOGATED.mgf" ]; then
+            # split it in positive and negative ion mode
+            echo "Splitting the ALL_GNPS_NO_PROPOGATED.mgf in Positive and Negative ion mode."
+            awk -v RS='BEGIN IONS\n' -v ORS='' '/IONMODE=(Negative|negative| Negative|\n)/ {print "BEGIN IONS\n" $0}' ALL_GNPS_NO_PROPOGATED.mgf > ALL_GNPS_NO_PROPAGATED_IonMode_Negative.mgf
+            awk -v RS='BEGIN IONS\n' -v ORS='' '/IONMODE=(Positive|positive| Positive|N\/A|Positive-20eV)/ {print "BEGIN IONS\n" $0}' ALL_GNPS_NO_PROPOGATED.mgf > ALL_GNPS_NO_PROPAGATED_IonMode_Positive.mgf
+            if [ $(grep -c "BEGIN IONS" ALL_GNPS_NO_PROPOGATED.mgf) -ne $(( $(grep -c "BEGIN IONS" ALL_GNPS_NO_PROPAGATED_IonMode_Positive.mgf) + $(grep -c "BEGIN IONS" ALL_GNPS_NO_PROPAGATED_IonMode_Negative.mgf) )) ]; then
+                echo "  WARNING: The resulting MGFs by ion mode have a different count of spectra (BEGIN IONS tag). Please report to the dev team!!! Something went wrong when spliting the ALL_GNPS_NO_PROPOGATED.mgf. =("
+            else
+                echo "  Done!"       
+            fi
+        fi
         # lets create a summary for the library file - in this case only the ALL_GNPS_NO_PROPOGATED.mgf is used, parse the ions headers into a table
         echo "Creating a summary of the ALL_GNPS_NO_PROPOGATED library!"
         cd ../..
         #python GNPS2_LibrarySearch_Workflow/library_summary.py libraries/GNPS-LIBRARY.mgf data/library_summary_GNPS-LIBRARY.tsv
         python GNPS2_LibrarySearch_Workflow/library_summary.py data/libraries/ALL_GNPS_NO_PROPOGATED.mgf data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv
+        # remove complete mgf
+        rm data/libraries/ALL_GNPS_NO_PROPOGATED.mgf 
         echo "Enriching the ALL_GNPS_NO_PROPOGATED library summary with other annotations!"
         # execute a join between the library summary and the library summary enriched with annotations (hardcoded)
         python GNPS2_LibrarySearch_Workflow/library_summary_merge_annotations.py data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv data/library_summary_ALL_GNPS_NO_PROPOGATED_enriched.tsv      
@@ -40,7 +53,7 @@ if wget -N https://external.gnps2.org/gnpslibrary/ALL_GNPS_NO_PROPOGATED_SPLITS.
     else
         echo "The ALL_GNPS_NO_PROPOGATED library is already present in its latest version."; 
         if [ -f "ALL_GNPS_NO_PROPOGATED.mgf" ]; then
-            # TODO split it in positive and negative ion mode
+            # split it in positive and negative ion mode
             echo "Splitting the ALL_GNPS_NO_PROPOGATED.mgf in Positive and Negative ion mode."
             awk -v RS='BEGIN IONS\n' -v ORS='' '/IONMODE=(Negative|negative| Negative|\n)/ {print "BEGIN IONS\n" $0}' ALL_GNPS_NO_PROPOGATED.mgf > ALL_GNPS_NO_PROPAGATED_IonMode_Negative.mgf
             awk -v RS='BEGIN IONS\n' -v ORS='' '/IONMODE=(Positive|positive| Positive|N\/A|Positive-20eV)/ {print "BEGIN IONS\n" $0}' ALL_GNPS_NO_PROPOGATED.mgf > ALL_GNPS_NO_PROPAGATED_IonMode_Positive.mgf
@@ -64,7 +77,3 @@ fi
 
 # remove the extracted file
 rm library_summary_ALL_GNPS_NO_PROPOGATED_annotations.tsv
-
-#wget https://external.gnps2.org/gnpslibrary/GNPS-SELLECKCHEM-FDA-PART1.mgf
-#cd ../ && mkdir spectra && cd spectra
-#wget --output-document=isa_9.mzML "https://massive.ucsd.edu/ProteoSAFe/DownloadResultFile?file=f.MSV000084030/ccms_peak/isa_9.mzML&forceDownload=true"
