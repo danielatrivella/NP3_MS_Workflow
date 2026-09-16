@@ -44,7 +44,8 @@ if wget -N https://external.gnps2.org/gnpslibrary/ALL_GNPS_NO_PROPOGATED_SPLITS.
         cd ../..
         #python GNPS2_LibrarySearch_Workflow/library_summary.py libraries/GNPS-LIBRARY.mgf data/library_summary_GNPS-LIBRARY.tsv
         python GNPS2_LibrarySearch_Workflow/library_summary.py data/libraries/ALL_GNPS_NO_PROPOGATED.mgf data/library_summary_ALL_GNPS_NO_PROPOGATED.tsv
-        # remove complete mgf
+        # remove complete mgf, trucate first to prevent I/O chocking in a docker
+        > data/libraries/ALL_GNPS_NO_PROPOGATED.mgf
         rm data/libraries/ALL_GNPS_NO_PROPOGATED.mgf 
         echo "Enriching the ALL_GNPS_NO_PROPOGATED library summary with other annotations!"
         # execute a join between the library summary and the library summary enriched with annotations (hardcoded)
