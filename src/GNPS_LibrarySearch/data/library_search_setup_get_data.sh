@@ -62,6 +62,8 @@ if wget -N https://external.gnps2.org/gnpslibrary/ALL_GNPS_NO_PROPOGATED_SPLITS.
                 echo "  WARNING: The resulting MGFs by ion mode have a different count of spectra (BEGIN IONS tag). Please report to the dev team!!! Something went wrong when spliting the ALL_GNPS_NO_PROPOGATED.mgf. =("
             else
                 echo "  Done!"  
+                # remove complete mgf, trucate first to prevent I/O chocking in a docker
+                > ALL_GNPS_NO_PROPOGATED.mgf
                 rm ALL_GNPS_NO_PROPOGATED.mgf      
             fi
         fi
