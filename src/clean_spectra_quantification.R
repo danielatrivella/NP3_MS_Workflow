@@ -10,9 +10,9 @@ sim_tol <- 0.55 # sim to join
 rt_tol <- 2
 bin_size <- 0.05
 scale_factor <- 0.5
-trim_mz <- TRUE 
+trim_mz <- 1 
 max_shift <- 200 
-parallel_cores <- 1 # no paralleliztion
+parallel_cores <- 2 # parallell using 2 threads
 mz_rt_digits <- 4  # number of digits to round the mzConsensus and the retention times
 ion_mode <- "+" # + or -
 # BFLAG_cutoff_factor is A positive numeric value to scale the interquartile range (IQR) of the 
@@ -210,7 +210,7 @@ if (length(args) < 3) {
       parallel_cores <- detectCores(logical = FALSE)-2
     }
   } else {
-    cat("- Using the default value in the rest of the arguments (4 to 14). Inform all the arguments if this is not wanted.")
+    cat("- Only the first 3 mandatory argumentes were informed. Using the default value in the rest of the arguments (4 to 14). Inform all the arguments if this is not wanted.")
   }
 }
 #print(args)
@@ -253,30 +253,6 @@ source(file.path(script_path(), "final_report",  "compute_fragmented_cluster.R")
 # source(file.path("src/read_metadata_table.R"))
 # source(file.path("src/writeMgfData_NP3.R"))
 # source(file.path("src/final_report",  "compute_fragmented_cluster.R"))
-
-inverse_scale <- function(ints, scale_factor)
-{
-  if (scale_factor == 0) # log scale was applied
-  {
-    # inverse of 1.0 + log(1.0 + multVal * ints[i]))
-    ints <- expm1(ints-1)
-  } else {
-    ints <- ints^(1/scale_factor)
-  }
-  return(round(ints,5))
-}
-
-scaleInts <- function(ints, scale_factor)
-{
-  if (scale_factor == 0) # log scale was applied
-  {
-    # following 1.0 + log(1.0 + multVal * ints[i]))
-    ints <- 1.0 + log(1.0+ints)
-  } else {
-    ints <- ints ^ scale_factor
-  }
-  return(round(ints,5))
-}
 
 # function to merge the count table by column
 # rules to merge each column
@@ -480,22 +456,22 @@ if (NOISE_cutoff > 0 && any(ms_spectra_count$basePeakInt < NOISE_cutoff)) {
       round(tf-t1, 2), units(tf-t1), "*\n\n")
   remove(spectra_to_keep, msclusterID_to_remove)
   if (nscans == 0) {
-    stop("Removed all spectra with the defined noise cutoff. Reset this parameter value if this is not wanted.")
+    stop("Removed all consensus spectra using the defined noise cutoff. Reset this parameter value if this is not wanted.")
   }
 }
 
-cat("\n** Retrieving the groups of putative isomers m/z with 3*mz_tol and ",
-    "max retention time range - all the possible fragmented clusters to be compared pairwise **\n")
+cat("\n** Retrieving the groups of putative close isomers m/z with 3*mz_tol and",
+    "rt_tol * 4 - all the possible fragmented clusters to be compared pairwise **\n")
 
 # first retrieve the groups of putative isomers with extended tolerances
 mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
-                                                 max(ms_spectra_count$rtMax) - min(ms_spectra_count$rtMin), 
-                                                 3*mz_tol,
+                                                 rt_tol*4, 
+                                                 mz_tol*3,
                                                  putative_origin=TRUE, 
-                                                 table_type="isomers from Step 3 - Clustering ",
+                                                 table_type="close isomers from Step 3 consensus spectra",
                                                  add_space_verbose="  "))
 number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
-cat("\n    - Total number of m/z without isomers and percentage overall m/zs:", 
+cat("\n    - Total number of m/z without close isomers and percentage overall m/zs:", 
     number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
 
 # make pairwise comparison of all possible isomers and store only the sim above the cutoff
@@ -520,7 +496,7 @@ sim_clust_file <- file.path(output_path,
 n_sim_computed <- pairwise_similarity_comparison_sets(df_mscluster_sets = mz_isomers_groups, 
                                     path_mgf=mgf_clust_file, 
                                     sim_output_path=sim_clust_file, 
-                                    set_name="putative isomers groups from Step 3 Clustering",
+                                    set_name="putative close isomers groups from Step 3 Clustering",
                                     sim_cutoff=sim_tol,
                                     bin_size=bin_size, 
                                     scale_factor=scale_factor,
@@ -541,15 +517,6 @@ ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "gnp
 # reset columns used in the joins
 ms_spectra_count$joinedIDs <- NA
 ms_spectra_count$numJoins <- 0
-# multiple the peakInts by the sumInts to correctly scale the joined spectra peaks
-ms_spectra_count$peaksInt <- sapply(seq_len(nrow(ms_spectra_count)), function(i){
-  peaksInt <- as.numeric(strsplit(ms_spectra_count$peaksInt[[i]], ";")[[1]])
-  # remove scale from intensities
-  peaksInt <- inverse_scale(peaksInt, scale_factor)
-  # weight by the sumInts
-  peaksInt <- peaksInt*ms_spectra_count$sumInts[[i]]
-  paste0(peaksInt, collapse=";")
-})
 
 not_count_columns <- which(!(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))) 
 count_columns <- which(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))
@@ -588,7 +555,7 @@ repeat
   # start each round retrieving the msclusters with fragmented clusters, blank or not blank
   if (step_join == 1)
   {
-    # in the first round, retrieve all mz with fragmented clusters
+    # in the first round, retrieve all mz with fragmented clusters, this is equal the origin_cluster
     msclusterID_to_search <- ms_spectra_count$msclusterID[ms_spectra_count$fragmented_clusters > 0]
   } else {
     # after the first round, retrieve the fragmented clusters or
@@ -879,17 +846,6 @@ ms_spectra_count[,c("fragmented_clusters","origin_cluster")] <- NULL
 # get total number of joins by cluster
 ms_spectra_count$numJoins <- total_num_join_clusters
 
-# scale the spectra peaksInt by dividing by the sumInts
-ms_spectra_count$peaksInt <- sapply(seq_len(nrow(ms_spectra_count)), function(i){
-  peaksInt <- as.numeric(strsplit(ms_spectra_count$peaksInt[[i]], ";")[[1]])
-  peaksInt <- peaksInt/ms_spectra_count$sumInts[[i]]
-  # rescale the peaksInt of the not joined clusters
-  if (is.na(ms_spectra_count$joinedIDs[[i]])) {
-    peaksInt <- scaleInts(peaksInt, scale_factor)
-  }
-  paste0(peaksInt, collapse=";")
-})
-
 tf <- Sys.time()
 cat("\n  * Done reducing", num_joins_total, "similar clusters in", 
     round(tf-t0, 2), units(tf-t0), "*\n\n")
@@ -935,47 +891,22 @@ ms_area_count$meanInt <- ms_spectra_count$meanInt <- ms_area_count$sumInts / ms_
 tf <- Sys.time()
 cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
 
-cat("\n** Checking joined ids, recomputing samples types indicators and aggregating peak list of joined ids **\n")
+cat("\n** Checking joined ids and recomputing samples types indicators **\n")
 t1 <- Sys.time()
 # check if joined ID are ok: min ID is in msclusterID column and the others IDs are not
-# and aggregate peaksList and peaksInt by ordering and joining adjacent peaks
+
 joined_idx <- which(!is.na(ms_area_count$joinedIDs))
-ms_spectra_count[joined_idx, c("peaksList", "peaksInt")] <- 
-  ms_area_count[joined_idx, c("peaksList", "peaksInt")] <- 
-  Reduce(rbind, lapply(joined_idx, function(i) {
-    # check joined scans are ok  
-    scan_nums <-  as.numeric(strsplit(ms_area_count$joinedIDs[[i]], split = ";")[[1]])
-    min_scan <- min(scan_nums)
-    scan_nums <- scan_nums[scan_nums != min_scan]
-    
-    if (!(min_scan %in% ms_area_count$msclusterID))
-      stop("Error in the cleanning step. Missing scan number in the resulting counts table.")
-    if (any(scan_nums %in% ms_area_count$msclusterID))
-      stop("Error in the cleanning step. Cleaned scan number is still present in the counts table.")
-    
-    # join adj peaks
-    peaks <- as.numeric(strsplit(ms_area_count$peaksList[[i]], split = ";")[[1]])
-    ints <- as.numeric(strsplit(ms_area_count$peaksInt[[i]], split = ";")[[1]])
-    # order peaks
-    peaksOrder <- order(peaks)
-    peaks <- peaks[peaksOrder]
-    ints <- ints[peaksOrder]
-    
-    sapply(joinAdjPeaksScalee(peaks, ints, bin_size, -1, scale_factor, 0), 
-           function(x) {
-             x <- round(x,5)
-             paste(x,collapse = ";")
-           })
-  }), init = NULL)
-# check if the inverse scaled intensities sum 1000
-check_ints_sum <- sapply(ms_area_count$peaksInt[joined_idx], function(x) {
-  ints <- as.numeric(strsplit(x, ";")[[1]])
-  # remove scale from intensities
-  ints <- inverse_scale(ints, scale_factor)
-  round(sum(ints)) == 1000
-})
-if (!all(check_ints_sum)) {
-  stop("Bad scaling of the peak lists' intensities. Some spectra do not have the inverse scales intensities summing 1000 (the normalized value).")
+
+for (i in joined_idx) {
+  # check joined scans are ok  
+  scan_nums <-  as.numeric(strsplit(ms_area_count$joinedIDs[[i]], split = ";")[[1]])
+  min_scan <- min(scan_nums)
+  scan_nums <- scan_nums[scan_nums != min_scan]
+  
+  if (!(min_scan %in% ms_area_count$msclusterID))
+    stop("Error in the cleanning step. Missing scan number in the resulting counts table.")
+  if (any(scan_nums %in% ms_area_count$msclusterID))
+    stop("Error in the cleanning step. Cleaned scan number is still present in the counts table.")
 }
 
 # sort by msclsuterID
