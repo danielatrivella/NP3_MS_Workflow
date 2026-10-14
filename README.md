@@ -4,6 +4,13 @@
 
 - - - - 
 
+# Documentation 
+
+For the installations instructions, how to use and complete details of each step and command see the 
+[NP³ MS Workflow documentation](https://crisfbazz.github.io/NP3_MS_Workflow_Nextflow/). 
+
+-------------
+
 # Current Version 1.6.0
 
 - NEW features:
@@ -58,7 +65,7 @@ Check the [NP³ MS Workflow documentation](https://crisfbazz.github.io/NP3_MS_Wo
 
 # Overview 
 
-The NP³ MS workflow1 is a tool to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research 
+The NP³ MS Workflow is a tool to process and analyse LC-MS/MS data from targeted and untargeted metabolomics research 
 with a single command!
 
 The algorithms approach are focused on drug discovery (untargeted) with optimization towards natural products (NP). 
@@ -66,7 +73,7 @@ It ensures high sensitivity for minority compounds while distinguishing them fro
 
 
 
-The NP³ MS workflow consists of ten major steps, where only the first requires user intervention, 
+The NP³ MS Workflow consists of ten major steps, where only the first requires user intervention, 
 exemplified in the following image:
 
 ![NP³ MS Workflow Pipeline](docs/img/NP3_MS_workflow_infographic.jpg "NP³ MS Workflow Pipeline") 
@@ -74,21 +81,22 @@ exemplified in the following image:
 
 This workflow also contains some visualization commands and a command to join online GNPS library identifications.
 
-The Steps 2 to 10 can be automatically executed with the NP³ MS Workflow command **run**. 
-And different results from the NP³ MS Workflow may be united using the command **join_jobs**, which automatically 
+The Steps 2 to 10 can be automatically executed with the NP³ MS Workflow command 
+**[run](https://crisfbazz.github.io/NP3_MS_Workflow_Nextflow/pages/cmd_run/description/)**. 
+And different results from the NP³ MS Workflow may be united using the command 
+**[join_jobs](https://crisfbazz.github.io/NP3_MS_Workflow_Nextflow/pages/cmd_join_jobs/description/)**, 
+which automatically 
 executes Steps 3 to 10 with adaptations for joining previous results in an incremental clustering approach. 
 At the end of the pipeline, final reports are created containing quantification, chemical and molecular networking 
 statistics and plots. 
 
 The chemical space of the identified result using PCA method is also created using a reference dataset for comparison 
-and reproducibility. Check the 'Final Reports' section in the documentation for more details.
+and reproducibility. Check the 
+'[Final Reports](https://crisfbazz.github.io/NP3_MS_Workflow_Nextflow/pages/cmd_run/final_reports/)' section of the 
+documentation for more details.
 
-Check the 'Getting Started' section of the documentation for more details and an example of use!
-
-# Documentation 
-
-For the installations instructions, how to use and complete details of each step and command see the 
-[NP³ MS Workflow documentation](https://crisfbazz.github.io/NP3_MS_Workflow_Nextflow/). 
+Check the '[Getting Started](https://crisfbazz.github.io/NP3_MS_Workflow_Nextflow/pages/installation_setup/getting_started/)' 
+section of the documentation for more details and an example of use!
 
 - - - - 
 
