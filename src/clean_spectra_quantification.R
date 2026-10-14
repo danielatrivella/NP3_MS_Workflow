@@ -283,13 +283,13 @@ scaleInts <- function(ints, scale_factor)
 merge_counts <- function(col_name, x)
 {
   switch(col_name,
-         msclusterID = min(as.numeric(x$msclusterID)), # TODO get which max basePeakInt or keep the smaller id?
+         msclusterID = min(as.numeric(x$msclusterID)), # keep smaller ID
          origin_cluster = as.numeric(x$msclusterID[[1]]),
          numJoins =  sum(x$numJoins) + nrow(x) - 1,
          mzConsensus=,rtMean=
-           round(weighted.mean(x[[col_name]], x$basePeakInt), mz_rt_digits),
-         rtMin=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 0, round(weighted.mean(x[[col_name]], x$basePeakInt), mz_rt_digits)),
-         rtMax=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 1000000, round(weighted.mean(x[[col_name]], x$basePeakInt), mz_rt_digits)),
+           round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits),
+         rtMin=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 0, round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits)),
+         rtMax=ifelse(any(x$rtMin == 0 & x$rtMax == 1000000), 1000000, round(weighted.mean(x[[col_name]], x$sumInts), mz_rt_digits)),
          numSpectra =,BLANKS_TOTAL =,BEDS_TOTAL=,CONTROLS_TOTAL=,sumInts = sum(x[[col_name]]),
          basePeakInt=max(as.numeric(x[[col_name]])),
          BEDFLAG=,BFLAG =,CFLAG = any(as.logical(x[[col_name]])),
@@ -297,7 +297,7 @@ merge_counts <- function(col_name, x)
            ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it
                   paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                   NA),
-         peaksList=,peaksInt= # only keep the most intense spectra as the representative
+         peaksList=,peaksInt= # only keep the best quality spectra as the representative
            x[[col_name]][which.max(as.numeric(x$basePeakInt))],
          peakIds= # if there is a not NA value paste it, remove duplicates
            ifelse(any(!is.na(x[[col_name]])), 
