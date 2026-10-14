@@ -31,6 +31,18 @@ inverse_scale <- function(ints, scale_factor)
   return(ints)
 }
 
+scaleInts <- function(ints, scale_factor)
+{
+  if (scale_factor == 0) # log scale was applied
+  {
+    # following 1.0 + log(1.0 + multVal * ints[i]))
+    ints <- 1.0 + log(1.0+ints)
+  } else {
+    ints <- ints ^ scale_factor
+  }
+  return(round(ints,5))
+}
+
 # read input
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 5) {
