@@ -637,18 +637,18 @@ if (NOISE_cutoff > 0 && any(ms_spectra_count$basePeakInt < NOISE_cutoff)) {
   }
 }
 
-cat("\n** Retrieving the groups of putative close isomers m/z with 3*mz_tol and",
-    "rt_tol * 4 - all the possible fragmented clusters to be compared pairwise **\n")
+cat("\n** Retrieving the groups of possible m/z to be joined in the cleanning **\n")
+cat("\n  - Searching for fragmented clusters within 3*mz_tol and 4*rt_tol")
 
 # first retrieve the groups of putative isomers with extended tolerances
 mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
                                                  rt_tol*4, 
                                                  mz_tol*3,
                                                  putative_origin=TRUE, 
-                                                 table_type="close isomers from Step 3 consensus spectra",
+                                                 table_type="possible fragmented cluster to clean",
                                                  add_space_verbose="  "))
 number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
-cat("\n    - Total number of m/z without close isomers and percentage overall m/zs:", 
+cat("\n    - Total number of m/z without any possible fragmented cluster and percentage overall m/zs:", 
     number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
 
 # make pairwise comparison of all possible isomers and store only the sim above the cutoff
@@ -716,7 +716,7 @@ cat("\n  * Starting Clean Optimal Clustering with Greedy Heuristics in 10 Rounds
 if (!dir.exists(file.path(output_path, "count_tables", "clean")))
   dir.create(file.path(output_path, "count_tables", "clean"), showWarnings = FALSE)
 t0 <- Sys.time()
-# start on step 1, analys blank and not blank together
+# start on step 1, analyse blank and not blank together
 step_join <- 1
 num_joins_total <- 0
 # stores the number of joins by step and the total number of joins by cluster
