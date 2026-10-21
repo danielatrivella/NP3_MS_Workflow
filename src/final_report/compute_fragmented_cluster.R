@@ -1,4 +1,4 @@
-library(data.table)
+suppressPackageStartupMessages(library(data.table))
 
 # compute the number of fragmented clusters present in the provided count table and
 # return a column with the putative fragmented clusters of each m/z by row (same order of the provided table)
@@ -47,7 +47,8 @@ compute_fragmented_clusters <- function(clean_count_table,
   for (i in seq_len(n)) {
     if (frag[i] < 0) next
     if (with_numJoins && numJoins[i] == 0) next
-    if (is.na(lo[i]) || lo[i] > hi[i]) next
+    if (is.na(lo[i]) || lo[i] > hi[i]) 
+      stop("Error finding the m/z intervals. Something wrong when search for similar m/z. Lower interval is NA or greater than the higher interval value.")
     
     # clusters candidates in the m/z window
     cluster_peak_cand_idx <- ord[lo[i]:hi[i]]
@@ -72,18 +73,43 @@ compute_fragmented_clusters <- function(clean_count_table,
       cluster_peak_cand_idx <- cluster_peak_cand_idx[which(keep_cluster_peak)]
     }
     
-    # there if there is an fragmented cluster that was not merged and 
-    # assign the origin of all clusters as the spectra in the current 
+    # if there is an fragmented cluster that was not merged, 
+    # assign as origin of all clusters the spectra in the current 
     # cluster_peak with the biggest base peak intensity
+    # except if there is a spectra with a previous origin, 
+    # then keep the smaller previous origin for every one in the current peak 
     if (length(cluster_peak_cand_idx) > 1L) { 
-      j <- which.max(basePeakInt[cluster_peak_cand_idx])
-      origin_cluster_idx <- cluster_peak_cand_idx[j]
-      origin_ID <- msclusterID[origin_cluster_idx]
-      frag[origin_cluster_idx]   <- length(cluster_peak_cand_idx) - 1L
-      origin[origin_cluster_idx] <- origin_ID
-      others_cluster_peak <- cluster_peak_cand_idx[-j]
-      frag[others_cluster_peak]   <- -1
-      origin[others_cluster_peak] <- origin_ID
+      # if there is a spectra with a previous origin, keep it
+      check_cluster_peak_has_origin <- !is.na(origin[cluster_peak_cand_idx])
+      if (any(check_cluster_peak_has_origin)) {
+        # get smaller previous origin
+        origin_ID <- min(origin[cluster_peak_cand_idx][check_cluster_peak_has_origin])
+        origin_cluster_idx <- match(origin_ID, msclusterID)
+        # if more than one previous origin in the current peak, join all to the above
+        n_origins_to_join <- 0
+        if (any(origin[cluster_peak_cand_idx][check_cluster_peak_has_origin] != origin_ID)) {
+          origins_to_join <- origin[cluster_peak_cand_idx][check_cluster_peak_has_origin][origin[cluster_peak_cand_idx][check_cluster_peak_has_origin] != origin_ID]
+          origins_to_join_idx <- match(origins_to_join, origin)
+          frag[origins_to_join_idx]   <- -1
+          origin[origins_to_join_idx] <- origin_ID
+          n_origins_to_join <- length(origins_to_join_idx)
+        }
+        # the number of fragments of this origin will be incremented by the 
+        # number of current clusters without a previous origin plus the nows with a different previous origin
+        frag[origin_cluster_idx] <- frag[origin_cluster_idx] + sum(!check_cluster_peak_has_origin) + n_origins_to_join
+        # the current cluster peak that are not the new origin will be set as fragmented clusters
+        frag[cluster_peak_cand_idx[cluster_peak_cand_idx != origin_cluster_idx]]  <- -1
+        origin[cluster_peak_cand_idx] <- origin_ID
+      } else {
+        # there is no spectra with a previous origin, compute a new origin
+        j <- which.max(basePeakInt[cluster_peak_cand_idx])
+        origin_cluster_idx <- cluster_peak_cand_idx[j]
+        origin_ID <- msclusterID[origin_cluster_idx]
+        frag[origin_cluster_idx]   <- length(cluster_peak_cand_idx) - 1L
+        origin[cluster_peak_cand_idx] <- origin_ID
+        others_cluster_peak <- cluster_peak_cand_idx[-j]
+        frag[others_cluster_peak]   <- -1
+      }
     }
   }
   
@@ -94,10 +120,11 @@ compute_fragmented_clusters <- function(clean_count_table,
       "  - Total number of putative fragmented cluster and percentage overall m/zs:",
       number_fragmented_clusters, 
       "(", round(100 * number_fragmented_clusters / n, 2), "% ) \n")
-  cat("", add_space_verbose, 
-      "  - Total number of putative unique origin clusters and percentage overall fragmented clusters:",
-      number_unique_origin_cluster, 
-      "(", round(100 * number_unique_origin_cluster / number_fragmented_clusters, 2), "% ) \n")
+  if (number_fragmented_clusters > 0)
+    cat("", add_space_verbose, 
+        "  - Total number of putative unique origin clusters and percentage overall fragmented clusters:",
+        number_unique_origin_cluster, 
+        "(", round(100 * number_unique_origin_cluster / number_fragmented_clusters, 2), "% ) \n")
   
   t2 <- Sys.time()
   cat("", add_space_verbose, "  * Done in", round(t2 - t1, 2), units(t2 - t1), "*\n")
