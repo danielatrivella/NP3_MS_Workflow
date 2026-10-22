@@ -688,7 +688,7 @@ cat("\n  - Searching for fragmented clusters within 3*mz_tol and 4*rt_tol")
 
 # first retrieve the groups of putative isomers with extended tolerances
 mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
-                                                 rt_tol*5, 
+                                                 rt_tol*4, 
                                                  mz_tol*3,
                                                  putative_origin=TRUE, 
                                                  table_type="possible joins to clean",
