@@ -2,7 +2,6 @@
 # Step 5 - clean optimal clustering of the fragmented clusters
 ##
 options(digits=10) # increase precision
-options(readr.show_progress = FALSE)
 
 # default args values
 mz_tol <- 0.025
@@ -224,11 +223,11 @@ if (length(args) < 3) {
 #print(args)
 
 ## ----load-libs, message = FALSE--------------------------------------------
-cat("Loading packages Matrix, stringi, readr, data.table, CPP functions...\n")
-suppressPackageStartupMessages(library(readr))
+cat("Loading packages Matrix, stringi, data.table, CPP functions...\n")
 suppressPackageStartupMessages(library(data.table))
 library(Matrix)
 library(stringi)
+
 
 script_path <- function() {
   cmdArgs <- commandArgs(trailingOnly = FALSE)
@@ -261,6 +260,15 @@ source(file.path(script_path(), "final_report",  "compute_fragmented_cluster.R")
 # source(file.path("src/read_metadata_table.R"))
 # source(file.path("src/writeMgfData_NP3.R"))
 # source(file.path("src/final_report",  "compute_fragmented_cluster.R"))
+
+#####################
+## Functions utils ##
+#####################
+
+# column bind of data.frames/vectors returning a plain data.frame
+# (replacement of dplyr::bind_cols, keeps the column names untouched)
+cbind_df <- function(...) data.frame(..., check.names = FALSE, stringsAsFactors = FALSE)
+
 
 # format a awk command to read the rows of a given similarity table CSV in sim_file
 # that contains data between the msclusterID in the list_msclusterIDs_filter
@@ -311,19 +319,17 @@ clean_search_new_clusters <- function(idx_search)
   p_bar <- progress_bar_show[[idx_search]]
   scan_num <- msclusterID_to_search[[idx_search]]
   i <- msclusterID_to_search_idx[[idx_search]]
-  #i <- which(ms_spectra_count$msclusterID == scan_num)
   #cat("i: ", i, "\n")
   if (p_bar) {
     cat("=")
   }
-  # if (is.na(i)) {
-  #   # this msclusterID was already joined, go to the next
-  #   next()
-  # }
+  if (is.na(i)) {
+    stop("Error when searching for new clusters. The current scan_num=",
+         scan_num," have an invalid index=NA in the msclusterID_to_search_idx.")
+  }
   
   # get next cluster scan number and cluster info
-  cluster <- ms_spectra_count[i,]
-  origin_cluster <- ms_spectra_count[i,"origin_cluster"][[1]]
+  origin_cluster <- ms_spectra_count$origin_cluster[i]
   # get the cluster peak from the fragmented clusters origin,
   # this includes the current cluster row
   cluster_peak <- ms_spectra_count[ms_spectra_count$origin_cluster %in% origin_cluster,]
@@ -332,15 +338,15 @@ clean_search_new_clusters <- function(idx_search)
   join_from_msclusterIDs <- c()
   join_to_msclusterIDs <- c()
   
-  # Criteria 1
+  # Criteria 1 - Bflag
   # if BFLAG_cutoff is enabled, join blanks first if any
   # for the mz with BFLAG TRUE in the current peak and basePeakInt < BFLAG_cutoff, 
   # join them to the blank m/z (BLANKS_TOTAL > 0) with the greater basePeakInt 
   if (BFLAG_cutoff >= 0 && any(cluster_peak$BLANKS_TOTAL > 0)) {
     bflag_mzs <- (cluster_peak$BFLAG)
     blank_mzs <- (cluster_peak$BLANKS_TOTAL > 0)
-    if (any(cluster_peak[bflag_mzs, "basePeakInt"] < BFLAG_cutoff)) {
-      bflag_mz_to_join <- cluster_peak$msclusterID[bflag_mzs][cluster_peak[bflag_mzs, "basePeakInt"] < BFLAG_cutoff]
+    if (any(cluster_peak$basePeakInt[bflag_mzs] < BFLAG_cutoff)) {
+      bflag_mz_to_join <- cluster_peak$msclusterID[bflag_mzs][cluster_peak$basePeakInt[bflag_mzs] < BFLAG_cutoff]
       blank_mz_to_receive <- cluster_peak$msclusterID[blank_mzs][which.max(cluster_peak$basePeakInt[blank_mzs])]
       join_from_msclusterIDs <- bflag_mz_to_join[bflag_mz_to_join != blank_mz_to_receive]
       join_to_msclusterIDs <- rep_len(blank_mz_to_receive, length(join_from_msclusterIDs))
@@ -368,7 +374,7 @@ clean_search_new_clusters <- function(idx_search)
   } 
   else
   {
-    # Criteria 2
+    # Criteria 2 - MS2
     # get valid sim values between the mz from the the cluster_peak 
     # sim_cluster_peak contains all mz pairs that should be joined
     sim_cluster_peak <- get_sim_pairs(cluster_peak$msclusterID, sim_in_memory)
@@ -380,13 +386,13 @@ clean_search_new_clusters <- function(idx_search)
                                 sim_cluster_peak$msclusterID_target)
     }
     
-    # Criteria 3
+    # Criteria 3 - MS1
     # now try to find the pairs that share a MS1 peak
     # first get the pairs of mz that appear in at least one common sample
     # and for those check the peakIDs from the matching samples
     matrix_cluster_peak_samples_count <- as.matrix(cluster_peak[,count_columns])
-    pairs_mz_matching_samples <- as_tibble(get_mz_pairs_share_samples(matrix_cluster_peak_samples_count, 
-                                                                      cluster_peak$msclusterID))
+    pairs_mz_matching_samples <- get_mz_pairs_share_samples(matrix_cluster_peak_samples_count, 
+                                                              cluster_peak$msclusterID)
     if (nrow(pairs_mz_matching_samples) > 0) 
     {
       # first check if the mz pairs are already in the join list, 
@@ -398,14 +404,17 @@ clean_search_new_clusters <- function(idx_search)
         not_new_matching_pair_samples <- sapply(matching_pair_idx_repeated, function(j) {
           (pairs_mz_matching_samples$mz_ID_to[j] %in% join_to_msclusterIDs[join_from_msclusterIDs==pairs_mz_matching_samples$mz_ID_from[j]])
         })
-        pairs_mz_matching_samples <- pairs_mz_matching_samples[-matching_pair_idx_repeated[not_new_matching_pair_samples],]
+        # if there is any repeated pair, remove it from the new matching pairs
+        if (length(matching_pair_idx_repeated[not_new_matching_pair_samples]) > 0) {
+          pairs_mz_matching_samples <- pairs_mz_matching_samples[-matching_pair_idx_repeated[not_new_matching_pair_samples],]
+        }
       }
       if (nrow(pairs_mz_matching_samples) > 0) 
       {
-        
         # pairs_mz_matching_samples contains all mz pairs that appear in at least one common sample
-        # from pairs_mz_matching_samples, check if those mz pairs have matching peakIds, 
+        # from pairs_mz_matching_samples, check if those mz pairs have matching peakIds
         # in the matching samples
+        # first retrieve the matching sample codes
         pairs_mz_matching_samples$samples_names <- mapply(function(a, b) {
           # Find column indices where both Row A and Row B are equal to 1
           sub("_spectra$", "", 
@@ -419,11 +428,11 @@ clean_search_new_clusters <- function(idx_search)
         pairs_mz_matching_samples$valid_pairs <- apply(pairs_mz_matching_samples, 1, function(x) {
           if (length(x[[3]]) == 0)
             return(FALSE)
-          peakIds_from <- cluster_peak[cluster_peak$msclusterID == x[[1]], "peakIds"][[1]]
-          peakIds_to <- cluster_peak[cluster_peak$msclusterID == x[[2]], "peakIds"][[1]]
-          pattern_matching_samples <- paste0(paste0("(", "[0-9]+_", x[[3]][[1]],")"),collapse="|")
-          peakIds_matches_from <- stri_extract_all_regex(peakIds_from, pattern_matching_samples)
-          peakIds_matches_to <- stri_extract_all_regex(peakIds_to, pattern_matching_samples)
+          peakIds_from <- cluster_peak$peakIds[cluster_peak$msclusterID == x[[1]]][[1]]
+          peakIds_to <- cluster_peak$peakIds[cluster_peak$msclusterID == x[[2]]][[1]]
+          pattern_matching_samples <- paste0(paste0("(", "[0-9]+_", x[[3]],")"),collapse="|")
+          peakIds_matches_from <- stri_extract_all_regex(peakIds_from, pattern_matching_samples)[[1]]
+          peakIds_matches_to <- stri_extract_all_regex(peakIds_to, pattern_matching_samples)[[1]]
           # if nothing to extract, remove resulting NA to prevent a match
           peakIds_matches_from <- peakIds_matches_from[!is.na(peakIds_matches_from)]
           peakIds_matches_to <- peakIds_matches_to[!is.na(peakIds_matches_to)]
@@ -627,10 +636,14 @@ get_mz_pairs_share_samples <- function(df_samples_quantification, list_mscluster
 
 tstart <- Sys.time()
 # read count files
-ms_spectra_count <- suppressMessages(read_csv(path_spectra_count, 
-                                              guess_max = 5000,
-                                              col_types = cols(.default="?", 
-                                                               msclusterID="i")))
+# fread returns a plain data.frame (data.table = FALSE); empty strings and "NA" are read as NA
+# (as readr did) and big integers are read as double instead of integer64
+ms_spectra_count <- fread(path_spectra_count, 
+                          colClasses = list(integer = "msclusterID"),
+                          na.strings = c("NA", ""),
+                          integer64 = "double",
+                          data.table = FALSE,
+                          showProgress = FALSE)
 
 # disable the BFLAG cutoff if there is no blank sample
 if ('BLANKS_TOTAL' %in% names(ms_spectra_count)) {
@@ -684,15 +697,16 @@ if (NOISE_cutoff > 0 && any(ms_spectra_count$basePeakInt < NOISE_cutoff)) {
 }
 
 cat("\n** Retrieving the groups of possible m/z to be joined in the cleanning **\n")
-cat("\n  - Searching for fragmented clusters within 3*mz_tol and 4*rt_tol")
+cat("\n  - Searching for fragmented clusters within 3*mz_tol and 5*rt_tol")
 
 # first retrieve the groups of putative isomers with extended tolerances
-mz_isomers_groups <- bind_cols(ms_spectra_count[,"msclusterID"], compute_fragmented_clusters(ms_spectra_count, 
-                                                 rt_tol*4, 
-                                                 mz_tol*3,
-                                                 putative_origin=TRUE, 
-                                                 table_type="possible joins to clean",
-                                                 add_space_verbose="  "))
+mz_isomers_groups <- cbind_df(ms_spectra_count[, "msclusterID", drop = FALSE], 
+                              compute_fragmented_clusters(ms_spectra_count, 
+                                                          rt_tol*5, 
+                                                          mz_tol*3,
+                                                          putative_origin=TRUE, 
+                                                          table_type="possible joins to clean",
+                                                          add_space_verbose="  "))
 number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
 cat("\n    - Total number of m/z without any possible fragmented cluster and percentage overall m/zs:", 
     number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
@@ -748,7 +762,7 @@ if (sim_in_memory) {
 sim_modified <- FALSE
 
 # read the metadata samples table
-batch_metadata <- readMetadataTable(path_batch_metadata)
+batch_metadata <- as.data.frame(readMetadataTable(path_batch_metadata))
 
 # remove any column from tremolo or gnps
 ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "tremolo_")]
@@ -769,10 +783,11 @@ cat("\n** Cleanning counts, removing redudancies and aggregating data **\n")
 # compute the number of fragmented clusters in the clustering counts
 ms_spectra_count$fragmented_clusters <- NULL
 ms_spectra_count$origin_cluster <- NULL
-ms_spectra_count <- bind_cols(ms_spectra_count, compute_fragmented_clusters(ms_spectra_count, 
-                                                                            rt_tol, mz_tol, 
-                                                                            putative_origin=TRUE, 
-                                                                            table_type="Step 3 clustering"))
+ms_spectra_count <- cbind_df(ms_spectra_count, 
+                             compute_fragmented_clusters(ms_spectra_count, 
+                                                         rt_tol, mz_tol, 
+                                                         putative_origin=TRUE, 
+                                                         table_type="Step 3 clustering"))
 
 cat("\n  * Starting Clean Optimal Clustering with Greedy Heuristics in 10 Rounds *\n")
 if (!dir.exists(file.path(output_path, "count_tables", "clean")))
@@ -902,8 +917,8 @@ repeat
                                 add_space_verbose="    ")
     
     # retrieve the new origin_cluster with joins
-    new_origin_clusters <- unique(ms_spectra_count[ms_spectra_count$fragmented_clusters!=0 & 
-                                                   ms_spectra_count$numJoins > 0, "origin_cluster"][[1]])
+    new_origin_clusters <- unique(ms_spectra_count$origin_cluster[ms_spectra_count$fragmented_clusters!=0 & 
+                                                                  ms_spectra_count$numJoins > 0])
     if (length(new_origin_clusters) == 0) {
      # finish cleaning
       # no more joins to make, there is no new fragmented cluster from a 
@@ -971,9 +986,10 @@ ms_spectra_count$numJoins <- total_num_join_clusters
 
 tf <- Sys.time()
 cat("\n  * Done reducing", num_joins_total, "similar clusters in", 
-    round(tf-t0, 2), units(tf-t0), "*\n\n")
+    round(tf-t0, 2), units(tf-t0), "*\n")
 rm(total_num_join_clusters, num_joins, num_joins_total, 
    num_joins_last_step)
+cat("\n  * Final number of clean consensus spectra =", nrow(ms_spectra_count), "*\n\n")
 # warnings()
 
 cat("\n** Computing Peak Area by Sample ** \n\n")
@@ -1022,55 +1038,59 @@ t1 <- Sys.time()
 
 joined_idx <- which(!is.na(ms_area_count$joinedIDs))
 
-for (i in joined_idx) {
-  # check joined scans are ok  
-  scan_nums <-  as.numeric(strsplit(ms_area_count$joinedIDs[[i]], split = ";")[[1]])
-  min_scan <- min(scan_nums)
-  scan_nums <- scan_nums[scan_nums != min_scan]
+# vectorized check using hash lookups (%in%) instead of scanning the msclusterID column for each row
+if (length(joined_idx) > 0) {
+  joined_scans_list <- lapply(strsplit(ms_area_count$joinedIDs[joined_idx], split = ";", fixed = TRUE), 
+                              as.numeric)
+  min_scans <- vapply(joined_scans_list, min, numeric(1))
+  other_scans <- unlist(lapply(joined_scans_list, function(scan_nums) scan_nums[scan_nums != min(scan_nums)]),
+                        use.names = FALSE)
   
-  if (!(min_scan %in% ms_area_count$msclusterID))
+  if (!all(min_scans %in% ms_area_count$msclusterID))
     stop("Error in the cleanning step. Missing scan number in the resulting counts table.")
-  if (any(scan_nums %in% ms_area_count$msclusterID))
+  if (any(other_scans %in% ms_area_count$msclusterID))
     stop("Error in the cleanning step. Cleaned scan number is still present in the counts table.")
+  rm(joined_scans_list, min_scans, other_scans)
 }
 
 # sort by msclsuterID
-ms_area_count <- arrange(ms_area_count, msclusterID)
-ms_spectra_count <- arrange(ms_spectra_count, msclusterID)
+# (forder is the data.table fast radix order; returns a new data.frame, no in-place reordering)
+ms_area_count <- ms_area_count[data.table:::forder(ms_area_count$msclusterID), , drop = FALSE]
+ms_spectra_count <- ms_spectra_count[data.table:::forder(ms_spectra_count$msclusterID), , drop = FALSE]
 
 # compute Blanks total and controls total and beds total
-blanks_code <- batch_metadata[batch_metadata$SAMPLE_TYPE == "blank", "SAMPLE_CODE"]
+blanks_code <- batch_metadata$SAMPLE_CODE[which(batch_metadata$SAMPLE_TYPE == "blank")]
 if (length(blanks_code) > 0)
 {
   if (length(blanks_code) == 1) {
-    ms_area_count$BLANKS_TOTAL <- ms_area_count[,  paste0(blanks_code,"_area")][[1]]
-    ms_spectra_count$BLANKS_TOTAL <- ms_spectra_count[,  paste0(blanks_code,"_spectra")][[1]]
+    ms_area_count$BLANKS_TOTAL <- ms_area_count[[paste0(blanks_code,"_area")]]
+    ms_spectra_count$BLANKS_TOTAL <- ms_spectra_count[[paste0(blanks_code,"_spectra")]]
   } else {
     ms_area_count$BLANKS_TOTAL <- rowSums(ms_area_count[, paste0(blanks_code,"_area")])
     ms_spectra_count$BLANKS_TOTAL <- rowSums(ms_spectra_count[, paste0(blanks_code,"_spectra")])
   }
 }
-controls_code <- batch_metadata[batch_metadata$SAMPLE_TYPE == "control", "SAMPLE_CODE"]
+controls_code <- batch_metadata$SAMPLE_CODE[which(batch_metadata$SAMPLE_TYPE == "control")]
 if (length(controls_code) > 0)
 {
   if (length(controls_code) == 1)
   {
-    ms_area_count$CONTROLS_TOTAL <- ms_area_count[, paste0(controls_code,"_area")][[1]]
-    ms_spectra_count$CONTROLS_TOTAL <- ms_spectra_count[, paste0(controls_code,"_spectra")][[1]]
+    ms_area_count$CONTROLS_TOTAL <- ms_area_count[[paste0(controls_code,"_area")]]
+    ms_spectra_count$CONTROLS_TOTAL <- ms_spectra_count[[paste0(controls_code,"_spectra")]]
   } else {
     ms_area_count$CONTROLS_TOTAL <- rowSums(ms_area_count[, paste0(controls_code,"_area")])
     ms_spectra_count$CONTROLS_TOTAL <- rowSums(ms_spectra_count[, paste0(controls_code,"_spectra")])
   }
   rm(controls_code)
 }
-bed_controls_code <- batch_metadata[batch_metadata$SAMPLE_TYPE == "bed", "SAMPLE_CODE"]
+bed_controls_code <- batch_metadata$SAMPLE_CODE[which(batch_metadata$SAMPLE_TYPE == "bed")]
 
 if (length(bed_controls_code) > 0)
 {
   if (length(bed_controls_code) == 1)
   {
-    ms_area_count$BEDS_TOTAL <- ms_area_count[, paste0(bed_controls_code,"_area")][[1]]
-    ms_spectra_count$BEDS_TOTAL <- ms_spectra_count[, paste0(bed_controls_code,"_spectra")][[1]]
+    ms_area_count$BEDS_TOTAL <- ms_area_count[[paste0(bed_controls_code,"_area")]]
+    ms_spectra_count$BEDS_TOTAL <- ms_spectra_count[[paste0(bed_controls_code,"_spectra")]]
   } else {
     ms_area_count$BEDS_TOTAL <- rowSums(ms_area_count[, paste0(bed_controls_code,"_area")])
     ms_spectra_count$BEDS_TOTAL <- rowSums(ms_spectra_count[, paste0(bed_controls_code,"_spectra")])
@@ -1081,23 +1101,21 @@ if (length(bed_controls_code) > 0)
 # remove duplicated entries due to merge
 if ("DESREPLICATION" %in% names(ms_area_count))
 {
-  hflag_rows <- !is.na(ms_area_count$HFLAG) | !is.na(ms_area_count$DESREPLICATION)
-  ms_spectra_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- 
-  ms_area_count[hflag_rows, c("DESREPLICATION", "HFLAG")] <- Reduce(rbind, 
-    lapply(which(hflag_rows), 
-           function(i)
-           {
-             if (is.na(ms_area_count$HFLAG[[i]]))
-               hflag <- NA
-             else
-               hflag <- paste0(unique(strsplit(ms_area_count$HFLAG[[i]], ";")[[1]]), collapse = ";")
-             if (is.na(ms_area_count$DESREPLICATION[[i]]))
-               desrep <- NA
-             else
-               desrep <- paste0(unique(strsplit(ms_area_count$DESREPLICATION[[i]], ";")[[1]]), collapse = ";")
-             
-             return(c(desrep, hflag))
-           }), init = NULL)
+  hflag_rows <- which(!is.na(ms_area_count$HFLAG) | !is.na(ms_area_count$DESREPLICATION))
+  # remove the duplicated entries of the ";" separated values, keeping NAs
+  unique_collapsed_values <- function(x) {
+    x <- as.character(x)
+    res <- rep(NA_character_, length(x))
+    not_na <- !is.na(x)
+    res[not_na] <- vapply(strsplit(x[not_na], ";", fixed = TRUE), 
+                          function(values) paste0(unique(values), collapse = ";"), 
+                          character(1))
+    res
+  }
+  desrep_unique <- unique_collapsed_values(ms_area_count$DESREPLICATION[hflag_rows])
+  hflag_unique <- unique_collapsed_values(ms_area_count$HFLAG[hflag_rows])
+  ms_area_count$DESREPLICATION[hflag_rows] <- ms_spectra_count$DESREPLICATION[hflag_rows] <- desrep_unique
+  ms_area_count$HFLAG[hflag_rows] <- ms_spectra_count$HFLAG[hflag_rows] <- hflag_unique
 }
 tf <- Sys.time()
 cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
@@ -1124,8 +1142,9 @@ if ("msclusterID_integrative" %in% names(ms_spectra_count)) {
 cat("\n** Saving the clean MGF file **\n\n")
 t1 <- Sys.time()
 # sort by msclusterID, this order will be applied to the scans in the MGF file
-ms_area_count <- arrange(ms_area_count, msclusterID)
-ms_spectra_count <- arrange(ms_spectra_count, msclusterID)
+# (forder is the data.table fast radix order; returns a new data.frame, no in-place reordering)
+ms_area_count <- ms_area_count[data.table:::forder(ms_area_count$msclusterID), , drop = FALSE]
+ms_spectra_count <- ms_spectra_count[data.table:::forder(ms_spectra_count$msclusterID), , drop = FALSE]
 # write the peaks list and ints to the mgf file - the intensities will be 
 # inversed scaled to be saved with no scaling
 writeMgfDataFile_NP3_table(ms_count_table = ms_area_count,
@@ -1155,10 +1174,13 @@ ms_spectra_count$fragmented_clusters <- ms_area_count$fragmented_clusters <- com
                                                                                                          table_type = "final clean")
 
 # write cleanned data without annotation
-write_csv(ms_area_count, path = file.path(output_path, "count_tables", "clean", 
-                                          paste0(output_name, "_peak_area_clean.csv")))
-write_csv(ms_spectra_count, path = file.path(output_path, "count_tables", "clean", 
-                                             paste0(output_name, "_spectra_clean.csv")))
+# na = "NA" keeps the same NA representation written by readr::write_csv
+fwrite(ms_area_count, file = file.path(output_path, "count_tables", "clean", 
+                                       paste0(output_name, "_peak_area_clean.csv")),
+       na = "NA", showProgress = FALSE)
+fwrite(ms_spectra_count, file = file.path(output_path, "count_tables", "clean", 
+                                          paste0(output_name, "_spectra_clean.csv")),
+       na = "NA", showProgress = FALSE)
 rm(ms_spectra_count, ms_area_count)
 
 tf <- Sys.time()
