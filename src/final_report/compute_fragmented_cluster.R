@@ -73,13 +73,13 @@ compute_fragmented_clusters <- function(clean_count_table,
       cluster_peak_cand_idx <- cluster_peak_cand_idx[which(keep_cluster_peak)]
     }
     
-    # if there is an fragmented cluster that was not merged, 
+    # if there is a fragmented cluster that was not merged, 
     # assign as origin of all clusters the spectra in the current 
     # cluster_peak with the biggest base peak intensity
     # except if there is a spectra with a previous origin, 
-    # then keep the smaller previous origin for every one in the current peak 
+    # then keep the smaller previous origin for every one in the current peak, 
     if (length(cluster_peak_cand_idx) > 1L) { 
-      # if there is a spectra with a previous origin, keep it
+      # if there is a spectra with a previous origin, keep it - merge origins
       check_cluster_peak_has_origin <- !is.na(origin[cluster_peak_cand_idx])
       if (any(check_cluster_peak_has_origin)) {
         # get smaller previous origin
@@ -88,14 +88,17 @@ compute_fragmented_clusters <- function(clean_count_table,
         # if more than one previous origin in the current peak, join all to the above
         n_origins_to_join <- 0
         if (any(origin[cluster_peak_cand_idx][check_cluster_peak_has_origin] != origin_ID)) {
+          # retrieve other origins to be updated with the current origin, merge origins
           origins_to_join <- origin[cluster_peak_cand_idx][check_cluster_peak_has_origin][origin[cluster_peak_cand_idx][check_cluster_peak_has_origin] != origin_ID]
-          origins_to_join_idx <- match(origins_to_join, origin)
+          # retrieve all idx in which these previous origins were set
+          origins_to_join_idx <- which(origin %in% origins_to_join)
+          # reset them to the current merged origin_ID
           frag[origins_to_join_idx]   <- -1
           origin[origins_to_join_idx] <- origin_ID
           n_origins_to_join <- length(origins_to_join_idx)
         }
         # the number of fragments of this origin will be incremented by the 
-        # number of current clusters without a previous origin plus the nows with a different previous origin
+        # number of current clusters without a previous origin plus the rows with a different previous origin
         frag[origin_cluster_idx] <- frag[origin_cluster_idx] + sum(!check_cluster_peak_has_origin) + n_origins_to_join
         # the current cluster peak that are not the new origin will be set as fragmented clusters
         frag[cluster_peak_cand_idx[cluster_peak_cand_idx != origin_cluster_idx]]  <- -1
