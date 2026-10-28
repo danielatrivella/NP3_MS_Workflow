@@ -294,7 +294,12 @@ get_sim_pairs <- function(cluster_peak_ids, sim_in_memory)
   if (sim_in_memory) {
     # rows of the similarity table where both msclusterID_source and 
     # msclusterID_target are in the cluster_peak msclusterIDs (cluster_peak_ids):
-    res <- sim_dt[msclusterID_source %in% cluster_peak_ids & msclusterID_target %in% cluster_peak_ids]
+    # sim_dt is keyed by (msclusterID_source, msclusterID_target): join on the sorted ids
+    # (binary search on the key, no full scan of the table). The result keeps the key order,
+    # the same order of the previous full scan filter.
+    ids <- sort(unique(as.integer(cluster_peak_ids)))
+    res <- sim_dt[.(ids), nomatch = 0L]
+    res <- res[msclusterID_target %in% ids]
     return(res)
   }
   # low RAM mode: stream the similarity file with awk
@@ -332,7 +337,11 @@ clean_search_new_clusters <- function(idx_search)
   origin_cluster <- ms_spectra_count$origin_cluster[i]
   # get the cluster peak from the fragmented clusters origin,
   # this includes the current cluster row
-  cluster_peak <- ms_spectra_count[ms_spectra_count$origin_cluster %in% origin_cluster,]
+  # rows indexed once per round in origin_cluster_rows (same rows, same order of
+  # the previous full scan using %in%), and only the columns used in the search are copied
+  # (avoids copying the wide peaksList/peaksInt/scans/sample columns)
+  cluster_peak_rows <- origin_cluster_rows[[origin_cluster_group[[i]]]]
+  cluster_peak <- ms_spectra_count[cluster_peak_rows, cluster_peak_cols, drop = FALSE]
   
   # create lists of m/z pairs to be joined
   join_from_msclusterIDs <- c()
@@ -390,7 +399,7 @@ clean_search_new_clusters <- function(idx_search)
     # now try to find the pairs that share a MS1 peak
     # first get the pairs of mz that appear in at least one common sample
     # and for those check the peakIDs from the matching samples
-    matrix_cluster_peak_samples_count <- as.matrix(cluster_peak[,count_columns])
+    matrix_cluster_peak_samples_count <- as.matrix(ms_spectra_count[cluster_peak_rows, count_columns, drop = FALSE])
     pairs_mz_matching_samples <- get_mz_pairs_share_samples(matrix_cluster_peak_samples_count, 
                                                               cluster_peak$msclusterID)
     if (nrow(pairs_mz_matching_samples) > 0) 
@@ -513,38 +522,6 @@ merge_counts <- function(col_name, x)
                 ifelse(any(!is.na(x[[col_name]])), # if there is a not NA value paste it, delim = ;
                        paste(x[[col_name]][!is.na(x[[col_name]])], collapse = ";"), 
                        NA))) # cocatenate string fields (e.g. from gnps)
-}
-
-# TODO not used anymore, remove or use in another place
-# function to remove from a similarity table file in input_sim_table_file 
-# the rows containing any of the IDs present in the remove_msclsuterIDs list
-# and store the remaining table to output_sim_table_file
-# uses awk with regex for better performance and almost no RAM overload
-sim_table_filtering_out <- function(remove_msclusterIDs = c(1,2,3), 
-                                    input_sim_table_file, output_sim_table_file) {
-  # concate the IDs to be removed using pipe in a regex format
-  regex_pattern_removal <- paste0("'^(", paste(remove_msclusterIDs, 
-                                              collapse = "|"), ")$'")
-  # Build the awk arguments
-  # -F, tells awk it is a CSV file
-  # $1 !~ pat ensures column 1 does not match the list
-  # $2 !~ pat ensures column 2 does not match the list
-  awk_args <- c(
-    "-F,",
-    "-v", paste0("pat_rm=", regex_pattern_removal),
-    "'NR == 1 || (($1 !~ pat_rm) && ($2 !~ pat_rm))'" ,
-    input_sim_table_file)
-  # Stream directly via system2
-  status <- system2(
-    command = "awk",
-    args = awk_args,
-    stdout = output_sim_table_file)
-  # Check execution status
-  if (status != 0) {
-    stop("ERROR: Awk filtering failed: ", paste(status, collapse = "\n"),
-         ". Could not remove some msclusterIDs from the similarity table '",
-         input_sim_table_file, "'. Check for warnings.")
-  }
 }
 
 # in memory version of the aggregation of the similarity table: replace, in one pass, 
@@ -708,7 +685,7 @@ mz_isomers_groups <- cbind_df(ms_spectra_count[, "msclusterID", drop = FALSE],
                                                           table_type="possible joins to clean",
                                                           add_space_verbose="  "))
 number_mz_no_isomers <- sum(is.na(mz_isomers_groups$origin_cluster))
-cat("\n    - Total number of m/z without any possible fragmented cluster and percentage overall m/zs:", 
+cat("\n    - Total number of m/z without any possible clean join and percentage overall m/zs:",
     number_mz_no_isomers, "(",round(100*number_mz_no_isomers/nrow(ms_spectra_count),2), "% )\n")
 
 # make pairwise comparison of all possible isomers and store only the sim above the cutoff
@@ -771,8 +748,13 @@ ms_spectra_count <- ms_spectra_count[, !startsWith(names(ms_spectra_count), "gnp
 ms_spectra_count$joinedIDs <- NA
 ms_spectra_count$numJoins <- 0
 
+# set the columns with the quantification by samples - count columns - and 
+# the other columns - not count columns
 not_count_columns <- which(!(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))) 
 count_columns <- which(names(ms_spectra_count) %in% paste0(batch_metadata$SAMPLE_CODE, "_spectra"))
+# columns needed by clean_search_new_clusters to search for the new clusters
+cluster_peak_cols <- intersect(c("msclusterID", "BLANKS_TOTAL", "BFLAG", "basePeakInt", "peakIds"), 
+                               names(ms_spectra_count))
 
 # order the spectra table by the msclusterID column
 ms_spectra_count <- ms_spectra_count[order(ms_spectra_count$msclusterID),]
@@ -827,6 +809,12 @@ repeat
   msclusterID_to_search_idx <- match(msclusterID_to_search, 
                                      ms_spectra_count$msclusterID)
   
+  # index the rows of each origin cluster once per round (used by clean_search_new_clusters)
+  origin_cluster_unique <- unique(ms_spectra_count$origin_cluster)
+  origin_cluster_group <- match(ms_spectra_count$origin_cluster, origin_cluster_unique)
+  origin_cluster_rows <- split(seq_along(origin_cluster_group), origin_cluster_group)
+  rm(origin_cluster_unique)
+  
   progress_joins <- msclusterID_to_search[unique(trunc(c(seq(from = 1, to = nsearch, by = nsearch/25), nsearch)))]
   n_progress <- length(progress_joins)
   # add one extra progress bar for the integration step
@@ -853,26 +841,60 @@ repeat
   if (length(new_clusters_clean) > 0) {
     # store rows to be removed after join, remove all together at the end
     remove_rows <- c()
-    for (j in seq_along(new_clusters_clean$new_clusters_members))
+    new_clusters_members_list <- new_clusters_clean$new_clusters_members
+    # check if there is any duplicated in the new clusters member
+    new_clusters_members_unlist <- unlist(new_clusters_members_list, use.names = FALSE)
+    if (any(duplicated(new_clusters_members_unlist)))
+    {
+      stop("Error: there are duplicated members in the new clusters lists. ",
+           "More than one new cluster share the same member.",
+           "Something went wrong when searching for clean candidates.")
+    }
+    # work in a deep copy as data.table to update the representative rows in place with set()
+    # (a data.frame row assignment copies every column in each join). The copy is needed because
+    # some columns are shared with other variables (e.g. numJoins) and set() modifies by reference.
+    dt_counts <- setDT(copy(ms_spectra_count))
+    count_table_names <- names(dt_counts)
+    # positions of all members of all the new clusters in the count table, computed once: 
+    # the rows are not moved before the end of the loop and the representative msclusterID is kept
+    members_idx_list <- split(match(new_clusters_members_unlist, 
+                                    dt_counts$msclusterID),
+                              rep.int(seq_along(new_clusters_members_list), 
+                                      new_clusters_clean$new_clusters_size))
+    rm(new_clusters_members_unlist)
+    for (j in seq_along(new_clusters_members_list))
     {
       # update number of joins, remove the representative mz that will be kept
       num_joins <- num_joins + new_clusters_clean$new_clusters_size[[j]] - 1
-      new_cluster_j_members <- new_clusters_clean$new_clusters_members[[j]]
       # get the new cluster members pos in the count table
-      new_cluster_j_count_idx <- match(new_cluster_j_members, ms_spectra_count$msclusterID)
+      new_cluster_j_count_idx <- members_idx_list[[j]]
       # merge counts based on spectra counts
-      new_cluster_j <- lapply(names(ms_spectra_count), merge_counts, 
-                              ms_spectra_count[new_cluster_j_count_idx,])
+      new_cluster_j <- lapply(count_table_names, merge_counts, 
+                              dt_counts[new_cluster_j_count_idx])
       # get representative cluster ID - which for now is the lower msclusterID idx
       new_cluster_j_representative_ID <- new_cluster_j[[1]]
-      new_cluster_j_representative_idx <- match(new_cluster_j_representative_ID, 
-                                                ms_spectra_count$msclusterID)
-      # replace representative cluster with the new cluster counts
-      ms_spectra_count[new_cluster_j_representative_idx,] <- new_cluster_j
+      new_cluster_j_representative_idx <- new_cluster_j_count_idx[
+        which(dt_counts$msclusterID[new_cluster_j_count_idx] == new_cluster_j_representative_ID)[[1]]]
+      # replace representative cluster with the new cluster counts, column by column in place;
+      # if the new value has a higher type than the column (e.g. character into a logical NA 
+      # column) promote the column first, as the data.frame assignment does
+      for (k in seq_along(new_cluster_j)) {
+        new_value <- new_cluster_j[[k]]
+        current_col <- dt_counts[[k]]
+        promoted_type <- typeof(c(current_col[0L], new_value[0L]))
+        if (promoted_type != typeof(current_col)) {
+          # change type
+          set(dt_counts, j = k, value = as.vector(current_col, promoted_type))
+        }
+        set(dt_counts, i = new_cluster_j_representative_idx, j = k, value = new_value)
+      }
       # remove merged mz rows from the count tables, keeping the representative mz row
       new_cluster_j_count_idx <- new_cluster_j_count_idx[new_cluster_j_count_idx != new_cluster_j_representative_idx]
       remove_rows <- c(remove_rows, new_cluster_j_count_idx)
     }
+    setDF(dt_counts)
+    ms_spectra_count <- dt_counts
+    rm(dt_counts, members_idx_list, new_clusters_members_list)
     
     if (length(remove_rows) > 0) {
       # remove the joined clusters
@@ -1027,7 +1049,7 @@ ms_spectra_count$basePeakInt <- ms_area_count$basePeakInt <- peak_areas_base_pea
 rm(peak_areas_base_peak_int)
 
 # compute max area and the mean precursor intensity of the final clusters
-ms_area_count$maxArea <- ms_spectra_count$maxArea <- apply(ms_area_count[,count_columns], 1, max)
+ms_area_count$maxArea <- ms_spectra_count$maxArea <- do.call(pmax, unname(as.list(ms_area_count[, count_columns, drop = FALSE])))
 ms_area_count$meanInt <- ms_spectra_count$meanInt <- ms_area_count$sumInts / ms_area_count$numSpectra
 tf <- Sys.time()
 cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
@@ -1131,9 +1153,8 @@ if ("msclusterID_integrative" %in% names(ms_spectra_count)) {
   ms_spectra_count$cleanClustID <- ms_area_count$cleanClustID <- ms_spectra_count$msclusterID
   # convert to char
   ms_spectra_count$msclusterID_integrative <- ms_area_count$msclusterID_integrative <- as.character(ms_spectra_count$msclusterID_integrative)
-  new_msclusterIDs <- sapply(ms_spectra_count$msclusterID_integrative, function(x) {
-    min(as.integer(strsplit(x, ";")[[1]]))
-  })
+  new_msclusterIDs <- vapply(strsplit(ms_spectra_count$msclusterID_integrative, ";", fixed = TRUE), 
+                             function(x) min(as.integer(x)), integer(1))
   ms_spectra_count$msclusterID <- ms_area_count$msclusterID <- new_msclusterIDs
   tf <- Sys.time()
   cat("\n  * Done in", round(tf-t1, 2), units(tf-t1), "*\n\n")
