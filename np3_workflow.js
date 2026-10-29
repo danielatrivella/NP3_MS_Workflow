@@ -648,12 +648,11 @@ function callMergeCounts(output_path, output_name, processed_dir, metadata_path,
 }
 
 // call the clean step
-function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size, processed_dir,
-                                   log_clustered_spec_comparison)
+function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size, processed_dir)
 {
     // console.log('outp '+ output_path+ " rt "+rt_tol+" bin "+ bin_size)
     const start_clean = process.hrtime.bigint();
-    var step_name = '*** Step 5 - Cleaning the clustering counts tables *** \n';
+    var step_name = '====== Step 5 - Cleaning the clustering results ====== \n';
     console.log(step_name);
     if (processed_dir === "") {
         processed_dir = parms.raw_data_path + '/' + parms.processed_data_name;
@@ -661,13 +660,13 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
 
     var clean_output_path = output_path+"/count_tables/clean/";
 
+    // executes the clean script - it also performs the pairwise comparison of the possible fragmented clusters
     var resExec = shell.exec('Rscript '+__dirname+'/src/clean_spectra_quantification.R '+output_path+' '+parms.metadata+' '+
         processed_dir+' '+mz_tol+' '+ parms.similarity+' '+ rt_tol+' '+bin_size+' '+
-        parms.scale_factor+' '+parms.ion_mode+' '+parms.bflag_cutoff+' '+parms.noise_cutoff+' '+parms.max_chunk_spectra,
+        parms.scale_factor+' '+parms.trim_mz+' '+parms.max_shift+' '+parms.ion_mode+' '+
+        parms.bflag_cutoff+' '+parms.noise_cutoff+' '+parms.max_size_in_mem+' '+parms.parallel_cores,
         {async:false,
         silent:(parms.verbose === 0)});
-    // print the clustered spectra comparision in the output log after the folder creation (counts_table/clean)
-    shell.ShellString(log_clustered_spec_comparison + "\n" + step_name).toEnd(clean_output_path+"logCleanOutput");
 
     if (resExec.code || resExec.signal == "SIGKILL") {
         if (resExec.signal == "SIGKILL") {
@@ -690,7 +689,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
         callAnalyseCount(clean_output_path+output_name+"_spectra_clean.csv",
             clean_output_path+"analyseCountClusteringClean",
             clean_output_path+"logCleanOutput");
-        // call the pairwise comparision of the clean mgf
+        // call the pairwise comparison of the clean mgf
         var out_pairComp = callPairwiseComparision(output_name+'_clean',
             output_path+'/molecular_networking/similarity_tables/',
             output_path+'/mgf/'+output_name+'_clean.mgf',
@@ -703,7 +702,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
             parms.metadata = output_path + "/../../" + "original_samples_METADATA.csv"
         }
 
-        var out_done_log = '\n======\nFinish Step 5 '+printTimeElapsed_bigint(start_clean, process.hrtime.bigint())+' (without the clustered spectra comparison time) \n======\n';
+        var out_done_log = '\n======\nFinish Step 5 '+printTimeElapsed_bigint(start_clean, process.hrtime.bigint())+' \n======\n';
         console.log(out_done_log);
         shell.ShellString(out_done_log).toEnd(clean_output_path+"logCleanOutput");
     }
@@ -2142,11 +2141,6 @@ program
     .option('-e, --method [name]', 'a character string indicating which correlation coefficient\n\t\t\t\t\t' +
         'is to be computed. One of "pearson", "kendall", or\n\t\t\t\t\t' +
         '"spearman" (Step 9)', convertMethodCorr,"spearman")
-    // .option('-i, --metfrag_identification [x]', 'a logical "TRUE" or "FALSE" indicating if the MetFrag tool\n\t\t\t\t\t' +
-    //     'should be used for spectra identification search against the\n\t\t\t\t\t' +
-    //     'PubChem database of the top correlated spectra. \n\t\t\t\t\t' +
-    //     'The Metfrag API is not very fast and could raise some errors, \n\t\t\t\t\t' +
-    //     'if this happen the user must stop the process (Step 6)', toupper, "FALSE")
     .option('-j, --tremolo_identification [x]', '(not Windows OS\'s) A logical "TRUE" or "FALSE" indicating if\n\t\t\t\t\t' +
         'the Tremolo tool should be used for the spectra matching\n\t\t\t\t\t' +
         'against the ISDB from the UNPD (Step 6)', toupper, "TRUE")
@@ -2312,7 +2306,7 @@ program
 
         // remove mass dissipation in the clustering from area and spectra count
         resExec = callCleanClusteringCounts(options, output_path, options.mz_tolerance,
-            options.rt_tolerance[1], options.fragment_tolerance, '',
+            options.rt_tolerance, options.fragment_tolerance, '',
             out_clustered_spec_comp);
 
         var counts_path = output_path+"/count_tables/"+options.output_name;
@@ -2961,26 +2955,29 @@ program
 
 program
     .command('clean')
-    .description('Step 5: This command runs the pairwise comparisons of the collection of consensus spectra (if not ' +
-        'done yet) and then runs the cleaning of the clustering counts. It also runs Step 7 to annotate possible ion ' +
-        'variants using the new clean count tables and to create the molecular network of annotations, and runs Step ' +
-        '10 to overwrite any old computation of the molecular network of similarities. It can also run the library ' +
-        'spectral identifications (Step 6) for the collection of clean consensus spectra.\n\n')
-    .option('-m, --metadata <file>', 'path to the metadata table CSV file')
-    .option('-o, --output_path <path>', 'path to the final output data folder, inside the outs directory of the clustering result folder. ' +
-        'It should contain the mgf folder, the peak area count CSV and the spectra count CSV. The job name will be extracted from here')
+    .description('Step 5: This command runs the cleaning of a NP³ clustering results and produces the final results. ' +
+        'It removes fragmented clusters using BFLAG, MS1 and MS2 information. ' +
+        'It also performs the pairwise comparison of the final clean consensus spectra and ' +
+        'runs the following Steps 7 to 10 with the new clean results.\n\n')
+    .option('-o, --output_path <path>', 'path to the final output data folder of a np3 result, ' +
+        'inside the outs directory of the clustering result folder. ' +
+        'It should contain the "mgf" folder and the "count_tables" folder with the spectra count table in CSV. ' +
+        'The job name will be extracted from here.')
+    .option('-m, --metadata <file>', 'path to the metadata table CSV file used in the provided np3 result.')
     .option('-y, --processed_data_dir <path>', 'the path to the folder inside the raw data folder where the\n\t\t\t\t\t' +
         'pre processed data (MGFs) are stored.')
     .option('-z, --mz_tolerance [x]', 'the tolerance in Daltons that determines if two spectra will be compared and ' +
         'possibly joined. It is also used in Step 7 to detect possible ion variants.', parseFloat, 0.025)
-    .option('-t, --rt_tolerance [x,y]', 'tolerances in seconds for the retention time width of the\n\t\t\t\t\t' +
+    .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. Peaks in a cluster ' +
+        'spectrum that are closer than this are considered the same.', parseFloat, 0.05)
+    .option('-t, --rt_tolerance [x]', 'tolerance in seconds for the retention time width of the\n\t\t\t\t\t' +
         'precursor that determines if two spectra will be compared\n\t\t\t\t\t' +
-        'and possibly joined. It is directly applied to the retention\n\t\t\t\t\t' +
+        'and possibly joined. ' +
+        'It is directly applied to the retention\n\t\t\t\t\t' +
         'time minimum (subtracted) and maximum (added) of the spectra.\n\t\t\t\t\t' +
-        'It enlarges the peak boundaries to deal with disaligned samples\n\t\t\t\t\t' +
-        'or ionization variant spectra. The first tolerance [x] is used \n\t\t\t\t\t' +
-        'in the annotation Step 7; and the tolerance [y] is used \n\t\t\t\t\t' +
-        'in the clean Step 5', splitListFloat, [1,2])
+        'It enlarges the peak boundaries to deal with misalignments. ' +
+        'Its used in the clean Step 5 to define fragmented clusters range and in the annotation Step 7.',
+        parseFloat, 2)
     .option('-a, --ion_mode [x]', 'the precursor ion mode. One of the following numeric values corresponding ' +
         'to a ion adduct type: \'1\' = Positive [M+H]+ or \'2\' = Negative [M-H]-', convertIonMode,1)
     .option('-i, --similarity_function [x]', 'the similarity function to be used in the spectra comparison \n\t\t\t\t\t' +
@@ -2989,16 +2986,8 @@ program
         'is used by spec2vec in the spectra comparison and the matchms library is used to compute \n\t\t\t\t\t' +
         'the number of matched peaks between the compared spectra; otherwise, the NP3 shifted cosine \n\t\t\t\t\t' +
         'function is used. One of "np3_shifted_cosine" or "spec2vec".', convertSimilarityFunc, "np3_shifted_cosine")
-    .option('-s, --similarity [x]', 'the similarity to be consider when joining clusters and merging ' +
-        'their counts in not blank samples', parseFloat, 0.55)
-    .option('-g, --similarity_blank [x]', 'the similarity to be consider when joining clusters and ' +
-        'merging their counts in blank samples (column SAMPLE\\_TYPE equals \'blank\' in the metadata table)', parseFloat, 0.3)
-    .option('-w, --similarity_mn [x]', 'the minimum similarity score that must occur between a pair of ' +
-        'consensus MS/MS spectra in order to create an edge in the molecular networking. Lower values will increase the ' +
-        'component size of the clusters by inducing the connection of less related MS/MS spectra; and higher values will ' +
-        ' limit the components sizes to the opposite', parseFloat, 0.6)
-    .option('-f, --fragment_tolerance [x]', 'the tolerance in Daltons for fragment peaks. Peaks in a cluster ' +
-        'spectrum that are closer than this are considered the same.', parseFloat, 0.05)
+    .option('-s, --similarity [x]', 'the similarity cutoff to be consider when joining fragmented clusters ' +
+        'using MS2 information. Should be similar to the one used in the clustering Step 3.', parseFloat, 0.55)
     .option('--bflag_cutoff [x]', 'A positive numeric value to scale the interquartile range (IQR)\n\t\t\t\t\t' +
         'of the blank spectra basePeakInt distribution from the clustering result and to allow spectra with a basePeakInt\n\t\t\t\t\t' +
         'value below this distribution median plus IQR*bflag_cutoff to be\n\t\t\t\t\t' +
@@ -3007,11 +2996,11 @@ program
         'The IQR is the range between the 1st quartile (25th quantile) and the\n\t\t\t\t\t' +
         '3rd quartile (75th quantile) of the distribution. The spectra with a\n\t\t\t\t\t' +
         'basePeakInt value <= median + IQR*bflag_cutoff (from the\n\t\t\t\t\t' +
-        'blank spectra basePeakInt distribution) and BFLAG TRUE will be joined to a blank spectrum\n\t\t\t\t\t' +
+        'blank spectra basePeakInt distribution) and BFLAG TRUE may be joined to a blank spectrum\n\t\t\t\t\t' +
         'in the clean Step 5. This cutoff will affect the spectra with BFLAG TRUE\n\t\t\t\t\t' +
         'that would not get joined to a blank spectra when relying only on the\n\t\t\t\t\t' +
-        'similarity cutoff. This is a turn around to the fact that blank spectra\n\t\t\t\t\t' +
-        'have low quality spectra and thus can not fully rely on the similarity values.',
+        'MS1 and MS2 information. This is a turn around to the fact that blank spectra\n\t\t\t\t\t' +
+        'have low quality spectra and baseline occurrence.',
         parseBFLAGcutoff, 1.5)
     .option('--noise_cutoff [x]', 'A positive numeric value defining the minimum base peak intensity absolute value \n\t\t\t\t\t' +
         'that a MS2 spectra must have to be kept after the clustering of Step 3. \n\t\t\t\t\t' +
@@ -3019,9 +3008,6 @@ program
         ' The default value is zero (disabled). Large values in this parameter may result in the loss of minority \n\t\t\t\t\t'+
         'compounds together with noise spectra.',
         parseNOISEcutoff, 0)
-    .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules ' +
-        'for detecting adducts, multiple charge and dimers/trimers variants, and their combination ' +
-        'with neutral losses (Step 7)',__dirname+"/rules/np3_modifications.csv")
     .option('-c, --scale_factor [x]', 'the scaling method to be used in the fragmented peak\'s\n\t\t\t\t\t' +
         'intensities before any dot product comparison (Steps 5 and 7).\n\t\t\t\t\t' +
         'Valid values are: 0 for the natural logarithm (ln) of the\n\t\t\t\t\t' +
@@ -3029,6 +3015,27 @@ program
         'than zero for raising the fragment peaks intensities to\n\t\t\t\t\t' +
         'the power of x (e.g. x = 0.5 is the square root scaling).\n\t\t\t\t\t' +
         '[x] >= 0', parseFloat, 0.5)
+    .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
+        'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
+        'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
+        'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
+        'spectra acquired on qTOFs.',toupper,"TRUE")
+    .option('--max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search of ' +
+        'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
+        'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
+        'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
+    .option('-b, --max_size_in_mem [x]', "The maximum size that the similarity table must have in bytes " +
+        "to be loaded in memory (faster), otherwise the script will use awk to access and modify it directly from the " +
+        "disk (no mem footprint). (default to 10^9 = 1Gb)",parseDecimal,1000000000)
+    .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing. ' +
+        'x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1', parseDecimal, 4)
+    .option('-u, --rules [x]', 'path to the CSV file with the accepted ionization modification rules ' +
+        'for detecting adducts, multiple charge and dimers/trimers variants, and their combination ' +
+        'with neutral losses (Step 7)',__dirname+"/rules/np3_modifications.csv")
+    .option('-w, --similarity_mn [x]', 'the minimum similarity score that must occur between a pair of ' +
+        'consensus MS/MS spectra in order to create an edge in the molecular networking. Lower values will increase the ' +
+        'component size of the clusters by inducing the connection of less related MS/MS spectra; and higher values will ' +
+        ' limit the components sizes to the opposite', parseFloat, 0.6)
     .option('-k, --net_top_k [x]', 'the maximum number of connection for one single node in the\n\t\t\t\t\t' +
         'similarity molecular networking. An edge between two nodes\n\t\t\t\t\t' +
         'is kept only if both nodes are within each other\'s [x]\n\t\t\t\t\t' +
@@ -3054,27 +3061,11 @@ program
         '(2 or greater) to remove nodes in a distance equal to 2 or greater from a blank node, \n\t\t\t\t\t' +
         'or (-1) to remove all possible neighbours and ancestors of a blank node (remove blank clusters) from IVAMN ',
         parseDecimal, 0)
-    .option('-r, --trim_mz [x]', 'A logical "TRUE" or "FALSE" indicating if the spectra fragmented \n\t\t\t\t\t' +
-        'peaks around the precursor m/z +-20 Da should be deleted \n\t\t\t\t\t' +
-        'before the pairwise comparisons. If "TRUE" this removes the \n\t\t\t\t\t' +
-        'residual precursor ion, which is frequently observed in MS/MS \n\t\t\t\t\t' +
-        'spectra acquired on qTOFs.',toupper,"TRUE")
-    .option('--max_shift [x]', 'Maximum difference between precursor m/zs that will be used in the search of ' +
-        'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
-        'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
-        'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
-    .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing. ' +
-        'x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1', parseDecimal, 2)
     .option('-e, --method [name]', 'a character string indicating which correlation coefficient is to be computed. One ' +
         'of "pearson", "kendall", or "spearman"', convertMethodCorr,"spearman")
-    // .option('-i, --metfrag_identification [x]', 'a logical "TRUE" or "FALSE" indicating if the MetFrag tool\n\t\t\t\t\t' +
-    //     'should be used for identification search against the\n\t\t\t\t\t' +
-    //     'PubChem database of the top correlated m/z\'s\n\t\t\t\t\t', toupper,"FALSE")
     .option('-j, --tremolo_identification [x]', 'for not Windows OS\'s. A logical "TRUE" or "FALSE" indicating if the Tremolo tool should be used ' +
         'for the spectral matching against the In-Silico predicted MS/MS spectrum of Natural Products Database (ISDB) from the UNPD ' +
         '(Universal Natural Products Database).', toupper,"TRUE")
-    .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed in " +
-        "a chunk at the same time. In case of memory issues this value should be decreased",parseDecimal,3000)
     .option('-v, --verbose [x]', 'for values X>0 show the scripts output information', parseDecimal, 0)
     .action(function(options) {
         if (typeof options.metadata === 'undefined') {
@@ -3098,30 +3089,19 @@ program
             console.error('\nERROR. Wrong mz_tolerance parameter value. The m/z tolerance must be a positive numeric value given in Daltons. Execution aborted.');
             process.exit(1);
         }
+        if (isNaN(options.rt_tolerance) || options.rt_tolerance < 0) {
+            console.error('\nERROR. Wrong rt_tolerance parameter value. The retention time tolerance must be a positive numeric value given in seconds. Execution aborted.');
+            process.exit(1);
+        }
         var output_name = basename(options.output_path);
 
-        // check if pairwise table exists
-        var out_clustered_spec_comp = '';
-        if (!shell.test('-e', options.output_path + "/molecular_networking/similarity_tables/similarity_table_" +
-            output_name + ".csv")) {
-            // cread molecular networking output dir
-            shell.mkdir("-p", options.output_path + "/molecular_networking/similarity_tables");
-            // call pairwise comparison, create folder
-            out_clustered_spec_comp = callPairwiseComparision(basename(options.output_path), options.output_path + "/molecular_networking/similarity_tables",
-                options.output_path + "/mgf/", options.fragment_tolerance,
-                options.scale_factor, options.trim_mz, options.max_shift, options.parallel_cores,
-                options.similarity_function, options.verbose);
-        }
 
         const start_clean = process.hrtime.bigint();
-        console.log('*** NP3 Clean Clustered Spectra - Step 5 ***\n');
+        console.log('*** Command clean - Step 5 ***\n');
 
-        // remove mass dissipation from the clustering area and spectra count
-        // var resExec = callCleanAnnotateClustering(options, options.output_path, options.mz_tolerance,
-        //     options.rt_tolerance, options.fragment_tolerance, options.processed_data_dir);
+        // remove mass dissipation from the clustering area and spectra counts
         var resExec = callCleanClusteringCounts(options, options.output_path, options.mz_tolerance,
-            options.rt_tolerance[1], options.fragment_tolerance, options.processed_data_dir,
-            out_clustered_spec_comp);
+            options.rt_tolerance, options.fragment_tolerance, options.processed_data_dir);
 
         if (!resExec) {   // clean worked, if not windows run tremolo
             var output_clean_path = options.output_path + "/count_tables/clean/";
@@ -3140,7 +3120,7 @@ program
 
             // call annotate spectra to identify variant and create the molecular network of annotations
             resExec = callAnnotateCleanCounts(options, options.output_path,
-                options.mz_tolerance, options.mz_tolerance, options.rt_tolerance[0],
+                options.mz_tolerance, options.mz_tolerance, options.rt_tolerance,
                 15);
 
             if (resExec) {
@@ -3166,7 +3146,7 @@ program
             // create MNs
             callCreatMN(options.output_path, options.similarity_mn, options.net_top_k,
                 options.max_component_size, options.min_matched_peaks,
-                options.max_chunk_spectra, options.blank_expansion, options.verbose);
+                options.max_size_in_mem, options.blank_expansion, options.verbose);
 
             // call final report here too
             callFinalReportsCreation(options.metadata, count_area_path, options.output_path, output_name,
@@ -3198,7 +3178,7 @@ program
         console.log('');
         console.log('One sub folder inside the \'count_tables\' folder is created named \'clean\' containing:\n' +
             '    - A text file named \'analyseCountClusteringClean\' with the clean count analyses\n' +
-            '    - Two CSV files with the clustering counts of spectra and peak area cleanned and annotated, named with the ' +
+            '    - Two CSV files with the clustering counts of spectra and peak area cleaned and annotated, named with the ' +
             'suffix \'_clean_ann.csv\'\n' +
             '    - CSV files with the correlation columns added are also included when there is a biocorrelation result\n' +
             'The \'molecular_networking\' folder is also created if not present yet, and inside it: \n' +
@@ -3215,7 +3195,7 @@ program
         console.log('EXAMPLES:');
         console.log('');
         console.log('  $ node np3_workflow.js clean --metadata "/path/to/the/metadata/file/test_np3_metadata.csv" ' +
-            '--output_path "/path/to/the/output/dir/test_np3/outs/test_np3" -b 1000');
+            '--output_path "/path/to/the/output/dir/test_np3/outs/test_np3" -b 2000000000');
     });
 
 program
