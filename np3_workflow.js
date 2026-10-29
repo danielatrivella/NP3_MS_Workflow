@@ -690,7 +690,7 @@ function callCleanClusteringCounts(parms, output_path, mz_tol, rt_tol, bin_size,
             clean_output_path+"analyseCountClusteringClean",
             clean_output_path+"logCleanOutput");
         // call the pairwise comparison of the clean mgf
-        var out_pairComp = callPairwiseComparision(output_name+'_clean',
+        var out_pairComp = callPairwiseComparison(output_name+'_clean',
             output_path+'/molecular_networking/similarity_tables/',
             output_path+'/mgf/'+output_name+'_clean.mgf',
              bin_size, parms.scale_factor, parms.trim_mz, parms.max_shift,
@@ -826,10 +826,10 @@ function callJoinJobsAnnotations(parms, output_path)
     return(resExec.code);
 }
 
-function callPairwiseComparision(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, max_shift,
+function callPairwiseComparison(out_name, out_path, mgf_path, bin_size, scaling_method, trim_mz, max_shift,
                                  cores_parallel, similarity_function, verbose)
 {
-    const step_name = '*** Step 5 - Computing the pairwise similarity comparisons of the resulting consensus spectra *** \n';
+    const step_name = '*** Computing the pairwise similarity comparisons of the resulting clean consensus spectra *** \n';
     console.log(step_name);
 
     const start_comp = process.hrtime.bigint();
@@ -2299,7 +2299,7 @@ program
         // create molecular networking output dir
         shell.mkdir("-p", output_path+ "/molecular_networking/similarity_tables");
         // call pairwise comparison for the clustered spectra
-        var out_clustered_spec_comp = callPairwiseComparision(options.output_name, output_path + "/molecular_networking/similarity_tables",
+        var out_clustered_spec_comp = callPairwiseComparison(options.output_name, output_path + "/molecular_networking/similarity_tables",
             output_path+"/mgf/", options.fragment_tolerance,
             options.scale_factor, options.trim_mz, options.max_shift,options.parallel_cores,
             options.similarity_function, options.verbose);
@@ -3869,7 +3869,7 @@ program
         // create molecular networking output dir
         shell.mkdir("-p", output_path+ "/molecular_networking/similarity_tables");
         // call pairwise comparison for the clustered spectra
-        var out_clustered_spec_comp = callPairwiseComparision(options.output_name, output_path + "/molecular_networking/similarity_tables",
+        var out_clustered_spec_comp = callPairwiseComparison(options.output_name, output_path + "/molecular_networking/similarity_tables",
             output_path+"/mgf/", options.fragment_tolerance,
             options.scale_factor, options.trim_mz, options.max_shift, options.parallel_cores,
             options.similarity_function, options.verbose);
