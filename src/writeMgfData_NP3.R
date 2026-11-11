@@ -6,13 +6,11 @@ Rcpp::sourceCpp(file.path(script_path(),
 # Modified by Sebastian Gibb <mail@sebastiangibb.de>
 # Modified by Cristina F. Bazzano <crisfbazz@gmail.com>
 # tags: check if the provided list of tags were correctly written in all spectrum header of the created MGF
-writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT = NULL,
-                                 RTMIN = NULL, RTMAX = NULL, PEAK_ID = NULL, PEAK_AREA = NULL, SIZE = NULL,
-                                 INTO = NULL, PEPMASS = NULL, CHARGE = NULL, 
+writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, CHARGE=NULL,
                                  tags = c("BEGIN IONS", "SCANS", "RTINSECONDS", 
                                           "CHARGE", "PRECURSOR_INTENSITY", "PEPMASS",
                                           "END IONS"),
-                                 verbose = isMSnbaseVerbose()) {
+                                 verbose = FALSE) {
   file_MGF <- path.expand(file_MGF)
   if (class(file_MGF) == "character" && file.exists(file_MGF)) 
   {
@@ -42,10 +40,7 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
     if (verbose)
       setTxtProgressBar(pb, i)
     
-    writeMgfContent_NP3(splist[[i]], TITLE = TITLE, con = con, RT = RT[[i]],
-                        RTMIN = RTMIN[[i]], RTMAX = RTMAX[[i]], PEAK_ID = PEAK_ID[[i]],
-                        PEAK_AREA = PEAK_AREA[[i]], PEPMASS = PEPMASS[[i]],
-                        INTO = INTO[[i]], SIZE = SIZE[[i]], CHARGE = CHARGE)
+    writeMgfContent_NP3(splist[i], TITLE = TITLE, con = con, CHARGE = CHARGE)
   })
   n_sp_w <- sum(sp_w) # get the number of written spectrum
   
@@ -97,78 +92,6 @@ writeMgfDataFile_NP3 <- function(splist, file_MGF, COM = NULL, TITLE = NULL, RT 
   cat(" OK!\n")
 }
 
-writeMgfContent_NP3 <- function(sp, TITLE = NULL, con, RT = NULL, RTMIN = NULL, 
-                                RTMAX = NULL, PEAK_ID = NULL, PEAK_AREA = NULL, INTO = NULL,
-                                PEPMASS = NULL, SIZE = NULL, CHARGE = NULL) {
-  # do not write zero peak spectrum, or spectrum with all peaks intensity equals zero
-  sp <- clean(sp, all=TRUE) # remove zero intensity peaks
-  if (peaksCount(sp) == 0)
-    return(0)
-  
-  .cat <- function(..., file = con, sep = "", append = TRUE) {
-    cat(..., file = file, sep = sep, append = append)
-  }
-  
-  .cat("\nBEGIN IONS\n",
-       "SCANS=", scanIndex(sp))
-  
-  if (is.null(TITLE)) {
-    .cat("\nTITLE=", scanIndex(sp))
-  } else {
-    if (nchar(TITLE) > 200) 
-      TITLE <- substr(TITLE, 1, 200)
-    .cat("\nTITLE=", TITLE,".",scanIndex(sp))
-  }
-  
-  if (!is.null(RTMIN)) {
-    # if outside the peak profile, enlarge peak
-    if (rtime(sp) < RTMIN)
-      RTMIN <- rtime(sp) - 0.5
-    
-    .cat("\nRTMIN=", RTMIN)
-  }
-  
-  if (!is.null(RTMAX)) {
-    # if outside the peak profile, enlarge peak
-    if (rtime(sp) > RTMAX)
-      RTMAX <- rtime(sp) + 0.5
-    
-    .cat("\nRTMAX=", RTMAX)
-  }
-  
-  if (!is.null(PEAK_ID)) {
-    .cat("\nPEAK_ID=", PEAK_ID)
-  }
-  
-  if (!is.null(PEAK_AREA)) {
-    .cat("\nPEAK_AREA=", PEAK_AREA)
-  }
-  
-  if (!is.null(SIZE)) {
-    .cat("\nCLUSTER_SIZE=", SIZE)
-  }
-  
-  #.cat("\nGROUPID=", acquisitionNum(sp))
-  
-  if (msLevel(sp) > 1) {
-    if (length(precursorCharge(sp)) && !is.na(precursorCharge(sp))) {
-      .cat("\nCHARGE=", ifelse(is.null(CHARGE), precursorCharge(sp), CHARGE))
-    }
-    .cat("\nNUM_PEAKS=", peaksCount(sp), 
-         "\nRTINSECONDS=", ifelse(is.null(RT), rtime(sp), RT), 
-         "\nPRECURSOR_INTENSITY=", ifelse(is.null(INTO), 
-                                          ifelse(precursorIntensity(sp)>0, 
-                                                 precursorIntensity(sp), 
-                                                 ionCount(sp)), 
-                                          INTO),
-         "\nPEPMASS=", ifelse(is.null(PEPMASS), precursorMz(sp), PEPMASS))
-  } else .cat("\nRTINSECONDS=", rtime(sp))
-  
-  .cat("\n", paste(mz(sp), intensity(sp), collapse = "\n"))
-  .cat("\nEND IONS\n")
-  
-  return(1)
-}
 
 ##### CONCATENATION FUNS
 
