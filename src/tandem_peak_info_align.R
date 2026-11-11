@@ -510,13 +510,15 @@ suppressPackageStartupMessages(library(xcms))
 suppressPackageStartupMessages(library(MSnbase))
 
 ## Use socket based parallel processing on Windows systems
+NCORES <- 4
 # if (.Platform$OS.type == "unix") {
-#     register(bpstart(MulticoreParam(2)))
+#     register(bpstart(MulticoreParam(NCORES)))
 # } else {
-#     register(bpstart(SnowParam(2)))
+#     register(bpstart(SnowParam(NCORES)))
 # }
 # Disable parallel processing
 register(SerialParam())
+
 
 # check if all files exists
 if (!all(file.exists(metadata$FILENAME)))
@@ -576,6 +578,7 @@ rm(overwrite_preprocess, integrate_method, path_batch_metadata, snthresh, prefil
    noise_tol, mzCenter_fun, fitgauss)
 
 cat("*** Starting to extract peak info for", data_name, "***\n")
+
 
 # write.table("START", "memory_use")
 # write.table(gc(), "memory_use", append = T)
