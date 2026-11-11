@@ -1198,10 +1198,10 @@ ms_spectra_count$fragmented_clusters <- ms_area_count$fragmented_clusters <- com
 # na = "NA" keeps the same NA representation written by readr::write_csv
 fwrite(ms_area_count, file = file.path(output_path, "count_tables", "clean", 
                                        paste0(output_name, "_peak_area_clean.csv")),
-       na = "NA", showProgress = FALSE)
+       na = "NA", showProgress = FALSE, sep=",",  quote = TRUE)
 fwrite(ms_spectra_count, file = file.path(output_path, "count_tables", "clean", 
                                           paste0(output_name, "_spectra_clean.csv")),
-       na = "NA", showProgress = FALSE)
+       na = "NA", showProgress = FALSE, sep=",",  quote = TRUE)
 rm(ms_spectra_count, ms_area_count)
 
 tf <- Sys.time()
