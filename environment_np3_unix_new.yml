@@ -1,0 +1,16 @@
+name: np3_new
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - nodejs
+  - r-base=4.5.3
+  - r-rams
+  - r-biocmanager
+  - bioconductor-xcms=4.8
+  - r-data.table
+  - r-rcpparmadillo
+  - r-stringi
+  - bioconductor-msbackendmgf
+
