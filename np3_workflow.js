@@ -2135,6 +2135,9 @@ program
         'shifted m/z fragment ions in the NP3 shifted cosine function. ' +
         'Shifts greater than this value will be ignored and not used in the cosine computation. ' +
         'It can be useful to deal with local modifications of the same compound.', parseFloat, 200)
+    .option('--max_size_in_mem [x]', "The maximum size that the similarity table must have in bytes " +
+        "to be loaded in memory (faster), otherwise the script will use awk to access and modify it directly from the " +
+        "disk (no mem footprint). (default to 10^9 = 1Gb)",parseDecimal,1000000000)
     .option('-b, --max_chunk_spectra [x]', "Maximum number of spectra (rows) to be loaded and processed\n\t\t\t\t\t" +
         "in a chunk at the same time. In case of memory issues this\n\t\t\t\t\t" +
         "value should be decreased. To be used in Steps 5, 7 and 10",parseDecimal,3000)
@@ -2306,7 +2309,7 @@ program
 
         // remove mass dissipation in the clustering from area and spectra count
         resExec = callCleanClusteringCounts(options, output_path, options.mz_tolerance,
-            options.rt_tolerance, options.fragment_tolerance, '',
+            options.rt_tolerance[1], options.fragment_tolerance, '',
             out_clustered_spec_comp);
 
         var counts_path = output_path+"/count_tables/"+options.output_name;
