@@ -1565,12 +1565,12 @@ function callGNPSLibrarySearch(library_mgf_path, input_mgf_file, result_folder, 
 }
 
 //  create PCA for external data - compute descriptors and NP3 reference PCA
-function createPersonalizedPCA(table_path, smiles_column, type_column, output_path, output_name) {
+function createPersonalizedPCA(table_path, smiles_column, type_column, output_path, output_name, parallel_cores) {
     // call compute rcdk descriptors
     console.log('* Computing the CDK descriptors for the valid SMILES *');
     // print the total and percentage of smiles that were correctly processed
     let resExec = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
-        table_path+' '+smiles_column+' '+output_path, {async: false, silent: false});
+        table_path+' '+smiles_column+' '+parallel_cores+' '+output_path, {async: false, silent: false});
     if (resExec.code) {
         console.log('ERROR\n');
         console.log('ERROR computing the external data RCDK descriptors. PCA creation aborted.\n');
@@ -4303,6 +4303,8 @@ program
         'together with the descriptors table. If empty string "" (default), the output_path is set to the table_path base directory.',
         '')
     .option('-n, --output_name [name]', 'The name to be used to name the final plots, used as a prefix in the PCA plots naming.\n', "new_data")
+    .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing in the rcdk descriptors computation. ' +
+        'x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1', parseDecimal, 2)
     .action(function(options) {
         if (typeof options.table_path === 'undefined') {
             console.error('\nMissing the mandatory \'table_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
@@ -4322,7 +4324,7 @@ program
         console.log('*** Create a personalized PCA plot using the NP3 reference datasets as chemical space ***\n');
 
         createPersonalizedPCA(options.table_path, options.smiles_column, options.data_type,
-                              options.output_path, options.output_name)
+                              options.output_path, options.output_name, options.parallel_cores)
         console.log("Done PCA creation in "+printTimeElapsed_bigint(start_pca, process.hrtime.bigint()));
     })
     .on('--help', function() {
