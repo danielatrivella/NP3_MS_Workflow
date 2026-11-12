@@ -11,10 +11,11 @@ For the installations instructions, how to use and complete details of each step
 
 -------------
 
-# Current Version 1.6.0
+# Current Version 1.6.1
 
 - NEW features:
 
+  - (1.6.1) Bug fix in the **pca_plot** command when the types of the data were numeric, the plots were not created. Added parallelization in the **pca_plot** command.
   - (1.6.0) Standardized the final identification curation method and split the ALL_GNPS MGF library by ion mode (**setup** required). Updated some of the final reports chemical statistics.
       - Updated the names of the final curated library annotation columns using a prefix equals "curated_lib_annotation_*". More details in Manual Section 4.6.5.
       - Split the ALL_GNPS_NO_PROPOGATED.mgf in two MGF files, one with the positive ions and another with the negative ions. The library search procedure will choose the appropriated library depending on the ion_mode informed, positive or negative. The **setup** must be executed again for this modification to take effect.
