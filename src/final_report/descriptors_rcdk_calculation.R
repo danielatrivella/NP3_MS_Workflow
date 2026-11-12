@@ -43,15 +43,101 @@ if (length(args) < 2) {
 } else {
   smiles_file <- file.path(args[[1]])
   smiles_col <- args[[2]]
+  parallel_cores <- as.numeric(args[[3]])
+  if (parallel_cores < 1) {
+    cat("Invalid parallel_cores value (", parallel_cores, 
+        "). The number of cores to be used for parallel processing must be at least 2 ",
+        "or 1 for disabling parallelization. The number of cores was set to 1 by default.\n")
+    warning("Invalid parallel_cores parameter value.")
+    parallel_cores <- 1    
+  } else if (parallel_cores > 1 && !require(parallel)) {
+    cat("Parallel library is not available, disabling parallelization. ",
+        "The number of cores was set to 1 by default.\n")
+    warning("Invalid parallel_cores parameter value.")
+    parallel_cores <- 1 
+  } else if (parallel_cores > 1 && !is.na(detectCores(logical = FALSE)) && parallel_cores >= detectCores(logical = FALSE)) {
+    cat("The number of paralell_cores =",parallel_cores,
+        " is greater or equal than the number of physical cores =",detectCores(logical = FALSE),
+        " in your machine. This is not recommended,",
+        "the number of parallel clusters will be limited by the number of physical cores minus two =",
+        detectCores(logical = FALSE)-2, ".\n")
+    warning("Invalid parallel_cores parameter value.")
+    parallel_cores <- detectCores(logical = FALSE)-2
+  }
   output_path <- ""
-  if (length(args) >= 3) {
-    output_path <- file.path(args[[3]])
+  if (length(args) >= 4) {
+    output_path <- file.path(args[[4]])
     if (!dir.exists(output_path))
     {
     stop("The path to the output directory '", output_path,
          "' do not exists. Provide a valid path to store the results.")
     }
   }
+}
+
+
+compute_descriptors_smiles <- function(smiles_char, 
+                                       topological_desc_names, 
+                                       geometrical_desc_names,
+                                       constitutional_desc_names,
+                                       set_reference_descriptors_cols_list) {
+  parsed_smiles <- parse.smiles(smiles_char)
+  if (parsed_smiles == "NULL") {
+    descriptors_data <- as.list(rep.int(NA_real_, length(set_reference_descriptors_cols_list)),all.names=set_reference_descriptors_cols_list)
+    names(descriptors_data) <- set_reference_descriptors_cols_list
+    return(descriptors_data)
+  }
+  #cat("    - Calculating topological descriptors \n")
+  # evaluate the descriptors
+  topological_descriptors <- tryCatch(eval.desc(parsed_smiles, 
+                                                topological_desc_names), 
+                                      error = function(e) {
+                                        #cat(paste(e, "- SMILES", i, ":", smiles_char_list[i], "\n"))
+                                        NULL
+                                      })
+  if (!is.null(topological_descriptors) && 
+      (nrow(topological_descriptors) == 0 || ncol(topological_descriptors) == 0)) {
+    topological_descriptors <- NULL
+  }
+  #cat("    - Calculating geometrical descriptors\n")
+  # evaluate the descriptors
+  geometrical_descriptors <- tryCatch(eval.desc(parsed_smiles, 
+                                                geometrical_desc_names), 
+                                      error = function(e) {
+                                        #cat(paste(e, "- SMILES", i, ":", smiles_char_list[i], "\n"))
+                                        NULL
+                                      })
+  if (!is.null(geometrical_descriptors) && 
+      (nrow(geometrical_descriptors) == 0 || ncol(geometrical_descriptors) == 0)) {
+    geometrical_descriptors <- NULL
+  }
+  #cat("    - Calculating constitutional descriptors\n")
+  # evaluate the descriptors
+  constitutional_descriptors <- tryCatch(eval.desc(parsed_smiles, 
+                                                   constitutional_desc_names), 
+                                         error = function(e) {
+                                           #cat(paste(e, "- SMILES", i, ":", smiles_char_list[i], "\n"))
+                                           NULL
+                                         })
+  if (!is.null(constitutional_descriptors) && 
+      (nrow(constitutional_descriptors) == 0 || ncol(constitutional_descriptors) == 0)) {
+    constitutional_descriptors <- NULL
+  }
+  # concatenate the descriptors result for current smiles
+  # if any valid result, otherwise leave its data as NA
+  descriptors_data <- bind_cols(topological_descriptors, geometrical_descriptors, constitutional_descriptors)
+  if (!is.null(descriptors_data) && nrow(descriptors_data) != 0 && 
+      ncol(descriptors_data) != 0) {
+    # filter the selected valid descriptors
+    descriptors_data <- descriptors_data[,names(descriptors_data) %in% 
+                                           set_reference_descriptors_cols_list]
+    # and set the selected descriptors to the current smiles in the data table
+    #data_SMILES[i,names(descriptors_data)] <- descriptors_data
+  } else {
+    descriptors_data <- as.list(rep.int(NA_real_, length(set_reference_descriptors_cols_list)),all.names=set_reference_descriptors_cols_list)
+    names(descriptors_data) <- set_reference_descriptors_cols_list
+  }
+  return(descriptors_data)
 }
 
 ## Extract the rcdk descriptors (topological, geometrical and constitutional) - all descriptors are retrieved by default -
@@ -63,7 +149,7 @@ if (length(args) < 2) {
 # if set_reference_descriptors_list is not 'all' it should contain a list with the descriptors
 # resulting column names to be kept, otherwise the set_descriptors_rcdk is used which contains all descriptors column names
 calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_reference_descriptors_names="all",
-                                       set_reference_descriptors_cols_list="all", output_path="") {
+                                       set_reference_descriptors_cols_list="all", output_path="", parallel_cores) {
   # check if smiles_file exists and read it
   smiles_file <- file.path(smiles_file)
   if (!file.exists(smiles_file))
@@ -79,111 +165,118 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
          "column named '", smiles_col, 
          "'. Provide a valid name for the column containing the SMILES list.")
   }
+  ti <- Sys.time()
   # select the valid smiles
   valid_smiles <- !is.na(data[[smiles_col]])
   n <- sum(valid_smiles)
-  cat("\n  - Parsing valid SMILES:",n," entries\n")
+  cat(paste("\n  - Extracted valid SMILES:",n," entries\n"))
   # parse the valid smiles using rcdk to generate molecules info
-  data_SMILES <- data[valid_smiles, smiles_col]
-  data_SMILES$smiles_char <- as.character(data_SMILES[[smiles_col]])
-  data_SMILES$parsed_smiles <- parse.smiles(data_SMILES$smiles_char)
+  smiles_char <- as.character(data[valid_smiles, smiles_col][[1]])
+  
   # initialize the selected descriptors cols with NA values type float
   # if all descriptors were selected, set the reference list to all rcdk descriptors
   if (length(set_reference_descriptors_cols_list) == 1 && set_reference_descriptors_cols_list == "all")
   {
     set_reference_descriptors_cols_list <- set_descriptors_rcdk
   } 
-  data_SMILES[,set_reference_descriptors_cols_list] <- NA_real_
   
-  cat("  - Calculating descriptors \n")
-  # calculate the descriptors from the parsed valid smiles
+  cat(paste("  - Calculating",length(set_reference_descriptors_cols_list),"descriptors \n"))
+  cat(paste("    - Number of parallel cores to use:",parallel_cores,"\n"))
+  # calculate the descriptors for the valid smiles, parse them in each iteration
   # make this one smiles per round, with try catch errors
-  for (i in seq_len(nrow(data_SMILES))) {
-    #cat("\n * Descriptors calculation for SMILES:",i," * \n")
-    #cat("    - Calculating topological descriptors \n")
-    # Topological descriptors
-    topological_desc_names <- get.desc.names("topological")
-    if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
-    {
-      # filter the descriptors names
-      topological_desc_names <- topological_desc_names[topological_desc_names %in% set_reference_descriptors_names]
-    }
-    #topological_descriptors <- bind_rows(lapply(data_SMILES$parsed_smiles, 
-    #                                            eval.desc, topological_desc_names))
-    # evaluate the descriptors
-    topological_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
-                                                  topological_desc_names), 
-                                        error = function(e) {
-                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
-                                          NULL
-                                          })
-   if (!is.null(topological_descriptors) && 
-        (nrow(topological_descriptors) == 0 || ncol(topological_descriptors) == 0)) {
-      topological_descriptors <- NULL
-    }
-    #cat("    - Calculating geometrical descriptors\n")
-    # Geometrical descriptors
-    geometrical_desc_names <- get.desc.names("geometrical")
-    if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
-    {
-      # filter the descriptors names
-      geometrical_desc_names <- geometrical_desc_names[geometrical_desc_names %in% set_reference_descriptors_names]
-    }
-    #geometrical_descriptors <- bind_rows(lapply(data_SMILES$parsed_smiles, 
-    #                                            eval.desc, geometrical_desc_names))
-    # evaluate the descriptors
-    geometrical_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
-                                                  geometrical_desc_names), 
-                                        error = function(e) {
-                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
-                                          NULL
-                                        })
-    if (!is.null(geometrical_descriptors) && 
-        (nrow(geometrical_descriptors) == 0 || ncol(geometrical_descriptors) == 0)) {
-      geometrical_descriptors <- NULL
-    }
-    #cat("    - Calculating constitutional descriptors\n")
-    # Constitutional descriptors
-    constitutional_desc_names <- get.desc.names("constitutional")
-    problematic_desc <- "LongestAliphaticChainDescriptor"
-    constitutional_desc_names <- constitutional_desc_names[!endsWith(constitutional_desc_names, problematic_desc)]
-    if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
-    {
-      # filter the descriptors names
-      constitutional_desc_names <- constitutional_desc_names[constitutional_desc_names %in% set_reference_descriptors_names]
-    }
-    #constitutional_descriptors <- bind_rows(lapply(data_SMILES$parsed_smiles, 
-    #                                               eval.desc, constitutional_desc_names))
-    # evaluate the descriptors
-    constitutional_descriptors <- tryCatch(eval.desc(data_SMILES$parsed_smiles[i], 
-                                                     constitutional_desc_names), 
-                                        error = function(e) {
-                                          cat(paste(e, "- SMILES", i, ":", data_SMILES$smiles_char[i], "\n"))
-                                          NULL
-                                        })
-    if (!is.null(constitutional_descriptors) && 
-        (nrow(constitutional_descriptors) == 0 || ncol(constitutional_descriptors) == 0)) {
-      constitutional_descriptors <- NULL
-    }
-    # concatenate the descriptors result for current smiles
-    # if any valid result, otherwise leave its data as NA
-    descriptors_data <- bind_cols(topological_descriptors, geometrical_descriptors, constitutional_descriptors)
-    if (!is.null(descriptors_data) && nrow(descriptors_data) != 0 && 
-        ncol(descriptors_data) != 0) {
-      # filter the selected valid descriptors
-      descriptors_data <- descriptors_data[,names(descriptors_data) %in% 
-                                            set_reference_descriptors_cols_list]
-      # and set the selected descriptors to the current smiles in the data table
-      data_SMILES[i,names(descriptors_data)] <- descriptors_data
-    }
+  # Topological descriptors
+  topological_desc_names <- get.desc.names("topological")
+  if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
+  {
+    # filter the descriptors names
+    topological_desc_names <- topological_desc_names[topological_desc_names %in% set_reference_descriptors_names]
   }
-  data_SMILES$parsed_smiles <- NULL
-  data_SMILES <- data_SMILES[,-c(1,2)]
-  cat("  - Done computing", ncol(data_SMILES),"RCDK descriptors for", nrow(data_SMILES),"/",n,
-      "(",round(nrow(data_SMILES)/n*100,1),"%) valid SMILES!\n\n")
+  # Geometrical descriptors
+  geometrical_desc_names <- get.desc.names("geometrical")
+  if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
+  {
+    # filter the descriptors names
+    geometrical_desc_names <- geometrical_desc_names[geometrical_desc_names %in% set_reference_descriptors_names]
+  }
+  # Constitutional descriptors
+  constitutional_desc_names <- get.desc.names("constitutional")
+  problematic_desc <- "LongestAliphaticChainDescriptor"
+  constitutional_desc_names <- constitutional_desc_names[!endsWith(constitutional_desc_names, problematic_desc)]
+  if (length(set_reference_descriptors_names) > 1 || set_reference_descriptors_names != "all")
+  {
+    # filter the descriptors names
+    constitutional_desc_names <- constitutional_desc_names[constitutional_desc_names %in% set_reference_descriptors_names]
+  }
+  if (parallel_cores > 1 & length(smiles_char) > parallel_cores) {
+    # using makeCluster here because rJava can not be parallelized with mclapply
+    # Note: Do NOT export 'parsed_smiles' because Java objects break across PSOCK workers
+    # 1. Create the PSOCK cluster
+    cl <- makeCluster(parallel_cores, type = "PSOCK")
+
+    # 2. Load rcdk (and any other packages needed inside compute_descriptors_smiles) on each worker
+    clusterEvalQ(cl, {
+      suppressPackageStartupMessages(library(rcdk))
+      library(dplyr)
+    })
+
+    # 3. Export your function and static variables to all workers
+    clusterExport(
+      cl,
+      varlist = c(
+        "compute_descriptors_smiles",
+        "smiles_char",
+        "topological_desc_names",
+        "geometrical_desc_names",
+        "constitutional_desc_names",
+        "set_reference_descriptors_cols_list"
+      ),
+      envir = environment()
+    )
+
+    # 4. Run parLapply and bind the results
+    res_data <- bind_rows(
+      parLapply(
+        cl,
+        smiles_char,
+        compute_descriptors_smiles,
+        topological_desc_names = topological_desc_names,
+        geometrical_desc_names = geometrical_desc_names,
+        constitutional_desc_names = constitutional_desc_names,
+        set_reference_descriptors_cols_list = set_reference_descriptors_cols_list
+      )
+    )
+
+    # 5. Stop the cluster to free RAM
+    stopCluster(cl)
+  } else {
+    res_data <- bind_rows(lapply(smiles_char, 
+                                 compute_descriptors_smiles, 
+                                 topological_desc_names=topological_desc_names, 
+                                 geometrical_desc_names=geometrical_desc_names,
+                                 constitutional_desc_names=constitutional_desc_names,
+                                 set_reference_descriptors_cols_list=set_reference_descriptors_cols_list))
+  }
+  # check size matches
+  if (nrow(res_data) != length(smiles_char)) {
+    stop("Error when computing the descriptors, wrong number of final computed descriptors list.")
+  }
+  
+  tf <- Sys.time()
+  cat(paste("Done computing", ncol(res_data),"RCDK descriptors for the valid SMILES in", 
+      round(tf-ti, 2), units(tf-ti), "!\n\n"))
+  
+  desc_error <- rowSums(is.na(res_data))
+  if (any(desc_error > 0)) {
+    cat(paste("    - A total of", sum(desc_error > 0), 
+              "(",round(sum(desc_error > 0)/nrow(res_data)*100,1),"%) valid SMILES did not have all the descriptors computed successfully.",
+              "They are listed below:\n"))
+    desc_error <- sapply(which(desc_error > 0), function(i) 
+      cat(paste("    - SMILES", i, "(missing",desc_error[i],"descriptors):", smiles_char[i], " \n")))
+    
+  }
   
   # add the descriptors result to the original data table
-  data[valid_smiles, names(data_SMILES)] <- data_SMILES
+  data[valid_smiles, names(res_data)] <- res_data
   # save the original data table with the descriptors columns
   if (output_path == "") {
     write_csv(data, sub(".csv", "_descriptorsCDK.csv", smiles_file))
@@ -196,4 +289,4 @@ calculate_rcdk_descriptors <- function(smiles_file, smiles_col="SMILES", set_ref
 calculate_rcdk_descriptors(smiles_file = smiles_file, smiles_col = smiles_col,
                            set_reference_descriptors_names=set_reference_descriptors_names_top24,
                            set_reference_descriptors_cols_list=set_reference_descriptors_bestCos_top24,
-                           output_path=output_path)
+                           output_path=output_path, parallel_cores=parallel_cores)
