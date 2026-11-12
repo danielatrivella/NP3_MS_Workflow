@@ -1408,7 +1408,8 @@ function checkJoinedJobConsistency(output_path, noise_cutoff_parm, mz_tol)
     return res_all;
 }
 
-function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path, logOutputGNPSPath) {
+function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path, output_path, metadata_path,
+                      logOutputGNPSPath, parallel_cores) {
     // check molecular networking consistency
     var gnpsjoin_start = '\n*** Joining the GNPS identifications to the NP3 counts tables ***\n';
     console.log(gnpsjoin_start);
@@ -1428,7 +1429,7 @@ function callJoinGNPS(cluster_info_path, result_specnets_DB_path, ms_count_path,
     gnpsjoin_start = '\n*** Computing the RCDK descriptors for the valid GNPS library annotations ***\n';
     console.log(gnpsjoin_start);
     var resExec_rcdk = shell.exec('Rscript '+__dirname+'/src/final_report/descriptors_rcdk_calculation.R ' +
-        output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles', {async: false, silent: false});
+        output_path+'/identifications/gnps_results_smiles.csv gnps_Smiles'+' '+parallel_cores, {async: false, silent: false});
     if (resExec_rcdk.code) {
         console.log('ERROR\n');
         console.log('ERROR computing the GNPS descriptores, its PCA will not be created.\n');
@@ -1736,7 +1737,7 @@ function defaultModelDir() {
 }
 
 program
-    .version('1.6.0',  '--version')
+    .version('1.6.1',  '--version')
     .usage(' command [options]\n\n' +
         'The NP3 MS workflow is a software system with a collection of scripts to enhance untargeted metabolomics ' +
         'research focused on drug discovery with optimizations towards natural products. \n\n' +
@@ -2369,7 +2370,8 @@ program
             var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv"
             var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
             if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                process_res = callJoinGNPS("", output_file_name, area_counts_path, output_path, options.metadata,logOutputGNPSPath);
+                process_res = callJoinGNPS("", output_file_name, area_counts_path, output_path,
+                    options.metadata,logOutputGNPSPath, options.parallel_cores);
                 if (process_res > 0) {
                     steps_errors.push("Step 6.1 GNPS Library Search Join result error");
                 }
@@ -2423,7 +2425,8 @@ program
                 var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
                 var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
                 if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                    process_res = callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, options.metadata,logOutputGNPSPath);
+                    process_res = callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv",
+                        output_path, options.metadata,logOutputGNPSPath, options.parallel_cores);
                     if (process_res > 0) {
                         steps_errors.push("Step 6.1 GNPS Library Search Join result error");
                     }
@@ -3955,7 +3958,8 @@ program
             var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
             var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
             if (!resExec_gnps && options.gnps_search_tool !== "" && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                process_res = callJoinGNPS("", output_file_name, area_counts_path, output_path, metadata_original_samples,logOutputGNPSPath);
+                process_res = callJoinGNPS("", output_file_name, area_counts_path, output_path,
+                    metadata_original_samples,logOutputGNPSPath, options.parallel_cores);
                 if (process_res > 0) {
                     steps_errors.push("Step 6.1 GNPS Library Search Join result error");
                 }
@@ -4000,7 +4004,8 @@ program
                 var output_file_name = result_folder + "/" + options.output_name + "_library_search_" + options.gnps_search_tool + "_top1.tsv";
                 var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
                 if (!resExec && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
-                    process_res = callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv", output_path, metadata_original_samples, logOutputGNPSPath);
+                    process_res = callJoinGNPS("", output_file_name, counts_path + "_peak_area.csv",
+                        output_path, metadata_original_samples, logOutputGNPSPath, options.parallel_cores);
                     if (process_res > 0) {
                         steps_errors.push("Step 6.1 GNPS Library Search Join result error");
                     }
@@ -4192,7 +4197,8 @@ program
 
         if (!resExec && (options.count_file_path !== "") && (shell.test('-e', output_file_name) && shell.test('-f', output_file_name))) {
             var logOutputGNPSPath = result_folder + "/logGNPS2LibrarySearch";
-            callJoinGNPS("", output_file_name, options.count_file_path, options.output_path, options.metadata,logOutputGNPSPath);
+            callJoinGNPS("", output_file_name, options.count_file_path, options.output_path,
+                options.metadata,logOutputGNPSPath, options.parallel_threads);
         }
 
         console.log("GNPS_library_search "+printTimeElapsed_bigint(start_gnpssearch, process.hrtime.bigint()));
@@ -4235,6 +4241,8 @@ program
         'It should contain the "identifications" folder, if not it will be created. The job name (output_name) may be extracted from here.')
     .option('-m, --metadata [file]', 'path to the metadata table CSV file of the NP3 job. This is necessary to plot the ' +
         'distribution of the superclasses grouping by sample, it may be missing if this plot is not desired (leave as empty string).\n', "")
+    .option('-l, --parallel_cores [x]', 'the number of cores to be used for parallel processing in the rcdk descriptors computation. ' +
+        'x = 1 for disabling parallelization and x > 2 for enabling it. [x] >= 1', parseDecimal, 2)
     .action(function(options) {
         if (typeof options.cluster_info_path === 'undefined') {
             console.error('\nMissing the mandatory \'cluster_info_path\' parameter. See --help for the list of mandatory parameters indicated by angled brackets (e.g. <value>).');
@@ -4258,7 +4266,7 @@ program
         //console.log('*** Join of the GNPS identification result to the NP3 count files ***\n');
         var logOutputGNPSPath = options.job_output_path + osSep() + "identifications" + osSep()+ "logGNPS2LibrarySearch";
         callJoinGNPS(options.cluster_info_path, options.result_specnets_DB_path,
-            options.count_file_path, options.job_output_path, options.metadata,logOutputGNPSPath);
+            options.count_file_path, options.job_output_path, options.metadata,logOutputGNPSPath, options.parallel_cores);
 
         console.log("GNPS_result "+printTimeElapsed_bigint(start_gnpsjoin, process.hrtime.bigint()));
     })
